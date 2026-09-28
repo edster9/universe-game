@@ -4,6 +4,10 @@
 use std::fmt;
 use std::str::FromStr;
 
+/// How much game time one tick is. Rates written "per second" in data are
+/// per tick.
+pub const SECONDS_PER_TICK: u64 = 1;
+
 /// A mass, stored in milligrams.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Mass(u64);
@@ -18,10 +22,18 @@ impl Mass {
     pub const fn mg(self) -> u64 {
         self.0
     }
+
+    pub fn checked_add(self, other: Mass) -> Option<Mass> {
+        self.0.checked_add(other.0).map(Mass)
+    }
+
+    pub fn checked_sub(self, other: Mass) -> Option<Mass> {
+        self.0.checked_sub(other.0).map(Mass)
+    }
 }
 
 /// Units a mass can be written in, largest first, with their size in milligrams.
-const MASS_UNITS: [(&str, u64); 4] = [
+const MASS_UNITS: &[(&str, u64)] = &[
     ("t", 1_000_000_000),
     ("kg", 1_000_000),
     ("g", 1_000),
@@ -34,29 +46,84 @@ impl FromStr for Mass {
     /// Parses text like "72 kg", "1.2 kg", or "900 g". The value must come out
     /// to a whole number of milligrams.
     fn from_str(text: &str) -> Result<Self, Self::Err> {
-        let error = || UnitError(format!("{text:?} is not a mass like \"2 kg\" or \"900 g\""));
-        let text = text.trim();
-        let split = text
-            .find(|c: char| c.is_ascii_alphabetic())
-            .ok_or_else(error)?;
-        let (number, unit) = (text[..split].trim(), text[split..].trim());
-        let scale = MASS_UNITS
-            .iter()
-            .find(|(name, _)| *name == unit)
-            .map(|&(_, scale)| scale)
-            .ok_or_else(error)?;
-        parse_scaled(number, scale).map(Mass).ok_or_else(error)
+        parse_quantity(text, MASS_UNITS, "a mass like \"2 kg\" or \"900 g\"").map(Mass)
     }
 }
 
 impl fmt::Display for Mass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (unit, scale) = MASS_UNITS
-            .iter()
-            .copied()
-            .find(|&(_, scale)| self.0 >= scale)
-            .unwrap_or(("mg", 1));
+        let (unit, scale) = largest_unit(self.0, MASS_UNITS);
         write!(f, "{} {unit}", format_scaled(self.0, scale))
+    }
+}
+
+/// A temperature, stored in millikelvin.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Temperature(u64);
+
+impl Temperature {
+    pub const fn from_mk(mk: u64) -> Self {
+        Temperature(mk)
+    }
+
+    pub const fn mk(self) -> u64 {
+        self.0
+    }
+}
+
+impl FromStr for Temperature {
+    type Err = UnitError;
+
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        parse_quantity(text, &[("K", 1_000)], "a temperature like \"293 K\"").map(Temperature)
+    }
+}
+
+impl fmt::Display for Temperature {
+    /// Shown to the nearest kelvin.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} K", (self.0 + 500) / 1_000)
+    }
+}
+
+/// An amount of energy, stored in microjoules.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Energy(u64);
+
+impl Energy {
+    pub const ZERO: Energy = Energy(0);
+
+    pub const fn from_uj(uj: u64) -> Self {
+        Energy(uj)
+    }
+
+    pub const fn uj(self) -> u64 {
+        self.0
+    }
+
+    pub fn checked_add(self, other: Energy) -> Option<Energy> {
+        self.0.checked_add(other.0).map(Energy)
+    }
+
+    pub fn checked_sub(self, other: Energy) -> Option<Energy> {
+        self.0.checked_sub(other.0).map(Energy)
+    }
+}
+
+const ENERGY_UNITS: &[(&str, u64)] = &[
+    ("GJ", 1_000_000_000_000_000),
+    ("MJ", 1_000_000_000_000),
+    ("kJ", 1_000_000_000),
+    ("J", 1_000_000),
+    ("mJ", 1_000),
+    ("µJ", 1),
+];
+
+impl fmt::Display for Energy {
+    /// Shown to three decimal places in the largest fitting unit.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (unit, scale) = largest_unit(self.0, ENERGY_UNITS);
+        write!(f, "{} {unit}", format_rounded(self.0, scale, 3))
     }
 }
 
@@ -94,6 +161,25 @@ impl fmt::Display for Credits {
     }
 }
 
+/// Units for material properties in data files. Each converts to the whole
+/// number the engine stores.
+pub mod property {
+    /// Specific heat, stored as µJ per mg per K (numerically equal to J/(kg*K)).
+    pub const SPECIFIC_HEAT: &[(&str, u64)] = &[("kJ/(kg*K)", 1_000), ("J/(kg*K)", 1)];
+    /// Chemical energy per mass, stored as µJ per mg (numerically equal to J/kg).
+    pub const ENERGY_DENSITY: &[(&str, u64)] =
+        &[("MJ/kg", 1_000_000), ("kJ/kg", 1_000), ("J/kg", 1)];
+    /// Heat lost per kelvin of temperature difference, stored as µJ per K per tick.
+    pub const HEAT_LOSS: &[(&str, u64)] = &[
+        ("kW/K", 1_000_000_000 * super::SECONDS_PER_TICK),
+        ("W/K", 1_000_000 * super::SECONDS_PER_TICK),
+    ];
+    /// Density, stored in g per cubic metre.
+    pub const DENSITY: &[(&str, u64)] = &[("kg/m3", 1_000)];
+    /// Speed of sound, stored in mm per second.
+    pub const SPEED: &[(&str, u64)] = &[("m/s", 1_000)];
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UnitError(String);
 
@@ -104,6 +190,34 @@ impl fmt::Display for UnitError {
 }
 
 impl std::error::Error for UnitError {}
+
+/// Parses "<number> <unit>" using `units` (name, scale) into a whole number.
+pub fn parse_quantity(text: &str, units: &[(&str, u64)], expected: &str) -> Result<u64, UnitError> {
+    let error = || UnitError(format!("{text:?} is not {expected}"));
+    let trimmed = text.trim();
+    let split = trimmed
+        .find(|c: char| c.is_alphabetic())
+        .ok_or_else(error)?;
+    let (number, unit) = (trimmed[..split].trim(), trimmed[split..].trim());
+    let scale = units
+        .iter()
+        .find(|(name, _)| *name == unit)
+        .map(|&(_, scale)| scale)
+        .ok_or_else(error)?;
+    parse_scaled(number, scale).ok_or_else(error)
+}
+
+/// Parses a plain decimal like "4.5", scaled by `scale`.
+pub fn parse_number(text: &str, scale: u64, expected: &str) -> Result<u64, UnitError> {
+    parse_scaled(text.trim(), scale).ok_or_else(|| UnitError(format!("{text:?} is not {expected}")))
+}
+
+/// Parses a percentage like "60%" or "2.5%" into parts per ten thousand.
+pub fn parse_percent(text: &str) -> Result<u64, UnitError> {
+    let error = || UnitError(format!("{text:?} is not a percentage like \"40%\""));
+    let number = text.trim().strip_suffix('%').ok_or_else(error)?;
+    parse_scaled(number.trim(), 100).ok_or_else(error)
+}
 
 /// Parses a decimal like "1.25" and multiplies it by `scale` without floating
 /// point. Returns `None` if the result isn't a whole number or doesn't fit.
@@ -131,6 +245,14 @@ fn parse_scaled(number: &str, scale: u64) -> Option<u64> {
     u64::try_from(value).ok()
 }
 
+fn largest_unit<'a>(value: u64, units: &[(&'a str, u64)]) -> (&'a str, u64) {
+    units
+        .iter()
+        .copied()
+        .find(|&(_, scale)| value >= scale)
+        .unwrap_or(units[units.len() - 1])
+}
+
 /// Formats `value / scale` as an exact decimal with trailing zeros removed.
 fn format_scaled(value: u64, scale: u64) -> String {
     let (whole, rest) = (value / scale, value % scale);
@@ -140,6 +262,13 @@ fn format_scaled(value: u64, scale: u64) -> String {
     let width = scale.ilog10() as usize;
     let fraction = format!("{rest:0width$}");
     format!("{whole}.{}", fraction.trim_end_matches('0'))
+}
+
+/// Formats `value / scale` rounded to at most `decimals` places.
+fn format_rounded(value: u64, scale: u64, decimals: u32) -> String {
+    let step = (scale / 10u64.pow(decimals)).max(1);
+    let rounded = (u128::from(value) + u128::from(step) / 2) / u128::from(step) * u128::from(step);
+    format_scaled(u64::try_from(rounded).unwrap_or(value), scale)
 }
 
 #[cfg(test)]
@@ -177,5 +306,31 @@ mod tests {
         assert_eq!(Mass::from_mg(900_000).to_string(), "900 g");
         assert_eq!(Mass::from_mg(1_500).to_string(), "1.5 g");
         assert_eq!(Mass::ZERO.to_string(), "0 mg");
+    }
+
+    #[test]
+    fn parses_material_properties() {
+        assert_eq!("1811 K".parse(), Ok(Temperature::from_mk(1_811_000)));
+        assert_eq!(
+            parse_quantity("449 J/(kg*K)", property::SPECIFIC_HEAT, "x"),
+            Ok(449)
+        );
+        assert_eq!(
+            parse_quantity("30 MJ/kg", property::ENERGY_DENSITY, "x"),
+            Ok(30_000_000)
+        );
+        assert_eq!(
+            parse_quantity("33 W/K", property::HEAT_LOSS, "x"),
+            Ok(33_000_000)
+        );
+        assert_eq!(parse_percent("2.5%"), Ok(250));
+        assert_eq!(parse_number("4.5", 100, "x"), Ok(450));
+    }
+
+    #[test]
+    fn displays_energy_and_temperature() {
+        assert_eq!(Energy::from_uj(30_000_000_000_000).to_string(), "30 MJ");
+        assert_eq!(Energy::from_uj(1_234_567_890).to_string(), "1.235 kJ");
+        assert_eq!(Temperature::from_mk(1_810_600).to_string(), "1811 K");
     }
 }

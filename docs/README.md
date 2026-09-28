@@ -2,7 +2,7 @@
 
 Design notes for a small, networked space game that runs on a world engine of its own. Nothing is simulated from nowhere, things are made of things, and nothing gets built without someone who knows how.
 
-Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust. Slice 0 is built; see [slices.md](slices.md).
+Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust. Slices 0 and 1 are built; see [slices.md](slices.md).
 
 ## The idea in eight lines
 

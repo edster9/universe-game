@@ -13,7 +13,10 @@ fn session() -> Session {
 fn a_short_walk_through_town() {
     let mut s = session();
     let totals = s.handle("totals").text;
-    assert_eq!(totals, "The world holds 374.4 kg and 750 credits in total.");
+    assert_eq!(
+        totals,
+        "The world holds 374.4 kg, 0 µJ of energy, and 750 credits in total."
+    );
 
     let script = [
         (

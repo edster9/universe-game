@@ -14,7 +14,8 @@ A world engine for a small, networked space game. Design docs are in `docs/`; st
 - `crates/engine` is pure: no files, clock, threads, network, or randomness. I/O belongs in `console` (and later `server`).
 - No floating point in the simulation. Whole numbers in real units (`units.rs`): milligrams, and so on.
 - Deterministic: `BTreeMap`/`BTreeSet`, never iteration over a `HashMap`.
-- Laws propose `Change`s; only the gate (`World::apply`) changes the world. It checks conservation and invariants and logs every accepted action.
-- Laws in code, things in data: engine code never names a particular material or item. Things go in `data/*.toml`.
+- Laws propose `Change`s; only the gate (`World::apply`) changes the world. It checks that mass, energy, and credits are conserved and the invariants hold, and logs every accepted set of changes. Nature (`nature.rs`) proposes changes through the gate too.
+- Energy is stored as heat per piece of matter, in whole microjoules; temperature is derived from it.
+- Laws in code, things in data: engine code never names a particular material, shape, or item, and `tests/slice1.rs` scans the source to enforce it. Things go in `data/*.toml`.
 - No oracles: names resolve only among what the actor can perceive, and programs will only know what their sensors measure.
 - Every action has an actor.

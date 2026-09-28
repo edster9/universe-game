@@ -1,4 +1,4 @@
-//! The world engine: laws, the gate, and data loading.
+//! The world engine: laws, the gate, nature, and data loading.
 //!
 //! The engine is pure. It has no files, clock, threads, network, or
 //! randomness of its own: text and commands go in, a new world comes out.
@@ -9,6 +9,8 @@ pub mod data;
 pub mod gate;
 pub mod intent;
 pub mod laws;
+pub mod matter;
+pub mod nature;
 pub mod units;
 pub mod view;
 pub mod world;

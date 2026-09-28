@@ -1,0 +1,193 @@
+# Slice 1: matter and processes, in a world with copper ore.
+#
+# The same places, tools, and ids as slice1-iron.toml, but the ore holds
+# copper. The same commands make copper where the other world makes iron.
+#
+# Temperatures in kelvin (293 K is room temperature). Hardness is on a scale
+# where a tool only works material softer than itself; it falls as a material
+# heats, reaching zero at its melting point.
+
+[world]
+reference_temperature = "293 K"
+open_air_heat_loss = "5 W/K"
+dig_amount = "5 kg"
+max_touch_temperature = "330 K"
+
+[[material]]
+id = "copper"
+label = "copper"
+melting_point = "1358 K"
+boiling_point = "2835 K"
+specific_heat = "385 J/(kg*K)"
+hardness = "3"
+density = "8960 kg/m3"
+speed_of_sound = "4760 m/s"
+
+[[material]]
+id = "rock"
+label = "rock"
+melting_point = "2200 K"
+boiling_point = "3200 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "5"
+density = "2700 kg/m3"
+speed_of_sound = "5000 m/s"
+
+[[material]]
+id = "gold"
+label = "gold"
+melting_point = "1337 K"
+boiling_point = "3129 K"
+specific_heat = "129 J/(kg*K)"
+hardness = "2.5"
+density = "19300 kg/m3"
+speed_of_sound = "3240 m/s"
+
+[[material]]
+id = "charcoal"
+label = "charcoal"
+melting_point = "3800 K"
+boiling_point = "4200 K"
+specific_heat = "1000 J/(kg*K)"
+hardness = "1"
+energy_density = "30 MJ/kg"
+burns_to = { smoke = "95%", ash = "5%" }
+density = "300 kg/m3"
+
+[[material]]
+id = "ash"
+label = "ash"
+melting_point = "2300 K"
+boiling_point = "3500 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "1"
+
+[[material]]
+id = "smoke"
+label = "smoke"
+melting_point = "50 K"
+boiling_point = "100 K"
+specific_heat = "1000 J/(kg*K)"
+hardness = "0"
+
+[[material]]
+id = "stone"
+label = "stone"
+melting_point = "1983 K"
+boiling_point = "2503 K"
+specific_heat = "730 J/(kg*K)"
+hardness = "6"
+density = "2600 kg/m3"
+
+[[material]]
+id = "clay"
+label = "fired clay"
+melting_point = "2400 K"
+boiling_point = "3500 K"
+specific_heat = "900 J/(kg*K)"
+hardness = "3"
+
+[[material]]
+id = "steel"
+label = "hardened steel"
+melting_point = "1700 K"
+boiling_point = "3100 K"
+specific_heat = "470 J/(kg*K)"
+hardness = "7"
+density = "7850 kg/m3"
+speed_of_sound = "5900 m/s"
+
+[[shape]]
+id = "blade"
+label = "blade"
+
+[[shape]]
+id = "ingot"
+label = "ingot"
+
+[[place]]
+id = "hillside"
+label = "the hillside"
+exits = ["forge"]
+
+[[place]]
+id = "forge"
+label = "the forge yard"
+exits = ["hillside"]
+
+[[agent]]
+id = "traveller"
+label = "the traveller"
+at = "hillside"
+mass = "72 kg"
+credits = 50
+
+[[item]]
+id = "vein"
+label = "vein of ore"
+at = "hillside"
+mass = "5 t"
+fixed = true
+composition = { copper = "30%", rock = "70%" }
+
+[[item]]
+id = "gravel"
+label = "streambed gravel"
+at = "hillside"
+mass = "1 t"
+fixed = true
+composition = { gold = "1%", rock = "99%" }
+
+[[item]]
+id = "pick"
+label = "stone pick"
+at = "hillside"
+mass = "2 kg"
+material = "stone"
+
+[[item]]
+id = "hearth"
+label = "stone hearth"
+at = "forge"
+mass = "300 kg"
+fixed = true
+chamber = { burn_rate = "2 g", heat_loss = "33 W/K" }
+
+[[item]]
+id = "mould"
+label = "clay mould"
+at = "forge"
+mass = "3 kg"
+material = "clay"
+form = "blade"
+
+[[item]]
+id = "hammer"
+label = "stone hammer"
+at = "forge"
+mass = "1.5 kg"
+material = "stone"
+
+[[item]]
+id = "charcoal-1"
+at = "forge"
+mass = "1 kg"
+material = "charcoal"
+
+[[item]]
+id = "charcoal-2"
+at = "forge"
+mass = "1 kg"
+material = "charcoal"
+
+[[item]]
+id = "charcoal-small"
+at = "forge"
+mass = "100 g"
+material = "charcoal"
+
+[[item]]
+id = "bar"
+at = "forge"
+mass = "1 kg"
+material = "steel"

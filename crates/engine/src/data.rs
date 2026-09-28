@@ -1,23 +1,65 @@
 //! Builds a world from a TOML data file. Things live in data, laws in code:
-//! nothing here knows what any particular item is.
+//! nothing here knows what any particular material or item is.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use serde::Deserialize;
 
-use crate::units::{Credits, Mass};
-use crate::world::World;
+use crate::matter::{self, Composition, Material, MaterialId};
+use crate::units::{
+    self, Credits, Energy, Mass, Temperature, parse_number, parse_percent, parse_quantity, property,
+};
+use crate::world::{Chamber, Settings, World};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WorldFile {
+    #[serde(default)]
+    world: SettingsDef,
+    #[serde(default, rename = "material")]
+    materials: Vec<MaterialDef>,
+    #[serde(default, rename = "shape")]
+    shapes: Vec<ShapeDef>,
     #[serde(default, rename = "place")]
     places: Vec<PlaceDef>,
     #[serde(default, rename = "agent")]
     agents: Vec<AgentDef>,
     #[serde(default, rename = "item")]
     items: Vec<ItemDef>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SettingsDef {
+    reference_temperature: Option<String>,
+    open_air_heat_loss: Option<String>,
+    dig_amount: Option<String>,
+    max_touch_temperature: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MaterialDef {
+    id: String,
+    label: String,
+    melting_point: String,
+    boiling_point: String,
+    specific_heat: String,
+    hardness: String,
+    energy_density: Option<String>,
+    /// Material id to percentage by mass.
+    #[serde(default)]
+    burns_to: BTreeMap<String, String>,
+    density: Option<String>,
+    speed_of_sound: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ShapeDef {
+    id: String,
+    label: String,
 }
 
 #[derive(Deserialize)]
@@ -27,6 +69,7 @@ struct PlaceDef {
     label: String,
     #[serde(default)]
     exits: Vec<String>,
+    temperature: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -44,12 +87,34 @@ struct AgentDef {
 #[serde(deny_unknown_fields)]
 struct ItemDef {
     id: String,
-    label: String,
+    /// Optional for things made of materials: they can be described instead.
+    label: Option<String>,
     at: String,
     mass: String,
-    /// Too big or fixed in place to pick up.
+    /// Too big or fixed in place to carry.
     #[serde(default)]
     fixed: bool,
+    /// Made of one material.
+    material: Option<String>,
+    /// Made of several, as material id to percentage by mass.
+    composition: Option<BTreeMap<String, String>>,
+    /// Starting temperature, if not the surroundings'.
+    temperature: Option<String>,
+    /// Things can be put in it.
+    #[serde(default)]
+    container: bool,
+    /// Burns fuel inside it and holds the heat.
+    chamber: Option<ChamberDef>,
+    /// Liquid setting inside it takes this shape.
+    form: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ChamberDef {
+    /// Fuel burned per second, as a mass.
+    burn_rate: String,
+    heat_loss: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -63,6 +128,12 @@ impl fmt::Display for LoadError {
 
 impl std::error::Error for LoadError {}
 
+impl From<units::UnitError> for LoadError {
+    fn from(e: units::UnitError) -> Self {
+        LoadError(e.to_string())
+    }
+}
+
 fn fail<T>(message: impl Into<String>) -> Result<T, LoadError> {
     Err(LoadError(message.into()))
 }
@@ -72,7 +143,20 @@ fn fail<T>(message: impl Into<String>) -> Result<T, LoadError> {
 /// the same world.
 pub fn load_world(text: &str) -> Result<World, LoadError> {
     let file: WorldFile = toml::from_str(text).map_err(|e| LoadError(e.to_string()))?;
-    let mut world = World::default();
+    let mut world = World {
+        settings: load_settings(&file.world)?,
+        ..World::default()
+    };
+    load_materials(&mut world, &file.materials)?;
+    for shape in &file.shapes {
+        if world
+            .shapes
+            .insert(shape.id.clone(), shape.label.clone())
+            .is_some()
+        {
+            return fail(format!("the shape {:?} is defined twice", shape.id));
+        }
+    }
 
     let mut seen = BTreeSet::new();
     let all_ids = file
@@ -91,10 +175,13 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
     let places: Vec<_> = file
         .places
         .iter()
-        .map(|p| world.spawn(&p.id, &p.label))
+        .map(|p| world.spawn(Some(&p.id), Some(&p.label)))
         .collect();
-    for &place in &places {
+    for (&place, def) in places.iter().zip(&file.places) {
         world.exits.insert(place, Vec::new());
+        if let Some(t) = &def.temperature {
+            world.ambient.insert(place, t.parse()?);
+        }
     }
     for (&place, def) in places.iter().zip(&file.places) {
         let mut exits = Vec::new();
@@ -113,7 +200,7 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
     }
 
     for def in &file.agents {
-        let agent = world.spawn(&def.id, &def.label);
+        let agent = world.spawn(Some(&def.id), Some(&def.label));
         let at = match world.find_by_key(&def.at) {
             Some(at) if world.is_place(at) => at,
             _ => {
@@ -130,21 +217,7 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
     }
 
     for def in &file.items {
-        let item = world.spawn(&def.id, &def.label);
-        let at = match world.find_by_key(&def.at) {
-            Some(at) if world.is_place(at) || world.is_agent(at) => at,
-            _ => {
-                return fail(format!(
-                    "{} is at {:?}, which isn't a place or a person",
-                    def.id, def.at
-                ));
-            }
-        };
-        world.locations.insert(item, at);
-        world.masses.insert(item, parse_mass(&def.id, &def.mass)?);
-        if !def.fixed {
-            world.portable.insert(item);
-        }
+        load_item(&mut world, def)?;
     }
 
     // Totals must fit in a single value, so no sum of any part of the world
@@ -155,8 +228,211 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
     if world.total_credits() > u128::from(u64::MAX) {
         return fail("the world's total credits are too large");
     }
+    if world.total_energy() > u128::from(u64::MAX) {
+        return fail("the world's total energy is too large");
+    }
     world.check_invariants().map_err(LoadError)?;
     Ok(world)
+}
+
+fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
+    let mut settings = Settings::default();
+    if let Some(t) = &def.reference_temperature {
+        settings.reference_temperature = t.parse()?;
+    }
+    if let Some(rate) = &def.open_air_heat_loss {
+        settings.open_air_heat_loss =
+            parse_quantity(rate, property::HEAT_LOSS, "a heat loss like \"5 W/K\"")?;
+    }
+    if let Some(mass) = &def.dig_amount {
+        settings.dig_amount = parse_mass("dig_amount", mass)?;
+    }
+    if let Some(t) = &def.max_touch_temperature {
+        settings.max_touch_temperature = t.parse()?;
+    }
+    Ok(settings)
+}
+
+fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadError> {
+    let mut ids = BTreeMap::new();
+    for (index, def) in defs.iter().enumerate() {
+        let id =
+            MaterialId(u16::try_from(index).map_err(|_| LoadError("too many materials".into()))?);
+        if ids.insert(def.id.clone(), id).is_some() {
+            return fail(format!("the material {:?} is defined twice", def.id));
+        }
+    }
+    for (index, def) in defs.iter().enumerate() {
+        let what = |property: &str| format!("{}: {property}", def.id);
+        let melting_point: Temperature = def.melting_point.parse()?;
+        let boiling_point: Temperature = def.boiling_point.parse()?;
+        if boiling_point < melting_point {
+            return fail(format!("{} boils before it melts", def.id));
+        }
+        let mut burns_to = Vec::new();
+        for (product, share) in &def.burns_to {
+            let product_id = *ids.get(product).ok_or_else(|| {
+                LoadError(format!(
+                    "{} burns to {product:?}, which isn't a material",
+                    def.id
+                ))
+            })?;
+            burns_to.push((product_id, parse_percent(share)?));
+        }
+        if !burns_to.is_empty() && burns_to.iter().map(|(_, s)| s).sum::<u64>() != 10_000 {
+            return fail(what("burns_to must add up to 100%"));
+        }
+        let material = Material {
+            key: def.id.clone(),
+            label: def.label.clone(),
+            melting_point,
+            boiling_point,
+            specific_heat: parse_quantity(
+                &def.specific_heat,
+                property::SPECIFIC_HEAT,
+                "a specific heat like \"449 J/(kg*K)\"",
+            )?,
+            hardness: parse_number(&def.hardness, 100, "a hardness like \"4.5\"")?,
+            energy_density: def
+                .energy_density
+                .as_deref()
+                .map(|e| {
+                    parse_quantity(
+                        e,
+                        property::ENERGY_DENSITY,
+                        "an energy density like \"30 MJ/kg\"",
+                    )
+                })
+                .transpose()?
+                .unwrap_or(0),
+            burns_to,
+            density: def
+                .density
+                .as_deref()
+                .map(|d| parse_quantity(d, property::DENSITY, "a density like \"7874 kg/m3\""))
+                .transpose()?,
+            speed_of_sound: def
+                .speed_of_sound
+                .as_deref()
+                .map(|s| parse_quantity(s, property::SPEED, "a speed like \"5120 m/s\""))
+                .transpose()?,
+        };
+        let id = MaterialId(u16::try_from(index).expect("counted above"));
+        world.materials.insert(id, material);
+    }
+    Ok(())
+}
+
+fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
+    let mass = parse_mass(&def.id, &def.mass)?;
+    let composition = match (&def.material, &def.composition) {
+        (Some(_), Some(_)) => {
+            return fail(format!("{} has both a material and a composition", def.id));
+        }
+        (Some(material), None) => Some(Composition::from([(
+            material_id(world, &def.id, material)?,
+            mass,
+        )])),
+        (None, Some(parts)) => {
+            let mut fractions = Vec::new();
+            for (material, share) in parts {
+                fractions.push((
+                    material_id(world, &def.id, material)?,
+                    parse_percent(share)?,
+                ));
+            }
+            if fractions.iter().map(|(_, s)| s).sum::<u64>() != 10_000 {
+                return fail(format!("{}: the composition must add up to 100%", def.id));
+            }
+            let mut composition = Composition::new();
+            for (material, part) in matter::split_by_fractions(mass, &fractions) {
+                if part != Mass::ZERO {
+                    composition.insert(material, part);
+                }
+            }
+            Some(composition)
+        }
+        (None, None) => None,
+    };
+    if composition.is_none() && def.label.is_none() {
+        return fail(format!(
+            "{} needs a label, or a material to be described by",
+            def.id
+        ));
+    }
+
+    let item = world.spawn(Some(&def.id), def.label.as_deref());
+    let at = match world.find_by_key(&def.at) {
+        Some(at) if world.is_place(at) || world.is_agent(at) => at,
+        _ => {
+            return fail(format!(
+                "{} is at {:?}, which isn't a place or a person",
+                def.id, def.at
+            ));
+        }
+    };
+    world.locations.insert(item, at);
+
+    match composition {
+        Some(composition) => {
+            let temperature = match &def.temperature {
+                Some(t) => t.parse()?,
+                None => world.ambient(
+                    world
+                        .place_of(at)
+                        .expect("items start in a place or with a person"),
+                ),
+            };
+            let capacity = matter::heat_capacity(&world.materials, &composition);
+            let heat = u64::try_from(matter::energy_at(temperature, capacity))
+                .map_err(|_| LoadError(format!("{} holds too much heat", def.id)))?;
+            world.matter.insert(item, composition);
+            world.heat.insert(item, Energy::from_uj(heat));
+        }
+        None => {
+            if def.temperature.is_some() {
+                return fail(format!(
+                    "{} has a temperature but isn't made of a material",
+                    def.id
+                ));
+            }
+            world.masses.insert(item, mass);
+        }
+    }
+
+    if !def.fixed {
+        world.portable.insert(item);
+    }
+    if def.container || def.chamber.is_some() || def.form.is_some() {
+        world.containers.insert(item);
+    }
+    if let Some(chamber) = &def.chamber {
+        world.chambers.insert(
+            item,
+            Chamber {
+                burn_rate: parse_mass(&def.id, &chamber.burn_rate)?,
+                heat_loss: parse_quantity(
+                    &chamber.heat_loss,
+                    property::HEAT_LOSS,
+                    "a heat loss like \"30 W/K\"",
+                )?,
+                lit: false,
+            },
+        );
+    }
+    if let Some(shape) = &def.form {
+        if !world.shapes.contains_key(shape) {
+            return fail(format!("{} forms {shape:?}, which isn't a shape", def.id));
+        }
+        world.forms.insert(item, shape.clone());
+    }
+    Ok(())
+}
+
+fn material_id(world: &World, item: &str, key: &str) -> Result<MaterialId, LoadError> {
+    world
+        .material_by_key(key)
+        .ok_or_else(|| LoadError(format!("{item} is made of {key:?}, which isn't a material")))
 }
 
 fn parse_mass(id: &str, text: &str) -> Result<Mass, LoadError> {

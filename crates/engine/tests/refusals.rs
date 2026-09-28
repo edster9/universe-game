@@ -2,7 +2,7 @@
 //! refusing changes nothing.
 
 use engine::data::load_world;
-use engine::gate::{Change, Fault};
+use engine::gate::{Cause, Change, Fault};
 use engine::intent::{Command, Intent, parse};
 use engine::laws::{ActError, Refusal, act};
 use engine::units::Credits;
@@ -140,7 +140,7 @@ fn you_cant_take_people_fixed_things_or_what_others_hold() {
         &mut w,
         "traveller",
         "take anvil",
-        Refusal::CannotCarry("anvil".into()),
+        Refusal::CannotCarry("the anvil".into()),
     );
     // Mara is holding the hammer. Taking from people is stealing: slice 3.
     refused(
@@ -222,7 +222,10 @@ fn the_gate_refuses_bad_changes_on_its_own() {
         id(&w, "rope"),
         id(&w, "square"),
     );
-    let note = intent("take rope");
+    let cause = Cause::Action {
+        actor: traveller,
+        intent: intent("take rope"),
+    };
 
     let cases = [
         (
@@ -287,7 +290,7 @@ fn the_gate_refuses_bad_changes_on_its_own() {
         ),
     ];
     for (changes, what) in cases {
-        let result = w.apply(traveller, note.clone(), changes);
+        let result = w.apply(cause.clone(), changes);
         assert!(result.is_err(), "the gate allowed {what}");
         assert_eq!(
             w, before,
@@ -296,8 +299,7 @@ fn the_gate_refuses_bad_changes_on_its_own() {
     }
     assert!(matches!(
         w.apply(
-            traveller,
-            note,
+            cause,
             vec![Change::Move {
                 entity: rope,
                 to: rope

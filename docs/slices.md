@@ -45,6 +45,33 @@ Dig ore, smelt it with fuel, get iron and slag, and cast an ingot or a crude bla
 
 **Test:** the engine code contains no word "iron" or "sword". Swap the data file for a copper world and the same chain works. Mass in equals mass out. Heating costs fuel, and running out of fuel stops the furnace. A stone tool can't shape hardened steel.
 
+**Result, 2026-09-28: passed.**
+
+The worlds are [data/slice1-iron.toml](../data/slice1-iron.toml) and [data/slice1-copper.toml](../data/slice1-copper.toml). In the iron world a player can:
+
+1. take the stone pick and dig 5 kg of ore;
+2. carry it to the forge and put it in the hearth with a kilogram of charcoal;
+3. light the hearth;
+4. after about four minutes, see the iron run out of the rock as 3 kg of molten iron;
+5. pour it into the clay mould, where it sets as an iron blade;
+6. wait about 17 minutes for it to cool enough to pick up.
+
+The same commands in the copper world make a copper blade.
+
+- **No names:** a test reads every file of engine code and fails if any word naming a material, shape, or item from either world appears. It caught "pick", "rock", and "small" in early drafts, which were renamed. Even "furnace" and "mould" aren't in the engine: they're a *chamber* (burns fuel inside it and holds the heat) and a *form* (liquid setting inside it takes its shape).
+- **Energy is conserved exactly**, alongside mass and credits. Each piece of matter stores heat energy as a whole number of microjoules; temperature is worked out from it. Burning 100 g of charcoal released exactly 3 MJ of chemical energy as exactly 3 MJ of heat.
+- **Fuel:** with only 100 g of charcoal, the hearth burned for 50 seconds, went out, never melted the ore, and cooled afterwards.
+- **Hardness:** the stone hammer can't shape cold hardened steel. Hardness falls as a material heats, so the same hammer shapes the steel once it's been in the hearth. Forging came out of one law, without a rule for it. A lump of charcoal can't dig ore; the stone pick can.
+- **Random tests:** random commands and waits from a forge already burning never changed total mass, energy, or credits, never let the laws propose something the gate refused, never cooled anything below its surroundings, and always replayed identically.
+- **Sabotage check:** making hardness ignore temperature was caught by the forging test.
+
+Simplifications to revisit:
+
+- **No chemistry yet.** Metal separates from rock by melting first, not by reduction with carbon. Air and oxygen aren't modelled, so burning products weigh the same as the fuel, and smoke collects in a place's air rather than blowing away.
+- **Heat is simple.** Everything in a chamber shares one temperature; everything else cools at one open-air rate; the hearth itself doesn't heat up.
+- **Hardness is a game scale**, and a tool's hardness is its main material's.
+- **Nature logs every tick.** A long wait writes thousands of log entries. Logs will need trimming or summarising before worlds run for days.
+
 ## Slice 2: Parts and datasheets
 
 Shape a material into a part: a blade, a rod, a plate, a wire. Put parts together into something new. The engine tests the result once at the layer below and writes its datasheet.

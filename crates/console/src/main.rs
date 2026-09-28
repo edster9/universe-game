@@ -1,4 +1,4 @@
-//! Slice 0 console. Usage:
+//! The text console for the early slices. Usage:
 //!
 //!     cargo run -p console [-- --world <file.toml>] [--as <person-id>]
 //!
@@ -51,7 +51,7 @@ fn main() -> ExitCode {
 
     // When input is piped, echo each command so the transcript reads well.
     let interactive = io::stdin().is_terminal();
-    println!("Slice 0: the ledger. Type \"help\" for commands.\n");
+    println!("Universe console. Type \"help\" for commands.\n");
     println!("{}", session.handle("look").text);
     for line in io::stdin().lock().lines() {
         let Ok(line) = line else { break };

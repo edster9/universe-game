@@ -1,6 +1,6 @@
 # In-game computer
 
-Working proposal, rewritten 2026-09-28 to sit on top of the [world engine](world-engine.md). Not a decision.
+Working proposal, rewritten 2026-09-28 to sit on top of the [world engine](world-engine.md). Not a decision. Where programs sit relative to the laws, and what that asks of the technology, is in [code-and-laws.md](code-and-laws.md).
 
 ## The requirement
 
@@ -28,7 +28,7 @@ A program can touch only the devices wired to the computer it runs on.
 - A furnace controller holds a temperature because it is wired to a thermometer and a fuel valve.
 - A program cannot move money unless there is a device for it: a link to a bank that the bank chose to offer, on the bank's terms.
 
-The blast radius of bad code is whatever it is wired to. This is the same boundary the prior art kept (see [prior-art.md](../research/prior-art.md)), expressed as hardware instead of as a permission system.
+The same goes for knowing. A program learns about the world only through sensors wired to it, and there is no call that asks the engine what something is. The blast radius of bad code is whatever it is wired to. This is the same boundary the prior art kept (see [prior-art.md](../research/prior-art.md)), expressed as hardware instead of as a permission system.
 
 ## Programs are knowledge
 
@@ -56,4 +56,4 @@ Player code may be able to change *local* rules, such as a town's taxes, tariffs
 
 ## In the slices
 
-Slice 5 in [slices.md](../slices.md): a chip with an instruction set, a tiny virtual machine, and a program that controls one device from slice 1.
+Slice 5 in [slices.md](../slices.md): a chip with an instruction set, a tiny virtual machine, and a coin validator that knows only what its scale and water tank measure.

@@ -8,6 +8,24 @@ Decisions nobody has made yet. When one closes, add the date and a one-line answ
 - What data file format?
 - What is a tick, in game time?
 
+## Code and laws
+
+These are for [code-and-laws.md](ideas/code-and-laws.md).
+
+- Which material properties to simulate. Each one decides what can ever be measured, and so what can be invented.
+- How big a region is, and how fast influence travels between regions.
+- Are floating-point maths and determinism compatible here, or do the laws use fixed-point numbers?
+- The player VM: WebAssembly, or a small VM of our own?
+
+## Production
+
+These are for [production.md](ideas/production.md).
+
+- How many steps deep should a chain be at each layer?
+- How precise can hand work get, and how slowly?
+- Which facilities exist at the start, and how many of each?
+- How long should rebuilding a lost chain take, in game time?
+
 ## World engine
 
 These are for [world-engine.md](ideas/world-engine.md).
@@ -27,6 +45,8 @@ These are for [knowledge.md](ideas/knowledge.md).
 - How much of a design does reading a book give you, without the skill to understand it?
 - How much of a design does taking an item apart reveal?
 - Can an NPC be forced to share knowledge, and what does the world do about it?
+- Does a stored copy of a design decay over time: a rotting book, a failing data chip?
+- Who runs archives, and what stops them from reading what they store?
 
 ## Money
 

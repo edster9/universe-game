@@ -100,6 +100,8 @@ The teleporter is decided here. It exists only if some layer has a law that allo
 
 ## Related
 
-- [knowledge.md](knowledge.md): the third input to making anything.
+- [code-and-laws.md](code-and-laws.md): laws, designs, and programs, and what each can touch.
+- [production.md](production.md): why knowing a design is not being able to make it.
+- [knowledge.md](knowledge.md): the third input to making anything, and where it lives.
 - [in-game-computer.md](in-game-computer.md): computers as parts, programs as knowledge.
 - [game-concept.md](game-concept.md): the space game that eventually runs on this.

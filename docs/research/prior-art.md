@@ -65,6 +65,26 @@ Lessons:
 - **Subnautica.** Scanning fragments of a device teaches how to build it.
 - **EVE Online.** An original blueprint can make copies that have limited runs. Knowledge as a license.
 
+## Production chains and lost knowledge
+
+*Not yet re-checked.*
+
+- **"I, Pencil"** (Leonard Read, 1958). No single person knows how to make a pencil. The knowledge is spread across many chains.
+- **The Toaster Project** (Thomas Thwaites, 2009). A toaster built from raw materials, smelting included. Months of work for a barely working result.
+- **The three-plate method.** Rubbing three plates against each other in turn produces flat surfaces without a flatter tool. Precision from nothing, by hand, slowly.
+- **The lathe** is often called the machine tool that can reproduce itself.
+- **Dr. Stone** (manga, 2017–2022). One person rebuilds technology from the stone age, step by step.
+- **Warhammer 40,000's Standard Template Constructs.** Lost designs from a golden age that nobody can make any more.
+- **A Canticle for Leibowitz** (Walter M. Miller Jr., 1959) and **Foundation** (Isaac Asimov). Preserving knowledge through a collapse.
+
+## Splitting a world across servers
+
+*Not yet re-checked.*
+
+- **EVE Online.** Solar systems are the unit of simulation. Jumps move you between server nodes, and overloaded systems slow down time instead of failing.
+- **Improbable's SpatialOS.** Tried to run one seamless world across many cooperating servers. Games built on it, such as Worlds Adrift, shut down.
+- **Deterministic lockstep** (real-time strategy games). Every machine runs the same simulation from the same inputs. A mismatch shows that someone cheated or a bug diverged.
+
 ## Programmable worlds
 
 Every game in this list kept a core that players cannot rewrite. The ones that offered a general machine over the whole simulation cancelled (0x10c), stalled (Starbase), or shut the official world down (Dual Universe).

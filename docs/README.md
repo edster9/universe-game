@@ -4,13 +4,15 @@ Design notes for a small, networked space game that runs on a world engine of it
 
 Started 2026-09-28. No code yet. The first attempt is text-only slices of the engine.
 
-## The idea in five lines
+## The idea in seven lines
 
 1. **Laws, not things.** The engine knows how heat, hardness, energy, and money behave. It does not know "sword" or "rocket".
 2. **Conservation.** Mass and energy are never created from nothing, and money rests on them. Shops, guards, and towns run on real sources.
 3. **Datasheets.** Something built is tested once and becomes a part with a spec. That is how the world climbs from ore to microchips.
-4. **Knowledge.** Making anything takes a design and the skill to use it, as well as materials and tools.
-5. **Prehistory.** The universe opens in the space age because the space age was built inside the engine first, not hardcoded.
+4. **Knowledge.** Making anything takes a design and the skill to use it, as well as materials and tools. Knowledge lives somewhere, and can be lost.
+5. **Chains.** Knowing a design is not being able to make it. Tools make tools, and factories don't appear on their own.
+6. **Code sees through sensors.** Laws are the engine's. Designs are data. Programs run on in-game computers and know only what their sensors measure.
+7. **Prehistory.** The universe opens in the space age because the space age was built inside the engine first, not hardcoded.
 
 ## Read in this order
 
@@ -18,7 +20,9 @@ Started 2026-09-28. No code yet. The first attempt is text-only slices of the en
 | --- | --- |
 | [requirements.md](requirements.md) | What was asked for, in the words used |
 | [ideas/world-engine.md](ideas/world-engine.md) | Laws, conservation, layers, datasheets, prehistory |
-| [ideas/knowledge.md](ideas/knowledge.md) | Intelligence as the third input to making anything |
+| [ideas/code-and-laws.md](ideas/code-and-laws.md) | The foundational choice: laws, designs, and programs, and what each can touch |
+| [ideas/production.md](ideas/production.md) | Why duplicating something needs a chain of tools and factories |
+| [ideas/knowledge.md](ideas/knowledge.md) | Intelligence as the third input to making anything, and where knowledge lives |
 | [ideas/money.md](ideas/money.md) | What money is, before and after the space age, and how it's validated |
 | [slices.md](slices.md) | The first attempt: small text-only slices, each with a test |
 | [ideas/in-game-computer.md](ideas/in-game-computer.md) | Computers as parts, programs as knowledge |

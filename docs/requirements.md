@@ -42,6 +42,26 @@ Knowledge is a third input to making anything. You must already have it, find a 
 
 This is integral to the overall design. It may not be in the very first stages.
 
+## Duplication
+
+Just because something exists doesn't mean anybody can build another one, even if its design or code is common knowledge. You have to go through all the datasheets of the things in it and how they fit together. Some components are easy to find. Others, like a drill, can't be made by hand; they need a machine factory, and the factory is a much more complex thing that isn't born on its own.
+
+- Everything depends on everything else. That is where the effort and the cost are: you have to find a drill, find a scale, find the rest, and have the skill to put it together, or have it built in a factory somewhere.
+- As things are invented, there must be a way to reproduce them through a chain of things.
+- Stranded on a desert island, you can find food and eat it. You can't build a computer in a day. Eventually, perhaps, but first you have to make metals, melt them, make batteries, wires, and motors to machine things, and so on.
+- Don't get too carried away. This is the basic idea, not a demand for every real-world step.
+- As the world is trained and templates exist, things solidify.
+
+## Knowledge is located
+
+Knowledge is very key. If a planet holds datasheets and has never shared them, and the planet is destroyed, everything is lost. It isn't backed up anywhere. Anything that was produced on that world can no longer be produced, because everything about it was destroyed.
+
+## The world runs on code
+
+The original idea is a virtual computer as the world itself. Things are not only created by code, they run through code. A spaceship is higher-level code made of many other operations. When ship A meets ship B, code is running for both. Code far away doesn't need to be considered, because it's outside the cone of influence.
+
+This is the most important early design decision: whether the world is rules with templated ways to build things, or code that does things, and where the core engine ends. See [ideas/code-and-laws.md](ideas/code-and-laws.md).
+
 ## Money
 
 What makes money valuable should be answered, not assumed. Science fiction says "I have credits". Credits towards what: a computer system, like a crypto that controls it, or an element like gold that is rare in the universe and cannot be duplicated? At the end of the day, money is something rare that people are willing to use.

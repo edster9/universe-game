@@ -79,15 +79,11 @@ Whatever language is chosen, it must support:
 
 1. **Determinism.** Laws and VM give the same result on every machine. This constrains how floating-point maths is used.
 2. **A sandboxed, metered VM for programs.** Every instruction costs in-game power, which is the metering.
-3. **Programs that can be paused, saved, and moved mid-run**, so a ship's autopilot can cross between regions.
+3. **Programs that can be saved and moved**, so a ship's autopilot can cross between regions. Running programs one tick at a time makes this a matter of copying memory.
 4. **Designs as data**, with a verifier in the engine.
 5. **Code that never leaves the authority** except to its owner.
 
-Current lean, not a decision:
-
-- **Engine:** Rust, for determinism and speed, and because it has good tools for hosting sandboxed code.
-- **Player VM:** WebAssembly with metering, with a friendlier in-game language compiled to it.
-- **Slice 5:** a tiny custom VM is enough to prove the idea.
+Decided 2026-09-28: Rust for the engine, and WebAssembly for player programs, compiled ahead of time and metered by fuel. See [../technology.md](../technology.md).
 
 ## Related
 

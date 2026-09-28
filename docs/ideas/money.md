@@ -156,7 +156,7 @@ These credits have no value outside the game and cannot be bought or cashed out 
 - **Slice 0** keeps a plain credits counter as a stand-in, so conservation can be tested before money exists.
 - **Slice 1** includes one rare, non-corroding metal in its data file.
 - **Slice 3** is where money becomes real. The town has coins minted from that metal, the guard is paid in them, and testing coins by density works. Barter comes first if no coins exist.
-- **Network credits** wait until computers (slice 5) and a second place connected by messages (slice 8) exist.
+- **Network credits** wait until computers (slice 5) and a second place connected by messages (slice 9) exist.
 
 ## Open
 

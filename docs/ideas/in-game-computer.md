@@ -44,16 +44,11 @@ Player code may be able to change *local* rules, such as a town's taxes, tariffs
 
 ## Still open
 
-- **The language.** Options:
-  - A tiny instruction set of our own. It has charm, and 0x10c's DCPU-16 grew a community before the game existed.
-  - WebAssembly with metering. Players can use real languages.
-  - Lua.
-  
-  hackmud's lesson is that sandboxing JavaScript is harder than it looks.
+- **The language.** Programs are WebAssembly (decided 2026-09-28). The proposal is a small default language of our own, plus any language that compiles to WebAssembly. See [technology.md](../technology.md).
 - **Offline ships.** Do programs keep running while the owner is offline? Power budgets make that physical, but the server still pays for it.
 - **Unique or copied.** Can a program be unique (a stolen original) as well as copied (a license)?
 - **The first program.** What can a new character run before they can write one?
 
 ## In the slices
 
-Slice 5 in [slices.md](../slices.md): a chip with an instruction set, a tiny virtual machine, and a coin validator that knows only what its scale and water tank measure.
+Slice 5 in [slices.md](../slices.md): a chip running WebAssembly one tick at a time, and a coin validator that knows only what its scale and water tank measure. Slice 6 adds the player language. The runtime, interface, and language proposal are in [technology.md](../technology.md).

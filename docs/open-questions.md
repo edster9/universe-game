@@ -4,8 +4,8 @@ Decisions nobody has made yet. When one closes, add the date and a one-line answ
 
 ## Before slice 0
 
-- What implementation language? See [slices.md](slices.md).
-- What data file format?
+- ~~What implementation language?~~ Closed 2026-09-28: Rust. See [technology.md](technology.md).
+- ~~What data file format?~~ Closed 2026-09-28: TOML.
 - What is a tick, in game time?
 
 ## Code and laws
@@ -15,7 +15,8 @@ These are for [code-and-laws.md](ideas/code-and-laws.md).
 - Which material properties to simulate. Each one decides what can ever be measured, and so what can be invented.
 - How big a region is, and how fast influence travels between regions.
 - Are floating-point maths and determinism compatible here, or do the laws use fixed-point numbers?
-- The player VM: WebAssembly, or a small VM of our own?
+- ~~The player VM: WebAssembly, or a small VM of our own?~~ Closed 2026-09-28: WebAssembly, run one tick at a time. See [technology.md](technology.md).
+- The default player language: its syntax, its name, and whether it allows floating point at all.
 
 ## Production
 

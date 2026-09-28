@@ -78,7 +78,7 @@ A second test: knowledge lives somewhere. Burn the only book, and with nobody le
 
 ## Slice 5: A tiny computer, and the money validator
 
-A chip is a part whose datasheet is an instruction set and a clock speed. A tiny virtual machine runs it. Every cycle draws power. Sensors and actuators are parts, and a program can only reach the ones wired to its chip (see [ideas/code-and-laws.md](ideas/code-and-laws.md)).
+A chip is a part whose datasheet sets its speed, memory, and ports. Programs are WebAssembly, run one tick at a time, and every instruction draws power (see [technology.md](technology.md)). The validator program is written in Rust for this slice; the player language comes in slice 6. Sensors and actuators are parts, and a program can only reach the ones wired to its chip (see [ideas/code-and-laws.md](ideas/code-and-laws.md)).
 
 The scenario is a coin validator: a scale and a water tank wired to a chip, and a program that computes density and sorts coins into accept and reject.
 
@@ -94,10 +94,11 @@ The scenario is a coin validator: a scale and a water tank wired to a chip, and 
 
 ## After that, roughly in order
 
-- **Slice 6: Prehistory tools.** Build a small catalog of designs inside the engine and check that each one obeys the laws. Check that the climb exists: every design must be reachable from raw materials, skill, and time, with no unbreakable cycle. This is the first test of starting further up the ladder without hardcoding it.
-- **Slice 7: Two people.** A second player over a network, sharing the town.
-- **Slice 8: A second place and something that travels between them.** Space begins here, even as text. Messages travel too, which is when a shared ledger and network credits become possible.
-- **Slice 9: Graphics.** Only once the text version is worth looking at.
+- **Slice 6: The player language.** A small language that compiles to WebAssembly, with a compiler that runs in the browser, and a workbench to test a program against a local copy of a device. Test: rewrite the slice 5 validator in it, and it behaves the same.
+- **Slice 7: Prehistory tools.** Build a small catalog of designs inside the engine and check that each one obeys the laws. Check that the climb exists: every design must be reachable from raw materials, skill, and time, with no unbreakable cycle. This is the first test of starting further up the ladder without hardcoding it.
+- **Slice 8: Two people.** A second player over a network, sharing the town.
+- **Slice 9: A second place and something that travels between them.** Space begins here, even as text. Messages travel too, which is when a shared ledger and network credits become possible.
+- **Slice 10: Graphics.** Only once the text version is worth looking at.
 
 ## What we're really finding out
 
@@ -109,6 +110,5 @@ The scenario is a coin validator: a scale and a water tank wired to a chip, and 
 
 ## Choices needed before slice 0
 
-- **Implementation language.** Most of the code will be written by AI, so the choice follows the constraints in [ideas/code-and-laws.md](ideas/code-and-laws.md): determinism, a sandboxed and metered VM, and programs that can be saved and moved mid-run.
-- **Data file format.** For example TOML, JSON, or YAML.
+- ~~Implementation language~~ and ~~data file format~~: decided 2026-09-28, Rust and TOML. See [technology.md](technology.md).
 - **What a tick is.** How much game time passes per step.

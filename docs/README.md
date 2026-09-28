@@ -2,7 +2,7 @@
 
 Design notes for a small, networked space game that runs on a world engine of its own. Nothing is simulated from nowhere, things are made of things, and nothing gets built without someone who knows how.
 
-Started 2026-09-28. No code yet. The first attempt is text-only slices of the engine.
+Started 2026-09-28. No code yet. The first attempt is text-only slices of the engine, in Rust.
 
 ## The idea in eight lines
 
@@ -27,6 +27,7 @@ Started 2026-09-28. No code yet. The first attempt is text-only slices of the en
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |
 | [ideas/money.md](ideas/money.md) | What money is, before and after the space age, and how it's validated |
 | [slices.md](slices.md) | The first attempt: small text-only slices, each with a test |
+| [technology.md](technology.md) | Rust, the browser, whole-number units, and how player code runs |
 | [ideas/in-game-computer.md](ideas/in-game-computer.md) | Computers as parts, programs as knowledge |
 | [ideas/game-concept.md](ideas/game-concept.md) | The space game that eventually runs on the engine |
 | [research/prior-art.md](research/prior-art.md) | What other games have tried |

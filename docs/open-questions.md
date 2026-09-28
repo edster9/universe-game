@@ -1,0 +1,61 @@
+# Open questions
+
+Decisions nobody has made yet. When one closes, add the date and a one-line answer, and move the durable result into [requirements.md](requirements.md) or `ideas/`.
+
+## Before slice 0
+
+- What implementation language? See [slices.md](slices.md).
+- What data file format?
+- What is a tick, in game time?
+
+## World engine
+
+These are for [world-engine.md](ideas/world-engine.md).
+
+- Which laws belong to each layer, and where do the layer boundaries sit?
+- When is a datasheet recomputed: when a part wears, gets damaged, or gets repaired?
+- Where do credits enter and leave the world? Who mints the universal money in the fiction, and what does that cost them?
+- What recovery sources exist for a raided town, and how slow should recovery be?
+- Is there a law that permits a teleporter? It is a deliberate decision, not something to leave to chance.
+- How physical is combat? A sword's datasheet against armour's, or something more abstract?
+
+## Knowledge
+
+These are for [knowledge.md](ideas/knowledge.md).
+
+- How much does the player's own head count, compared with the character's skill?
+- How does skill grow? Can it fade?
+- How much of a design does reading a book give you, without the skill to understand it?
+- How much of a design does taking an item apart reveal?
+- Can an NPC be forced to share knowledge, and what does the world do about it?
+
+## The computer
+
+These are for [in-game-computer.md](ideas/in-game-computer.md).
+
+- One real language, or a tiny instruction set of our own?
+- Do programs keep running while the owner is offline?
+- Can a program be unique, as well as copied?
+- Can player code change local rules (a town's taxes) through ownership?
+- What is the first program a new character can run?
+
+## The game on top
+
+These are for [game-concept.md](ideas/game-concept.md).
+
+- How small is small: one system, a handful, a few dozen ports?
+- Are planets places you fly down to, or a port plus a point on the chart?
+- Do systems connect by jump, by real minutes of flight, or both?
+- What camera does the walking layer use: top-down, isometric, or first person?
+- How big is a port in walking time?
+
+## Networks
+
+- One shared world, or many copies of the same small map?
+- Does single-player exist, with NPCs standing in for other players?
+- A small map only puts players together if there are players. How does the world work while few people are online?
+- What persists: reputation, prices, programs, docked ships, towns' damage?
+
+## Not yet in scope
+
+Art style, audio, monetisation, and whether the eventual game runs in a browser or natively. Pick these once the text slices show the engine is worth building on.

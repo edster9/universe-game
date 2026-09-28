@@ -15,7 +15,7 @@ The design these slices test is in [ideas/world-engine.md](ideas/world-engine.md
 
 ## Slice 0: The ledger
 
-Entities with components, a place to be, inventories, and credits. Console commands: `look`, `take`, `drop`, `give`, `pay`.
+Entities with components, a place to be, inventories, and credits. Console commands: `look`, `take`, `drop`, `give`, `pay`. Credits here are a plain counter standing in for money until slice 3 (see [ideas/money.md](ideas/money.md)).
 
 **Proves:** nothing is created or destroyed except through the gate.
 
@@ -25,7 +25,7 @@ Entities with components, a place to be, inventories, and credits. Console comma
 
 About ten materials in a data file, each with a handful of properties: density, melting point, hardness, and for ores, composition. Processes: dig, heat, cool, crush, and separate by melting. A furnace that burns fuel for energy.
 
-Dig ore, smelt it with fuel, get iron and slag, and cast an ingot or a crude blade.
+Dig ore, smelt it with fuel, get iron and slag, and cast an ingot or a crude blade. The data file includes one rare metal that doesn't corrode, for money later.
 
 **Proves:** the engine can run a production chain it has no names for.
 
@@ -49,6 +49,8 @@ Two examples at different layers:
 Agents with needs, wallets, and jobs. A mine, a smith, a shop, a guard, and a tax. The world runs in ticks. The shop buys from the smith, the smith buys ore from the mine, the guard is paid from taxes, and taxes come from trade.
 
 The player can work, trade, and steal.
+
+Money becomes real here, replacing the slice 0 counter. The town has coins minted from slice 1's rare metal, and it pays the guard and collects tax in them. Coins can be tested by density, and a fake can be caught or missed.
 
 **Proves:** nothing comes from nowhere, and the town is still stable.
 
@@ -79,10 +81,10 @@ A chip is a part whose datasheet is an instruction set and a clock speed. A tiny
 
 ## After that, roughly in order
 
-6. **Prehistory tools.** Build a small catalog of designs inside the engine and check that each one obeys the laws. This is the first test of starting further up the ladder without hardcoding it.
-7. **Two people.** A second player over a network, sharing the town.
-8. **A second place and something that travels between them.** Space begins here, even as text.
-9. **Graphics.** Only once the text version is worth looking at.
+- **Slice 6: Prehistory tools.** Build a small catalog of designs inside the engine and check that each one obeys the laws. This is the first test of starting further up the ladder without hardcoding it.
+- **Slice 7: Two people.** A second player over a network, sharing the town.
+- **Slice 8: A second place and something that travels between them.** Space begins here, even as text. Messages travel too, which is when a shared ledger and network credits become possible.
+- **Slice 9: Graphics.** Only once the text version is worth looking at.
 
 ## What we're really finding out
 

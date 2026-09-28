@@ -14,7 +14,6 @@ These are for [world-engine.md](ideas/world-engine.md).
 
 - Which laws belong to each layer, and where do the layer boundaries sit?
 - When is a datasheet recomputed: when a part wears, gets damaged, or gets repaired?
-- Where do credits enter and leave the world? Who mints the universal money in the fiction, and what does that cost them?
 - What recovery sources exist for a raided town, and how slow should recovery be?
 - Is there a law that permits a teleporter? It is a deliberate decision, not something to leave to chance.
 - How physical is combat? A sword's datasheet against armour's, or something more abstract?
@@ -28,6 +27,16 @@ These are for [knowledge.md](ideas/knowledge.md).
 - How much of a design does reading a book give you, without the skill to understand it?
 - How much of a design does taking an item apart reveal?
 - Can an NPC be forced to share knowledge, and what does the world do about it?
+
+## Money
+
+These are for [money.md](ideas/money.md).
+
+- Which material is the hard money, before and after the space age?
+- Can matter be transmuted into the money metal, and at what energy cost?
+- How does information travel between systems: only with ships, through relays, or both? This decides what "universal" credits means.
+- In the fiction, who wrote the network's rules, and why does everyone accept them?
+- Confirm the recommendation: no real-money purchase or cash-out.
 
 ## The computer
 

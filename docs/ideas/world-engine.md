@@ -16,7 +16,7 @@ Everything else can be content or player code. These cannot:
 
 - **Mass.** Smelting ore yields metal plus slag, and the two add up to the ore.
 - **Energy.** Heating costs fuel. Thrust costs propellant. A device that does work draws power from somewhere.
-- **Credits.** Money enters the world only through named sources and leaves through named sinks. No script, shop, or mission creates it by decree.
+- **Money, indirectly.** The engine has no concept of money. Hard money is conserved because mass is. Ledger money changes only by its ledger's rules, and an issuer that prints too much causes inflation, not an exploit. No script, shop, or mission creates value by decree. See [money.md](money.md).
 - **People.** A guard, a smith, or a trader is one agent in one place, with a wallet and needs.
 
 Every change to the world passes through one place that checks these. That is the anti-exploit layer. Player code can combine anything, but it cannot make mass, energy, or money from nothing.

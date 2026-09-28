@@ -34,7 +34,7 @@ Making something takes:
 
 ## The one thing that isn't conserved
 
-Mass, energy, and credits are conserved. Knowledge is not: copying a design costs nothing. That is why it is valuable, and why secrets, licenses, piracy, and encryption have meaning. EVE Online already sells the difference between an original blueprint and a limited copy.
+Mass and energy are conserved, and money rests on them (see [money.md](money.md)). Knowledge is not: copying a design costs nothing. That is why it is valuable, and why secrets, licenses, piracy, and encryption have meaning. EVE Online already sells the difference between an original blueprint and a limited copy.
 
 A program is a design for behaviour, so "programs are cargo" from the [in-game computer](in-game-computer.md) is one case of this.
 

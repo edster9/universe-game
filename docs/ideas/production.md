@@ -53,13 +53,20 @@ Things "solidify" as the world is trained:
 
 Prehistory (see [world-engine.md](world-engine.md)) is this process run in advance. It builds the space age's chains and factories so that the world opens with proven designs and working production, all made under the laws.
 
-## No dead ends
+## The climb
 
-A world where the only chip factory can be destroyed has a risk: if no chips can ever be made again, no ships can ever be built again.
+Anything can be destroyed, including the last chip factory and every copy of its design. Nothing protects them. If they are lost, getting them back is the challenge of whoever survives.
 
-The rule proposed: **every design must be reachable from raw materials, skill, and time, even if that is extremely slow.** There is always a hand route, like the three plates. That route may take years of game time, but it exists. The verifier can check this on the whole production graph: no cycle may be unbreakable. For example, if making chips needs chips, there must be a slower route that makes a first crude chip without one.
+Getting back is possible because of how the design was made in the first place. Training climbed the ladder layer by layer, under the laws of the universe, until it reached a chip factory. Only then was the factory released, with its bill of materials, templates, and datasheets. Every step was built under the laws, so the route exists: from raw materials, skill, and time, up to the fab.
 
-Prehistory should also leave the universe with some redundancy: more than one factory for critical things, and powers that have reasons to protect them.
+That makes the climb one of the game's great challenges: how far can you get from a desert island? Metals, then batteries, wires, and motors, then machine tools, then a chip fab. Then teleportation, and beyond, to things nobody has thought of yet, if the laws allow them. See [universes.md](universes.md).
+
+**The engine guarantees only that the route exists.** The verifier checks the whole production graph:
+
+- every design is reachable from raw materials, skill, and time, even if extremely slowly;
+- no cycle is unbreakable. If making chips needs chips, there must be a slower route that makes a first crude chip without one.
+
+It guarantees nothing about whether anyone survives to walk the route.
 
 ## Not getting carried away
 

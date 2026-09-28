@@ -72,6 +72,7 @@ Before the world opens, the space age is constructed **inside the engine, under 
 What this buys:
 
 - Nothing in the starting universe is special. Every ship has a real bill of materials. It can be taken apart, studied, reverse-engineered, or improved.
+- Training climbs layer by layer. When it reaches a design, such as a chip factory, that design is released with its bill of materials, templates, and datasheets, and universes can start with it (see [universes.md](universes.md)).
 - The stone age is still there, underneath. A stranded crew can go down the ladder (scavenge, smelt, rebuild) because the ladder is real. They cannot make chips without a chip fab, and a fab is itself a thing that has to exist somewhere.
 
 ### AI proposes, the engine verifies
@@ -90,6 +91,8 @@ That is the "knowing some things in advance" that cannot be avoided. The test fo
 
 The teleporter is decided here. It exists only if some layer has a law that allows moving mass across space at a cost (for example, energy in proportion to mass times distance, plus a rare material that is used up). The team decides whether that law exists. Players discover what can be built with it.
 
+The same goes for anything beyond that, even time travel. If the laws allow it, someone may build it. Any such law still has to keep conservation intact, and time travel in particular would strain the engine, because the way the world is split across servers depends on cause coming before effect (see [code-and-laws.md](code-and-laws.md)).
+
 ## Risks
 
 - **Too few laws** and it becomes a recipe list, a crafting menu. **Too many** and nothing can run. Choosing the laws is the design work.
@@ -103,5 +106,6 @@ The teleporter is decided here. It exists only if some layer has a law that allo
 - [code-and-laws.md](code-and-laws.md): laws, designs, and programs, and what each can touch.
 - [production.md](production.md): why knowing a design is not being able to make it.
 - [knowledge.md](knowledge.md): the third input to making anything, and where it lives.
+- [universes.md](universes.md): many universes, each with its own rules and history.
 - [in-game-computer.md](in-game-computer.md): computers as parts, programs as knowledge.
 - [game-concept.md](game-concept.md): the space game that eventually runs on this.

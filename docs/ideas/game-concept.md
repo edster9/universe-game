@@ -19,6 +19,10 @@ Getting off the planet means going down the ladder. They salvage what's left of 
 
 Every step of that story is the world engine doing its job. None of it is scripted.
 
+## The climb, and many universes
+
+The game runs many universes (see [universes.md](universes.md)). Some start in the space age, some are free-for-all, and some will destroy themselves. Every one faces the same challenge, whether it starts there or falls back to it: the climb from a desert island to a chip fab, to teleportation, and beyond (see [production.md](production.md)). A universe that survives and climbs furthest is the ultimate experience.
+
 ## Why the cut between flight and walking stays
 
 A continuous world from orbit to a city street is what Star Citizen has spent more than a decade on. This game switches presentation on purpose:

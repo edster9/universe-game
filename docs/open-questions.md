@@ -78,9 +78,19 @@ These are for [game-concept.md](ideas/game-concept.md).
 - What camera does the walking layer use: top-down, isometric, or first person?
 - How big is a port in walking time?
 
+## Universes
+
+These are for [universes.md](ideas/universes.md).
+
+- Can characters, designs, or money cross between universes?
+- Do the laws ever differ between universes, or only the social rules?
+- What happens to a universe that has destroyed itself?
+- How many players per universe, and when does a new one open?
+- Does every universe start from the same released designs, or from its own training run?
+
 ## Networks
 
-- One shared world, or many copies of the same small map?
+- ~~One shared world, or many copies of the same small map?~~ Closed 2026-09-28: many universes, like WoW realms, each with its own rules. See [universes.md](ideas/universes.md).
 - Does single-player exist, with NPCs standing in for other players?
 - A small map only puts players together if there are players. How does the world work while few people are online?
 - What persists: reputation, prices, programs, docked ships, towns' damage?

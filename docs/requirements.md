@@ -56,6 +56,23 @@ Just because something exists doesn't mean anybody can build another one, even i
 
 Knowledge is very key. If a planet holds datasheets and has never shared them, and the planet is destroyed, everything is lost. It isn't backed up anywhere. Anything that was produced on that world can no longer be produced, because everything about it was destroyed.
 
+## Loss is real, and so is the climb back
+
+Clarified 2026-09-28. Information can be lost, and the last chip factory can be destroyed. Nothing prevents it.
+
+- Training gets to the design of a chip factory layer by layer, under the laws of the universe and the evolution it took to get there. Once built, it is released: the bill of materials, the templates, the spec sheets, everything needed to make it.
+- If it is lost, getting back to that point is the challenge of whoever survives.
+- How far can you go from a desert island: to a chip fab, to teleportation, and beyond, to things we can't even think of? If the engine's rules allow it, maybe even time travel.
+- That climb is one of the challenges of the game.
+
+## Many universes
+
+Not one universe but many, the way World of Warcraft runs many realms.
+
+- Some universes have certain types of rules, for training. Others are free-for-all.
+- If a civilisation decides to annihilate itself, that is the choice it made. The safeguard is having good people in a universe.
+- Many universes will destroy themselves, as it is human nature to destroy when there is too much power. Some will survive and thrive. That is the ultimate experience.
+
 ## The world runs on code
 
 The original idea is a virtual computer as the world itself. Things are not only created by code, they run through code. A spaceship is higher-level code made of many other operations. When ship A meets ship B, code is running for both. Code far away doesn't need to be considered, because it's outside the cone of influence.

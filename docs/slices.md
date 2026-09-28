@@ -94,7 +94,7 @@ The scenario is a coin validator: a scale and a water tank wired to a chip, and 
 
 ## After that, roughly in order
 
-- **Slice 6: Prehistory tools.** Build a small catalog of designs inside the engine and check that each one obeys the laws. Check the whole production graph for dead ends: every design must be reachable from raw materials, skill, and time. This is the first test of starting further up the ladder without hardcoding it.
+- **Slice 6: Prehistory tools.** Build a small catalog of designs inside the engine and check that each one obeys the laws. Check that the climb exists: every design must be reachable from raw materials, skill, and time, with no unbreakable cycle. This is the first test of starting further up the ladder without hardcoding it.
 - **Slice 7: Two people.** A second player over a network, sharing the town.
 - **Slice 8: A second place and something that travels between them.** Space begins here, even as text. Messages travel too, which is when a shared ledger and network credits become possible.
 - **Slice 9: Graphics.** Only once the text version is worth looking at.

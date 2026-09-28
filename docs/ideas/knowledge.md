@@ -63,7 +63,7 @@ What it gives the game:
 - **Archives, backups, and escrow.** An archive can hold a copy for a fee. It is a business, a target, and something worth defending. A copy stored on the network costs storage and lives wherever that storage physically is.
 - **People are knowledge too.** Kill a planet's engineers and its intact factory may stop, because nobody knows how to run it.
 - **Ruins and derelicts matter.** A wreck may hold the last copy of a design, or the last example of an item to take apart.
-- **Collapse and recovery.** Losing a whole chain is a world event. The "no dead ends" rule in [production.md](production.md) keeps recovery possible, however slow.
+- **Collapse and recovery.** Losing a whole chain is a world event, and getting it back is the survivors' challenge. The climb in [production.md](production.md) explains why a route back always exists, however long it is.
 
 ## The player's head or the character's
 

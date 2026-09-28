@@ -96,6 +96,14 @@ These are for [universes.md](ideas/universes.md).
 - A small map only puts players together if there are players. How does the world work while few people are online?
 - What persists: reputation, prices, programs, docked ships, towns' damage?
 
+## Servers
+
+These are for [technology.md](technology.md).
+
+- How many players fit in one region at one tick a second, with a town's worth of NPCs? Slice 3 gives the first numbers.
+- Should player programs keep running while their owners are offline, given each one costs real CPU?
+- Which AWS region, or regions, are closest to the first players?
+
 ## Not yet in scope
 
 Art style, audio, monetisation, and whether the eventual game runs in a browser or natively. Pick these once the text slices show the engine is worth building on.

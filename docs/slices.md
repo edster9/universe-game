@@ -94,10 +94,10 @@ The scenario is a coin validator: a scale and a water tank wired to a chip, and 
 
 ## After that, roughly in order
 
-- **Slice 6: The player language.** A small language that compiles to WebAssembly, with a compiler that runs in the browser, and a workbench to test a program against a local copy of a device. Test: rewrite the slice 5 validator in it, and it behaves the same.
+- **Slice 6: The player language.** A small language that compiles to WebAssembly, with a compiler that runs in the browser, and a workbench to test a program against a local copy of a device. The workbench is published as a static page on AWS. Test: rewrite the slice 5 validator in it, and it behaves the same.
 - **Slice 7: Prehistory tools.** Build a small catalog of designs inside the engine and check that each one obeys the laws. Check that the climb exists: every design must be reachable from raw materials, skill, and time, with no unbreakable cycle. This is the first test of starting further up the ladder without hardcoding it.
-- **Slice 8: Two people.** A second player over a network, sharing the town.
-- **Slice 9: A second place and something that travels between them.** Space begins here, even as text. Messages travel too, which is when a shared ledger and network credits become possible.
+- **Slice 8: Two people.** A second player over a network, sharing the town, on one AWS server. Tests: each player's browser receives only what their character can perceive; browsers send intents, and a modified browser can't cheat; a player installs new firmware and the other player needs no update.
+- **Slice 9: A second place and something that travels between them.** Space begins here, even as text. Messages travel too, which is when a shared ledger and network credits become possible. Test: kill a server in the middle of a ship's handoff, and the ship is neither duplicated nor lost.
 - **Slice 10: Graphics.** Only once the text version is worth looking at.
 
 ## What we're really finding out

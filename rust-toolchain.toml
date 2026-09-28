@@ -1,0 +1,5 @@
+# Pins the Rust version for everyone who builds this project. rustup reads
+# this file and installs the right toolchain automatically.
+[toolchain]
+channel = "1.90.0"
+components = ["clippy", "rustfmt"]

@@ -22,6 +22,19 @@ Entities with components, a place to be, inventories, and credits. Console comma
 
 **Test:** run thousands of random commands. Total mass and total credits never change. Every attempt to cheat through the console (negative amounts, giving what you don't have, taking from yourself) is refused.
 
+**Result, 2026-09-28: passed.**
+
+- About 50,000 random commands per test run, from every entity (including things that aren't people) with real, misspelled, and nonexistent names and amounts up to the largest possible number. Mass and credits never changed, a refused command never changed anything, and the laws never let through something the gate had to catch. The same commands always produced the same world.
+- A fixed run of 20,000 mostly sensible commands, with thousands accepted, conserved everything.
+- Each cheat has its own test, and the gate refuses bad changes on its own, including a set where the first change is fine and the second isn't. Neither sticks.
+- The tests were checked by removing the law against overpaying. The random test found `pay mara 51` with 50 credits within seconds, and the gate refused it independently.
+
+What was learned:
+
+- The laws propose changes and only the gate applies them. That split made conservation easy to guarantee and easy to test.
+- Names resolve only among what the actor can perceive, so "No oracles" was straightforward from the start.
+- Credits stay a plain counter until slice 3.
+
 ## Slice 1: Matter and processes
 
 About ten materials in a data file, each with a handful of properties: density, melting point, hardness, speed of sound, and for ores, composition. Processes: dig, heat, cool, crush, and separate by melting. A furnace that burns fuel for energy. A tool can only work material softer than itself.

@@ -1,0 +1,93 @@
+# Slice 0: a tiny town for testing the ledger.
+#
+# Masses are written with units and stored as whole milligrams.
+# Credits are a plain counter until money becomes real in slice 3
+# (see docs/ideas/money.md).
+#
+# Places list their exits. Agents are people. Items are "at" a place or a
+# person; "fixed = true" means it can't be picked up.
+
+[[place]]
+id = "square"
+label = "the town square"
+exits = ["market", "smithy"]
+
+[[place]]
+id = "market"
+label = "the market"
+exits = ["square"]
+
+[[place]]
+id = "smithy"
+label = "Mara's smithy"
+exits = ["square"]
+
+[[agent]]
+id = "traveller"
+label = "the traveller"
+at = "square"
+mass = "72 kg"
+credits = 50
+
+[[agent]]
+id = "mara"
+label = "Mara"
+at = "smithy"
+mass = "81 kg"
+credits = 200
+
+[[agent]]
+id = "oskar"
+label = "Oskar"
+at = "market"
+mass = "64.5 kg"
+credits = 500
+
+[[item]]
+id = "rope"
+label = "rope"
+at = "square"
+mass = "1.2 kg"
+
+[[item]]
+id = "lantern"
+label = "lantern"
+at = "square"
+mass = "900 g"
+
+[[item]]
+id = "ingot-1"
+label = "iron ingot"
+at = "smithy"
+mass = "2 kg"
+
+[[item]]
+id = "ingot-2"
+label = "iron ingot"
+at = "smithy"
+mass = "2 kg"
+
+[[item]]
+id = "hammer"
+label = "hammer"
+at = "mara"
+mass = "1.5 kg"
+
+[[item]]
+id = "anvil"
+label = "anvil"
+at = "smithy"
+mass = "120 kg"
+fixed = true
+
+[[item]]
+id = "grain"
+label = "sack of grain"
+at = "market"
+mass = "25 kg"
+
+[[item]]
+id = "apples"
+label = "basket of apples"
+at = "oskar"
+mass = "4.3 kg"

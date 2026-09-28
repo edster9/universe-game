@@ -6,7 +6,7 @@ Decisions nobody has made yet. When one closes, add the date and a one-line answ
 
 - ~~What implementation language?~~ Closed 2026-09-28: Rust. See [technology.md](technology.md).
 - ~~What data file format?~~ Closed 2026-09-28: TOML.
-- What is a tick, in game time?
+- ~~What is a tick, in game time?~~ Closed 2026-09-28: one second, to start.
 
 ## Code and laws
 

@@ -184,12 +184,19 @@ Approximate, and to be checked against current pricing:
 
 One Rust workspace, with separate parts:
 
-- **core:** the pure engine: laws, the gate, data loading.
+- **engine:** the pure core: laws, the gate, data loading. (Rust reserves the name `core`.)
 - **console:** the text program for slices 0 to 5.
 - **compiler:** the player language, from slice 6.
 - **web:** the browser client and workbench.
 - **server:** the universe server, from slice 8.
 - **protocol:** the messages browsers and servers exchange.
+
+## Local development
+
+- **Rust comes from rustup**, Rust's own installer. `rust-toolchain.toml` pins the version (1.90.0) and the lint and format tools, and rustup installs them automatically for anyone who builds the project.
+- **Not vfox for Rust.** The Rust that vfox installed on the development machine has the compiler but not the standard library, so it can't build anything. If vfox's Rust comes first in the shell's path, rustup's tools in `~/.cargo/bin` have to come before it.
+- **No Docker for the development loop.** Building on the host is faster, especially under WSL, and the pinned toolchain already makes builds repeatable. Docker arrives with the server at slice 8, because ECS runs containers anyway.
+- **Commands:** `cargo test --workspace` runs every test. `cargo run -p console` starts the console. `cargo clippy --workspace --all-targets` runs the lints.
 
 ## Deferred
 

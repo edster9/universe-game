@@ -32,6 +32,10 @@ pub struct Material {
     pub density: Option<u64>,
     /// In mm per second. Not used by any law yet.
     pub speed_of_sound: Option<u64>,
+    /// Electrical resistivity in pΩ·m. `None` means it doesn't conduct.
+    pub resistivity: Option<u64>,
+    /// Voltage it gives when shaped as a source of charge, in µV.
+    pub voltage: Option<u64>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -79,6 +83,18 @@ pub type Composition = BTreeMap<MaterialId, Mass>;
 
 pub fn total_mass(composition: &Composition) -> u128 {
     composition.values().map(|m| u128::from(m.mg())).sum()
+}
+
+/// Volume in µm³, if every material's density is known.
+pub fn volume(materials: &Materials, composition: &Composition) -> Option<u128> {
+    composition
+        .iter()
+        .map(|(id, mass)| {
+            let density = materials[id].density.filter(|&d| d > 0)?;
+            // mg × 10¹⁵ / (g per m³) gives µm³.
+            Some(u128::from(mass.mg()) * 1_000_000_000_000_000 / u128::from(density))
+        })
+        .sum()
 }
 
 /// Heat needed to raise the temperature by one kelvin, in µJ per K.

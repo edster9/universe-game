@@ -87,6 +87,26 @@ Parts carry a precision inherited from the tool that made them (see [ideas/produ
 
 **Test:** two blades from different ores get different datasheets. A composite is used as a part in something larger without the engine re-running its insides. A design that needs a tight fit fails with hand-filed parts, and succeeds after enough slow hand work. Nobody wrote a rule saying it needs a machine.
 
+**Result, 2026-09-28: passed.**
+
+The world is [data/slice2.toml](../data/slice2.toml): a workshop with a stone hammer, iron and copper stock, a wooden handle, a dry cell, copper wire, a tungsten filament, and two iron contact plates filed by hand to 2 mm. It has three designs: a knife (blade and handle), a switch (two contact plates), and a lamp (cell, wire, switch, and filament). The lamp uses the switch as a part.
+
+- **Every entity in every world has a datasheet**, measured by the engine: what it's made of, mass, volume, state, temperature, melting point, hardness, and stored energy. Shaped parts add their tolerance and what their shape's role measures: edge width and hardness for cutting, resistance for conducting, voltage for a source of charge, surface roughness for touching. The hearth, the mould, places, and people have datasheets too. `datasheet <thing>` in the console shows one.
+- **Two blades from different ores differ**: worked with the same hammer, iron and copper blades have the same 2 mm edge but edge hardness 4 and 3.
+- **Precision is inherited**: a part is as fine as the tool that made it. The hammer is a 2 mm tool; a bare lump gives the world's rough 5 mm; the mould casts to 1 mm.
+- **Assemblies are measured once, from datasheets alone.** The lamp's datasheet is exactly what the measuring law makes from its parts' datasheets, including the switch's stored one. Given a made-up switch that is only a datasheet, with no plates behind it, the law can't tell the difference: it never looks inside.
+- **The tight fit, from physics:** where two surfaces touch, resistance grows with their roughness. With 2 mm hand-filed plates the switch adds 4 Ω, the filament reaches only 421 K, and the lamp gives no light. Rubbing the plates together makes both 20% finer per 10-minute session. After nine sessions the lamp still doesn't light; after ten (an hour and forty minutes) the filament passes 1000 K and it lights, running 3 h 11 min on its cell. No rule says it needs a machine.
+- **Random tests** building, rubbing, assembling, and taking apart never changed mass, energy, or credits, and every assembly's datasheet matched what was inside it.
+- **Sabotage check:** making touching surfaces add no resistance was caught by the lamp test.
+- **The no-names scan** now covers the slice 2 data too, including design names. It caught "lump", used both as a data ID and as the engine's word for an unshaped piece; the data was renamed.
+
+Simplifications to revisit:
+
+- **Stored datasheets don't age.** An assembly's datasheet is its rating when it was put together. If a part inside is later damaged or heated, the stored sheet doesn't change.
+- **Shapes have no size.** A blade is 20 cm long whether it weighs 300 g or 3 kg, and nothing checks whether the mass makes sense for the shape.
+- **Rubbing needs only two parts**, not the real three-plate method, and removes no material.
+- **Electricity is one series loop per assembly**, measured, not run: the lamp's cell doesn't drain yet.
+
 ## Slice 3: A town with a budget
 
 Agents with needs, wallets, and jobs. A mine, a smith, a shop, a guard, and a tax. The world runs in ticks. The shop buys from the smith, the smith buys ore from the mine, the guard is paid from taxes, and taxes come from trade.

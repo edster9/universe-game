@@ -118,6 +118,7 @@ fn run_chain(text: &str, metal: &str) {
     .unwrap_or_else(|| panic!("the {metal} never set"));
     let blade = pure_piece(&w, mould, metal, State::Solid).unwrap();
     assert_eq!(w.shape(blade), Some("blade"));
+    assert_eq!(w.tolerance(blade), Some(1_000), "cast to the mould's 1 mm");
     assert_eq!(w.label(blade), format!("{metal} blade"));
     assert_eq!(
         refused(&mut w, "take blade from mould"),
@@ -149,10 +150,13 @@ fn the_same_chain_makes_a_copper_blade_from_a_different_data_file() {
 fn the_engine_names_no_materials_shapes_or_items() {
     let mut forbidden: BTreeSet<String> = BTreeSet::from(["sword".to_string()]);
     let ignore = ["the", "and", "of", "with", "for"];
-    for text in [IRON, COPPER] {
+    for text in [IRON, COPPER, include_str!("../../../data/slice2.toml")] {
         let data: toml::Table = toml::from_str(text).unwrap();
-        for section in ["material", "shape", "item"] {
-            for entry in data[section].as_array().unwrap() {
+        for section in ["material", "shape", "item", "design"] {
+            let Some(entries) = data.get(section).and_then(|v| v.as_array()) else {
+                continue;
+            };
+            for entry in entries {
                 for field in ["id", "label"] {
                     if let Some(name) = entry.get(field).and_then(|v| v.as_str()) {
                         forbidden.extend(

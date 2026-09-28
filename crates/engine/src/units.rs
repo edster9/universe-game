@@ -173,11 +173,80 @@ pub mod property {
     pub const HEAT_LOSS: &[(&str, u64)] = &[
         ("kW/K", 1_000_000_000 * super::SECONDS_PER_TICK),
         ("W/K", 1_000_000 * super::SECONDS_PER_TICK),
+        ("mW/K", 1_000 * super::SECONDS_PER_TICK),
     ];
     /// Density, stored in g per cubic metre.
     pub const DENSITY: &[(&str, u64)] = &[("kg/m3", 1_000)];
     /// Speed of sound, stored in mm per second.
     pub const SPEED: &[(&str, u64)] = &[("m/s", 1_000)];
+    /// Electrical resistivity, stored in pΩ·m.
+    pub const RESISTIVITY: &[(&str, u64)] = &[("uOhm*m", 1_000_000), ("nOhm*m", 1_000)];
+    /// Voltage, stored in µV.
+    pub const VOLTAGE: &[(&str, u64)] = &[("V", 1_000_000), ("mV", 1_000)];
+    /// Length, stored in µm.
+    pub const LENGTH: &[(&str, u64)] = &[
+        ("m", 1_000_000),
+        ("cm", 10_000),
+        ("mm", 1_000),
+        ("um", 1),
+        ("µm", 1),
+    ];
+    /// Resistance per µm of roughness where two surfaces touch, stored in µΩ per µm.
+    pub const TOUCH_RESISTANCE: &[(&str, u64)] = &[("Ohm/um", 1_000_000), ("mOhm/um", 1_000)];
+    /// A span of time, stored in seconds.
+    pub const DURATION: &[(&str, u64)] = &[("h", 3_600), ("min", 60), ("s", 1)];
+}
+
+/// Units for showing stored whole numbers, largest first.
+pub mod show {
+    /// µm.
+    pub const LENGTH: &[(&str, u64)] = &[("m", 1_000_000), ("mm", 1_000), ("µm", 1)];
+    /// µm³.
+    pub const VOLUME: &[(&str, u64)] = &[
+        ("cm³", 1_000_000_000_000),
+        ("mm³", 1_000_000_000),
+        ("µm³", 1),
+    ];
+    /// µΩ.
+    pub const RESISTANCE: &[(&str, u64)] = &[("Ω", 1_000_000), ("mΩ", 1_000), ("µΩ", 1)];
+    /// µV.
+    pub const VOLTAGE: &[(&str, u64)] = &[("V", 1_000_000), ("mV", 1_000), ("µV", 1)];
+    /// µA.
+    pub const CURRENT: &[(&str, u64)] = &[("A", 1_000_000), ("mA", 1_000), ("µA", 1)];
+    /// µW, and µW per K.
+    pub const POWER: &[(&str, u64)] = &[("W", 1_000_000), ("mW", 1_000), ("µW", 1)];
+}
+
+/// Shows a stored whole number in the largest fitting unit, to at most
+/// `decimals` places.
+pub fn show(value: u128, units: &[(&str, u64)], decimals: u32) -> String {
+    let (unit, scale) = units
+        .iter()
+        .copied()
+        .find(|&(_, scale)| value >= u128::from(scale))
+        .unwrap_or(units[units.len() - 1]);
+    let scale = u128::from(scale);
+    let step = (scale / 10u128.pow(decimals)).max(1);
+    let rounded = (value + step / 2) / step * step;
+    let (whole, rest) = (rounded / scale, rounded % scale);
+    if rest == 0 {
+        return format!("{whole} {unit}");
+    }
+    let width = scale.ilog10() as usize;
+    let fraction = format!("{rest:0width$}");
+    format!("{whole}.{} {unit}", fraction.trim_end_matches('0'))
+}
+
+/// Shows a number of seconds as hours, minutes, and seconds.
+pub fn show_duration(seconds: u64) -> String {
+    let (h, m, s) = (seconds / 3_600, seconds / 60 % 60, seconds % 60);
+    match (h, m, s) {
+        (0, 0, s) => format!("{s} s"),
+        (0, m, 0) => format!("{m} min"),
+        (0, m, s) => format!("{m} min {s} s"),
+        (h, 0, _) => format!("{h} h"),
+        (h, m, _) => format!("{h} h {m} min"),
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -325,6 +394,15 @@ mod tests {
         );
         assert_eq!(parse_percent("2.5%"), Ok(250));
         assert_eq!(parse_number("4.5", 100, "x"), Ok(450));
+    }
+
+    #[test]
+    fn shows_stored_numbers_in_fitting_units() {
+        assert_eq!(show(2_160_000, show::RESISTANCE, 3), "2.16 Ω");
+        assert_eq!(show(1_883, show::RESISTANCE, 3), "1.883 mΩ");
+        assert_eq!(show(2_590_673_570, show::VOLUME, 3), "2.591 mm³");
+        assert_eq!(show_duration(9_600), "2 h 40 min");
+        assert_eq!(show_duration(600), "10 min");
     }
 
     #[test]

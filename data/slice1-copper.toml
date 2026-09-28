@@ -3,6 +3,9 @@
 # The same places, tools, and ids as slice1-iron.toml, but the ore holds
 # copper. The same commands make copper where the other world makes iron.
 #
+# Tolerances say how closely a shaped thing matches its shape: smaller is
+# finer. Something made with a tool is at best as fine as the tool.
+#
 # Temperatures in kelvin (293 K is room temperature). Hardness is on a scale
 # where a tool only works material softer than itself; it falls as a material
 # heats, reaching zero at its melting point.
@@ -100,10 +103,21 @@ speed_of_sound = "5900 m/s"
 [[shape]]
 id = "blade"
 label = "blade"
+role = "cutting"
+length = "0.2 m"
 
 [[shape]]
 id = "ingot"
 label = "ingot"
+
+[[shape]]
+id = "pick"
+label = "pick"
+role = "cutting"
+
+[[shape]]
+id = "hammer"
+label = "hammer"
 
 [[place]]
 id = "hillside"
@@ -144,6 +158,8 @@ label = "stone pick"
 at = "hillside"
 mass = "2 kg"
 material = "stone"
+shape = "pick"
+tolerance = "3 mm"
 
 [[item]]
 id = "hearth"
@@ -151,6 +167,7 @@ label = "stone hearth"
 at = "forge"
 mass = "300 kg"
 fixed = true
+material = "stone"
 chamber = { burn_rate = "2 g", heat_loss = "33 W/K" }
 
 [[item]]
@@ -159,7 +176,7 @@ label = "clay mould"
 at = "forge"
 mass = "3 kg"
 material = "clay"
-form = "blade"
+form = { shape = "blade", tolerance = "1 mm" }
 
 [[item]]
 id = "hammer"
@@ -167,6 +184,8 @@ label = "stone hammer"
 at = "forge"
 mass = "1.5 kg"
 material = "stone"
+shape = "hammer"
+tolerance = "2 mm"
 
 [[item]]
 id = "charcoal-1"

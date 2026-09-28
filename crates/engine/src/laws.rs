@@ -7,11 +7,13 @@
 
 use std::fmt;
 
+use crate::datasheet;
 use crate::gate::{Cause, Change, Fault};
 use crate::intent::Intent;
 use crate::matter::{self, State};
+use crate::nature;
 use crate::units::Credits;
-use crate::world::{EntityId, World};
+use crate::world::{EntityId, Requirement, World};
 
 /// Processes a person must know how to do. Knowledge becomes real in slice 4
 /// (docs/ideas/knowledge.md). Until then everyone knows everything, but every
@@ -22,6 +24,7 @@ pub enum Process {
     Light,
     Pour,
     Work,
+    Assemble,
 }
 
 impl fmt::Display for Process {
@@ -31,6 +34,7 @@ impl fmt::Display for Process {
             Process::Light => "light a fire",
             Process::Pour => "pour",
             Process::Work => "shape things",
+            Process::Assemble => "put that together or take it apart",
         })
     }
 }
@@ -68,6 +72,11 @@ pub enum Refusal {
     NotSolid(String),
     TooHot(String),
     CannotWork(String),
+    UnknownDesign(String),
+    MissingPart { slot: String, needs: String },
+    NotAnAssembly(String),
+    NotAPart(String),
+    AsFineAsItGets(String),
 }
 
 impl fmt::Display for Refusal {
@@ -110,6 +119,15 @@ impl fmt::Display for Refusal {
             Refusal::NotSolid(name) => write!(f, "{name} isn't solid"),
             Refusal::TooHot(name) => write!(f, "{name} is too hot to touch"),
             Refusal::CannotWork(name) => write!(f, "{name} can't be shaped"),
+            Refusal::UnknownDesign(name) => write!(f, "you don't know a design called {name}"),
+            Refusal::MissingPart { slot, needs } => {
+                write!(f, "you need to be carrying a {needs} for the {slot}")
+            }
+            Refusal::NotAnAssembly(name) => write!(f, "{name} isn't made of parts"),
+            Refusal::NotAPart(name) => write!(f, "{name} isn't a shaped part"),
+            Refusal::AsFineAsItGets(name) => {
+                write!(f, "{name} is as fine as hand work can make it")
+            }
         }
     }
 }
@@ -136,13 +154,53 @@ impl fmt::Display for ActError {
 impl std::error::Error for ActError {}
 
 /// Checks `intent` against the laws and, if allowed, applies it through the
-/// gate. Returns the changes that were made.
+/// gate. Returns the changes that were made. The world's clock doesn't move;
+/// see `perform` for actions that take time.
 pub fn act(world: &mut World, actor: EntityId, intent: Intent) -> Result<Vec<Change>, ActError> {
     let changes = resolve(world, actor, &intent).map_err(ActError::Refused)?;
     world
         .apply(Cause::Action { actor, intent }, changes.clone())
         .map_err(ActError::Fault)?;
     Ok(changes)
+}
+
+/// Like `act`, then lets the world run for as long as the action takes.
+pub fn perform(
+    world: &mut World,
+    actor: EntityId,
+    intent: Intent,
+) -> Result<Vec<Change>, ActError> {
+    let seconds = duration(world, &intent);
+    let changes = act(world, actor, intent)?;
+    nature::run(world, seconds).map_err(ActError::Fault)?;
+    Ok(changes)
+}
+
+/// How many seconds an action takes. Most are quick enough to count as none.
+pub fn duration(world: &World, intent: &Intent) -> u64 {
+    match intent {
+        Intent::Rub { .. } => world.settings().rubbing_time,
+        _ => 0,
+    }
+}
+
+/// Finds something `actor` can see or hold, for measuring. "here" is the
+/// place itself.
+pub fn find_reachable(world: &World, actor: EntityId, name: &str) -> Option<EntityId> {
+    let reach = Reach::of(world, actor).ok()?;
+    if normalize(name) == "here" {
+        return Some(reach.here);
+    }
+    if is_called(world, actor, name) || normalize(name) == "me" {
+        return Some(actor);
+    }
+    let candidates = reach
+        .carried
+        .iter()
+        .chain(&reach.around)
+        .chain(&reach.inside)
+        .copied();
+    find(world, candidates, name)
 }
 
 /// What a person can reach from where they stand.
@@ -367,7 +425,7 @@ pub fn resolve(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             let shape_key = world
                 .shapes()
                 .iter()
-                .find(|(key, label)| normalize(key) == wanted || normalize(label) == wanted)
+                .find(|(key, def)| normalize(key) == wanted || normalize(&def.label) == wanted)
                 .map(|(key, _)| key.clone())
                 .ok_or_else(|| Refusal::UnknownShape(shape.clone()))?;
             let candidates = reach
@@ -389,11 +447,114 @@ pub fn resolve(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 return Err(Refusal::NotYourself);
             }
             harder_than(world, tool, found)?;
+            // A part is at most as precise as the tool that made it.
+            let tolerance = world
+                .tolerance(tool)
+                .unwrap_or(world.settings().rough_tolerance);
             Ok(vec![Change::Shape {
                 entity: found,
-                shape: Some(shape_key),
+                shape: Some((shape_key, tolerance)),
             }])
         }
+
+        Intent::Rub { item, against } => {
+            must_know(world, actor, Process::Work)?;
+            let first = carrying(item)?;
+            let second = carrying(against)?;
+            if first == second {
+                return Err(Refusal::NotYourself);
+            }
+            // Rubbing two parts together wears each against the other, and
+            // both come out finer than either tool that made them.
+            let settings = world.settings();
+            let mut changes = Vec::new();
+            for part in [first, second] {
+                let tolerance = world
+                    .tolerance(part)
+                    .filter(|_| world.is_all(part, State::Solid))
+                    .ok_or_else(|| Refusal::NotAPart(named(world, part)))?;
+                let keep = 10_000u64.saturating_sub(settings.rubbing_improvement);
+                let finer = (u128::from(tolerance) * u128::from(keep) / 10_000) as u64;
+                let finer = finer.max(settings.finest_tolerance);
+                if finer < tolerance {
+                    changes.push(Change::Refine {
+                        entity: part,
+                        tolerance: finer,
+                    });
+                }
+            }
+            if changes.is_empty() {
+                return Err(Refusal::AsFineAsItGets(named(world, first)));
+            }
+            Ok(changes)
+        }
+
+        Intent::Assemble { design } => {
+            must_know(world, actor, Process::Assemble)?;
+            let wanted = normalize(design);
+            let (key, def) = world
+                .designs()
+                .iter()
+                .find(|(key, def)| normalize(key) == wanted || normalize(&def.label) == wanted)
+                .ok_or_else(|| Refusal::UnknownDesign(design.clone()))?;
+            // Fill each slot with the first carried part that fits it.
+            let mut used: Vec<EntityId> = Vec::new();
+            let mut parts = Vec::new();
+            for (slot, requirement) in &def.slots {
+                let fits = |part: EntityId| match requirement {
+                    Requirement::Shape(shape) => {
+                        world.shape(part) == Some(shape.as_str())
+                            && world.is_all(part, State::Solid)
+                    }
+                    Requirement::Design(inner) => {
+                        world.assembly(part).is_some_and(|a| &a.design == inner)
+                    }
+                };
+                let part = carried()
+                    .find(|&p| !used.contains(&p) && fits(p))
+                    .ok_or_else(|| Refusal::MissingPart {
+                        slot: slot.clone(),
+                        needs: requirement_label(world, requirement),
+                    })?;
+                used.push(part);
+                parts.push((
+                    slot.clone(),
+                    world.label(part),
+                    datasheet::measure(world, part),
+                ));
+            }
+            // Measure it once, now, from the parts' datasheets.
+            let sheet = datasheet::measure_assembly(world.settings(), &parts);
+            Ok(vec![Change::Assemble {
+                design: key.clone(),
+                parts: used,
+                at: actor,
+                datasheet: sheet,
+            }])
+        }
+
+        Intent::Disassemble { item } => {
+            must_know(world, actor, Process::Assemble)?;
+            let found = find(world, reach.around_or_carried(), item)
+                .ok_or_else(|| Refusal::NotHere(item.clone()))?;
+            if world.assembly(found).is_none() {
+                return Err(Refusal::NotAnAssembly(named(world, found)));
+            }
+            Ok(vec![Change::Disassemble { assembly: found }])
+        }
+    }
+}
+
+fn requirement_label(world: &World, requirement: &Requirement) -> String {
+    match requirement {
+        Requirement::Shape(shape) => world
+            .shapes()
+            .get(shape)
+            .map_or(shape.clone(), |s| s.label.clone()),
+        Requirement::Design(design) => world
+            .designs()
+            .get(design)
+            .map_or(design.clone(), |d| d.label.clone()),
     }
 }
 

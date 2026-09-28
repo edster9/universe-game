@@ -19,3 +19,4 @@ A world engine for a small, networked space game. Design docs are in `docs/`; st
 - Laws in code, things in data: engine code never names a particular material, shape, or item, and `tests/slice1.rs` scans the source to enforce it. Things go in `data/*.toml`.
 - No oracles: names resolve only among what the actor can perceive, and programs will only know what their sensors measure.
 - Every action has an actor.
+- Datasheets (`datasheet.rs`) are measured, never written in data. An assembly is measured once from its parts' datasheets and never looks inside them.

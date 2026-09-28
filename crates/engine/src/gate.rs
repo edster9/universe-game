@@ -6,6 +6,7 @@
 
 use std::fmt;
 
+use crate::datasheet::Datasheet;
 use crate::intent::Intent;
 use crate::matter::{self, Composition, MaterialId};
 use crate::units::{Credits, Energy, Mass};
@@ -46,11 +47,25 @@ pub enum Change {
     },
     /// Pour everything in `from` into `into`. `from` stops existing.
     Merge { from: EntityId, into: EntityId },
-    /// Give a piece of matter a shape, or take its shape away.
+    /// Give a piece of matter a shape and the tolerance it was made to, or
+    /// take its shape away.
     Shape {
         entity: EntityId,
-        shape: Option<String>,
+        shape: Option<(String, u64)>,
     },
+    /// Change how closely a shaped part matches its shape, in µm.
+    Refine { entity: EntityId, tolerance: u64 },
+    /// Put `parts` together to `design`, as a new thing at `at`, with the
+    /// datasheet measured for it.
+    Assemble {
+        design: String,
+        parts: Vec<EntityId>,
+        at: EntityId,
+        datasheet: Datasheet,
+    },
+    /// Take an assembly apart. Its parts are left where it was, and it stops
+    /// existing.
+    Disassemble { assembly: EntityId },
     /// Light or put out a chamber.
     Light { chamber: EntityId, lit: bool },
 }
@@ -106,6 +121,9 @@ pub enum Fault {
     WouldEmpty(EntityId),
     CannotMerge(EntityId),
     UnknownShape(String),
+    UnknownDesign(String),
+    NotAPart(EntityId),
+    NotAnAssembly(EntityId),
     NotConserved(&'static str),
     Invariant(String),
 }
@@ -131,6 +149,9 @@ impl fmt::Display for Fault {
             Fault::WouldEmpty(id) => write!(f, "{id:?} would be left with nothing"),
             Fault::CannotMerge(id) => write!(f, "{id:?} can't be merged away"),
             Fault::UnknownShape(shape) => write!(f, "no shape called {shape:?}"),
+            Fault::UnknownDesign(design) => write!(f, "no design called {design:?}"),
+            Fault::NotAPart(id) => write!(f, "{id:?} can't be a part"),
+            Fault::NotAnAssembly(id) => write!(f, "{id:?} isn't an assembly"),
             Fault::NotConserved(what) => write!(f, "total {what} would change"),
             Fault::Invariant(why) => write!(f, "the world would be broken: {why}"),
         }
@@ -333,6 +354,7 @@ impl World {
                 self.locations.remove(&from);
                 self.portable.remove(&from);
                 self.forms.remove(&from);
+                self.tolerance.remove(&from);
                 Ok(())
             }
 
@@ -341,18 +363,85 @@ impl World {
                     return Err(Fault::NotMatter(*entity));
                 }
                 match shape {
-                    Some(shape) if !self.shapes.contains_key(shape) => {
+                    Some((shape, _)) if !self.shapes.contains_key(shape) => {
                         Err(Fault::UnknownShape(shape.clone()))
                     }
-                    Some(shape) => {
+                    Some((shape, tolerance)) => {
                         self.shape_of.insert(*entity, shape.clone());
+                        self.tolerance.insert(*entity, *tolerance);
                         Ok(())
                     }
                     None => {
                         self.shape_of.remove(entity);
+                        self.tolerance.remove(entity);
                         Ok(())
                     }
                 }
+            }
+
+            &Change::Refine { entity, tolerance } => {
+                let current = self
+                    .tolerance
+                    .get_mut(&entity)
+                    .ok_or(Fault::NotAPart(entity))?;
+                *current = tolerance;
+                Ok(())
+            }
+
+            Change::Assemble {
+                design,
+                parts,
+                at,
+                datasheet,
+            } => {
+                if !self.designs.contains_key(design) {
+                    return Err(Fault::UnknownDesign(design.clone()));
+                }
+                self.must_exist(*at)?;
+                let mut seen = std::collections::BTreeSet::new();
+                for &part in parts {
+                    let fits = self.exists(part)
+                        && seen.insert(part)
+                        && self.is_portable(part)
+                        && !self.is_agent(part)
+                        && !self.is_place(part)
+                        && !self.is_container(part)
+                        && self.location(part).is_some();
+                    if !fits {
+                        return Err(Fault::NotAPart(part));
+                    }
+                }
+                let new = self.spawn(None, None);
+                self.assemblies.insert(
+                    new,
+                    crate::world::Assembly {
+                        design: design.clone(),
+                        datasheet: datasheet.clone(),
+                    },
+                );
+                self.portable.insert(new);
+                self.locations.insert(new, *at);
+                for &part in parts {
+                    self.locations.insert(part, new);
+                }
+                Ok(())
+            }
+
+            &Change::Disassemble { assembly } => {
+                if !self.assemblies.contains_key(&assembly) {
+                    return Err(Fault::NotAnAssembly(assembly));
+                }
+                let at = self.location(assembly).ok_or(Fault::NotLocated(assembly))?;
+                for part in self.contents(assembly) {
+                    self.locations.insert(part, at);
+                }
+                self.assemblies.remove(&assembly);
+                for components in [&mut self.keys, &mut self.labels] {
+                    components.remove(&assembly);
+                }
+                self.locations.remove(&assembly);
+                self.portable.remove(&assembly);
+                Ok(())
             }
 
             &Change::Light { chamber, lit } => {

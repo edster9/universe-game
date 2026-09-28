@@ -6,6 +6,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::datasheet::Datasheet;
 use crate::gate::LogEntry;
 use crate::matter::{self, Composition, MaterialId, Materials, State};
 use crate::units::{Credits, Energy, Mass, Temperature};
@@ -25,6 +26,21 @@ pub struct Settings {
     pub dig_amount: Mass,
     /// The hottest thing a bare hand can hold.
     pub max_touch_temperature: Temperature,
+    /// Tolerance, in µm, of anything shaped with a tool that isn't itself a
+    /// shaped part: a bare lump, say.
+    pub rough_tolerance: u64,
+    /// The finest tolerance hand work can reach, in µm.
+    pub finest_tolerance: u64,
+    /// How much one session of rubbing two parts together improves each, in
+    /// parts per ten thousand of its tolerance.
+    pub rubbing_improvement: u64,
+    /// How long one session of rubbing takes, in seconds.
+    pub rubbing_time: u64,
+    /// Resistance where two surfaces touch, in µΩ per µm of their combined
+    /// roughness.
+    pub touch_resistance: u64,
+    /// The temperature at which something hot gives off visible light.
+    pub glow_temperature: Temperature,
 }
 
 impl Default for Settings {
@@ -34,8 +50,76 @@ impl Default for Settings {
             open_air_heat_loss: 5_000_000,
             dig_amount: Mass::from_mg(5_000_000),
             max_touch_temperature: Temperature::from_mk(330_000),
+            rough_tolerance: 5_000,
+            finest_tolerance: 1,
+            rubbing_improvement: 2_000,
+            rubbing_time: 600,
+            touch_resistance: 1_000,
+            glow_temperature: Temperature::from_mk(1_000_000),
         }
     }
+}
+
+/// What a shaped part does, which decides what gets measured about it.
+/// These are laws, so they're named for what they do, not what they're called.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Role {
+    /// Cuts. Measured: edge width and hardness.
+    Cutting,
+    /// Is held.
+    Holding,
+    /// Carries current. Measured: resistance.
+    Conducting,
+    /// Carries current and glows when hot enough. Measured: resistance, and
+    /// how fast it sheds heat.
+    Glowing,
+    /// Supplies charge. Measured: voltage and stored energy.
+    Source,
+    /// Presses against another surface to carry current. Its roughness sets
+    /// the resistance where they touch.
+    Touching,
+}
+
+/// A shape from data, and what it takes to measure it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ShapeDef {
+    pub label: String,
+    pub role: Option<Role>,
+    /// In µm.
+    pub length: Option<u64>,
+    /// Heat it sheds per kelvin above its surroundings, in µW per K.
+    pub heat_loss: Option<u64>,
+}
+
+/// What fills one slot of a design.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Requirement {
+    Shape(String),
+    Design(String),
+}
+
+/// A design from data: which parts go together.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Design {
+    pub label: String,
+    /// Slot name and what fills it.
+    pub slots: Vec<(String, Requirement)>,
+}
+
+/// A container that shapes liquid setting inside it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Form {
+    pub shape: String,
+    /// Tolerance of what sets in it, in µm.
+    pub tolerance: u64,
+}
+
+/// Parts put together to a design, and the datasheet measured when it was
+/// assembled.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Assembly {
+    pub design: String,
+    pub datasheet: Datasheet,
 }
 
 /// An insulated enclosure where fuel burns and heats whatever is inside.
@@ -56,8 +140,8 @@ pub struct World {
     pub(crate) tick: u64,
     pub(crate) settings: Settings,
     pub(crate) materials: Materials,
-    /// Shape keys and their labels, from data.
-    pub(crate) shapes: BTreeMap<String, String>,
+    pub(crate) shapes: BTreeMap<String, ShapeDef>,
+    pub(crate) designs: BTreeMap<String, Design>,
 
     /// The ID each entity was given in the data file, or "#n" if it was made
     /// during play.
@@ -72,6 +156,8 @@ pub struct World {
     /// Heat energy held by each piece of matter.
     pub(crate) heat: BTreeMap<EntityId, Energy>,
     pub(crate) shape_of: BTreeMap<EntityId, String>,
+    /// How closely a shaped part matches its shape, in µm. Smaller is finer.
+    pub(crate) tolerance: BTreeMap<EntityId, u64>,
     /// What each entity is in or held by. Places are the only entities that
     /// aren't anywhere.
     pub(crate) locations: BTreeMap<EntityId, EntityId>,
@@ -85,8 +171,8 @@ pub struct World {
     pub(crate) portable: BTreeSet<EntityId>,
     pub(crate) containers: BTreeSet<EntityId>,
     pub(crate) chambers: BTreeMap<EntityId, Chamber>,
-    /// Containers that give liquid setting inside them a shape.
-    pub(crate) forms: BTreeMap<EntityId, String>,
+    pub(crate) forms: BTreeMap<EntityId, Form>,
+    pub(crate) assemblies: BTreeMap<EntityId, Assembly>,
     pub(crate) wallets: BTreeMap<EntityId, Credits>,
     pub(crate) log: Vec<LogEntry>,
 }
@@ -131,9 +217,12 @@ impl World {
             .map(|(&id, _)| id)
     }
 
-    /// Shape keys and labels.
-    pub fn shapes(&self) -> &BTreeMap<String, String> {
+    pub fn shapes(&self) -> &BTreeMap<String, ShapeDef> {
         &self.shapes
+    }
+
+    pub fn designs(&self) -> &BTreeMap<String, Design> {
+        &self.designs
     }
 
     pub fn key(&self, id: EntityId) -> &str {
@@ -145,6 +234,12 @@ impl World {
     pub fn label(&self, id: EntityId) -> String {
         if let Some(label) = self.labels.get(&id) {
             return label.clone();
+        }
+        if let Some(assembly) = self.assemblies.get(&id) {
+            return self
+                .designs
+                .get(&assembly.design)
+                .map_or_else(|| assembly.design.clone(), |d| d.label.clone());
         }
         let Some(composition) = self.matter.get(&id) else {
             return String::new();
@@ -164,7 +259,7 @@ impl World {
                 "{names} {}",
                 self.shapes
                     .get(shape)
-                    .map_or(shape.as_str(), String::as_str)
+                    .map_or(shape.as_str(), |s| s.label.as_str())
             )
         } else {
             format!("lump of {names}")
@@ -196,6 +291,14 @@ impl World {
                 u64::try_from(matter::total_mass(composition))
                     .expect("the loader keeps masses in range"),
             ),
+            None if self.assemblies.contains_key(&id) => {
+                let total: u64 = self
+                    .contents(id)
+                    .iter()
+                    .map(|&part| self.mass(part).mg())
+                    .sum();
+                Mass::from_mg(total)
+            }
             None => self.masses.get(&id).copied().unwrap_or(Mass::ZERO),
         }
     }
@@ -241,6 +344,15 @@ impl World {
 
     pub fn shape(&self, id: EntityId) -> Option<&str> {
         self.shape_of.get(&id).map(String::as_str)
+    }
+
+    /// A shaped part's tolerance in µm.
+    pub fn tolerance(&self, id: EntityId) -> Option<u64> {
+        self.tolerance.get(&id).copied()
+    }
+
+    pub fn assembly(&self, id: EntityId) -> Option<&Assembly> {
+        self.assemblies.get(&id)
     }
 
     pub fn location(&self, id: EntityId) -> Option<EntityId> {
@@ -294,9 +406,8 @@ impl World {
         self.chambers.get(&id)
     }
 
-    /// The shape key a form gives liquid that sets inside it.
-    pub fn form(&self, id: EntityId) -> Option<&str> {
-        self.forms.get(&id).map(String::as_str)
+    pub fn form(&self, id: EntityId) -> Option<&Form> {
+        self.forms.get(&id)
     }
 
     pub fn exits(&self, place: EntityId) -> &[EntityId] {
@@ -377,8 +488,11 @@ impl World {
             if self.is_agent(id) && !self.is_place(location) {
                 return Err(format!("{} isn't standing in a place", self.key(id)));
             }
-            if !(self.is_place(location) || self.is_agent(location) || self.is_container(location))
-            {
+            let holds = self.is_place(location)
+                || self.is_agent(location)
+                || self.is_container(location)
+                || self.assemblies.contains_key(&location);
+            if !holds {
                 return Err(format!(
                     "{} is inside {}, which can't hold things",
                     self.key(id),
@@ -413,6 +527,20 @@ impl World {
         }
         if self.heat.keys().any(|id| !self.matter.contains_key(id)) {
             return Err("heat is held by something that isn't matter".into());
+        }
+        if self
+            .tolerance
+            .keys()
+            .any(|id| !self.shape_of.contains_key(id))
+        {
+            return Err("a tolerance belongs to something with no shape".into());
+        }
+        if self
+            .assemblies
+            .keys()
+            .any(|id| self.matter.contains_key(id) || self.masses.contains_key(id))
+        {
+            return Err("an assembly has a mass of its own besides its parts".into());
         }
         if self.surroundings.keys().any(|&id| !self.is_place(id)) {
             return Err("surroundings belong to something that isn't a place".into());

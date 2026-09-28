@@ -10,7 +10,7 @@ use crate::matter::{self, Composition, Material, MaterialId};
 use crate::units::{
     self, Credits, Energy, Mass, Temperature, parse_number, parse_percent, parse_quantity, property,
 };
-use crate::world::{Chamber, Settings, World};
+use crate::world::{self, Chamber, Design, Form, Requirement, Role, Settings, World};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -21,6 +21,8 @@ struct WorldFile {
     materials: Vec<MaterialDef>,
     #[serde(default, rename = "shape")]
     shapes: Vec<ShapeDef>,
+    #[serde(default, rename = "design")]
+    designs: Vec<DesignDef>,
     #[serde(default, rename = "place")]
     places: Vec<PlaceDef>,
     #[serde(default, rename = "agent")]
@@ -36,6 +38,12 @@ struct SettingsDef {
     open_air_heat_loss: Option<String>,
     dig_amount: Option<String>,
     max_touch_temperature: Option<String>,
+    rough_tolerance: Option<String>,
+    finest_tolerance: Option<String>,
+    rubbing_improvement: Option<String>,
+    rubbing_time: Option<String>,
+    touch_resistance: Option<String>,
+    glow_temperature: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -53,6 +61,8 @@ struct MaterialDef {
     burns_to: BTreeMap<String, String>,
     density: Option<String>,
     speed_of_sound: Option<String>,
+    resistivity: Option<String>,
+    voltage: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -60,6 +70,20 @@ struct MaterialDef {
 struct ShapeDef {
     id: String,
     label: String,
+    /// What the shape does: cutting, holding, conducting, glowing, source,
+    /// or touching.
+    role: Option<String>,
+    length: Option<String>,
+    heat_loss: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesignDef {
+    id: String,
+    label: String,
+    /// Slot name to the shape or design that fills it.
+    parts: BTreeMap<String, String>,
 }
 
 #[derive(Deserialize)]
@@ -105,8 +129,20 @@ struct ItemDef {
     container: bool,
     /// Burns fuel inside it and holds the heat.
     chamber: Option<ChamberDef>,
-    /// Liquid setting inside it takes this shape.
-    form: Option<String>,
+    /// Liquid setting inside it takes a shape.
+    form: Option<FormDef>,
+    /// Its own shape, if it starts as a shaped part.
+    shape: Option<String>,
+    /// How closely it matches that shape.
+    tolerance: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FormDef {
+    shape: String,
+    /// Tolerance of what sets in it.
+    tolerance: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -149,14 +185,12 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
     };
     load_materials(&mut world, &file.materials)?;
     for shape in &file.shapes {
-        if world
-            .shapes
-            .insert(shape.id.clone(), shape.label.clone())
-            .is_some()
-        {
+        let def = load_shape(shape)?;
+        if world.shapes.insert(shape.id.clone(), def).is_some() {
             return fail(format!("the shape {:?} is defined twice", shape.id));
         }
     }
+    load_designs(&mut world, &file.designs)?;
 
     let mut seen = BTreeSet::new();
     let all_ids = file
@@ -250,6 +284,31 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     if let Some(t) = &def.max_touch_temperature {
         settings.max_touch_temperature = t.parse()?;
     }
+    if let Some(t) = &def.rough_tolerance {
+        settings.rough_tolerance = parse_quantity(t, property::LENGTH, "a length like \"5 mm\"")?;
+    }
+    if let Some(t) = &def.finest_tolerance {
+        settings.finest_tolerance = parse_quantity(t, property::LENGTH, "a length like \"1 um\"")?;
+    }
+    if let Some(p) = &def.rubbing_improvement {
+        settings.rubbing_improvement = parse_percent(p)?;
+        if settings.rubbing_improvement >= 10_000 {
+            return fail("rubbing_improvement must be under 100%");
+        }
+    }
+    if let Some(t) = &def.rubbing_time {
+        settings.rubbing_time = parse_quantity(t, property::DURATION, "a time like \"10 min\"")?;
+    }
+    if let Some(r) = &def.touch_resistance {
+        settings.touch_resistance = parse_quantity(
+            r,
+            property::TOUCH_RESISTANCE,
+            "a resistance like \"1 mOhm/um\"",
+        )?;
+    }
+    if let Some(t) = &def.glow_temperature {
+        settings.glow_temperature = t.parse()?;
+    }
     Ok(settings)
 }
 
@@ -315,6 +374,22 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
                 .speed_of_sound
                 .as_deref()
                 .map(|s| parse_quantity(s, property::SPEED, "a speed like \"5120 m/s\""))
+                .transpose()?,
+            resistivity: def
+                .resistivity
+                .as_deref()
+                .map(|r| {
+                    parse_quantity(
+                        r,
+                        property::RESISTIVITY,
+                        "a resistivity like \"16.8 nOhm*m\"",
+                    )
+                })
+                .transpose()?,
+            voltage: def
+                .voltage
+                .as_deref()
+                .map(|v| parse_quantity(v, property::VOLTAGE, "a voltage like \"1.5 V\""))
                 .transpose()?,
         };
         let id = MaterialId(u16::try_from(index).expect("counted above"));
@@ -420,11 +495,135 @@ fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
             },
         );
     }
-    if let Some(shape) = &def.form {
-        if !world.shapes.contains_key(shape) {
-            return fail(format!("{} forms {shape:?}, which isn't a shape", def.id));
+    if let Some(form) = &def.form {
+        if !world.shapes.contains_key(&form.shape) {
+            return fail(format!(
+                "{} forms {:?}, which isn't a shape",
+                def.id, form.shape
+            ));
         }
-        world.forms.insert(item, shape.clone());
+        let tolerance = match &form.tolerance {
+            Some(t) => parse_length(&def.id, t)?,
+            None => world.settings.rough_tolerance,
+        };
+        world.forms.insert(
+            item,
+            Form {
+                shape: form.shape.clone(),
+                tolerance,
+            },
+        );
+    }
+    match (&def.shape, &def.tolerance) {
+        (Some(shape), tolerance) => {
+            if !world.matter.contains_key(&item) {
+                return fail(format!(
+                    "{} has a shape but isn't made of a material",
+                    def.id
+                ));
+            }
+            if !world.shapes.contains_key(shape) {
+                return fail(format!(
+                    "{} has the shape {shape:?}, which isn't a shape",
+                    def.id
+                ));
+            }
+            let tolerance = match tolerance {
+                Some(t) => parse_length(&def.id, t)?,
+                None => world.settings.rough_tolerance,
+            };
+            world.shape_of.insert(item, shape.clone());
+            world.tolerance.insert(item, tolerance);
+        }
+        (None, Some(_)) => return fail(format!("{} has a tolerance but no shape", def.id)),
+        (None, None) => {}
+    }
+    Ok(())
+}
+
+fn parse_length(id: &str, text: &str) -> Result<u64, LoadError> {
+    parse_quantity(text, property::LENGTH, "a length like \"2 mm\"")
+        .map_err(|e| LoadError(format!("{id}: {e}")))
+}
+
+fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
+    let role = match def.role.as_deref() {
+        None => None,
+        Some("cutting") => Some(Role::Cutting),
+        Some("holding") => Some(Role::Holding),
+        Some("conducting") => Some(Role::Conducting),
+        Some("glowing") => Some(Role::Glowing),
+        Some("source") => Some(Role::Source),
+        Some("touching") => Some(Role::Touching),
+        Some(other) => {
+            return fail(format!(
+                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, and touching",
+                def.id
+            ));
+        }
+    };
+    let length = def
+        .length
+        .as_deref()
+        .map(|l| parse_length(&def.id, l))
+        .transpose()?;
+    if matches!(role, Some(Role::Conducting | Role::Glowing)) && length.is_none() {
+        return fail(format!(
+            "the shape {} conducts, so it needs a length",
+            def.id
+        ));
+    }
+    let heat_loss = def
+        .heat_loss
+        .as_deref()
+        .map(|h| parse_quantity(h, property::HEAT_LOSS, "a heat loss like \"1 mW/K\""))
+        .transpose()?;
+    Ok(world::ShapeDef {
+        label: def.label.clone(),
+        role,
+        length,
+        heat_loss,
+    })
+}
+
+fn load_designs(world: &mut World, defs: &[DesignDef]) -> Result<(), LoadError> {
+    for def in defs {
+        if world.shapes.contains_key(&def.id) {
+            return fail(format!(
+                "the design {:?} has the same id as a shape",
+                def.id
+            ));
+        }
+        if world.designs.contains_key(&def.id) {
+            return fail(format!("the design {:?} is defined twice", def.id));
+        }
+    }
+    let design_ids: BTreeSet<&str> = defs.iter().map(|d| d.id.as_str()).collect();
+    for def in defs {
+        let mut slots = Vec::new();
+        for (slot, needs) in &def.parts {
+            let requirement = if world.shapes.contains_key(needs) {
+                Requirement::Shape(needs.clone())
+            } else if design_ids.contains(needs.as_str()) && needs != &def.id {
+                Requirement::Design(needs.clone())
+            } else {
+                return fail(format!(
+                    "the design {} needs {needs:?}, which isn't a shape or another design",
+                    def.id
+                ));
+            };
+            slots.push((slot.clone(), requirement));
+        }
+        if slots.is_empty() {
+            return fail(format!("the design {} has no parts", def.id));
+        }
+        world.designs.insert(
+            def.id.clone(),
+            Design {
+                label: def.label.clone(),
+                slots,
+            },
+        );
     }
     Ok(())
 }

@@ -6,6 +6,7 @@
 //! server, and in tests. See docs/technology.md and docs/ideas/world-engine.md.
 
 pub mod data;
+pub mod datasheet;
 pub mod gate;
 pub mod intent;
 pub mod laws;

@@ -1,13 +1,14 @@
 //! One person at the console, acting in one world.
 
+use engine::datasheet::{self, Datasheet};
 use engine::gate::{Cause, Change, Holder};
 use engine::intent::{self, Command, Intent};
 use engine::laws::{self, ActError};
 use engine::matter;
 use engine::nature;
-use engine::units::{Credits, Energy, Mass};
+use engine::units::{self, Credits, Energy, Mass};
 use engine::view::{self, Thing};
-use engine::world::{EntityId, World};
+use engine::world::{EntityId, Requirement, World};
 
 pub const HELP: &str = "\
 Commands:
@@ -24,9 +25,14 @@ Commands:
   pour <liquid> into <container>    pour something molten
   work <thing> into <shape> with <tool>
                                     shape something with a tool
+  rub <thing> against <thing>       rub two parts together to make both finer (10 minutes)
+  assemble <design>                 put carried parts together to a design
+  disassemble <thing>               take something apart into its parts
   wait [seconds]                    let time pass
 Testing tools:
   totals                            the world's total mass, energy, and credits (these never change)
+  datasheet <thing|here|me>         everything the engine measures about something
+  designs                           the designs in this world and what they need
   time                              how long the world has been running
   log [n]                           the last n entries that passed the gate
   become <person>                   act as someone else
@@ -90,6 +96,8 @@ impl Session {
             "log" => Reply::say(self.log(rest)),
             "become" => Reply::say(self.become_person(rest)),
             "wait" | "z" => Reply::say(self.wait(rest)),
+            "datasheet" | "ds" => Reply::say(self.datasheet(rest)),
+            "designs" => Reply::say(self.designs()),
             _ => Reply::say(self.command(line)),
         }
     }
@@ -100,7 +108,7 @@ impl Session {
             Ok(Command::Look) => self.look(),
             Ok(Command::Inventory) => self.inventory(),
             Ok(Command::Act(intent)) => {
-                match laws::act(&mut self.world, self.player, intent.clone()) {
+                match laws::perform(&mut self.world, self.player, intent.clone()) {
                     Ok(changes) => self.describe(&intent, &changes),
                     Err(ActError::Refused(refusal)) => sentence(&refusal.to_string()),
                     Err(fault @ ActError::Fault(_)) => format!("!! {fault}"),
@@ -200,6 +208,39 @@ impl Session {
             (Intent::Work { .. }, Some(&Change::Shape { entity, .. })) => {
                 format!("You work it into {}.", name(entity))
             }
+            (Intent::Rub { .. }, _) => {
+                let parts: Vec<String> = changes
+                    .iter()
+                    .filter_map(|c| match *c {
+                        Change::Refine { entity, tolerance } => Some(format!(
+                            "{} is now within {}",
+                            name(entity),
+                            units::show(u128::from(tolerance), units::show::LENGTH, 3)
+                        )),
+                        _ => None,
+                    })
+                    .collect();
+                format!(
+                    "You rub them together for {}. {}.",
+                    units::show_duration(laws::duration(w, intent)),
+                    sentence_case(&parts.join(", and "))
+                )
+            }
+            (Intent::Assemble { .. }, Some(Change::Assemble { .. })) => {
+                let made = w
+                    .contents(self.player)
+                    .into_iter()
+                    .max()
+                    .map(name)
+                    .unwrap_or_default();
+                format!(
+                    "You put together {made}. Type \"datasheet {}\" to see how it measures up.",
+                    made.trim_start_matches("the ")
+                )
+            }
+            (Intent::Disassemble { .. }, Some(&Change::Disassemble { .. })) => {
+                "You take it apart.".into()
+            }
             _ => "Done.".into(),
         }
     }
@@ -296,7 +337,61 @@ impl Session {
                     if lit { "is lit" } else { "goes out" }
                 )
             }
+            &Change::Refine { entity, tolerance } => format!(
+                "{} refined to {}",
+                w.label(entity),
+                units::show(u128::from(tolerance), units::show::LENGTH, 3)
+            ),
+            Change::Assemble { design, parts, .. } => {
+                format!("{} parts assembled into a {design}", parts.len())
+            }
+            &Change::Disassemble { assembly } => format!("{} taken apart", w.key(assembly)),
         }
+    }
+
+    fn datasheet(&self, name: &str) -> String {
+        let name = if name.is_empty() { "here" } else { name };
+        let Some(id) = laws::find_reachable(&self.world, self.player, name) else {
+            return format!("You don't see {name} here.");
+        };
+        let mut lines = vec![format!(
+            "Datasheet: {} ({})",
+            self.world.label(id),
+            self.world.key(id)
+        )];
+        lines.extend(format_datasheet(&datasheet::measure(&self.world, id)));
+        lines.join("\n")
+    }
+
+    fn designs(&self) -> String {
+        let w = &self.world;
+        if w.designs().is_empty() {
+            return "There are no designs in this world.".into();
+        }
+        w.designs()
+            .values()
+            .map(|d| {
+                let slots: Vec<String> = d
+                    .slots
+                    .iter()
+                    .map(|(slot, requirement)| {
+                        let needs = match requirement {
+                            Requirement::Shape(shape) => w
+                                .shapes()
+                                .get(shape)
+                                .map_or(shape.clone(), |s| s.label.clone()),
+                            Requirement::Design(design) => w
+                                .designs()
+                                .get(design)
+                                .map_or(design.clone(), |x| x.label.clone()),
+                        };
+                        format!("{slot}: {needs}")
+                    })
+                    .collect();
+                format!("{}: {}", d.label, slots.join(", "))
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     fn become_person(&mut self, name: &str) -> String {
@@ -314,6 +409,36 @@ impl Session {
             None => format!("There's no person called {name:?}."),
         }
     }
+}
+
+/// A datasheet as indented lines.
+pub fn format_datasheet(sheet: &Datasheet) -> Vec<String> {
+    let mut lines = Vec::new();
+    if !sheet.made_of.is_empty() {
+        let parts: Vec<String> = sheet
+            .made_of
+            .iter()
+            .map(|(label, share)| {
+                format!(
+                    "{label} {}",
+                    units::show(u128::from(*share), &[("%", 100)], 2).replace(" %", "%")
+                )
+            })
+            .collect();
+        lines.push(format!("  made of: {}", parts.join(", ")));
+    }
+    if !sheet.parts.is_empty() {
+        let parts: Vec<String> = sheet
+            .parts
+            .iter()
+            .map(|(slot, label)| format!("{slot}: {label}"))
+            .collect();
+        lines.push(format!("  parts: {}", parts.join("; ")));
+    }
+    for (property, value) in &sheet.entries {
+        lines.push(format!("  {}: {value}", property.name()));
+    }
+    lines
 }
 
 fn things(things: &[Thing]) -> String {

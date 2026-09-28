@@ -57,6 +57,16 @@ pub enum Intent {
         shape: String,
         tool: String,
     },
+    Rub {
+        item: String,
+        against: String,
+    },
+    Assemble {
+        design: String,
+    },
+    Disassemble {
+        item: String,
+    },
 }
 
 impl fmt::Display for Intent {
@@ -73,6 +83,9 @@ impl fmt::Display for Intent {
             Intent::Light { chamber } => write!(f, "light {chamber}"),
             Intent::Pour { liquid, into } => write!(f, "pour {liquid} into {into}"),
             Intent::Work { item, shape, tool } => write!(f, "work {item} into {shape} with {tool}"),
+            Intent::Rub { item, against } => write!(f, "rub {item} against {against}"),
+            Intent::Assemble { design } => write!(f, "assemble {design}"),
+            Intent::Disassemble { item } => write!(f, "take apart {item}"),
         }
     }
 }
@@ -168,6 +181,16 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                 .ok_or_else(|| usage("<thing> into <shape> with <tool>"))?;
             Intent::Work { item, shape, tool }
         }
+        "rub" => {
+            let (item, against) = two(&["against", "on", "with"], "<thing> against <thing>")?;
+            Intent::Rub { item, against }
+        }
+        "assemble" | "build" => Intent::Assemble {
+            design: one("<design>")?,
+        },
+        "disassemble" | "dismantle" => Intent::Disassemble {
+            item: one("<thing>")?,
+        },
         other => {
             return Err(ParseError(format!(
                 "I don't know how to {other:?}. Type \"help\" for commands"

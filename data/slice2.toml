@@ -1,0 +1,243 @@
+# Slice 2: parts and datasheets, in a small workshop.
+#
+# Shapes have roles, which decide what the engine measures about them:
+# cutting (edge width, edge hardness), holding, conducting (resistance),
+# glowing (resistance, and whether it gives light), source (voltage, stored
+# energy), and touching (surface roughness, which sets resistance where two
+# surfaces meet).
+#
+# Designs say which parts go together. When parts are assembled, the engine
+# measures the result once, from the parts' datasheets, and keeps that
+# datasheet. A design can use another design as a part.
+#
+# Tolerances say how closely a part matches its shape: smaller is finer.
+# Something made with a tool is at best as fine as the tool. Rubbing two
+# parts together makes both finer, slowly.
+
+[world]
+reference_temperature = "293 K"
+open_air_heat_loss = "5 W/K"
+dig_amount = "5 kg"
+max_touch_temperature = "330 K"
+rough_tolerance = "5 mm"
+finest_tolerance = "1 um"
+rubbing_improvement = "20%"
+rubbing_time = "10 min"
+touch_resistance = "1 mOhm/um"
+glow_temperature = "1000 K"
+
+[[material]]
+id = "iron"
+label = "iron"
+melting_point = "1811 K"
+boiling_point = "3134 K"
+specific_heat = "449 J/(kg*K)"
+hardness = "4"
+density = "7874 kg/m3"
+speed_of_sound = "5120 m/s"
+resistivity = "97 nOhm*m"
+
+[[material]]
+id = "copper"
+label = "copper"
+melting_point = "1358 K"
+boiling_point = "2835 K"
+specific_heat = "385 J/(kg*K)"
+hardness = "3"
+density = "8960 kg/m3"
+speed_of_sound = "4760 m/s"
+resistivity = "16.8 nOhm*m"
+
+[[material]]
+id = "tungsten"
+label = "tungsten"
+melting_point = "3695 K"
+boiling_point = "5828 K"
+specific_heat = "134 J/(kg*K)"
+hardness = "7.5"
+density = "19300 kg/m3"
+speed_of_sound = "5220 m/s"
+resistivity = "56 nOhm*m"
+
+[[material]]
+id = "paste"
+label = "cell paste"
+melting_point = "400 K"
+boiling_point = "600 K"
+specific_heat = "1500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "0.5 MJ/kg"
+voltage = "1.5 V"
+density = "2000 kg/m3"
+
+[[material]]
+id = "wood"
+label = "wood"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1700 J/(kg*K)"
+hardness = "2"
+energy_density = "16 MJ/kg"
+burns_to = { smoke = "99%", ash = "1%" }
+density = "600 kg/m3"
+
+[[material]]
+id = "stone"
+label = "stone"
+melting_point = "1983 K"
+boiling_point = "2503 K"
+specific_heat = "730 J/(kg*K)"
+hardness = "6"
+density = "2600 kg/m3"
+
+[[material]]
+id = "ash"
+label = "ash"
+melting_point = "2300 K"
+boiling_point = "3500 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "1"
+
+[[material]]
+id = "smoke"
+label = "smoke"
+melting_point = "50 K"
+boiling_point = "100 K"
+specific_heat = "1000 J/(kg*K)"
+hardness = "0"
+
+[[shape]]
+id = "blade"
+label = "blade"
+role = "cutting"
+length = "0.2 m"
+
+[[shape]]
+id = "handle"
+label = "handle"
+role = "holding"
+length = "12 cm"
+
+[[shape]]
+id = "wire"
+label = "wire"
+role = "conducting"
+length = "0.5 m"
+
+[[shape]]
+id = "filament"
+label = "filament"
+role = "glowing"
+length = "10 cm"
+heat_loss = "1 mW/K"
+
+[[shape]]
+id = "cell"
+label = "cell"
+role = "source"
+
+[[shape]]
+id = "contact"
+label = "contact plate"
+role = "touching"
+
+[[shape]]
+id = "hammer"
+label = "hammer"
+
+[[design]]
+id = "knife"
+label = "knife"
+parts = { edge = "blade", grip = "handle" }
+
+[[design]]
+id = "switch"
+label = "switch"
+parts = { first = "contact", second = "contact" }
+
+[[design]]
+id = "lamp"
+label = "lamp"
+parts = { power = "cell", lead = "wire", switch = "switch", light = "filament" }
+
+[[place]]
+id = "workshop"
+label = "the workshop"
+
+[[agent]]
+id = "traveller"
+label = "the traveller"
+at = "workshop"
+mass = "72 kg"
+credits = 50
+
+[[item]]
+id = "hammer"
+label = "stone hammer"
+at = "workshop"
+mass = "1.5 kg"
+material = "stone"
+shape = "hammer"
+tolerance = "2 mm"
+
+[[item]]
+id = "iron-stock"
+at = "workshop"
+mass = "300 g"
+material = "iron"
+
+[[item]]
+id = "copper-stock"
+at = "workshop"
+mass = "300 g"
+material = "copper"
+
+[[item]]
+id = "handle"
+at = "workshop"
+mass = "150 g"
+material = "wood"
+shape = "handle"
+tolerance = "2 mm"
+
+[[item]]
+id = "cell"
+label = "dry cell"
+at = "workshop"
+mass = "20 g"
+material = "paste"
+shape = "cell"
+tolerance = "1 mm"
+
+[[item]]
+id = "wire"
+at = "workshop"
+mass = "20 g"
+material = "copper"
+shape = "wire"
+tolerance = "1 mm"
+
+[[item]]
+id = "filament"
+at = "workshop"
+mass = "5 mg"
+material = "tungsten"
+shape = "filament"
+tolerance = "10 um"
+
+# Two contact plates, filed by hand to the hammer's 2 mm.
+[[item]]
+id = "contact-1"
+at = "workshop"
+mass = "50 g"
+material = "iron"
+shape = "contact"
+tolerance = "2 mm"
+
+[[item]]
+id = "contact-2"
+at = "workshop"
+mass = "50 g"
+material = "iron"
+shape = "contact"
+tolerance = "2 mm"

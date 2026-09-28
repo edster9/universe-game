@@ -269,8 +269,8 @@ fn pool(world: &World) -> Vec<Change> {
         .collect()
 }
 
-/// A solid piece inside a form takes the form's shape. Anything that melts
-/// loses its shape.
+/// A solid piece inside a form takes the form's shape, made to the form's
+/// tolerance. Anything that melts loses its shape.
 fn set_shapes(world: &World) -> Vec<Change> {
     let mut changes = Vec::new();
     for &id in world.matter.keys() {
@@ -278,11 +278,11 @@ fn set_shapes(world: &World) -> Vec<Change> {
         if world.is_all(id, State::Solid) {
             let form = world.location(id).and_then(|l| world.form(l));
             if let Some(form) = form
-                && current != Some(form)
+                && current != Some(form.shape.as_str())
             {
                 changes.push(Change::Shape {
                     entity: id,
-                    shape: Some(form.to_string()),
+                    shape: Some((form.shape.clone(), form.tolerance)),
                 });
             }
         } else if current.is_some() {

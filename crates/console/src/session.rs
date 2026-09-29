@@ -224,6 +224,22 @@ impl Session {
         let w = &self.world;
         let name = |id: EntityId| laws::named(w, id);
         match (intent, changes.first()) {
+            (
+                Intent::Go {
+                    aboard: Some(vessel),
+                    ..
+                },
+                Some(&Change::Move { to, .. }),
+            ) => {
+                let vessel = changes
+                    .get(1)
+                    .and_then(|c| match c {
+                        &Change::Move { entity, .. } => Some(name(entity)),
+                        _ => None,
+                    })
+                    .unwrap_or_else(|| vessel.clone());
+                format!("You cross to {} on {vessel}.", w.label(to))
+            }
             (Intent::Go { .. }, Some(&Change::Move { to, .. })) => {
                 format!("You go to {}.", w.label(to))
             }

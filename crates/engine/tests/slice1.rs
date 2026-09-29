@@ -411,7 +411,10 @@ fn command(world: &World, step: &Step) -> Result<Intent, u64> {
     let pick = |n: usize| names[n % names.len()].clone();
     let (a, b, c) = (pick(step.a), pick(step.b), pick(step.c));
     Ok(match step.verb {
-        0 => Intent::Go { place: a },
+        0 => Intent::Go {
+            place: a,
+            aboard: None,
+        },
         1 => Intent::Take { item: a },
         2 => Intent::TakeFrom { item: a, from: b },
         3 => Intent::Drop { item: a },

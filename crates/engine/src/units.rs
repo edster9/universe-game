@@ -185,6 +185,7 @@ pub mod property {
     pub const VOLTAGE: &[(&str, u64)] = &[("V", 1_000_000), ("mV", 1_000)];
     /// Length, stored in µm.
     pub const LENGTH: &[(&str, u64)] = &[
+        ("km", 1_000_000_000),
         ("m", 1_000_000),
         ("cm", 10_000),
         ("mm", 1_000),

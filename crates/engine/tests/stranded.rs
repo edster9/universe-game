@@ -527,7 +527,10 @@ proptest! {
             let names: Vec<String> = world.entities().flat_map(|e| [world.key(e).to_string(), world.label(e)]).collect();
             let (a, b) = (names[step.a % names.len()].clone(), names[step.b % names.len()].clone());
             let intent = match step.verb {
-                0 => Intent::Go { place: a },
+                0 => Intent::Go {
+                    place: a,
+                    aboard: None,
+                },
                 1 => Intent::Drink { source: a },
                 2 => Intent::Eat { item: a },
                 3 => Intent::Gather { source: a },

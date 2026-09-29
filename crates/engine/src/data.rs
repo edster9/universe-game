@@ -59,6 +59,8 @@ struct SettingsDef {
     friction_share: Option<String>,
     flame_share: Option<String>,
     hand_hardness: Option<String>,
+    hand_push: Option<String>,
+    drag: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -105,6 +107,8 @@ struct ShapeDef {
     role: Option<String>,
     length: Option<String>,
     heat_loss: Option<String>,
+    /// For the pushing role: the share of effort it delivers.
+    push: Option<String>,
     /// For the casting role: the shape it gives liquid that sets inside.
     casts: Option<String>,
 }
@@ -134,6 +138,10 @@ struct PlaceDef {
     /// both ways.
     #[serde(default)]
     distances: BTreeMap<String, String>,
+    /// Exits whose path crosses a liquid, and the item that liquid is. Only
+    /// something that floats can take you.
+    #[serde(default)]
+    crossings: BTreeMap<String, String>,
     temperature: Option<String>,
 }
 
@@ -389,6 +397,32 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
     for def in &file.items {
         load_item(&mut world, def)?;
     }
+    // Crossings refer to items, which are loaded after places.
+    for def in &file.places {
+        let place = world.find_by_key(&def.id).expect("just loaded");
+        for (to, liquid) in &def.crossings {
+            let other = world
+                .find_by_key(to)
+                .filter(|o| world.exits(place).contains(o))
+                .ok_or_else(|| {
+                    LoadError(format!(
+                        "{} has a crossing to {to:?}, which isn't one of its exits",
+                        def.id
+                    ))
+                })?;
+            let liquid = world
+                .find_by_key(liquid)
+                .filter(|&l| world.matter.contains_key(&l))
+                .ok_or_else(|| {
+                    LoadError(format!(
+                        "{} crosses {liquid:?}, which isn't a material item",
+                        def.id
+                    ))
+                })?;
+            world.crossings.insert((place, other), liquid);
+            world.crossings.insert((other, place), liquid);
+        }
+    }
     // Growth refers to other items, which may be listed after it.
     for def in &file.items {
         let Some(grows) = &def.grows else { continue };
@@ -502,6 +536,12 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     }
     if let Some(h) = &def.hand_hardness {
         settings.hand_hardness = parse_number(h, 100, "a hardness like \"1\"")?;
+    }
+    if let Some(p) = &def.hand_push {
+        settings.hand_push = parse_percent(p)?;
+    }
+    if let Some(d) = &def.drag {
+        settings.drag = parse_percent(d)?;
     }
     if let Some(t) = &def.calm_step {
         settings.calm_step = parse_quantity(t, property::DURATION, "a time like \"1 min\"")?.max(1);
@@ -911,9 +951,10 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         Some("touching") => Some(Role::Touching),
         Some("casting") => Some(Role::Casting),
         Some("pulling") => Some(Role::Pulling),
+        Some("pushing") => Some(Role::Pushing),
         Some(other) => {
             return fail(format!(
-                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, touching, casting, and pulling",
+                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, touching, casting, pulling, and pushing",
                 def.id
             ));
         }
@@ -934,6 +975,13 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         .as_deref()
         .map(|h| parse_quantity(h, property::HEAT_LOSS, "a heat loss like \"1 mW/K\""))
         .transpose()?;
+    let push = def.push.as_deref().map(parse_percent).transpose()?;
+    if matches!(role, Some(Role::Pushing)) != push.is_some() {
+        return fail(format!(
+            "the shape {} needs both the pushing role and how much it pushes, or neither",
+            def.id
+        ));
+    }
     if matches!(role, Some(Role::Casting)) != def.casts.is_some() {
         return fail(format!(
             "the shape {} needs both the casting role and what it casts, or neither",
@@ -945,6 +993,7 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         role,
         length,
         heat_loss,
+        push,
         casts: def.casts.clone(),
     })
 }

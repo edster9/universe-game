@@ -68,7 +68,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Buoyancy: something floats in a liquid if it weighs less than the liquid its volume displaces, and carries the difference | in | stranded 7 |
 | Whatever pulls an assembly together (a rope) must hold the weight of the rest of its parts | in | stranded 7 |
 | An assembly is built from the biggest fitting parts within reach, in hand or on the ground; if it's too heavy to carry, it stays where it was built | in | stranded 7 |
-| Propulsion against drag gives speed | planned | stranded 8 |
+| A pushing shape delivers a share of its user's effort into a liquid; bare hands deliver less | in | stranded 8 |
+| Propulsion against drag gives speed: drag takes ½ × density × bluntness × area × speed³ of power | in | stranded 8 |
 
 ## Life
 
@@ -98,6 +99,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | People move between places along exits | in | slice 0 |
 | Walking takes the path's length at the walker's speed, which a full load halves; it's hard work | in | stranded |
 | A body can carry only up to its limit | in | stranded |
+| Some paths cross a liquid, and only something that floats and carries you, with all you hold, can take you across; it comes with you | in | stranded 8 |
 | Some routes can only be crossed in something that floats, taking distance ÷ speed | planned | stranded 8 |
 
 ## Money and knowledge

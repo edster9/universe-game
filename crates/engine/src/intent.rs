@@ -18,6 +18,8 @@ pub enum Command {
 pub enum Intent {
     Go {
         place: String,
+        /// Something that floats, to cross a liquid on.
+        aboard: Option<String>,
     },
     Take {
         item: String,
@@ -89,7 +91,14 @@ pub enum Intent {
 impl fmt::Display for Intent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Intent::Go { place } => write!(f, "go {place}"),
+            Intent::Go {
+                place,
+                aboard: None,
+            } => write!(f, "go {place}"),
+            Intent::Go {
+                place,
+                aboard: Some(vessel),
+            } => write!(f, "go {place} on {vessel}"),
             Intent::Take { item } => write!(f, "take {item}"),
             Intent::TakeFrom { item, from } => write!(f, "take {item} from {from}"),
             Intent::Drop { item } => write!(f, "drop {item}"),
@@ -173,8 +182,15 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
     let intent = match verb.as_str() {
         "look" | "l" => return Ok(Command::Look),
         "inventory" | "inv" | "i" => return Ok(Command::Inventory),
-        "go" => Intent::Go {
-            place: one("<place>")?,
+        "go" => match two(&["on", "aboard"], "<place> on <something that floats>") {
+            Ok((place, vessel)) => Intent::Go {
+                place,
+                aboard: Some(vessel),
+            },
+            Err(_) => Intent::Go {
+                place: one("<place>")?,
+                aboard: None,
+            },
         },
         "take" | "get" => match two(&["from"], "<thing> from <container>") {
             Ok((item, from)) => Intent::TakeFrom { item, from },

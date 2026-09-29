@@ -112,6 +112,21 @@ pub enum Refusal {
         holds: Mass,
         load: Mass,
     },
+    MustCross {
+        place: String,
+        liquid: String,
+    },
+    NothingToCross(String),
+    NotAVessel(String),
+    Sinks {
+        vessel: String,
+        liquid: String,
+    },
+    WouldSink {
+        vessel: String,
+        carries: Mass,
+        load: Mass,
+    },
     TheyCantCarry(String),
     WouldSpoil(String),
 }
@@ -192,6 +207,23 @@ impl fmt::Display for Refusal {
             Refusal::TooWeak { part, holds, load } => write!(
                 f,
                 "the {part} won't hold it together: it holds up to {holds}, and the rest weighs {load}"
+            ),
+            Refusal::MustCross { place, liquid } => write!(
+                f,
+                "the way to {place} crosses {liquid}: you need something that floats to carry you (\"go … on …\")"
+            ),
+            Refusal::NothingToCross(place) => {
+                write!(f, "there's nothing to cross on the way to {place}")
+            }
+            Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
+            Refusal::Sinks { vessel, liquid } => write!(f, "{vessel} won't float in {liquid}"),
+            Refusal::WouldSink {
+                vessel,
+                carries,
+                load,
+            } => write!(
+                f,
+                "{vessel} would sink under you: it carries up to {carries} more, and you weigh {load} with what you carry"
             ),
             Refusal::TheyCantCarry(name) => write!(f, "{name} can't carry that much more"),
             Refusal::NotGatherable(name) => {
@@ -277,12 +309,17 @@ pub fn perform(
 pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
-        Intent::Go { place } => {
-            let Some(here) = world.location(actor) else {
+        Intent::Go { place, aboard } => {
+            let Ok(reach) = Reach::of(world, actor) else {
                 return 0;
             };
-            find(world, world.exits(here).iter().copied(), place)
-                .map_or(0, |to| walking_time(world, actor, here, to))
+            match way(world, actor, &reach, place, aboard.as_deref()) {
+                Ok((to, None)) => walking_time(world, actor, reach.here, to),
+                Ok((to, Some((vessel, liquid)))) => {
+                    paddling_time(world, actor, vessel, liquid, world.distance(reach.here, to))
+                }
+                Err(_) => 0,
+            }
         }
         Intent::Gather { source } => {
             let Some(reach) = Reach::of(world, actor).ok() else {
@@ -391,10 +428,14 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
     };
 
     match intent {
-        Intent::Go { place } => {
-            let to = find(world, world.exits(reach.here).iter().copied(), place)
-                .ok_or_else(|| Refusal::NoSuchExit(place.clone()))?;
-            Ok(vec![Change::Move { entity: actor, to }])
+        Intent::Go { place, aboard } => {
+            let (to, crossing) = way(world, actor, &reach, place, aboard.as_deref())?;
+            let mut changes = vec![Change::Move { entity: actor, to }];
+            // What you cross on comes with you.
+            if let Some((vessel, _)) = crossing.filter(|(v, _)| !reach.carried.contains(v)) {
+                changes.push(Change::Move { entity: vessel, to });
+            }
+            Ok(changes)
         }
 
         Intent::Take { item } => {
@@ -1087,6 +1128,92 @@ fn harder_than(world: &World, tool: EntityId, target: EntityId) -> Result<(), Re
 
 /// Seconds to walk between two places: the distance at the walker's speed,
 /// which a full load halves. People with no body walk instantly.
+/// Where a way out leads and, if its path crosses a liquid, what you cross
+/// on and what you cross. Only something that floats, and carries you with
+/// all you hold, can take you across.
+fn way(
+    world: &World,
+    actor: EntityId,
+    reach: &Reach,
+    place: &str,
+    aboard: Option<&str>,
+) -> Result<(EntityId, Option<(EntityId, EntityId)>), Refusal> {
+    let to = find(world, world.exits(reach.here).iter().copied(), place)
+        .ok_or_else(|| Refusal::NoSuchExit(place.to_string()))?;
+    let (liquid, vessel) = match (world.crossing(reach.here, to), aboard) {
+        (None, None) => return Ok((to, None)),
+        (None, Some(_)) => return Err(Refusal::NothingToCross(world.label(to))),
+        (Some(liquid), None) => {
+            return Err(Refusal::MustCross {
+                place: world.label(to),
+                liquid: world.label(liquid),
+            });
+        }
+        (Some(liquid), Some(vessel)) => (liquid, vessel),
+    };
+    let vessel = find(world, reach.around_or_carried(), vessel)
+        .ok_or_else(|| Refusal::NotHere(vessel.to_string()))?;
+    if !world.is_portable(vessel) || world.is_agent(vessel) {
+        return Err(Refusal::NotAVessel(named(world, vessel)));
+    }
+    let mut load = world.mass(actor).mg() + world.carried_mass(actor).mg();
+    if reach.carried.contains(&vessel) {
+        load -= world.mass(vessel).mg();
+    }
+    match datasheet::carries_afloat(world, vessel, liquid) {
+        Some(Some(spare)) if spare.mg() >= load => Ok((to, Some((vessel, liquid)))),
+        Some(Some(spare)) => Err(Refusal::WouldSink {
+            vessel: named(world, vessel),
+            carries: spare,
+            load: Mass::from_mg(load),
+        }),
+        _ => Err(Refusal::Sinks {
+            vessel: named(world, vessel),
+            liquid: world.label(liquid),
+        }),
+    }
+}
+
+/// How long it takes to push a vessel across a liquid. A share of the
+/// worker's effort goes into the liquid: more with something made to push,
+/// less with bare hands. Drag takes ½ρCAv³ of power, where A is the face of a
+/// cube of the vessel's volume, so speed is the cube root of 2P ÷ (ρCA).
+pub fn paddling_time(
+    world: &World,
+    actor: EntityId,
+    vessel: EntityId,
+    liquid: EntityId,
+    distance: u64,
+) -> u64 {
+    let Some(life) = world.life(actor).filter(|_| distance > 0) else {
+        return 0;
+    };
+    let settings = world.settings();
+    let share = world
+        .contents(actor)
+        .into_iter()
+        .filter_map(|c| world.shape(c).and_then(|s| world.shapes().get(s)))
+        .filter_map(|def| def.push)
+        .max()
+        .unwrap_or(settings.hand_push);
+    let power = u128::from(life.working_power) * u128::from(share) / 10_000;
+    let (Some(density), Some(volume)) = (
+        datasheet::density(world, liquid),
+        datasheet::volume(world, vessel),
+    ) else {
+        return 0;
+    };
+    let side = matter::cube_root(volume);
+    let resistance = (density * side * side).max(1);
+    // µW ÷ (g/m³ × µm²) × 2 × 10²⁷ gives µm³/s³.
+    let cubed = power * 2_000_000_000_000_000_000_000_000_000 / resistance * 10_000
+        / u128::from(settings.drag.max(1));
+    let speed = matter::cube_root(cubed).max(1);
+    u64::try_from(u128::from(distance) / speed)
+        .unwrap_or(u64::MAX)
+        .max(1)
+}
+
 pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> u64 {
     let distance = u128::from(world.distance(from, to));
     let Some(life) = world.life(actor).filter(|_| distance > 0) else {

@@ -63,6 +63,7 @@ pub enum Property {
     Carrying,
     HoldsUpTo,
     Buoyancy,
+    Pushes,
 }
 
 impl Property {
@@ -112,6 +113,7 @@ impl Property {
             Property::Carrying => "carrying",
             Property::HoldsUpTo => "holds up to",
             Property::Buoyancy => "buoyancy",
+            Property::Pushes => "pushes with",
         }
     }
 }
@@ -229,9 +231,6 @@ fn buoyancy(world: &World, id: EntityId, sheet: &mut Datasheet) {
     if !world.is_portable(id) || world.is_agent(id) {
         return;
     }
-    let Some(Value::Volume(volume)) = sheet.get(Property::Volume).cloned() else {
-        return;
-    };
     let Some(place) = world.place_of(id) else {
         return;
     };
@@ -242,24 +241,61 @@ fn buoyancy(world: &World, id: EntityId, sheet: &mut Datasheet) {
     let Some(liquid) = liquid else {
         return;
     };
-    let Some(liquid_volume) = world
-        .composition(liquid)
-        .and_then(|c| matter::volume(world.materials(), c))
-        .filter(|&v| v > 0)
-    else {
+    let Some(spare) = spare_buoyancy(world, sheet, id, liquid) else {
         return;
     };
-    let displaced = volume * u128::from(world.mass(liquid).mg()) / liquid_volume;
-    let own = u128::from(world.mass(id).mg());
-    let text = match displaced.checked_sub(own) {
+    let text = match spare {
         Some(spare) => format!(
-            "floats in {}, carrying up to {} more",
-            world.label(liquid),
-            Mass::from_mg(u64::try_from(spare).unwrap_or(u64::MAX))
+            "floats in {}, carrying up to {spare} more",
+            world.label(liquid)
         ),
         None => format!("sinks in {}", world.label(liquid)),
     };
     sheet.set(Property::Buoyancy, Value::Text(text));
+}
+
+/// How much more something could carry afloat in a liquid: the mass of
+/// liquid its volume displaces, less its own mass. `Some(None)` if it sinks;
+/// `None` if its volume or the liquid's is unknown.
+fn spare_buoyancy(
+    world: &World,
+    sheet: &Datasheet,
+    id: EntityId,
+    liquid: EntityId,
+) -> Option<Option<Mass>> {
+    let Some(Value::Volume(volume)) = sheet.get(Property::Volume) else {
+        return None;
+    };
+    let displaced = volume * density(world, liquid)? / 1_000_000_000_000_000;
+    let own = u128::from(world.mass(id).mg());
+    Some(
+        displaced
+            .checked_sub(own)
+            .map(|spare| Mass::from_mg(u64::try_from(spare).unwrap_or(u64::MAX))),
+    )
+}
+
+/// What something could carry afloat in a liquid, measured as above.
+pub fn carries_afloat(world: &World, id: EntityId, liquid: EntityId) -> Option<Option<Mass>> {
+    spare_buoyancy(world, &measure(world, id), id, liquid)
+}
+
+/// Something's density, in g per m³, if its volume is known.
+pub fn density(world: &World, id: EntityId) -> Option<u128> {
+    let volume = world
+        .composition(id)
+        .and_then(|c| matter::volume(world.materials(), c))
+        .filter(|&v| v > 0)?;
+    // mg × 10¹⁵ / µm³ gives g per m³.
+    Some(u128::from(world.mass(id).mg()) * 1_000_000_000_000_000 / volume)
+}
+
+/// Something's volume in µm³, as measured.
+pub fn volume(world: &World, id: EntityId) -> Option<u128> {
+    match measure(world, id).get(Property::Volume) {
+        Some(Value::Volume(v)) => Some(*v),
+        _ => None,
+    }
 }
 
 fn measure_thing(world: &World, id: EntityId) -> Datasheet {
@@ -437,6 +473,14 @@ fn measure_matter(world: &World, id: EntityId, composition: &Composition, sheet:
         }
         (Some(Role::Touching), _) => {
             sheet.set(Property::TouchTolerance, Value::Length(tolerance));
+        }
+        (Some(Role::Pushing), _) => {
+            if let Some(push) = def.push {
+                sheet.set(
+                    Property::Pushes,
+                    Value::Text(format!("{}% of the effort", push / 100)),
+                );
+            }
         }
         (Some(Role::Pulling), Some(main)) => {
             // Strength × cross-section, where the cross-section is the volume

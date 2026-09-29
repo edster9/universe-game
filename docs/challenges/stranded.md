@@ -34,7 +34,7 @@ Each stage has a test. A stage passes when the survivor can do it through comman
 | 5 | Timber | Fell trees and cut logs, taking hours with a crude axe | Work takes time, set by the tool's edge and the effort |
 | 6 | Rope | Strip fibre from bushes and twist it into rope | Tension: a material's strength when pulled, and a pulling role that's measured |
 | 7 | Raft | Lash logs together with rope | Buoyancy: it floats if it's less dense than the water it displaces, and its datasheet says what load it carries |
-| 8 | The crossing | Shape a paddle and cross 2 km of open water, with some risk | Propulsion against drag gives speed; some routes can only be crossed in something that floats, taking distance divided by speed |
+| 8 | The crossing | Shape a paddle and cross 2 km of open water, first in perfect conditions | Propulsion against drag gives speed; some routes can only be crossed in something that floats, taking distance divided by speed |
 
 Stages 1 to 3 teach the engine what the stone age is. Stage 4 reuses the smelting chain from slice 1. Stages 7 and 8 introduce vessels and routes, which is the pattern space travel will use later.
 
@@ -254,6 +254,37 @@ Simplifications to revisit:
 - **The raft doesn't need to be launched.** It's measured against the sea wherever it sits on the beach; stage 8 decides what it takes to cross.
 - **The rope holds the logs' weight as a simple total**, not the forces of waves working the lashing loose.
 - **Parts are chosen biggest first.** A player can't yet say which pieces go into which slot.
+
+### Stage 8: the crossing, in perfect conditions. Passed, 2026-09-28.
+
+**Shape a paddle from driftwood, drink, and cross 2 km of calm sea to the next island on the raft.** [stranded-8-crossing.txt](../../data/scripts/stranded-8-crossing.txt). As the owner asked, this first crossing is under perfect conditions: a calm sea, no current, no weather, and no risk.
+
+- **Some paths cross a liquid.** In data, the beach's path to the next island crosses the sea. You can't walk it: "the way to the next island crosses the sea: you need something that floats to carry you". You go aboard something instead: `go islet on raft`.
+- **What you cross on must carry you.** Its spare buoyancy in that liquid (stage 7) must cover your weight and everything you hold. The raft carries 85 kg more; the survivor and an axe and a paddle weigh about 71 kg. The raft comes with you.
+- **Propulsion against drag gives speed.** A share of the paddler's working effort goes into the water: 30% with a paddle (its datasheet says "pushes with: 30% of the effort"), 5% with bare hands. Drag grows with the liquid's density, the vessel's size, its bluntness (a drag coefficient of 3 for logs, in data), and the square of speed, so the power it takes grows with the cube of speed. With the paddle the raft makes about 0.55 m/s and crosses in **1 hour**; paddling by hand it takes **1 h 49 min**. The paddle helps a lot but isn't essential, as in real life. The crossing is hard work for the body, like walking.
+
+The mistakes, in [stranded-8-cant-cross.txt](../../data/scripts/stranded-8-cant-cross.txt): nobody walks or swims across; the sea itself isn't something to ride; the driftwood raft "would sink under you: it carries up to 8.5 kg more, and you weigh 69 kg"; and a raft is no use on a path over land.
+
+**Sabotage checks:** making the paddle count for nothing fails the crossing's timing; weakening the load check lets the driftwood raft sail and fails the mistakes proof.
+
+The raft recipe now lives once, in [skills/build-a-raft.txt](../../data/scripts/skills/build-a-raft.txt), included by the stage 7 and 8 proofs. The scripts now play in parallel, which brought the daily run down from about 25 seconds to about 16.
+
+Simplifications to revisit:
+
+- **Perfect conditions.** No current, waves, wind, or weather, and nothing can go wrong on the way.
+- **The drag area is the face of a cube** of the raft's volume, not its real shape or how deep it sits under load.
+- **Only the paddler's body counts toward the load.** A person's own buoyancy doesn't help the raft.
+- **A crossing is one step**, like walking: you're at the beach, then an hour later at the next island, with nothing in between.
+
+## After the crossing
+
+Proposed 2026-09-28 from the owner's direction ("Getting off the island" in [requirements.md](../requirements.md)); nothing here is built. Perfect conditions came first; these make the crossing a real journey, one at a time, each as its own stage with its own test:
+
+- **Currents.** A path over water can have a current that adds to or takes from the paddler's speed, so some crossings are only practical one way, or at the right time.
+- **A longer voyage.** Another land mass beyond sight, a day or more away. The journey then has to be survived: water and food brought along (which needs something to carry water in, such as a fired clay pot), fish caught on the way, and rain water caught.
+- **Being at sea.** For a long voyage, the traveller needs to be somewhere between the two ends, where time passes, the body burns its stores, and things can happen. This is the first step toward travel between planets.
+- **Rough seas and storms.** Weather that comes and goes by chance. Waves can swamp an overloaded raft or work its lashing loose, so the margin between what a raft carries and what's on it starts to matter.
+- **A sail.** Needs cloth or woven mats, which the island doesn't offer yet.
 
 ## How it's tested
 

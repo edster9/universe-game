@@ -159,6 +159,17 @@ See [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md).
 
 Added 2026-09-28. Walking and carrying weren't taken into account and need to come into play. As soon as there's a basic interface, a character will be standing in the middle of a desert and walking around. Walking takes time, consumes energy, and so on.
 
+## Getting off the island
+
+Added 2026-09-28, when the crossing came up.
+
+- A paddle, and relying on natural water currents, is the only form of propulsion we have. A sail would be nice, but there's nothing on the island to make a sail with at the moment.
+- How far is another land mass, and how do we survive the journey? We need water and food. We can maybe fish along the way, and rely on capturing rain water along the way, plus any water we bring with us.
+- Rough seas and storms are also a factor.
+- It won't be easy, but start under some perfect conditions first.
+
+See the stage 8 result and "After the crossing" in [challenges/stranded.md](challenges/stranded.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

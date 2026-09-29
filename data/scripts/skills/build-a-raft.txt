@@ -1,0 +1,47 @@
+# Skill: build a raft, starting on the beach of the stranded island with
+# nothing. Cast and haft an axe, fell six logs (drinking between), twist a
+# rope, haul the logs to the beach two at a time with empty hands, and lash
+# them together there. Ends on the beach holding the axe, beside the raft.
+include skills/cast-an-axe-head.txt
+include skills/hone-and-haft-an-axe.txt
+go forest
+go stream
+repeat 6
+  try drink water
+end
+go forest
+repeat 3
+  gather trees
+  drop largest wood
+end
+go stream
+repeat 6
+  try drink water
+end
+go forest
+repeat 3
+  gather trees
+  drop largest wood
+end
+gather bushes
+work fibre into rope
+# Empty hands: two logs are all a person can carry.
+drop rope
+drop axe
+drop flake
+drop mould
+drop stone
+drop wood
+drop wood
+repeat 3
+  take largest wood
+  take largest wood
+  go beach
+  drop wood
+  drop wood
+  go forest
+end
+take rope
+take axe
+go beach
+assemble raft

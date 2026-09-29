@@ -33,6 +33,12 @@
 # the sea, so each 20 kg log carries about 14 kg more than itself; six carry
 # a person. The rope must hold the logs it binds.
 #
+# Stage 8, the crossing, in perfect conditions: the next island is 2 km
+# across a calm sea, with no current. Only something that floats and carries
+# you can take you. Paddling pushes a share of the paddler's effort into the
+# water, 30% with a paddle and 5% with bare hands, against the drag of a
+# blunt raft of logs (a drag coefficient of 3).
+#
 # Walking and carrying: paths between places have lengths; walking takes the
 # distance at 1.2 m/s, slowed to half speed under a full 40 kg load, and is
 # hard work like any other.
@@ -56,6 +62,8 @@ friction_share = "50%"
 rubbing_time = "10 min"
 flame_share = "50%"
 hand_hardness = "1"
+hand_push = "5%"
+drag = "300%"
 
 [[material]]
 id = "water"
@@ -274,6 +282,13 @@ label = "rope"
 role = "pulling"
 length = "5 m"
 
+[[shape]]
+id = "paddle"
+label = "paddle"
+role = "pushing"
+length = "1.5 m"
+push = "30%"
+
 [[design]]
 id = "axe"
 label = "axe"
@@ -304,8 +319,9 @@ parts = { a = "stone", b = "stone", c = "stone", d = "stone", e = "stone" }
 [[place]]
 id = "beach"
 label = "the beach"
-exits = ["stream", "forest"]
-distances = { stream = "400 m", forest = "300 m" }
+exits = ["stream", "forest", "islet"]
+distances = { stream = "400 m", forest = "300 m", islet = "2 km" }
+crossings = { islet = "sea" }
 temperature = "300 K"
 
 [[place]]
@@ -326,6 +342,12 @@ temperature = "300 K"
 id = "hillside"
 label = "the hillside"
 exits = ["forest"]
+temperature = "300 K"
+
+[[place]]
+id = "islet"
+label = "the next island"
+exits = ["beach"]
 temperature = "300 K"
 
 [[agent]]

@@ -74,7 +74,10 @@ fn intent(step: &Step, names: &[String]) -> Intent {
     let first = names[step.first % names.len()].clone();
     let second = names[step.second % names.len()].clone();
     match step.verb {
-        0 => Intent::Go { place: first },
+        0 => Intent::Go {
+            place: first,
+            aboard: None,
+        },
         1 => Intent::Take { item: first },
         2 => Intent::Drop { item: first },
         3 => Intent::Give {

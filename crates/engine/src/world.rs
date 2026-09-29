@@ -66,6 +66,12 @@ pub struct Settings {
     pub flame_share: u64,
     /// The hardest material bare hands can pull apart, in hundredths.
     pub hand_hardness: u64,
+    /// Share of a worker's effort that bare hands push into a liquid, in
+    /// parts per ten thousand.
+    pub hand_push: u64,
+    /// How bluntly a vessel meets the liquid it's pushed through (its drag
+    /// coefficient), in parts per ten thousand.
+    pub drag: u64,
 }
 
 impl Default for Settings {
@@ -90,6 +96,8 @@ impl Default for Settings {
             friction_share: 5_000,
             flame_share: 5_000,
             hand_hardness: 100,
+            hand_push: 500,
+            drag: 10_000,
         }
     }
 }
@@ -225,6 +233,9 @@ pub enum Role {
     /// Is pulled along its length. Measured: the load it holds before
     /// breaking.
     Pulling,
+    /// Pushes against a liquid to move a vessel. Measured: the share of the
+    /// worker's effort it delivers.
+    Pushing,
 }
 
 /// A shape from data, and what it takes to measure it.
@@ -236,6 +247,9 @@ pub struct ShapeDef {
     pub length: Option<u64>,
     /// Heat it sheds per kelvin above its surroundings, in µW per K.
     pub heat_loss: Option<u64>,
+    /// For a pushing shape: the share of effort it delivers, in parts per
+    /// ten thousand.
+    pub push: Option<u64>,
     /// For a casting shape: the shape liquid takes when it sets inside.
     pub casts: Option<String>,
 }
@@ -325,6 +339,8 @@ pub struct World {
     pub(crate) exits: BTreeMap<EntityId, Vec<EntityId>>,
     /// How far it is between two places, in µm. Missing means no distance.
     pub(crate) distances: BTreeMap<(EntityId, EntityId), u64>,
+    /// Paths that cross a liquid, and the liquid they cross.
+    pub(crate) crossings: BTreeMap<(EntityId, EntityId), EntityId>,
     /// Each place's surrounding temperature.
     pub(crate) ambient: BTreeMap<EntityId, Temperature>,
     /// Heat each place's surroundings have taken in.
@@ -705,6 +721,11 @@ impl World {
     /// How far it is from one place to another, in µm.
     pub fn distance(&self, from: EntityId, to: EntityId) -> u64 {
         self.distances.get(&(from, to)).copied().unwrap_or(0)
+    }
+
+    /// The liquid a path between two places crosses, if any.
+    pub fn crossing(&self, from: EntityId, to: EntityId) -> Option<EntityId> {
+        self.crossings.get(&(from, to)).copied()
     }
 
     /// The total mass someone is carrying.

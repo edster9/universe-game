@@ -25,7 +25,7 @@ These hold for every design decision unless the owner changes them.
 
 ## Testing
 
-- **Proofs, every run** (`cargo test --workspace`, about 25 seconds): law checks, conservation property tests, the no-names scan, and every script in `data/scripts/`.
+- **Proofs, every run** (`cargo test --workspace`, about 16 seconds): law checks, conservation property tests, the no-names scan, and every script in `data/scripts/`.
 - **Scripts** are plain command files with `include` (shared recipes in `data/scripts/skills/`), `repeat … end`, optional `try` commands, and expectations (`alive`, `dead of`, `said`, `not said`, `time after/before`, `conserved`). See `crates/console/src/script.rs`. Use fixed luck (`luck average|good|bad`), not a seed: a seed's luck shifts whenever the engine's history changes.
 - **Trials, on demand** (`cargo test --workspace -- --ignored --nocapture`): survivors play many seeds with real chance and report success rates. Run them when a law changes and before recording a stage's result.
 - `cargo run -p console -- --script data/scripts/<file>.txt` plays one script and prints its transcript. `cargo run -p console -- --world <file> --as <person-id>` opens the console.
@@ -49,5 +49,5 @@ These hold for every design decision unless the owner changes them.
 ## Where things stand
 
 - Slices 0 to 2 are built. See `docs/slices.md`.
-- The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 7 have passed, and walking and carrying are in. Next is stage 8, the crossing: shape a paddle and cross 2 km of open water, with propulsion against drag as the new law.
+- The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 8 have passed: the survivor gets off the island by raft, in perfect conditions. Walking and carrying are in. Next, as the owner decides: harder crossings (currents, a longer voyage to survive, storms; see "After the crossing" in the challenge doc), or the validation challenge with laws frozen, for which the owner has scenarios to inject.
 - Directions recorded for later: skills and a spoken interface (`docs/ideas/skills-and-interface.md`), recognising what things are (`docs/ideas/recognition.md`), the skill learning paradigm, flagged for a major conversation (`docs/ideas/skill-learning-paradigm.md`), money (`docs/ideas/money.md`), many universes (`docs/ideas/universes.md`).

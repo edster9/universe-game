@@ -1,0 +1,26 @@
+# Stranded, stage 8: ways not to cross. Nobody swims 2 km. A raft of driftwood
+# floats, but not with a person on it. A single log carries even less. The sea
+# isn't something to ride, and a raft is no use on land.
+world stranded.toml
+as survivor
+luck average
+
+try go islet
+expect said the way to the next island crosses the sea
+try go islet on sea
+expect said you can't cross on the sea
+go forest
+gather bushes
+work fibre into rope
+go beach
+repeat 6
+  gather driftwood
+end
+assemble raft
+drop raft
+try go islet on raft
+expect said the raft would sink under you: it carries up to 8.5
+try go forest on raft
+expect said there's nothing to cross
+expect alive
+expect conserved

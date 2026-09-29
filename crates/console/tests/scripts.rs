@@ -15,10 +15,22 @@ fn every_script_ends_as_it_says() {
         .collect();
     paths.sort();
     assert!(!paths.is_empty(), "no scripts found");
+    // Each script is its own world, so they can all play at once.
+    let results: Vec<_> = std::thread::scope(|scope| {
+        let runs: Vec<_> = paths
+            .iter()
+            .map(|path| {
+                scope.spawn(move || {
+                    let text = std::fs::read_to_string(path).unwrap();
+                    script::run(&text, data)
+                })
+            })
+            .collect();
+        runs.into_iter().map(|run| run.join().unwrap()).collect()
+    });
     let mut failures = Vec::new();
-    for path in &paths {
-        let text = std::fs::read_to_string(path).unwrap();
-        match script::run(&text, data) {
+    for (path, result) in paths.iter().zip(results) {
+        match result {
             Ok(_) => println!("passed: {}", path.display()),
             Err(e) => failures.push(format!("{}: {e}", path.display())),
         }

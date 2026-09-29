@@ -1,0 +1,30 @@
+# Stranded, stage 8: the crossing, in perfect conditions. The next island is
+# 2 km across a calm sea. There's no walking there; only something that floats
+# and carries you can take you. Propulsion against drag gives the speed: a
+# paddle pushes 30% of the effort into the water, bare hands only 5%, so the
+# raft crosses in an hour with a paddle and nearly two without.
+world stranded.toml
+as survivor
+luck average
+
+include skills/build-a-raft.txt
+try go islet
+expect said you need something that floats
+gather driftwood
+work wood into paddle with axe
+datasheet paddle
+expect said pushes with: 30% of the effort
+go stream
+repeat 6
+  try drink water
+end
+go beach
+go islet on raft
+expect said you cross to the next island on the raft. (that took 1 h.)
+look
+expect said raft
+drop paddle
+go beach on raft
+expect said (that took 1 h 49 min.)
+expect alive
+expect conserved

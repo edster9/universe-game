@@ -132,6 +132,18 @@ Added 2026-09-28. Making fire showed a new direction for how the game works.
 
 See [ideas/skills-and-interface.md](ideas/skills-and-interface.md).
 
+## Knowing what things are
+
+Added 2026-09-28.
+
+- A blank mind has no skills. It's very rare for a character to start there, because they'd have to be taught everything. With a person nearby, they could be told what fire is, or how to extract iron from rock. Without basic skills, a stranded person might figure out how to fish, but will never get off the island, at least not in their generation. Starting skill sets matter, and learning skills is good.
+- **The extra dimension: skills let you identify things.** Walking around the island, you recognise what you know. Someone who has never seen a coconut wouldn't know what it is; they might guess it's some sort of fruit. A bow and arrow abandoned by someone else wouldn't mean anything to them, beyond common sense.
+- **This matters when buying from others.** Most games have an honour system: ask a shop for a gun and you get a gun. Here, if you don't know what a gun is, the seller could hand you a stick, say it's a gun, and you'd pay for it. The same for a table or anything else: if you don't know what it is, you can't verify what you bought.
+- Skills build the common sense to know what things are, because you've seen them before or built them yourself. A very basic human in early civilisation wouldn't know what an aeroplane is if they saw one flying overhead.
+- This is part of the evolution of a person's mind.
+
+See [ideas/recognition.md](ideas/recognition.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

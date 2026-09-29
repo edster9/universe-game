@@ -77,7 +77,7 @@ The working proposal is to have both:
 
 ## Skills
 
-A skill is a saved procedure for doing something, plus the practice to do it well. How skills are learned, saved, and used through a spoken interface is in [skills-and-interface.md](skills-and-interface.md).
+A skill is a saved procedure for doing something, plus the practice to do it well. How skills are learned, saved, and used through a spoken interface is in [skills-and-interface.md](skills-and-interface.md). Knowing what things *are*, which shapes what a character perceives and whether they can be cheated in trade, is in [recognition.md](recognition.md).
 
 ## Machines that build
 

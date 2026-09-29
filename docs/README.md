@@ -25,6 +25,7 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/production.md](ideas/production.md) | Why duplicating something needs a chain of tools and factories |
 | [ideas/knowledge.md](ideas/knowledge.md) | Intelligence as the third input to making anything, and where knowledge lives |
 | [ideas/skills-and-interface.md](ideas/skills-and-interface.md) | Talking to the game, and successes saved as skills |
+| [ideas/recognition.md](ideas/recognition.md) | Knowing what things are: perception and trade depend on what you've learned |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |
 | [ideas/money.md](ideas/money.md) | What money is, before and after the space age, and how it's validated |
 | [slices.md](slices.md) | The first attempt: small text-only slices, each with a test |

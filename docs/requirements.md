@@ -103,6 +103,17 @@ The eventual game, once the engine can carry it:
 - Money is credits, described as crypto: the one money that works everywhere in the universe. What stands behind credits is in [ideas/money.md](ideas/money.md).
 - The universe is small on purpose, so that a networked game puts players near each other. The point of the size is more encounters with real people.
 
+## Training by challenges
+
+Added 2026-09-28. Before modelling towns, run challenge exercises to see whether the engine has enough in it yet. For example: dropped on a desert island with nothing, what series of steps gets a person onto a raft and across to a nearby island? Food first (a sharp rock, branches made into spears, fishing), then fire (rubbing wood or stones), then an axe (finding iron, melting it, casting, sharpening with a rock), chopping trees, making rope, building the raft, a sail or paddle, and the crossing.
+
+- Once the engine's primitives let a challenge like this succeed, inject another random scenario and see whether the engine covers it without inventing anything new.
+- This sets the tone for how the system is trained: basic survival, boats, and weapons first, then mechanical things (a bicycle, a car), then simple rockets, until the system is trained up to the space age.
+- **A stranded person can die**, and often will in early testing. The chance of success should be about what a real person's would be. Run a challenge 20 or 30 times: perhaps five succeed and the rest die. Dying doesn't fail the test. **The test fails only if it runs out of logical options.** Better skills and better ways to feed yourself improve the odds, but there's always a chance of dying.
+- Time in tests doesn't run in real time. Days of activity should compute in seconds, and waiting an hour should happen instantly.
+
+See [challenges/stranded.md](challenges/stranded.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

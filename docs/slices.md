@@ -107,6 +107,10 @@ Simplifications to revisit:
 - **Rubbing needs only two parts**, not the real three-plate method, and removes no material.
 - **Electricity is one series loop per assembly**, measured, not run: the lamp's cell doesn't drain yet.
 
+## Challenge before slice 3
+
+Decided 2026-09-28: before building the town, train the engine on the [stranded](challenges/stranded.md) challenge, then validate it on scenarios it wasn't trained on. Slice 3 follows, built on whatever laws the challenges add.
+
 ## Slice 3: A town with a budget
 
 Agents with needs, wallets, and jobs. A mine, a smith, a shop, a guard, and a tax. The world runs in ticks. The shop buys from the smith, the smith buys ore from the mine, the guard is paid from taxes, and taxes come from trade.

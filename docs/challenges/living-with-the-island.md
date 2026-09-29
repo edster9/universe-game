@@ -13,8 +13,8 @@ Animals are the first characters in the world that aren't the player, so this ch
 | # | Stage | What happens | New laws it needs |
 | --- | --- | --- | --- |
 | 1 | Shelter | Build a lean-to and sleep warmer inside it | An assembly built to shelter keeps in a share of a sleeper's body heat |
-| 2 | Animals | Boars roam the forest, feed, breed, and charge when cornered | Animals are living bodies under the same laws as people, with a few rules of behaviour in data: wander, feed, flee, and charge |
-| 3 | Injury | A tusk or a spear wounds | Wounds bleed, which is faster fluid loss; they heal slowly. Bleeding to death is dying of fluid loss, a limit that already exists |
+| 2 | Animals | Boars roam the forest, feed, and flee people | Kinds of living things; animals are living bodies under the same laws as people, with an instinct in data: flee, keep away, feed, drink, sleep, wander |
+| 3 | Injury | A tusk or a spear wounds; a cornered boar charges | Wounds bleed, which is faster fluid loss; they heal slowly. Bleeding to death is dying of fluid loss, a limit that already exists |
 | 4 | The hunt | Kill a boar, butcher it, cook the meat, and keep what's left | Butchering divides a body with a cutting tool into meat, fat, hide, and bone. Cooking is a change at a temperature, as clay firing is. Meat spoils with time unless it's dried or smoked |
 | 5 | Hide and shoes | Scrape and dry a hide into leather, and make shoes and clothing | Walking wears what's between you and the ground: bare feet on rough ground are hurt and slowed, and shoes wear through instead. Worn clothing cuts a body's heat loss |
 | 6 | A barrier or tree house | Keep boars out at night | A barrier blocks what can't get past it; height keeps out animals that can't climb |
@@ -43,3 +43,39 @@ Simplifications to revisit:
 - **A shelter helps only a sleeper.** Sitting awake in it does nothing.
 - **Rain and wind don't exist yet**, so a shelter only saves food; it can't yet save a life.
 - **A lean-to weighs 2.2 kg and can be carried** like any other assembly.
+
+### Stage 2: animals. Passed, 2026-09-29.
+
+**Six boars live on the island**, keeping to the forest, the stream, the hillside, and the slopes, and looking after themselves. [living-2-boars.txt](../../data/scripts/living-2-boars.txt): the islander finds the herd asleep by the stream at 23:07 and walks right up to it; by morning it has gone.
+
+**Kinds.** At the owner's request, living things are classified generically, humans and future aliens included: see [kinds.md](../ideas/kinds.md). Kinds form a tree in data (living thing, animal, mammal, human, boar; fish, shellfish; plant, tree, shrub). A kind gives its members a body and a mind. Datasheets show it: "kind: human (mammal, animal, living thing)". Populations, such as the fish in the shallows, have kinds too. The engine knows only "is this a kind of that?"; the no-names scan now covers kinds, so "boar" and "human" can't appear in the engine.
+
+**Instinct is a mind.** A person acts on commands; a boar acts on its kind's instinct, which only ever proposes ordinary commands (go, drink, gather, eat, sleep), and the laws decide, exactly as for a person. In order:
+
+1. **Flee** anything of a kind it fears at the same place, and **keep away** from that place a while (three hours for boars).
+2. **Sleep** at night. Asleep, it can't flee.
+3. **Eat** what it holds.
+4. **Drink** when thirsty, going to water within its range if there's none here.
+5. **Forage** when hungry, but only where a search has a fair chance, going elsewhere when a patch is picked over.
+6. Otherwise **rest**, or sometimes **wander**.
+
+**A general law came with it: bodies store surplus food as fat.** Until now a body burned food, then fat, and nothing ever turned food back into fat, so every creature, people included, could only get thinner. Now food beyond half a day's needs becomes reserve again, at up to the body's resting power and 75% efficiency (data), until the reserve is back where it began; the rest leaves as heat and carbon dioxide, and the gate balances it all.
+
+**Trial:** 60 of 60 boars alive after 30 days, over 10 islands. On seed 1, the herd holds its weight for twenty days, eats the forest's roots and nuts down faster than they grow back, and migrates to the slopes, losing a little weight on the long walks.
+
+**What the attempts found:**
+
+- **Boars died of heat.** Working at 350 W, a boar that barely sweats made more heat than it could shed. Real pigs wallow in mud for this reason; the numbers were adjusted (250 W, better heat loss).
+- **They starved beside food**, three times over: they only ate when their gut was empty, so every twelve-hour night ran on fat; nothing turned food back into fat; and a rule to skip picked-over patches ruled out every patch, because patches were measured against a growth limit I'd raised. Each fix is above.
+- **A boar went back and forth all night** between the stream, where the islander was, and the forest, where it was thirsty. Real animals remember where they were scared, hence keeping away.
+
+**Sabotage checks:** no storing fails the fat test; no fleeing fails the fleeing test; no keeping away fails the boar proof.
+
+Simplifications to revisit:
+
+- **Boars don't breed or age yet**, and the herd can only shrink.
+- **A creature arrives the moment it sets off**, so boars hear a person coming the whole walk.
+- **Instinct knows its range**: where water and food are within the places it keeps to, without having to find them.
+- **Everyone sees true kinds**, until recognition.
+- **No charging yet**: a cornered boar comes with injury, in stage 3.
+

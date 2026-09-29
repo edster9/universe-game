@@ -32,7 +32,7 @@ fn a_short_walk_through_town() {
         ("go market", "You go to the market."),
         (
             "look",
-            "The market\nWays out: the town square\nPeople here: Oskar\nThings here: sack of grain (25 kg)",
+            "The market\nWays out: the town square\nAlso here: Oskar\nThings here: sack of grain (25 kg)",
         ),
         ("pay oskar -5", "\"-5\" isn't a whole number of credits."),
         (

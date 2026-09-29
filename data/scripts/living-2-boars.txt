@@ -1,0 +1,26 @@
+# Living with the island, stage 2: animals. The islander is a human: a
+# mammal, an animal, a living thing. Six boars keep to the forest, the
+# stream, the hillside, and the slopes, looking after themselves by instinct.
+# They run from people by day, but asleep at night they can't: the islander
+# walks right up to the herd asleep by the stream in the dark, and by
+# morning it has gone.
+world living.toml
+as survivor
+luck average
+
+datasheet survivor
+expect said kind: human (mammal, animal, living thing)
+datasheet fish
+expect said kind: fish (animal, living thing)
+wait 15 h
+go stream
+look
+expect said also here: a boar
+datasheet boar
+expect said kind: boar (mammal, animal, living thing)
+expect said awake for: asleep
+wait 9 h
+look
+expect not said a boar
+expect alive
+expect conserved

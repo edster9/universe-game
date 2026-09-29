@@ -33,6 +33,39 @@ struct WorldFile {
     agents: Vec<AgentDef>,
     #[serde(default, rename = "item")]
     items: Vec<ItemDef>,
+    #[serde(default, rename = "kind")]
+    kinds: Vec<KindDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct KindDef {
+    id: String,
+    label: String,
+    /// The broader kind it belongs to.
+    parent: Option<String>,
+    /// A typical member's mass, which members inherit.
+    mass: Option<String>,
+    /// What members are made of, which they inherit.
+    composition: Option<BTreeMap<String, String>>,
+    /// The figures of members' lives, which they inherit.
+    life: Option<LifeDef>,
+    /// Members act on instinct, following these rules.
+    instinct: Option<InstinctDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct InstinctDef {
+    /// Kinds it runs from.
+    #[serde(default)]
+    flees: Vec<String>,
+    /// How long it rests with nothing to do.
+    rest: String,
+    /// The chance it wanders with nothing to do.
+    wander: String,
+    /// How long it keeps away from where it met what it flees.
+    wary: Option<String>,
 }
 
 #[derive(Default, Deserialize)]
@@ -191,7 +224,16 @@ struct AgentDef {
     id: String,
     label: String,
     at: String,
-    mass: String,
+    /// Optional if its kind gives one.
+    mass: Option<String>,
+    /// What kind of creature it is. Its body and mind come from its kind
+    /// unless given here.
+    kind: Option<String>,
+    /// How many alike to make, with ids numbered from 1.
+    count: Option<u32>,
+    /// The places it keeps to.
+    #[serde(default)]
+    range: Vec<String>,
     #[serde(default)]
     credits: u64,
     /// A body made of materials, as material id to percentage by mass.
@@ -227,6 +269,8 @@ struct LifeDef {
     walk: Option<String>,
     /// The share of working power that lifts the body when climbing.
     climb: Option<String>,
+    /// How much of a surplus food's energy it keeps when storing it.
+    stores: Option<String>,
     /// How long it can stay awake before it's tired.
     awake: Option<String>,
     /// How long a full sleep takes.
@@ -292,6 +336,8 @@ struct ItemDef {
     pieces: Option<PiecesDef>,
     /// It's alive and grows.
     grows: Option<GrowsDef>,
+    /// What kind of creature it is, for a population of creatures.
+    kind: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -372,6 +418,7 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
         file.materials.splice(0..0, library.materials);
         file.shapes.splice(0..0, library.shapes);
         file.designs.splice(0..0, library.designs);
+        file.kinds.splice(0..0, library.kinds);
     }
     let mut world = World {
         settings: load_settings(&file.world)?,
@@ -484,44 +531,34 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
         world.exits.insert(place, exits);
     }
 
+    load_kinds(&mut world, &file.kinds)?;
     for def in &file.agents {
-        let agent = world.spawn(Some(&def.id), Some(&def.label));
-        let at = match world.find_by_key(&def.at) {
-            Some(at) if world.is_place(at) => at,
-            _ => {
-                return fail(format!(
-                    "{} is at {:?}, which isn't a place",
-                    def.id, def.at
-                ));
-            }
-        };
-        world.locations.insert(agent, at);
-        let mass = parse_mass(&def.id, &def.mass)?;
-        match parse_composition(&world, &def.id, mass, None, def.composition.as_ref())? {
-            Some(composition) => {
-                let temperature = match &def.temperature {
-                    Some(t) => t.parse()?,
-                    None => world.ambient(at),
-                };
-                insert_matter(&mut world, agent, composition, temperature, &def.id)?;
-            }
-            None => {
-                world.masses.insert(agent, mass);
-            }
+        let count = def.count.unwrap_or(1);
+        if count == 0 {
+            return fail(format!("{} has a count of 0", def.id));
         }
-        world.agents.insert(agent);
-        if def.lost {
-            world.known_ways.insert(agent, BTreeSet::new());
-        }
-        world.wallets.insert(agent, Credits::new(def.credits));
-        if let Some(life) = &def.life {
-            let life = load_life(&world, agent, &def.id, life)?;
-            world.life.insert(agent, life);
+        for n in 1..=count {
+            let id = if def.count.is_some() {
+                format!("{}-{n}", def.id)
+            } else {
+                def.id.clone()
+            };
+            load_agent(&mut world, def, &id, &file.kinds)?;
         }
     }
 
     for def in &file.items {
         load_item(&mut world, def)?;
+        if let Some(kind) = &def.kind {
+            if !world.kinds.contains_key(kind) {
+                return fail(format!(
+                    "{} is of kind {kind:?}, which isn't a kind",
+                    def.id
+                ));
+            }
+            let item = world.find_by_key(&def.id).expect("just loaded");
+            world.kind_of.insert(item, kind.clone());
+        }
     }
     // Crossings refer to items, which are loaded after places.
     for def in &file.places {
@@ -1056,6 +1093,144 @@ fn insert_matter(
     Ok(())
 }
 
+/// Loads the hierarchy of kinds, checking every parent is a kind and no kind is
+/// its own ancestor.
+fn load_kinds(world: &mut World, defs: &[KindDef]) -> Result<(), LoadError> {
+    for def in defs {
+        let instinct = match &def.instinct {
+            Some(i) => Some(world::Instinct {
+                flees: i.flees.clone(),
+                rest: parse_quantity(&i.rest, property::DURATION, "a time like \"30 min\"")?.max(1),
+                wander: parse_percent(&i.wander)?,
+                wary: i
+                    .wary
+                    .as_deref()
+                    .map(|w| parse_quantity(w, property::DURATION, "a time like \"3 h\""))
+                    .transpose()?
+                    .unwrap_or(0),
+            }),
+            None => None,
+        };
+        let kind = world::Kind {
+            label: def.label.clone(),
+            parent: def.parent.clone(),
+            instinct,
+        };
+        if world.kinds.insert(def.id.clone(), kind).is_some() {
+            return fail(format!("the kind {:?} is defined twice", def.id));
+        }
+    }
+    for (id, kind) in &world.kinds {
+        if let Some(parent) = &kind.parent
+            && !world.kinds.contains_key(parent)
+        {
+            return fail(format!(
+                "the kind {id} belongs to {parent:?}, which isn't a kind"
+            ));
+        }
+        // A lineage stops if it comes back on itself, so its last kind then
+        // still has a parent.
+        let lineage = world.lineage(id);
+        let last = lineage.last().and_then(|k| world.kinds.get(*k));
+        if last.is_some_and(|k| {
+            k.parent
+                .as_ref()
+                .is_some_and(|p| world.kinds.contains_key(p))
+        }) {
+            return fail(format!("the kind {id} is its own ancestor"));
+        }
+        for fled in kind.instinct.iter().flat_map(|i| &i.flees) {
+            if !world.kinds.contains_key(fled) {
+                return fail(format!("the kind {id} flees {fled:?}, which isn't a kind"));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Loads one person or creature. What isn't given comes from its kind, and
+/// the kinds above it, nearest first.
+fn load_agent(
+    world: &mut World,
+    def: &AgentDef,
+    id: &str,
+    kinds: &[KindDef],
+) -> Result<(), LoadError> {
+    let lineage: Vec<&KindDef> = match &def.kind {
+        Some(kind) => {
+            if !world.kinds.contains_key(kind) {
+                return fail(format!("{id} is of kind {kind:?}, which isn't a kind"));
+            }
+            world
+                .lineage(kind)
+                .iter()
+                .filter_map(|k| kinds.iter().find(|d| d.id == *k))
+                .collect()
+        }
+        None => Vec::new(),
+    };
+    let mass_text = def
+        .mass
+        .as_ref()
+        .or_else(|| lineage.iter().find_map(|k| k.mass.as_ref()))
+        .ok_or_else(|| LoadError(format!("{id} needs a mass, or a kind that gives one")))?;
+    let composition = def
+        .composition
+        .as_ref()
+        .or_else(|| lineage.iter().find_map(|k| k.composition.as_ref()));
+    let life_def = def
+        .life
+        .as_ref()
+        .or_else(|| lineage.iter().find_map(|k| k.life.as_ref()));
+
+    let agent = world.spawn(Some(id), Some(&def.label));
+    let at = match world.find_by_key(&def.at) {
+        Some(at) if world.is_place(at) => at,
+        _ => {
+            return fail(format!("{id} is at {:?}, which isn't a place", def.at));
+        }
+    };
+    world.locations.insert(agent, at);
+    let mass = parse_mass(id, mass_text)?;
+    match parse_composition(world, id, mass, None, composition)? {
+        Some(composition) => {
+            let temperature = match &def.temperature {
+                Some(t) => t.parse()?,
+                None => world.ambient(at),
+            };
+            insert_matter(world, agent, composition, temperature, id)?;
+        }
+        None => {
+            world.masses.insert(agent, mass);
+        }
+    }
+    world.agents.insert(agent);
+    if let Some(kind) = &def.kind {
+        world.kind_of.insert(agent, kind.clone());
+    }
+    if def.lost {
+        world.known_ways.insert(agent, BTreeSet::new());
+    }
+    if !def.range.is_empty() {
+        let mut range = BTreeSet::new();
+        for place in &def.range {
+            match world.find_by_key(place) {
+                Some(p) if world.is_place(p) => {
+                    range.insert(p);
+                }
+                _ => return fail(format!("{id} keeps to {place:?}, which isn't a place")),
+            }
+        }
+        world.ranges.insert(agent, range);
+    }
+    world.wallets.insert(agent, Credits::new(def.credits));
+    if let Some(life) = life_def {
+        let life = load_life(world, agent, id, life)?;
+        world.life.insert(agent, life);
+    }
+    Ok(())
+}
+
 fn load_life(
     world: &World,
     agent: world::EntityId,
@@ -1147,6 +1322,23 @@ fn load_life(
                     "{id} needs both how long it stays awake and how long it sleeps"
                 ));
             }
+        },
+        stores: def.stores.as_deref().map(parse_percent).transpose()?,
+        reserve: {
+            // The most energy-rich store it digests that the body holds.
+            let digests: Vec<MaterialId> = def
+                .digests
+                .iter()
+                .map(|m| material_id(world, id, m))
+                .collect::<Result<_, _>>()?;
+            digests
+                .iter()
+                .filter_map(|m| {
+                    body.get(m)
+                        .map(|mass| (world.materials[m].energy_density, *m, *mass))
+                })
+                .max()
+                .map(|(_, m, mass)| (m, mass))
         },
         working_until: 0,
         died_of: None,

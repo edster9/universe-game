@@ -89,6 +89,8 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
             world.apply(Cause::Nature { tick: now }, changes)?;
         }
     }
+    // Creatures acting on instinct choose what to do next.
+    crate::instinct::act(world)?;
     world.advance_clock(dt);
     Ok(())
 }
@@ -630,6 +632,50 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
                 mass: Mass::from_mg(u64::try_from(amount).expect("no more than it has")),
             });
             needed = needed.saturating_sub(amount * density);
+        }
+
+        // Storing a surplus: food beyond half a day's needs at rest becomes
+        // the reserve again, at up to the body's resting power, until the reserve
+        // is back where it began.
+        if let (Some(efficiency), Some((reserve, start))) = (life.stores, life.reserve) {
+            let have = composition.get(&reserve).map_or(0, |m| m.mg());
+            let mut foods: Vec<_> = composition
+                .iter()
+                .filter(|(m, _)| {
+                    **m != reserve && life.digests.contains(m) && world.materials[m].burns()
+                })
+                .map(|(&m, &mass)| (world.materials[&m].energy_density, m, mass))
+                .collect();
+            foods.sort();
+            let food_energy: u128 = foods
+                .iter()
+                .map(|(density, _, mass)| u128::from(*density) * u128::from(mass.mg()))
+                .sum::<u128>()
+                // Less what this step burns.
+                .saturating_sub(u128::from(power) * u128::from(dt));
+            let half_a_day = u128::from(life.resting_power) * u128::from(SECONDS_PER_DAY) / 2;
+            let surplus = food_energy.saturating_sub(half_a_day);
+            let room = u128::from(start.mg().saturating_sub(have))
+                * u128::from(world.materials[&reserve].energy_density)
+                * 10_000
+                / u128::from(efficiency.max(1));
+            let energy = surplus
+                .min(room)
+                .min(u128::from(life.resting_power) * u128::from(dt));
+            if let Some(&(density, material, mass)) = foods.first()
+                && energy > 0
+            {
+                let amount = (energy / u128::from(density.max(1))).min(u128::from(mass.mg()));
+                if amount > 0 {
+                    changes.push(Change::Store {
+                        entity: id,
+                        from: material,
+                        mass: Mass::from_mg(u64::try_from(amount).expect("no more than it has")),
+                        into: reserve,
+                        efficiency,
+                    });
+                }
+            }
         }
 
         // Losing fluid, and sweating.

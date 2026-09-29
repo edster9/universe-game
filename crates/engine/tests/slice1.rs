@@ -169,7 +169,7 @@ fn the_engine_names_no_materials_shapes_or_items() {
         include_str!("../../../data/island-things.toml"),
     ] {
         let data: toml::Table = toml::from_str(text).unwrap();
-        for section in ["material", "shape", "item", "design"] {
+        for section in ["material", "shape", "item", "design", "kind"] {
             let Some(entries) = data.get(section).and_then(|v| v.as_array()) else {
                 continue;
             };

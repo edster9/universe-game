@@ -75,3 +75,151 @@ fn a_night_in_a_shelter_costs_less_than_a_night_in_the_open() {
     );
     assert!(open_mj >= 4, "a night in the open burned only {open_mj} MJ");
 }
+
+fn boars(world: &World) -> Vec<EntityId> {
+    (1..=6)
+        .map(|n| world.find_by_key(&format!("boar-{n}")).unwrap())
+        .collect()
+}
+
+fn material(world: &World, id: EntityId, key: &str) -> u64 {
+    let m = world.material_by_key(key).unwrap();
+    world
+        .composition(id)
+        .and_then(|c| c.get(&m))
+        .map_or(0, |mass| mass.mg())
+}
+
+#[test]
+#[ignore = "a trial: run with `cargo test -- --ignored --nocapture`"]
+fn trial_a_herd_of_boars_looks_after_itself_for_a_month() {
+    let started = std::time::Instant::now();
+    let mut alive_total = 0;
+    for seed in 1..=10 {
+        let mut w = island().with_seed(seed);
+        let start = (w.total_mass(), w.total_energy() - w.sunlight());
+        for day in 1..=30 {
+            engine::nature::run(&mut w, 86_400).unwrap();
+            if seed == 1 && (day == 1 || day % 10 == 0) {
+                let report: Vec<String> = boars(&w)
+                    .iter()
+                    .map(|&b| {
+                        format!(
+                            "{} fat {:.1} water {:.1}{}",
+                            w.key(w.place_of(b).unwrap()),
+                            material(&w, b, "fat") as f64 / 1e6,
+                            material(&w, b, "water") as f64 / 1e6,
+                            w.life(b)
+                                .unwrap()
+                                .died_of
+                                .as_ref()
+                                .map_or(String::new(), |c| format!(" DEAD of {c}"))
+                        )
+                    })
+                    .collect();
+                println!("seed 1 day {day}: {}", report.join("; "));
+            }
+        }
+        assert_eq!(
+            (w.total_mass(), w.total_energy() - w.sunlight()),
+            start,
+            "seed {seed}: totals changed"
+        );
+        let alive = boars(&w).iter().filter(|&&b| w.is_living(b)).count();
+        alive_total += alive;
+        if seed == 1 {
+            println!(
+                "seed 1 forage: forest {}, slopes {}",
+                w.mass(w.find_by_key("forage").unwrap()),
+                w.mass(w.find_by_key("slope-forage").unwrap())
+            );
+        }
+    }
+    println!(
+        "living 2: {alive_total} of 60 boars alive after 30 days, over 10 islands; took {:.1?}",
+        started.elapsed()
+    );
+    assert!(alive_total > 0);
+}
+
+#[test]
+fn a_well_fed_body_stores_its_surplus_as_fat_again() {
+    // Two days without food, then ten helpings of shellfish (about 12 MJ),
+    // then half a day's rest: the body lives on the shellfish and turns what
+    // it won't need soon into fat, so it has more than when it began eating.
+    // (Two days later it would be thinner again: 12 MJ is less than two days
+    // at rest.)
+    let mut w = island();
+    let me = w.find_by_key("survivor").unwrap();
+    run(&mut w, me, "go stream");
+    for _ in 0..2 {
+        for _ in 0..6 {
+            let _ = parse("drink water").map(|c| match c {
+                Command::Act(intent) => perform(&mut w, me, intent).ok(),
+                _ => None,
+            });
+        }
+        engine::nature::run(&mut w, 14 * 3_600).unwrap();
+        run(&mut w, me, "sleep for 10 h");
+    }
+    let hungry = material(&w, me, "fat");
+    run(&mut w, me, "go beach");
+    for _ in 0..10 {
+        run(&mut w, me, "gather shellfish-bed");
+        let piece = *w.contents(me).last().unwrap();
+        let eat = format!("eat {}", w.key(piece));
+        run(&mut w, me, &eat);
+        for shell in w.contents(me) {
+            let line = format!("drop {}", w.key(shell));
+            let Ok(Command::Act(intent)) = parse(&line) else {
+                unreachable!()
+            };
+            act(&mut w, me, intent).unwrap();
+        }
+    }
+    engine::nature::run(&mut w, 12 * 3_600).unwrap();
+    let fed = material(&w, me, "fat");
+    assert!(
+        fed > hungry,
+        "fat went from {hungry} mg when hungry to {fed} mg when fed"
+    );
+}
+
+#[test]
+fn boars_run_from_a_person_who_comes_among_them_and_keep_away() {
+    // Mid-morning, set the islander down wherever most of the herd is. Within
+    // ten minutes every boar that was awake there has gone, and none comes
+    // back within the hour.
+    let mut w = island();
+    let me = w.find_by_key("survivor").unwrap();
+    engine::nature::run(&mut w, 2 * 3_600).unwrap();
+    let herd = boars(&w);
+    let mut places: Vec<EntityId> = herd.iter().map(|&b| w.place_of(b).unwrap()).collect();
+    places.sort();
+    let busiest = *places
+        .iter()
+        .max_by_key(|&&p| places.iter().filter(|&&q| q == p).count())
+        .unwrap();
+    let awake: Vec<EntityId> = herd
+        .iter()
+        .copied()
+        .filter(|&b| w.place_of(b) == Some(busiest) && !w.is_asleep(b))
+        .collect();
+    assert!(!awake.is_empty(), "no boars awake together");
+    w.apply(
+        engine::gate::Cause::Nature { tick: w.tick() },
+        vec![engine::gate::Change::Move {
+            entity: me,
+            to: busiest,
+        }],
+    )
+    .unwrap();
+    engine::nature::run(&mut w, 10 * 60).unwrap();
+    for &b in &awake {
+        assert_ne!(w.place_of(b), Some(busiest), "a boar stayed");
+    }
+    engine::nature::run(&mut w, 3_600).unwrap();
+    for &b in &awake {
+        assert_ne!(w.place_of(b), Some(busiest), "a boar came back");
+    }
+}

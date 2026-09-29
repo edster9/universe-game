@@ -69,6 +69,7 @@ pub enum Property {
     Height,
     PlacesSeen,
     Shelters,
+    Kind,
 }
 
 impl Property {
@@ -124,6 +125,7 @@ impl Property {
             Property::Height => "height",
             Property::PlacesSeen => "places seen",
             Property::Shelters => "keeps in",
+            Property::Kind => "kind",
         }
     }
 }
@@ -241,6 +243,22 @@ pub fn measure(world: &World, id: EntityId) -> Datasheet {
         );
     }
     buoyancy(world, id, &mut sheet);
+    // A kind, and the kinds it belongs to, nearest first.
+    if let Some(kind) = world.kind_of(id) {
+        let labels: Vec<&str> = world
+            .lineage(kind)
+            .into_iter()
+            .filter_map(|k| world.kinds().get(k).map(|def| def.label.as_str()))
+            .collect();
+        if let Some((own, broader)) = labels.split_first() {
+            let text = if broader.is_empty() {
+                (*own).to_string()
+            } else {
+                format!("{own} ({})", broader.join(", "))
+            };
+            sheet.set(Property::Kind, Value::Text(text));
+        }
+    }
     sheet
 }
 

@@ -249,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn cube_roots_are_exact_or_round_down() {
+    fn a_cube_root_is_exact_or_rounds_down() {
         assert_eq!(cube_root(27), 3);
         assert_eq!(cube_root(26), 2);
         assert_eq!(cube_root(1_000_000_000_000), 10_000);

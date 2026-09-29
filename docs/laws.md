@@ -87,6 +87,9 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | You can drink something only if it's nothing but the fluid your body needs | in | stranded 1 |
 | A body dies below its minimum fluid, with nothing left to burn, or outside the temperatures it can live in. It stays where it fell, holding what it carried | in | stranded 1 |
 | Living things grow toward a limit, fast while few and slowing as they fill, taking matter from a source and energy from sunlight | in | stranded 3 |
+| A body stores food beyond half a day's needs as its reserve again, at up to its resting power and an efficiency its data gives, until the reserve is back where it began | in | living 2 |
+| Living things have kinds, in a tree given in data; a kind gives its members a body, and a mind: a person acts on commands, an instinct on its kind's rules | in | living 2 |
+| An instinct flees what its kind fears and keeps away from where it met it a while; sleeps at night; eats what it holds; drinks and forages when it needs to, where a search is worth it; and otherwise rests or wanders its range. It only proposes commands | in | living 2 |
 
 ## Chance and time
 

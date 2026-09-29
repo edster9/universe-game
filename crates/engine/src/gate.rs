@@ -77,6 +77,25 @@ pub enum Change {
     },
     /// A body works hard until `until`.
     Exert { agent: EntityId, until: u64 },
+    /// A body stores `mass` of a food it has digested as its reserve: a share
+    /// of the food's energy (`efficiency`, in parts per ten thousand) becomes
+    /// the reserve, the rest is released as heat, and what's left of the
+    /// food's mass becomes what it burns to.
+    Store {
+        entity: EntityId,
+        from: MaterialId,
+        mass: Mass,
+        into: MaterialId,
+        efficiency: u64,
+    },
+    /// A creature acting on instinct is busy until `until`.
+    Occupy { agent: EntityId, until: u64 },
+    /// A creature keeps away from a place until `until`.
+    Avoid {
+        agent: EntityId,
+        place: EntityId,
+        until: u64,
+    },
     /// Someone sees a place, from afar or by being there.
     See { agent: EntityId, place: EntityId },
     /// Someone learns the way from one place to another.
@@ -101,7 +120,7 @@ pub enum Change {
     },
     /// Someone stops what they were doing.
     EndActivity { agent: EntityId },
-    /// A living thing grows by `mass`, turning matter taken from `from` into
+    /// Something alive grows by `mass`, turning matter taken from `from` into
     /// more of itself. The chemical energy it gains comes from sunlight.
     Grow {
         entity: EntityId,
@@ -366,6 +385,58 @@ impl World {
                 self.give_heat(Holder::Thing(entity), Energy::from_uj(released))
             }
 
+            &Change::Store {
+                entity,
+                from,
+                mass,
+                into,
+                efficiency,
+            } => {
+                let (Some(food), Some(reserve)) =
+                    (self.materials.get(&from), self.materials.get(&into))
+                else {
+                    return Err(Fault::DoesNotBurn(from));
+                };
+                if !food.burns() || reserve.energy_density == 0 || efficiency > 10_000 {
+                    return Err(Fault::DoesNotBurn(from));
+                }
+                let energy = u128::from(mass.mg()) * u128::from(food.energy_density);
+                let stored = energy * u128::from(efficiency) / 10_000;
+                let into_mass = u64::try_from(stored / u128::from(reserve.energy_density))
+                    .expect("less than the food's mass")
+                    .min(mass.mg());
+                let products = matter::split_by_fractions(
+                    Mass::from_mg(mass.mg() - into_mass),
+                    &food.burns_to,
+                );
+                let left: u128 = u128::from(into_mass) * u128::from(reserve.energy_density)
+                    + products
+                        .iter()
+                        .map(|(m, part)| {
+                            u128::from(part.mg()) * u128::from(self.materials[m].energy_density)
+                        })
+                        .sum::<u128>();
+                let released = energy
+                    .checked_sub(left)
+                    .and_then(|e| u64::try_from(e).ok())
+                    .ok_or(Fault::DoesNotBurn(from))?;
+                let composition = self
+                    .matter
+                    .get_mut(&entity)
+                    .ok_or(Fault::NotMatter(entity))?;
+                remove_material(composition, from, mass).ok_or(Fault::NotEnoughMaterial {
+                    entity,
+                    material: from,
+                })?;
+                add_material(composition, into, Mass::from_mg(into_mass))
+                    .ok_or(Fault::Overflow(entity))?;
+                for (product, part) in products {
+                    add_material(composition, product, part).ok_or(Fault::Overflow(entity))?;
+                }
+                composition.retain(|_, m| m.mg() > 0);
+                self.give_heat(Holder::Thing(entity), Energy::from_uj(released))
+            }
+
             Change::Split { from, take, at } => {
                 self.must_exist(*at)?;
                 let (piece, heat) = self.take_part(*from, take)?;
@@ -439,7 +510,7 @@ impl World {
                 let source = self.matter.get(&from).ok_or(Fault::NotMatter(from))?;
                 let own = self.matter.get(&entity).ok_or(Fault::NotMatter(entity))?;
                 let taken = matter::proportional(source, mass).ok_or(Fault::WouldEmpty(from))?;
-                // What grows is more of what the living thing is already
+                // What grows is more of what the grower is already
                 // made of, in the same shares.
                 let grown = scale(own, mass).ok_or(Fault::WouldEmpty(entity))?;
                 let before = matter::chemical_energy(&self.materials, &taken);
@@ -481,6 +552,29 @@ impl World {
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 life.working_until = until;
+                Ok(())
+            }
+
+            &Change::Occupy { agent, until } => {
+                if !self.is_agent(agent) {
+                    return Err(Fault::NotAlive(agent));
+                }
+                self.busy_until.insert(agent, until);
+                Ok(())
+            }
+
+            &Change::Avoid {
+                agent,
+                place,
+                until,
+            } => {
+                if !self.is_agent(agent) {
+                    return Err(Fault::NotAlive(agent));
+                }
+                if !self.is_place(place) {
+                    return Err(Fault::NotAPlace(place));
+                }
+                self.avoiding.entry(agent).or_default().insert(place, until);
                 Ok(())
             }
 

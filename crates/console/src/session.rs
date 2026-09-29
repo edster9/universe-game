@@ -231,7 +231,7 @@ impl Session {
         };
         lines.push(format!("{ways}: {}", list_or(&look.exits, "none")));
         if !look.people.is_empty() {
-            lines.push(format!("People here: {}", look.people.join(", ")));
+            lines.push(format!("Also here: {}", look.people.join(", ")));
         }
         if !look.things.is_empty() {
             lines.push(format!("Things here: {}", things(&look.things)));
@@ -572,6 +572,30 @@ impl Session {
             ),
             &Change::Exert { agent, until } => {
                 format!("{} works hard until {until} s", w.label(agent))
+            }
+            &Change::Store {
+                entity,
+                from,
+                mass,
+                into,
+                ..
+            } => format!(
+                "{} stores {mass} of {} as {}",
+                w.label(entity),
+                w.materials()[&from].label,
+                w.materials()[&into].label
+            ),
+            &Change::Avoid {
+                agent,
+                place,
+                until,
+            } => format!(
+                "{} keeps away from {} until {until} s",
+                w.label(agent),
+                w.label(place)
+            ),
+            &Change::Occupy { agent, until } => {
+                format!("{} is busy until {until} s", w.label(agent))
             }
             &Change::See { agent, place } => {
                 format!("{} sees {}", w.label(agent), w.label(place))

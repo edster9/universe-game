@@ -192,6 +192,25 @@ Added 2026-09-28, when day and night came up.
 - **Later: age.** Typical game characters are always young, fit bodies. We could have an older person, not as strong and not as mobile. Keep to a range: no one under 18 or over 55 for a game like this, for now. Age may be a factor.
 - **Later: body types.** Different body types have different strengths: male, female, and so on. For now keep it as generic as possible.
 
+## Classifying living things
+
+Added 2026-09-29, starting the animals stage.
+
+- Be clear on how we classify animals. We've already had animals that aren't human, such as fish, and now we're bringing in boars and others, so this has to be designed generically.
+- Even humans should be classified under the animal category in some capacity, because later, in the space age, there will very likely be aliens: non-humans who are intelligent.
+- Make sure it's designed correctly for classifying everything. It's almost like a taxonomy, without getting too complex, but that's what we have to be prepared for.
+
+## Maps, and knowing what you know
+
+Added 2026-09-29. **A phase after the animal work, before the vocabulary conversation.** After it, we should be in a good spot to try random scenarios.
+
+- A person knows only what they have observed: they can't know the world around them until they've seen it. Your knowledge of your surroundings, and what your memory holds, will be a very important key item in a universe game: knowing what you know.
+- You might find a map on the island while exploring. It fills in your memory with more about the island. So there has to be a way to expand your memory from what you've been told or found in a map.
+- That doesn't make it definite: a map could be wrong. It's marked in your memory as a possibility, not a certainty.
+- As you explore by the map and confirm things with your own eyes, what you know grows.
+- If the map is wrong, you have to correct your memory. The same happens in the space age: given a star chart, you travel somewhere and only when you get there find the chart was wrong, or that the star it showed has since exploded.
+- Even what you do know can change. A marker you spotted on the way out may be gone on the way back, for any number of reasons. Now you're in a contradiction: what you know is no longer there, and you have to correct it. You must be able to keep correcting your memory.
+
 ## How new vocabulary emerges
 
 Added 2026-09-29, **for a conversation after the where-am-I? and living-with-the-island challenges, and before any unplanned (validation) scenarios.**

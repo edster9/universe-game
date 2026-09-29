@@ -208,6 +208,12 @@ pub struct Life {
     /// Sleep, if it needs it: how long it can stay awake for each night's
     /// sleep, and how long that sleep takes.
     pub sleep: Option<Sleep>,
+    /// Its reserve: the most energy-rich store it digests, and how much of it
+    /// the body had to begin with.
+    pub reserve: Option<(MaterialId, Mass)>,
+    /// How much of a surplus food's energy it keeps when it stores it in its
+    /// reserve, in parts per ten thousand. `None` if it can't.
+    pub stores: Option<u64>,
     /// The tick until which it's working hard.
     pub working_until: u64,
     /// Why it died, or `None` while it's alive.
@@ -274,6 +280,32 @@ pub enum Role {
     Pushing,
     /// Holds things put in it, up to a mass. Measured: what it can hold.
     Containing,
+}
+
+/// A kind of creature or growing thing, from data. Kinds form a hierarchy:
+/// every kind but the broadest has a parent. See docs/ideas/kinds.md.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Kind {
+    pub label: String,
+    pub parent: Option<String>,
+    /// If members act on instinct, the rules they follow. Otherwise they're
+    /// persons, acting on commands.
+    pub instinct: Option<Instinct>,
+}
+
+/// The rules an instinct follows, beyond looking after its own body.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Instinct {
+    /// Kinds it runs from when one is at the same place.
+    pub flees: Vec<String>,
+    /// How long it rests when it has nothing to do, in seconds.
+    pub rest: u64,
+    /// The chance it wanders when it has nothing to do, in parts per ten
+    /// thousand.
+    pub wander: u64,
+    /// How long it keeps away from a place where it met what it flees, in
+    /// seconds.
+    pub wary: u64,
 }
 
 /// A body's need for sleep.
@@ -412,6 +444,16 @@ pub struct World {
     pub(crate) from_afar: BTreeMap<EntityId, String>,
     /// The places each person has seen or been to.
     pub(crate) seen: BTreeMap<EntityId, BTreeSet<EntityId>>,
+    /// Kinds of creatures and growing things, by id.
+    pub(crate) kinds: BTreeMap<String, Kind>,
+    /// What kind each thing is, for things that have one.
+    pub(crate) kind_of: BTreeMap<EntityId, String>,
+    /// The places a creature keeps to.
+    pub(crate) ranges: BTreeMap<EntityId, BTreeSet<EntityId>>,
+    /// The tick until which a creature acting on instinct is busy.
+    pub(crate) busy_until: BTreeMap<EntityId, u64>,
+    /// Places a creature keeps away from, and until when.
+    pub(crate) avoiding: BTreeMap<EntityId, BTreeMap<EntityId, u64>>,
     /// Paths that cross a liquid, and the liquid they cross.
     pub(crate) crossings: BTreeMap<(EntityId, EntityId), EntityId>,
     /// The ways out each person knows, as (from, to), for people who have
@@ -856,6 +898,58 @@ impl World {
     /// How a landmark looks from far away.
     pub fn from_afar(&self, place: EntityId) -> Option<&str> {
         self.from_afar.get(&place).map(String::as_str)
+    }
+
+    pub fn kinds(&self) -> &BTreeMap<String, Kind> {
+        &self.kinds
+    }
+
+    /// What kind something is, if it has one.
+    pub fn kind_of(&self, id: EntityId) -> Option<&str> {
+        self.kind_of.get(&id).map(String::as_str)
+    }
+
+    /// A kind and the kinds above it, nearest first.
+    pub fn lineage<'a>(&'a self, kind: &'a str) -> Vec<&'a str> {
+        let mut line = Vec::new();
+        let mut next = Some(kind);
+        while let Some(k) = next.filter(|k| !line.contains(k)) {
+            line.push(k);
+            next = self.kinds.get(k).and_then(|def| def.parent.as_deref());
+        }
+        line
+    }
+
+    /// Whether something is of a kind, or of a kind beneath it.
+    pub fn is_kind(&self, id: EntityId, kind: &str) -> bool {
+        self.kind_of(id)
+            .is_some_and(|own| self.lineage(own).contains(&kind))
+    }
+
+    /// The instinct something acts on, from its nearest kind that has one.
+    pub fn instinct(&self, id: EntityId) -> Option<&Instinct> {
+        self.lineage(self.kind_of(id)?)
+            .into_iter()
+            .find_map(|k| self.kinds.get(k)?.instinct.as_ref())
+    }
+
+    /// The places a creature keeps to, if it keeps to some.
+    pub fn range(&self, id: EntityId) -> Option<&BTreeSet<EntityId>> {
+        self.ranges.get(&id)
+    }
+
+    /// Whether a creature is keeping away from a place, having been scared
+    /// there.
+    pub fn is_avoiding(&self, id: EntityId, place: EntityId) -> bool {
+        self.avoiding
+            .get(&id)
+            .and_then(|places| places.get(&place))
+            .is_some_and(|&until| until > self.tick)
+    }
+
+    /// Whether a creature acting on instinct is still busy.
+    pub fn is_busy(&self, id: EntityId) -> bool {
+        self.busy_until.get(&id).is_some_and(|&t| t > self.tick)
     }
 
     /// How many places someone has seen, from afar or by being there.

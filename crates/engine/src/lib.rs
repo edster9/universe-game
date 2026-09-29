@@ -8,6 +8,7 @@
 pub mod data;
 pub mod datasheet;
 pub mod gate;
+pub mod instinct;
 pub mod intent;
 pub mod laws;
 pub mod matter;

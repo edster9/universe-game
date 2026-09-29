@@ -128,6 +128,10 @@ struct PlaceDef {
     label: String,
     #[serde(default)]
     exits: Vec<String>,
+    /// How far it is to each exit. A distance given from either end counts
+    /// both ways.
+    #[serde(default)]
+    distances: BTreeMap<String, String>,
     temperature: Option<String>,
 }
 
@@ -164,6 +168,10 @@ struct LifeDef {
     gulp: String,
     coldest: String,
     hottest: String,
+    /// The most it can carry.
+    carry: Option<String>,
+    /// Walking speed unloaded.
+    walk: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -325,6 +333,20 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
                     ));
                 }
             }
+        }
+        for (to, distance) in &def.distances {
+            let other = world
+                .find_by_key(to)
+                .filter(|o| exits.contains(o))
+                .ok_or_else(|| {
+                    LoadError(format!(
+                        "{} has a distance to {to:?}, which isn't one of its exits",
+                        def.id
+                    ))
+                })?;
+            let length = parse_length(&def.id, distance)?;
+            world.distances.insert((place, other), length);
+            world.distances.entry((other, place)).or_insert(length);
         }
         world.exits.insert(place, exits);
     }
@@ -850,6 +872,17 @@ fn load_life(
         gulp: parse_mass(id, &def.gulp)?,
         coldest: def.coldest.parse()?,
         hottest: def.hottest.parse()?,
+        carry_limit: def
+            .carry
+            .as_deref()
+            .map(|c| parse_mass(id, c))
+            .transpose()?,
+        walking_speed: def
+            .walk
+            .as_deref()
+            .map(|w| parse_quantity(w, property::SPEED, "a speed like \"1.2 m/s\""))
+            .transpose()?
+            .unwrap_or(1_200),
         working_until: 0,
         died_of: None,
     })

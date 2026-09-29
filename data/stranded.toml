@@ -25,6 +25,10 @@
 # Stage 5, timber: standing trees, felled a 20 kg log at a time with an axe.
 # A log takes an hour with a 1 mm edge, and longer the blunter the axe.
 #
+# Walking and carrying: paths between places have lengths; walking takes the
+# distance at 1.2 m/s, slowed to half speed under a full 40 kg load, and is
+# hard work like any other.
+#
 # Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
 # and 300 W working; about 2 kg of water lost a day at rest, twice that when
 # working, plus sweat; death after losing about 7 kg of water (10% of body weight).
@@ -268,18 +272,21 @@ parts = { a = "stone", b = "stone", c = "stone", d = "stone", e = "stone" }
 id = "beach"
 label = "the beach"
 exits = ["stream", "forest"]
+distances = { stream = "400 m", forest = "300 m" }
 temperature = "300 K"
 
 [[place]]
 id = "stream"
 label = "the stream"
 exits = ["beach", "forest"]
+distances = { forest = "300 m" }
 temperature = "300 K"
 
 [[place]]
 id = "forest"
 label = "the forest"
 exits = ["beach", "stream", "hillside"]
+distances = { hillside = "500 m" }
 temperature = "300 K"
 
 [[place]]
@@ -295,7 +302,7 @@ at = "beach"
 mass = "70 kg"
 composition = { water = "60%", flesh = "26%", fat = "14%" }
 temperature = "310 K"
-life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K" }
+life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K", carry = "40 kg", walk = "1.2 m/s" }
 
 [[item]]
 id = "sea"

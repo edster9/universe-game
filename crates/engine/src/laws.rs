@@ -85,6 +85,8 @@ pub enum Refusal {
     NotGatherable(String),
     NeedsTool { source: String, tool: String },
     NoFlame(String),
+    TooHeavy { carrying: Mass, limit: Mass },
+    TheyCantCarry(String),
 }
 
 impl fmt::Display for Refusal {
@@ -148,6 +150,13 @@ impl fmt::Display for Refusal {
                 write!(f, "you need {article} {tool} for {source}")
             }
             Refusal::NoFlame(name) => write!(f, "there's no flame nearby to light {name} from"),
+            Refusal::TooHeavy { carrying, limit } => {
+                write!(
+                    f,
+                    "that's too much to carry: you have {carrying} of the {limit} you can manage"
+                )
+            }
+            Refusal::TheyCantCarry(name) => write!(f, "{name} can't carry that much more"),
             Refusal::NotGatherable(name) => {
                 write!(f, "{name} isn't loose pieces you can gather by hand")
             }
@@ -231,6 +240,13 @@ pub fn perform(
 pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
+        Intent::Go { place } => {
+            let Some(here) = world.location(actor) else {
+                return 0;
+            };
+            find(world, world.exits(here).iter().copied(), place)
+                .map_or(0, |to| walking_time(world, actor, here, to))
+        }
         Intent::Gather { source } => {
             let Some(reach) = Reach::of(world, actor).ok() else {
                 return 0;
@@ -405,6 +421,8 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         Intent::Give { item, to } => {
             let found = carrying(item)?;
             let recipient = person_here(world, actor, &reach.around, to)?;
+            can_carry(world, recipient, world.mass(found))
+                .map_err(|_| Refusal::TheyCantCarry(named(world, recipient)))?;
             Ok(vec![Change::Move {
                 entity: found,
                 to: recipient,
@@ -446,6 +464,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if world.mass(from) <= amount {
                 return Err(Refusal::Exhausted(named(world, from)));
             }
+            can_carry(world, actor, amount)?;
             let take =
                 matter::proportional(composition, amount).expect("there is more than the amount");
             Ok(vec![Change::Split {
@@ -856,6 +875,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if world.mass(found) <= pieces.size {
                 return Err(Refusal::Exhausted(named(world, found)));
             }
+            can_carry(world, actor, pieces.size)?;
             // Some sources can't be gathered with bare hands.
             if let Some(needs) = &pieces.needs {
                 if let Some(tool) = needed_tool(world, &reach.carried, Some(needs)) {
@@ -913,6 +933,7 @@ fn lift(world: &World, actor: EntityId, found: EntityId) -> Result<Vec<Change>, 
     if world.composition(found).is_some() && !world.is_all(found, State::Solid) {
         return Err(Refusal::NotSolid(named(world, found)));
     }
+    can_carry(world, actor, world.mass(found))?;
     if world
         .temperature(found)
         .is_some_and(|t| t > world.settings().max_touch_temperature)
@@ -959,6 +980,39 @@ fn harder_than(world: &World, tool: EntityId, target: EntityId) -> Result<(), Re
             target: named(world, target),
         })
     }
+}
+
+/// Seconds to walk between two places: the distance at the walker's speed,
+/// which a full load halves. People with no body walk instantly.
+pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> u64 {
+    let distance = u128::from(world.distance(from, to));
+    let Some(life) = world.life(actor).filter(|_| distance > 0) else {
+        return 0;
+    };
+    let speed = u128::from(life.walking_speed.max(1));
+    let (load, limit) = match life.carry_limit {
+        Some(limit) => (
+            u128::from(world.carried_mass(actor).mg()),
+            u128::from(limit.mg()).max(1),
+        ),
+        None => (0, 1),
+    };
+    let load = load.min(limit);
+    // µm ÷ (mm/s × 1000) is seconds; a load of L of limit M slows it to (2M − L) / 2M.
+    let seconds = distance * 2 * limit / (speed * 1_000 * (2 * limit - load));
+    u64::try_from(seconds).unwrap_or(u64::MAX).max(1)
+}
+
+/// Refuses if taking on `extra` would put someone over what they can carry.
+fn can_carry(world: &World, who: EntityId, extra: Mass) -> Result<(), Refusal> {
+    let Some(limit) = world.life(who).and_then(|l| l.carry_limit) else {
+        return Ok(());
+    };
+    let carrying = world.carried_mass(who);
+    if carrying.mg().saturating_add(extra.mg()) > limit.mg() {
+        return Err(Refusal::TooHeavy { carrying, limit });
+    }
+    Ok(())
 }
 
 /// The first thing carried that's the shape or design `needs` names.

@@ -93,6 +93,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Law | Status | Used by |
 | --- | --- | --- |
 | People move between places along exits | in | slice 0 |
+| Walking takes the path's length at the walker's speed, which a full load halves; it's hard work | in | stranded |
+| A body can carry only up to its limit | in | stranded |
 | Some routes can only be crossed in something that floats, taking distance ÷ speed | planned | stranded 8 |
 
 ## Money and knowledge

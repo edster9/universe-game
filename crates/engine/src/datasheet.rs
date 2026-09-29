@@ -60,6 +60,7 @@ pub enum Property {
     FindChance,
     Needs,
     GrowsTo,
+    Carrying,
 }
 
 impl Property {
@@ -106,6 +107,7 @@ impl Property {
             Property::FindChance => "chance a search finds a piece",
             Property::Needs => "gathering needs",
             Property::GrowsTo => "grows back up to",
+            Property::Carrying => "carrying",
         }
     }
 }
@@ -232,6 +234,12 @@ pub fn measure(world: &World, id: EntityId) -> Datasheet {
             .copied()
             .unwrap_or(Mass::ZERO);
         sheet.set(Property::Alive, Value::Flag(life.died_of.is_none()));
+        if let Some(limit) = life.carry_limit {
+            sheet.set(
+                Property::Carrying,
+                Value::Text(format!("{} of {limit}", world.carried_mass(id))),
+            );
+        }
         sheet.set(
             Property::BodyFluid,
             Value::Text(format!("{fluid} (dies below {})", life.fluid_minimum)),

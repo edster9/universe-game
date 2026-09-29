@@ -159,6 +159,11 @@ pub struct Life {
     /// It dies outside this range of body temperature.
     pub coldest: Temperature,
     pub hottest: Temperature,
+    /// The most it can carry. `None` means no limit.
+    pub carry_limit: Option<Mass>,
+    /// Walking speed with nothing to carry, in mm per second. A full load
+    /// halves it.
+    pub walking_speed: u64,
     /// The tick until which it's working hard.
     pub working_until: u64,
     /// Why it died, or `None` while it's alive.
@@ -315,6 +320,8 @@ pub struct World {
     pub(crate) locations: BTreeMap<EntityId, EntityId>,
     /// Being a place means having exits, even if there are none.
     pub(crate) exits: BTreeMap<EntityId, Vec<EntityId>>,
+    /// How far it is between two places, in µm. Missing means no distance.
+    pub(crate) distances: BTreeMap<(EntityId, EntityId), u64>,
     /// Each place's surrounding temperature.
     pub(crate) ambient: BTreeMap<EntityId, Temperature>,
     /// Heat each place's surroundings have taken in.
@@ -690,6 +697,21 @@ impl World {
 
     pub fn exits(&self, place: EntityId) -> &[EntityId] {
         self.exits.get(&place).map_or(&[], Vec::as_slice)
+    }
+
+    /// How far it is from one place to another, in µm.
+    pub fn distance(&self, from: EntityId, to: EntityId) -> u64 {
+        self.distances.get(&(from, to)).copied().unwrap_or(0)
+    }
+
+    /// The total mass someone is carrying.
+    pub fn carried_mass(&self, holder: EntityId) -> Mass {
+        let total: u64 = self
+            .contents(holder)
+            .iter()
+            .map(|&c| self.mass(c).mg())
+            .sum();
+        Mass::from_mg(total)
     }
 
     pub fn ambient(&self, place: EntityId) -> Temperature {

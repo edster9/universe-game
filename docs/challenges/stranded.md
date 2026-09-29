@@ -210,6 +210,18 @@ Simplifications to revisit:
 - **Trees don't regrow**, and a felled log is a plain lump of wood with no shape.
 - **The daily test run grew to about 24 seconds**, because several proofs replay the whole axe recipe from nothing.
 
+### Walking and carrying. Added 2026-09-28.
+
+Not a stage of its own, but needed from here on: hauling logs to the beach, and any character walking around a world.
+
+- **Paths between places have lengths** in data. Walking takes the distance at the walker's speed (1.2 m/s here), and it's hard work, burning energy and water like any other.
+- **A body has a carrying limit** (40 kg here). Taking, gathering, digging, or being given more is refused.
+- **Load slows you down**, to half speed at a full load.
+
+[stranded-walking-and-carrying.txt](../../data/scripts/stranded-walking-and-carrying.txt): 300 m takes 4 min 10 s unloaded and 8 min 20 s under 40 kg of driftwood, and a 21st log is refused. Worlds without distances, like the slice worlds, still walk instantly.
+
+Simplification: the carried mass counts, not its bulk. Twenty driftwood logs weigh 40 kg; nothing yet says they're too awkward to hold at once.
+
 ## How it's tested
 
 Decided 2026-09-28.

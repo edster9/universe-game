@@ -1,0 +1,20 @@
+# Stranded: walking takes time and a load slows you. Paths have lengths;
+# walking goes at 1.2 m/s unloaded, and a full 40 kg load halves that. Taking
+# more than you can manage is refused.
+world stranded.toml
+as survivor
+luck average
+
+go forest
+expect said (that took 4 min 10 s.)
+go beach
+repeat 20
+  gather driftwood
+end
+try gather driftwood
+expect said too much to carry
+datasheet me
+expect said carrying: 40 kg of 40 kg
+go forest
+expect said (that took 8 min 20 s.)
+expect conserved

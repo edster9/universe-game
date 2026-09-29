@@ -268,11 +268,41 @@ impl Session {
                         _ => None,
                     })
                     .collect();
-                format!(
-                    "You rub them together for {}. {}.",
-                    units::show_duration(w.settings().rubbing_time),
-                    sentence_case(&parts.join(", and "))
-                )
+                let session = match intent {
+                    Intent::Rub {
+                        seconds: Some(s), ..
+                    } => *s,
+                    _ => w.settings().rubbing_time,
+                };
+                let mut text = format!(
+                    "You rub them together for {}.",
+                    units::show_duration(session)
+                );
+                if !parts.is_empty() {
+                    text = format!("{text} {}.", sentence_case(&parts.join(", and ")));
+                }
+                // What the rubbing wore off, and how hot it got.
+                let dust = changes.iter().find_map(|c| match c {
+                    Change::StartActivity {
+                        activity: engine::world::Activity::Rubbing { dust, .. },
+                        ..
+                    } => Some(*dust),
+                    _ => None,
+                });
+                if let Some(dust) = dust.filter(|&d| w.exists(d)) {
+                    let state = if w.is_burning(dust) {
+                        ", and it's smouldering"
+                    } else {
+                        ""
+                    };
+                    text = format!(
+                        "{text} {} of {} wears off, at {}{state}.",
+                        w.mass(dust),
+                        w.label(dust),
+                        w.temperature(dust).unwrap_or_default()
+                    );
+                }
+                text
             }
             (Intent::Assemble { .. }, Some(Change::Assemble { .. })) => {
                 let made = w
@@ -298,6 +328,10 @@ impl Session {
             (Intent::Gather { .. }, Some(Change::Exert { .. }) | None) => {
                 "You search but find nothing.".into()
             }
+            (Intent::Divide { .. }, Some(Change::Split { take, .. })) => format!(
+                "You pull it apart, and now hold {} of it in each hand.",
+                Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX))
+            ),
             (Intent::Gather { .. }, Some(Change::Split { take, .. })) => format!(
                 "You find {} of {}.",
                 Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
@@ -426,6 +460,8 @@ impl Session {
                 format!("{} works hard until {until} s", w.label(agent))
             }
             Change::Die { agent, cause } => format!("{} dies of {cause}", w.label(*agent)),
+            &Change::StartActivity { agent, .. } => format!("{} starts rubbing", w.label(agent)),
+            &Change::EndActivity { agent } => format!("{} stops", w.label(agent)),
         }
     }
 
@@ -464,6 +500,9 @@ impl Session {
                                 .designs()
                                 .get(design)
                                 .map_or(design.clone(), |x| x.label.clone()),
+                            Requirement::Material(material) => {
+                                format!("any piece of {}", w.materials()[material].label)
+                            }
                         };
                         format!("{slot}: {needs}")
                     })

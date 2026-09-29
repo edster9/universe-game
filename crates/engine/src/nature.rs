@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 use crate::gate::{Cause, Change, Fault, Holder};
 use crate::matter::{self, Composition, State};
 use crate::units::{Energy, Mass};
-use crate::world::{EntityId, World};
+use crate::world::{Activity, EntityId, World};
 
 /// How far from its surroundings' temperature something non-living can be
 /// and still count as calm, in mK.
@@ -45,13 +45,17 @@ type Law = fn(&World, u64) -> Vec<Change>;
 /// `dt` seconds of nature, as one step.
 fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
     let now = world.tick();
-    let laws: [Law; 9] = [
+    let laws: [Law; 13] = [
         burn,
+        burn_in_the_open,
+        friction,
         share_heat,
+        conduct,
         lose_heat,
         live,
         clear_air,
         limits_of_life,
+        finish_activities,
         separate,
         pool,
         set_shapes,
@@ -70,7 +74,7 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
 /// world's calm step otherwise. A step never runs past the end of someone's
 /// hard work.
 fn step_size(world: &World, left: u64) -> u64 {
-    if world.chambers.values().any(|c| c.lit) {
+    if world.chambers.values().any(|c| c.lit) || !world.activities.is_empty() {
         return 1;
     }
     for &id in world.matter.keys() {
@@ -96,7 +100,7 @@ fn step_size(world: &World, left: u64) -> u64 {
 
 fn matter_pieces(world: &World, holder: EntityId) -> Vec<EntityId> {
     world
-        .contents(holder)
+        .held(holder)
         .into_iter()
         .filter(|&e| world.composition(e).is_some())
         .collect()
@@ -227,19 +231,35 @@ fn lose_heat(world: &World, dt: u64) -> Vec<Change> {
         let chamber = world
             .location(id)
             .and_then(|l| world.chamber(l).map(|c| (l, c)));
-        let rate = if let Some(life) = world.life.get(&id) {
-            u128::from(life.heat_loss)
+        let difference = u128::from(temperature.mk() - ambient.mk());
+        let loss = if let Some(life) = world.life.get(&id) {
+            u128::from(life.heat_loss) * difference * u128::from(dt) / 1_000
         } else if let Some((chamber_id, chamber)) = chamber {
             let total = chamber_capacity[&chamber_id];
-            if total == 0 {
+            let rate = if total == 0 {
                 0
             } else {
                 u128::from(chamber.heat_loss) * capacity / total
-            }
+            };
+            rate * difference * u128::from(dt) / 1_000
+        } else if let (Some(convection), Some(area)) =
+            (world.settings.convection, surface(world, id))
+        {
+            // Convection from the surface, plus radiation, which dominates
+            // once something glows.
+            let convected =
+                u128::from(convection) * area * difference * u128::from(dt) / 1_000_000_000_000;
+            convected
+                + radiated(
+                    area,
+                    temperature.mk(),
+                    ambient.mk(),
+                    world.settings.emissivity,
+                    dt,
+                )
         } else {
-            u128::from(world.settings.open_air_heat_loss)
+            u128::from(world.settings.open_air_heat_loss) * difference * u128::from(dt) / 1_000
         };
-        let loss = rate * u128::from(temperature.mk() - ambient.mk()) * u128::from(dt) / 1_000;
         let above_ambient =
             u128::from(energy.uj()).saturating_sub(matter::energy_at(ambient, capacity));
         let loss = loss.min(above_ambient);
@@ -249,6 +269,271 @@ fn lose_heat(world: &World, dt: u64) -> Vec<Change> {
                 to: Holder::Surroundings(place),
                 amount: Energy::from_uj(u64::try_from(loss).expect("part of one piece's heat")),
             });
+        }
+    }
+    changes
+}
+
+/// Surface area of a piece in µm², if its materials' densities are known.
+fn surface(world: &World, id: EntityId) -> Option<u128> {
+    matter::surface_area(&world.materials, world.matter.get(&id)?)
+}
+
+/// Heat radiated in `dt` seconds, in µJ: emissivity × σ × area × (T⁴ − T₀⁴).
+fn radiated(area_um2: u128, mk: u64, ambient_mk: u64, emissivity: u64, dt: u64) -> u128 {
+    // In centikelvin and mm², σ × 10¹⁴ = 5,670,374 gives watts × 10²⁸.
+    let fourth = |mk: u64| u128::from(mk / 10).pow(4);
+    let difference = fourth(mk).saturating_sub(fourth(ambient_mk));
+    let watts_e28 = 5_670_374u128
+        .saturating_mul(area_um2 / 1_000_000)
+        .saturating_mul(difference);
+    // Watts × 10²⁸ ÷ 10²² is µJ per second.
+    watts_e28 / 1_000_000_000_000_000_000 * u128::from(emissivity) * u128::from(dt) / 100_000_000
+}
+
+/// Anything holding a material that burns on its own, hotter than that
+/// material's ignition point, burns: its surface burns away at the material's
+/// burn speed, and the energy released heats it. A share of that heat goes
+/// into the things held with it, split by their surfaces: a flame heats what
+/// it's piled with. Inside a lit chamber, the chamber's own draught does the
+/// burning instead.
+fn burn_in_the_open(world: &World, dt: u64) -> Vec<Change> {
+    let mut changes = Vec::new();
+    for (&id, composition) in &world.matter {
+        let in_lit_chamber = world
+            .location(id)
+            .and_then(|l| world.chamber(l))
+            .is_some_and(|c| c.lit);
+        if !world.is_burning(id) || in_lit_chamber {
+            continue;
+        }
+        let Some(area) = surface(world, id) else {
+            continue;
+        };
+        let temperature = world.temperature(id).unwrap_or_default();
+        for (&material, &mass) in composition {
+            let m = &world.materials[&material];
+            if !m.burns() || m.ignition_point.is_none_or(|point| temperature < point) {
+                continue;
+            }
+            let amount =
+                (area * u128::from(m.burn_speed) * u128::from(dt) / 1_000_000_000_000).max(1);
+            let amount = u64::try_from(amount).unwrap_or(u64::MAX).min(mass.mg());
+            if amount == 0 {
+                continue;
+            }
+            changes.push(Change::Burn {
+                entity: id,
+                material,
+                mass: Mass::from_mg(amount),
+            });
+            let released = u128::from(amount) * u128::from(m.energy_density);
+            changes.extend(flame(world, id, released));
+        }
+    }
+    changes
+}
+
+/// Heat from a burning piece to the other things held with it, split by
+/// their surfaces.
+fn flame(world: &World, id: EntityId, released: u128) -> Vec<Change> {
+    let Some(holder) = world.location(id).filter(|&h| world.is_container(h)) else {
+        return Vec::new();
+    };
+    let neighbours: Vec<(EntityId, u128)> = matter_pieces(world, holder)
+        .into_iter()
+        .filter(|&n| n != id)
+        .filter_map(|n| surface(world, n).map(|a| (n, a)))
+        .collect();
+    let total: u128 = neighbours.iter().map(|(_, a)| a).sum();
+    if total == 0 {
+        return Vec::new();
+    }
+    let shared = released * u128::from(world.settings.flame_share) / 10_000;
+    neighbours
+        .into_iter()
+        .filter_map(|(n, area)| {
+            let amount = shared * area / total;
+            (amount > 0).then(|| Change::Heat {
+                from: Holder::Thing(id),
+                to: Holder::Thing(n),
+                amount: Energy::from_uj(u64::try_from(amount).expect("part of the heat released")),
+            })
+        })
+        .collect()
+}
+
+/// Rubbing two things together wears the softer one into dust, and turns a
+/// share of the worker's extra effort into heat in that dust.
+fn friction(world: &World, dt: u64) -> Vec<Change> {
+    let mut changes = Vec::new();
+    let reference = world.settings.reference_temperature;
+    for (&agent, activity) in &world.activities {
+        let Activity::Rubbing {
+            first,
+            second,
+            dust,
+            ..
+        } = *activity;
+        let (Some(life), true) = (world.life.get(&agent), world.is_living(agent)) else {
+            continue;
+        };
+        if !world.matter.contains_key(&dust) {
+            continue;
+        }
+        let hardness = |id: EntityId| {
+            world.matter.get(&id).and_then(matter::dominant).map(|m| {
+                world.materials[&m]
+                    .hardness_at(world.temperature(id).unwrap_or(reference), reference)
+            })
+        };
+        let softer = if hardness(second) < hardness(first) {
+            second
+        } else {
+            first
+        };
+        if let Some(composition) = world.matter.get(&softer) {
+            let wear =
+                (world.settings.wear_rate * dt).min(world.mass(softer).mg().saturating_sub(1));
+            if let Some(take) =
+                matter::proportional(composition, Mass::from_mg(wear)).filter(|t| !t.is_empty())
+            {
+                changes.push(Change::Shift {
+                    from: softer,
+                    to: dust,
+                    take,
+                });
+            }
+        }
+        let effort = life.working_power.saturating_sub(life.resting_power);
+        let heat = u128::from(effort) * u128::from(world.settings.friction_share) / 10_000
+            * u128::from(dt);
+        let heat = heat.min(u128::from(world.heat(agent).map_or(0, |e| e.uj())));
+        if heat > 0 {
+            changes.push(Change::Heat {
+                from: Holder::Thing(agent),
+                to: Holder::Thing(dust),
+                amount: Energy::from_uj(u64::try_from(heat).expect("part of the body's heat")),
+            });
+        }
+    }
+    changes
+}
+
+/// Things that touch pass heat between them, in proportion to the
+/// difference and to the smaller one's surface. Things in the same container
+/// (other than a chamber, which stirs everything to one temperature) touch,
+/// and so do dust and the two things being rubbed to make it.
+fn conduct(world: &World, dt: u64) -> Vec<Change> {
+    let mut pairs: Vec<(EntityId, EntityId)> = Vec::new();
+    for &holder in &world.containers {
+        if world.chambers.contains_key(&holder) {
+            continue;
+        }
+        let pieces = matter_pieces(world, holder);
+        for (i, &a) in pieces.iter().enumerate() {
+            for &b in &pieces[i + 1..] {
+                pairs.push((a, b));
+            }
+        }
+    }
+    for activity in world.activities.values() {
+        let Activity::Rubbing {
+            first,
+            second,
+            dust,
+            ..
+        } = *activity;
+        pairs.push((dust, first));
+        pairs.push((dust, second));
+    }
+
+    // First, each pair's flow on its own terms: in proportion to the
+    // difference and the smaller surface, never past an even temperature.
+    let mut flows: Vec<(EntityId, EntityId, u128)> = Vec::new();
+    for (a, b) in pairs {
+        let (Some(area_a), Some(area_b)) = (surface(world, a), surface(world, b)) else {
+            continue;
+        };
+        let (Some(ta), Some(tb)) = (world.temperature(a), world.temperature(b)) else {
+            continue;
+        };
+        let (hot, cold) = if ta > tb { (a, b) } else { (b, a) };
+        let difference = u128::from(ta.mk().abs_diff(tb.mk()));
+        if difference == 0 {
+            continue;
+        }
+        let area = area_a.min(area_b);
+        let flow = u128::from(world.settings.touch_transfer) * area * difference * u128::from(dt)
+            / 1_000_000_000_000;
+        let (ch, cc) = (world.heat_capacity(hot), world.heat_capacity(cold));
+        let even = if ch + cc == 0 {
+            0
+        } else {
+            difference * ch / 1_000 * cc / (ch + cc)
+        };
+        let flow = flow.min(even);
+        if flow > 0 {
+            flows.push((hot, cold, flow));
+        }
+    }
+
+    // Then, however many things a piece touches, it gives away at most half
+    // the heat it holds above its coldest neighbour, so it can't overshoot.
+    let mut out: BTreeMap<EntityId, (u128, u64)> = BTreeMap::new();
+    for &(hot, cold, flow) in &flows {
+        let coldest = world.temperature(cold).map_or(0, |t| t.mk());
+        let entry = out.entry(hot).or_insert((0, coldest));
+        entry.0 += flow;
+        entry.1 = entry.1.min(coldest);
+    }
+    let allowed: BTreeMap<EntityId, (u128, u128)> = out
+        .into_iter()
+        .map(|(hot, (total, coldest))| {
+            let above = u128::from(
+                world
+                    .temperature(hot)
+                    .map_or(0, |t| t.mk())
+                    .saturating_sub(coldest),
+            );
+            let spare = above * world.heat_capacity(hot) / 1_000 / 2;
+            (hot, (spare.min(total), total))
+        })
+        .collect();
+
+    flows
+        .into_iter()
+        .filter_map(|(hot, cold, flow)| {
+            let (spare, total) = allowed[&hot];
+            let flow = if total == 0 { 0 } else { flow * spare / total };
+            (flow > 0).then(|| Change::Heat {
+                from: Holder::Thing(hot),
+                to: Holder::Thing(cold),
+                amount: Energy::from_uj(u64::try_from(flow).expect("part of one piece's heat")),
+            })
+        })
+        .collect()
+}
+
+/// An activity stops when its time is up, or when the worker dies or lets go
+/// of what they were rubbing.
+fn finish_activities(world: &World, _dt: u64) -> Vec<Change> {
+    let mut changes = Vec::new();
+    for (&agent, activity) in &world.activities {
+        let Activity::Rubbing {
+            first,
+            second,
+            dust,
+            until,
+        } = *activity;
+        let holding = |id: EntityId| world.location(id) == Some(agent);
+        let over = world.tick >= until
+            || !world.is_living(agent)
+            || !holding(first)
+            || !holding(second)
+            || !world.matter.contains_key(&dust);
+        if over {
+            changes.push(Change::EndActivity { agent });
         }
     }
     changes
@@ -514,4 +799,25 @@ fn set_shapes(world: &World, _dt: u64) -> Vec<Change> {
         }
     }
     changes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn glowing_things_radiate_far_more_than_warm_ones() {
+        // Radiation grows with the fourth power of temperature. At 1300 K a
+        // surface is ten times further above 300 K air than at 400 K, but
+        // radiates hundreds of times as much.
+        let area = 10_000_000_000; // 100 cm²
+        let warm = radiated(area, 400_000, 300_000, 9_000, 1);
+        let glowing = radiated(area, 1_300_000, 300_000, 9_000, 1);
+        assert!(glowing > 100 * warm, "{glowing} vs {warm}");
+        // 100 cm² at 1300 K radiates about 1.45 kW.
+        assert!(
+            (1_400_000_000..1_500_000_000).contains(&glowing),
+            "{glowing} µJ"
+        );
+    }
 }

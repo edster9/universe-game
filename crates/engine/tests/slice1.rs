@@ -145,11 +145,22 @@ fn the_same_chain_makes_a_copper_blade_from_a_different_data_file() {
     run_chain(COPPER, "copper");
 }
 
-/// The engine's code must not know any material, shape, or item by name.
+/// The engine's code must not know any material, shape, item, or design by
+/// name. A one-word name is forbidden as a word. A longer name is forbidden
+/// as a phrase: the engine may say "fire" (things catch fire) but not "fire
+/// ring", which is a thing.
 #[test]
 fn the_engine_names_no_materials_shapes_or_items() {
-    let mut forbidden: BTreeSet<String> = BTreeSet::from(["sword".to_string()]);
-    let ignore = ["the", "and", "of", "with", "for"];
+    let mut words: BTreeSet<String> = BTreeSet::from(["sword".to_string()]);
+    let mut phrases: BTreeSet<String> = BTreeSet::new();
+    let ignore = ["the", "and", "of", "with", "for", "a"];
+    let normal = |text: &str| {
+        text.to_lowercase()
+            .split(|c: char| !c.is_alphabetic())
+            .filter(|w| !w.is_empty() && !ignore.contains(w))
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
     for text in [
         IRON,
         COPPER,
@@ -163,12 +174,14 @@ fn the_engine_names_no_materials_shapes_or_items() {
             };
             for entry in entries {
                 for field in ["id", "label"] {
-                    if let Some(name) = entry.get(field).and_then(|v| v.as_str()) {
-                        forbidden.extend(
-                            name.split(|c: char| !c.is_alphabetic())
-                                .map(str::to_lowercase)
-                                .filter(|w| w.len() > 2 && !ignore.contains(&w.as_str())),
-                        );
+                    let Some(name) = entry.get(field).and_then(|v| v.as_str()) else {
+                        continue;
+                    };
+                    let name = normal(name);
+                    if name.contains(' ') {
+                        phrases.insert(name);
+                    } else if name.len() > 2 {
+                        words.insert(name);
                     }
                 }
             }
@@ -179,11 +192,16 @@ fn the_engine_names_no_materials_shapes_or_items() {
     let mut found = Vec::new();
     for entry in std::fs::read_dir(src).unwrap() {
         let path = entry.unwrap().path();
-        let code = std::fs::read_to_string(&path).unwrap().to_lowercase();
-        let words: BTreeSet<&str> = code.split(|c: char| !c.is_alphabetic()).collect();
-        for name in &forbidden {
-            if words.contains(name.as_str()) {
-                found.push(format!("{} mentions {name:?}", path.display()));
+        let code = std::fs::read_to_string(&path).unwrap();
+        let code = format!(" {} ", normal(&code));
+        for word in &words {
+            if code.contains(&format!(" {word} ")) {
+                found.push(format!("{} mentions {word:?}", path.display()));
+            }
+        }
+        for phrase in &phrases {
+            if code.contains(&format!(" {phrase} ")) {
+                found.push(format!("{} mentions {phrase:?}", path.display()));
             }
         }
     }
@@ -192,9 +210,8 @@ fn the_engine_names_no_materials_shapes_or_items() {
         "the engine names things it shouldn't:\n{}",
         found.join("\n")
     );
-    assert!(
-        forbidden.contains("iron") && forbidden.contains("copper") && forbidden.contains("blade")
-    );
+    assert!(words.contains("iron") && words.contains("copper") && words.contains("blade"));
+    assert!(phrases.contains("fire ring"));
 }
 
 #[test]

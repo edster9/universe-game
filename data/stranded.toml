@@ -5,6 +5,12 @@
 # drink from; the sea, which can't be drunk; and shellfish on the rocks,
 # gathered by hand.
 #
+# Stage 2, fire: dry grass, sticks, and driftwood to burn, and loose stones
+# for a fire ring. Rubbing two sticks wears off dust and friction heats it;
+# anything that burns catches fire above its ignition point. Heat moves
+# between things that touch, in proportion to the smaller one's surface, and
+# things lose heat to the air by their surface and, when hot, by glowing.
+#
 # Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
 # and 300 W working; about 2 kg of water lost a day at rest, twice that when
 # working, plus sweat; death after losing about 7 kg of water (10% of body weight).
@@ -16,6 +22,14 @@ max_touch_temperature = "330 K"
 seed = 1
 air_clearing = "0.1%"
 calm_step = "1 min"
+convection = "10 W/(m2*K)"
+emissivity = "90%"
+touch_transfer = "100 W/(m2*K)"
+wear_rate = "10 mg/s"
+friction_share = "50%"
+rubbing_time = "10 min"
+flame_share = "50%"
+hand_hardness = "1"
 
 [[material]]
 id = "water"
@@ -76,12 +90,62 @@ hardness = "3"
 density = "2700 kg/m3"
 
 [[material]]
+id = "wood"
+label = "wood"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1700 J/(kg*K)"
+hardness = "2"
+energy_density = "16 MJ/kg"
+burns_to = { co2 = "99%", ash = "1%" }
+ignition_point = "570 K"
+burn_speed = "15 g/(m2*s)"
+density = "600 kg/m3"
+
+[[material]]
+id = "grass"
+label = "dry grass"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "15 MJ/kg"
+burns_to = { co2 = "97%", ash = "3%" }
+ignition_point = "500 K"
+burn_speed = "30 g/(m2*s)"
+density = "100 kg/m3"
+
+[[material]]
+id = "ash"
+label = "ash"
+melting_point = "2300 K"
+boiling_point = "3500 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "1"
+density = "600 kg/m3"
+
+[[material]]
+id = "stone"
+label = "stone"
+melting_point = "1983 K"
+boiling_point = "2503 K"
+specific_heat = "730 J/(kg*K)"
+hardness = "6"
+density = "2600 kg/m3"
+
+[[material]]
 id = "co2"
 label = "carbon dioxide"
 melting_point = "195 K"
 boiling_point = "216 K"
 specific_heat = "840 J/(kg*K)"
 hardness = "0"
+
+[[design]]
+id = "fire-ring"
+label = "fire ring"
+holds = true
+parts = { a = "stone", b = "stone", c = "stone", d = "stone", e = "stone" }
 
 [[place]]
 id = "beach"
@@ -140,3 +204,48 @@ at = "stream"
 mass = "50 t"
 fixed = true
 material = "water"
+
+[[item]]
+id = "driftwood"
+label = "driftwood on the sand"
+at = "beach"
+mass = "100 kg"
+fixed = true
+material = "wood"
+pieces = { size = "2 kg", find_time = "15 min" }
+
+[[item]]
+id = "grass"
+label = "dry grass"
+at = "forest"
+mass = "20 kg"
+fixed = true
+material = "grass"
+pieces = { size = "20 g", find_time = "5 min" }
+
+[[item]]
+id = "twigs"
+label = "dry twigs"
+at = "forest"
+mass = "20 kg"
+fixed = true
+material = "wood"
+pieces = { size = "50 g", find_time = "5 min" }
+
+[[item]]
+id = "sticks"
+label = "fallen sticks"
+at = "forest"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { size = "200 g", find_time = "10 min" }
+
+[[item]]
+id = "stones"
+label = "loose stones"
+at = "hillside"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 min" }

@@ -219,7 +219,7 @@ pub fn perform(
 /// How many seconds an action takes. Most are quick enough to count as none.
 pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
-        Intent::Rub { .. } => world.settings().rubbing_time,
+        Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
         Intent::Gather { source } => Reach::of(world, actor)
             .ok()
             .and_then(|reach| find(world, reach.around.iter().copied(), source))
@@ -283,7 +283,7 @@ impl Reach {
         let inside = around
             .iter()
             .filter(|&&e| world.is_container(e))
-            .flat_map(|&e| world.contents(e))
+            .flat_map(|&e| world.held(e))
             .collect();
         Ok(Reach {
             here,
@@ -342,7 +342,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 return Err(Refusal::NotAContainer(named(world, container)));
             }
             let found =
-                find(world, world.contents(container), item).ok_or_else(|| Refusal::NotInside {
+                find(world, world.held(container), item).ok_or_else(|| Refusal::NotInside {
                     item: item.clone(),
                     container: named(world, container),
                 })?;
@@ -512,34 +512,114 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }])
         }
 
-        Intent::Rub { item, against } => {
+        Intent::Rub {
+            item,
+            against,
+            into,
+            seconds,
+        } => {
             must_know(world, actor, Process::Work)?;
             let first = carrying(item)?;
-            let second = carrying(against)?;
+            // Rubbing a thing against another of the same name means two pieces.
+            let second = find(world, carried().filter(|&p| p != first), against)
+                .or_else(|| find(world, carried(), against))
+                .ok_or_else(|| Refusal::NotCarrying(against.clone()))?;
             if first == second {
                 return Err(Refusal::NotYourself);
             }
-            // Rubbing two parts together wears each against the other, and
-            // both come out finer than either tool that made them.
+            for piece in [first, second] {
+                if world.composition(piece).is_none() {
+                    return Err(Refusal::NotAPart(named(world, piece)));
+                }
+                if !world.is_all(piece, State::Solid) {
+                    return Err(Refusal::NotSolid(named(world, piece)));
+                }
+            }
             let settings = world.settings();
             let mut changes = Vec::new();
-            for part in [first, second] {
-                let tolerance = world
-                    .tolerance(part)
-                    .filter(|_| world.is_all(part, State::Solid))
-                    .ok_or_else(|| Refusal::NotAPart(named(world, part)))?;
-                let keep = 10_000u64.saturating_sub(settings.rubbing_improvement);
-                let finer = (u128::from(tolerance) * u128::from(keep) / 10_000) as u64;
-                let finer = finer.max(settings.finest_tolerance);
-                if finer < tolerance {
-                    changes.push(Change::Refine {
-                        entity: part,
-                        tolerance: finer,
+
+            // Rubbing two parts together wears each against the other, and
+            // both come out finer than either tool that made them.
+            let session = seconds.unwrap_or(settings.rubbing_time);
+            let (a, b) = (world.tolerance(first), world.tolerance(second));
+            if let (Some(a), Some(b)) = (a, b) {
+                // A full session improves by the world's rubbing improvement;
+                // a shorter or longer one in proportion.
+                let improvement = u128::from(settings.rubbing_improvement) * u128::from(session)
+                    / u128::from(settings.rubbing_time.max(1));
+                let keep = 10_000u64.saturating_sub(u64::try_from(improvement).unwrap_or(10_000));
+                for (part, tolerance) in [(first, a), (second, b)] {
+                    let finer = (u128::from(tolerance) * u128::from(keep) / 10_000) as u64;
+                    let finer = finer.max(settings.finest_tolerance);
+                    if finer < tolerance {
+                        changes.push(Change::Refine {
+                            entity: part,
+                            tolerance: finer,
+                        });
+                    }
+                }
+                if changes.is_empty() {
+                    return Err(Refusal::AsFineAsItGets(named(world, first)));
+                }
+            }
+
+            // A living worker's effort wears dust off the softer of the two,
+            // and friction heats it. The dust falls into `into`, or on the
+            // ground. Nature carries the rubbing on for as long as it lasts.
+            if world.is_living(actor) {
+                let target = match into {
+                    Some(name) => {
+                        let found = find(world, reach.around.iter().copied(), name)
+                            .ok_or_else(|| Refusal::NotHere(name.clone()))?;
+                        if !world.is_container(found) {
+                            return Err(Refusal::NotAContainer(named(world, found)));
+                        }
+                        found
+                    }
+                    None => reach.here,
+                };
+                let reference = settings.reference_temperature;
+                let hardness = |id: EntityId| {
+                    world.composition(id).and_then(matter::dominant).map(|m| {
+                        world.materials()[&m]
+                            .hardness_at(world.temperature(id).unwrap_or(reference), reference)
+                    })
+                };
+                let softer = if hardness(second) < hardness(first) {
+                    second
+                } else {
+                    first
+                };
+                let composition = world.composition(softer).expect("checked above");
+                let wear = settings
+                    .wear_rate
+                    .max(1)
+                    .min(world.mass(softer).mg().saturating_sub(1));
+                if let Some(take) =
+                    matter::proportional(composition, Mass::from_mg(wear)).filter(|t| !t.is_empty())
+                {
+                    let dust = world.next_id();
+                    if world.activity(actor).is_some() {
+                        changes.push(Change::EndActivity { agent: actor });
+                    }
+                    changes.push(Change::Split {
+                        from: softer,
+                        take,
+                        at: target,
+                    });
+                    changes.push(Change::StartActivity {
+                        agent: actor,
+                        activity: crate::world::Activity::Rubbing {
+                            first,
+                            second,
+                            dust,
+                            until: world.tick() + session,
+                        },
                     });
                 }
             }
             if changes.is_empty() {
-                return Err(Refusal::AsFineAsItGets(named(world, first)));
+                return Err(Refusal::NotAPart(named(world, first)));
             }
             Ok(changes)
         }
@@ -563,6 +643,10 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     }
                     Requirement::Design(inner) => {
                         world.assembly(part).is_some_and(|a| &a.design == inner)
+                    }
+                    Requirement::Material(material) => {
+                        world.composition(part).and_then(matter::dominant) == Some(*material)
+                            && world.is_all(part, State::Solid)
                     }
                 };
                 let part = carried()
@@ -670,6 +754,40 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }])
         }
 
+        Intent::Divide { item } => {
+            let found = carrying(item)?;
+            let composition = world
+                .composition(found)
+                .filter(|_| world.assembly(found).is_none() && !world.is_container(found))
+                .ok_or_else(|| Refusal::CannotWork(named(world, found)))?;
+            if !world.is_all(found, State::Solid) {
+                return Err(Refusal::NotSolid(named(world, found)));
+            }
+            // Bare hands pull apart only what's soft enough.
+            let reference = world.settings().reference_temperature;
+            let temperature = world.temperature(found).unwrap_or(reference);
+            let hardest = composition
+                .keys()
+                .map(|m| world.materials()[m].hardness_at(temperature, reference))
+                .max()
+                .unwrap_or(0);
+            if hardest > world.settings().hand_hardness {
+                return Err(Refusal::TooHard {
+                    tool: "your hands".into(),
+                    target: named(world, found),
+                });
+            }
+            let half = Mass::from_mg(world.mass(found).mg() / 2);
+            let take = matter::proportional(composition, half)
+                .filter(|t| !t.is_empty())
+                .ok_or_else(|| Refusal::CannotWork(named(world, found)))?;
+            Ok(vec![Change::Split {
+                from: found,
+                take,
+                at: actor,
+            }])
+        }
+
         Intent::Gather { source } => {
             must_know(world, actor, Process::Gather)?;
             let found = find(world, reach.around.iter().copied(), source)
@@ -707,6 +825,9 @@ fn requirement_label(world: &World, requirement: &Requirement) -> String {
             .designs()
             .get(design)
             .map_or(design.clone(), |d| d.label.clone()),
+        Requirement::Material(material) => {
+            format!("piece of {}", world.materials()[material].label)
+        }
     }
 }
 
@@ -809,6 +930,21 @@ fn find(
     name: &str,
 ) -> Option<EntityId> {
     let candidates: Vec<EntityId> = candidates.into_iter().collect();
+    // "smallest …" and "largest …" choose by mass among the matches.
+    let lower = normalize(name);
+    for (word, smallest) in [("smallest ", true), ("largest ", false)] {
+        if let Some(rest) = lower.strip_prefix(word) {
+            let matching = candidates
+                .iter()
+                .copied()
+                .filter(|&id| is_called(world, id, rest) || mentions(world, id, rest));
+            return if smallest {
+                matching.min_by_key(|&id| (world.mass(id), id))
+            } else {
+                matching.max_by_key(|&id| (world.mass(id), std::cmp::Reverse(id)))
+            };
+        }
+    }
     candidates
         .iter()
         .copied()

@@ -197,6 +197,13 @@ pub mod property {
     pub const DURATION: &[(&str, u64)] = &[("day", 86_400), ("h", 3_600), ("min", 60), ("s", 1)];
     /// Power, stored in µW (so µJ per second).
     pub const POWER: &[(&str, u64)] = &[("kW", 1_000_000_000), ("W", 1_000_000), ("mW", 1_000)];
+    /// Heat passed per square metre of surface per kelvin of difference,
+    /// stored in mW per m² per K.
+    pub const HEAT_TRANSFER: &[(&str, u64)] = &[("W/(m2*K)", 1_000), ("mW/(m2*K)", 1)];
+    /// How fast a burning surface burns away, stored in mg per m² per second.
+    pub const BURN_SPEED: &[(&str, u64)] = &[("g/(m2*s)", 1_000), ("mg/(m2*s)", 1)];
+    /// Mass per second, stored in mg per second.
+    pub const MASS_PER_SECOND: &[(&str, u64)] = &[("g/s", 1_000), ("mg/s", 1)];
     /// A rate of mass, stored in mg per day.
     pub const MASS_RATE: &[(&str, u64)] = &[
         ("kg/day", 1_000_000),

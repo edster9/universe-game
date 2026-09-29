@@ -16,6 +16,9 @@
 //! expect alive               the player is alive
 //! expect dead of thirst      the player died of thirst
 //! expect said sea            the last reply mentions "sea"
+//! expect not said burning    the last reply doesn't mention "burning"
+//! expect conserved           mass, energy, and credits are as they started
+//! expect not said burning    the last reply doesn't mention "burning"
 //! expect time after 2 day    at least this much time has passed
 //! expect time before 3 day   less than this much time has passed
 //! ```
@@ -87,11 +90,16 @@ pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
         Some(seed) => world.with_seed(seed),
         None => world.with_luck(luck),
     };
+    let start = (
+        world.total_mass(),
+        world.total_energy(),
+        world.total_credits(),
+    );
     let mut session = Session::new(world, &player)?;
 
     let body = parse_block(&mut lines, None)?;
     let mut transcript = Vec::new();
-    run_block(&body, &mut session, &mut transcript).map_err(|e| {
+    run_block(&body, &mut session, &mut transcript, start).map_err(|e| {
         let tail = transcript.len().saturating_sub(12);
         format!(
             "{e}\n--- last lines of the transcript ---\n{}",
@@ -133,19 +141,22 @@ fn parse_block<'a>(
     }
 }
 
+type Totals = (u128, u128, u128);
+
 fn run_block(
     nodes: &[Node],
     session: &mut Session,
     transcript: &mut Vec<String>,
+    start: Totals,
 ) -> Result<(), String> {
     for node in nodes {
         match node {
             Node::Repeat { count, body, .. } => {
                 for _ in 0..*count {
-                    run_block(body, session, transcript)?;
+                    run_block(body, session, transcript, start)?;
                 }
             }
-            Node::Line { number, text } => run_line(*number, text, session, transcript)?,
+            Node::Line { number, text } => run_line(*number, text, session, transcript, start)?,
         }
     }
     Ok(())
@@ -156,9 +167,10 @@ fn run_line(
     line: &str,
     session: &mut Session,
     transcript: &mut Vec<String>,
+    start: Totals,
 ) -> Result<(), String> {
     if let Some(expectation) = line.strip_prefix("expect ") {
-        return check(number, expectation.trim(), session, transcript);
+        return check(number, expectation.trim(), session, transcript, start);
     }
     let (optional, command) = match line.strip_prefix("try ") {
         Some(command) => (true, command.trim()),
@@ -180,6 +192,7 @@ fn check(
     expectation: &str,
     session: &Session,
     transcript: &[String],
+    start: Totals,
 ) -> Result<(), String> {
     let world = session.world();
     let player = session.player();
@@ -190,6 +203,18 @@ fn check(
             .map_err(|e| format!("line {number}: {e}"))
     };
 
+    if expectation == "conserved" {
+        let now = (
+            world.total_mass(),
+            world.total_energy(),
+            world.total_credits(),
+        );
+        return if now == start {
+            Ok(())
+        } else {
+            fail(format!("totals went from {start:?} to {now:?}"))
+        };
+    }
     if expectation == "alive" {
         return match died_of {
             None => Ok(()),
@@ -204,6 +229,22 @@ fn check(
             Some(actual) if actual == cause.trim() => Ok(()),
             Some(actual) => fail(format!("the player died of {actual}")),
             None => fail("the player is alive".into()),
+        };
+    }
+    if let Some(text) = expectation.strip_prefix("not said ") {
+        let last = transcript.last().map_or("", String::as_str).to_lowercase();
+        return if last.contains(&text.trim().to_lowercase()) {
+            fail(format!("the last reply was: {last}"))
+        } else {
+            Ok(())
+        };
+    }
+    if let Some(text) = expectation.strip_prefix("not said ") {
+        let last = transcript.last().map_or("", String::as_str).to_lowercase();
+        return if last.contains(&text.trim().to_lowercase()) {
+            fail(format!("the last reply was: {last}"))
+        } else {
+            Ok(())
         };
     }
     if let Some(text) = expectation.strip_prefix("said ") {

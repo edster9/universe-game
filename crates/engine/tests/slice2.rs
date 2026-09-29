@@ -409,6 +409,8 @@ fn command(world: &World, step: &Step) -> Result<Intent, u64> {
         5 => Intent::Rub {
             item: a,
             against: b,
+            into: None,
+            seconds: None,
         },
         6 | 7 => Intent::Assemble { design: a },
         8 => Intent::Disassemble { item: a },

@@ -63,6 +63,13 @@ pub enum Change {
     Exert { agent: EntityId, until: u64 },
     /// A body dies. It stays where it is, as matter.
     Die { agent: EntityId, cause: String },
+    /// Someone starts something they keep doing over time.
+    StartActivity {
+        agent: EntityId,
+        activity: crate::world::Activity,
+    },
+    /// Someone stops what they were doing.
+    EndActivity { agent: EntityId },
     /// Pour everything in `from` into `into`. `from` stops existing.
     Merge { from: EntityId, into: EntityId },
     /// Give a piece of matter a shape and the tolerance it was made to, or
@@ -343,6 +350,31 @@ impl World {
                 self.give_heat(Holder::Surroundings(*place), heat)
             }
 
+            Change::StartActivity { agent, activity } => {
+                if !self.is_agent(*agent) {
+                    return Err(Fault::NotAlive(*agent));
+                }
+                let crate::world::Activity::Rubbing {
+                    first,
+                    second,
+                    dust,
+                    ..
+                } = activity;
+                for &id in [first, second, dust] {
+                    if !self.matter.contains_key(&id) {
+                        return Err(Fault::NotMatter(id));
+                    }
+                }
+                self.activities.insert(*agent, activity.clone());
+                Ok(())
+            }
+
+            &Change::EndActivity { agent } => self
+                .activities
+                .remove(&agent)
+                .map(|_| ())
+                .ok_or(Fault::NotAlive(agent)),
+
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 life.working_until = until;
@@ -452,10 +484,14 @@ impl World {
                     new,
                     crate::world::Assembly {
                         design: design.clone(),
+                        parts: parts.clone(),
                         datasheet: datasheet.clone(),
                     },
                 );
                 self.portable.insert(new);
+                if self.designs[design].holds {
+                    self.containers.insert(new);
+                }
                 self.locations.insert(new, *at);
                 for &part in parts {
                     self.locations.insert(part, new);
@@ -472,6 +508,7 @@ impl World {
                     self.locations.insert(part, at);
                 }
                 self.assemblies.remove(&assembly);
+                self.containers.remove(&assembly);
                 for components in [&mut self.keys, &mut self.labels] {
                     components.remove(&assembly);
                 }

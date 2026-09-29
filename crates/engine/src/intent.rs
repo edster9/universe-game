@@ -60,6 +60,10 @@ pub enum Intent {
     Rub {
         item: String,
         against: String,
+        into: Option<String>,
+        /// How long to keep rubbing, in seconds. The world's usual session
+        /// if not given.
+        seconds: Option<u64>,
     },
     Assemble {
         design: String,
@@ -75,6 +79,9 @@ pub enum Intent {
     },
     Gather {
         source: String,
+    },
+    Divide {
+        item: String,
     },
 }
 
@@ -92,12 +99,27 @@ impl fmt::Display for Intent {
             Intent::Light { chamber } => write!(f, "light {chamber}"),
             Intent::Pour { liquid, into } => write!(f, "pour {liquid} into {into}"),
             Intent::Work { item, shape, tool } => write!(f, "work {item} into {shape} with {tool}"),
-            Intent::Rub { item, against } => write!(f, "rub {item} against {against}"),
+            Intent::Rub {
+                item,
+                against,
+                into,
+                seconds,
+            } => {
+                write!(f, "rub {item} against {against}")?;
+                if let Some(into) = into {
+                    write!(f, " into {into}")?;
+                }
+                match seconds {
+                    Some(s) => write!(f, " for {s} s"),
+                    None => Ok(()),
+                }
+            }
             Intent::Assemble { design } => write!(f, "assemble {design}"),
             Intent::Disassemble { item } => write!(f, "take apart {item}"),
             Intent::Eat { item } => write!(f, "eat {item}"),
             Intent::Drink { source } => write!(f, "drink from {source}"),
             Intent::Gather { source } => write!(f, "gather from {source}"),
+            Intent::Divide { item } => write!(f, "divide {item}"),
         }
     }
 }
@@ -194,8 +216,35 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
             Intent::Work { item, shape, tool }
         }
         "rub" => {
-            let (item, against) = two(&["against", "on", "with"], "<thing> against <thing>")?;
-            Intent::Rub { item, against }
+            let (rest, seconds) = match rest.rsplit_once(" for ") {
+                Some((r, time)) => {
+                    let seconds = crate::units::parse_quantity(
+                        time,
+                        crate::units::property::DURATION,
+                        "a time",
+                    )
+                    .map_err(|_| ParseError(format!("{time:?} isn't a time like \"1 min\"")))?;
+                    (r.to_string(), Some(seconds))
+                }
+                None => (rest.clone(), None),
+            };
+            let (rest, into) = match rest.rsplit_once(" into ") {
+                Some((r, into)) if !into.trim().is_empty() => {
+                    (r.to_string(), Some(into.trim().to_string()))
+                }
+                _ => (rest.clone(), None),
+            };
+            let (item, against) = rest
+                .rsplit_once(" against ")
+                .map(|(a, b)| (a.trim().to_string(), b.trim().to_string()))
+                .filter(|(a, b)| !a.is_empty() && !b.is_empty())
+                .ok_or_else(|| usage("<thing> against <thing> [into <container>]"))?;
+            Intent::Rub {
+                item,
+                against,
+                into,
+                seconds,
+            }
         }
         "assemble" | "build" => Intent::Assemble {
             design: one("<design>")?,
@@ -221,6 +270,9 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                 .to_string();
             Intent::Gather { source }
         }
+        "divide" | "split" => Intent::Divide {
+            item: one("<thing>")?,
+        },
         "disassemble" | "dismantle" => Intent::Disassemble {
             item: one("<thing>")?,
         },

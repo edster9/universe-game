@@ -369,12 +369,8 @@ struct Random {
 }
 
 fn random() -> impl Strategy<Value = Random> {
-    (0..9u8, any::<usize>(), any::<usize>(), 0..20_000u64).prop_map(|(verb, a, b, amount)| Random {
-        verb,
-        a,
-        b,
-        amount,
-    })
+    (0..12u8, any::<usize>(), any::<usize>(), 0..20_000u64)
+        .prop_map(|(verb, a, b, amount)| Random { verb, a, b, amount })
 }
 
 proptest! {
@@ -384,6 +380,10 @@ proptest! {
     fn random_island_life_never_creates_or_destroys_anything(steps in prop::collection::vec(random(), 1..80)) {
         let mut world = island(7);
         let me = id(&world, "survivor");
+        // Carry fuel and tinder, so random steps can rub, divide, and burn.
+        for line in ["go forest", "gather grass", "gather twigs", "gather sticks", "gather sticks", "divide grass", "divide grass"] {
+            perform(&mut world, me, intent(line)).unwrap();
+        }
         let start = totals(&world);
         for step in &steps {
             let names: Vec<String> = world.entities().flat_map(|e| [world.key(e).to_string(), world.label(e)]).collect();
@@ -397,6 +397,9 @@ proptest! {
                 5 => Intent::Drop { item: a },
                 6 => Intent::Pay { to: a, amount: Credits::new(1) },
                 7 => Intent::Put { item: a, into: b },
+                8 => Intent::Rub { item: a, against: b, into: None, seconds: Some(step.amount % 120 + 1) },
+                9 => Intent::Divide { item: a },
+                10 => Intent::Assemble { design: a },
                 _ => {
                     nature::run(&mut world, step.amount).map_err(|f| TestCaseError::fail(f.to_string()))?;
                     prop_assert_eq!(totals(&world), start);

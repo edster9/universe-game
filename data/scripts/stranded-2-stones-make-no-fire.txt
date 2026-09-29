@@ -1,0 +1,37 @@
+# Stranded, stage 2: rubbing two stones only makes warm stone dust. Stone
+# doesn't burn, and its dust never gets hot enough to light even a pinch of
+# grass.
+world stranded.toml
+as survivor
+luck average
+
+# Gather fuel from the forest and five stones from the hillside, and build a
+# fire ring to hold the fire.
+go forest
+gather sticks
+gather sticks
+gather grass
+gather grass
+repeat 3
+  gather twigs
+end
+go hillside
+repeat 5
+  gather stones
+end
+assemble fire ring
+drop fire ring
+
+divide grass
+divide grass
+divide grass
+repeat 3
+  put smallest grass in ring
+end
+gather stones
+gather stones
+rub stone against stone into ring for 1 min
+wait 1 min
+look
+expect not said burning
+expect conserved

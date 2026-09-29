@@ -90,9 +90,12 @@ fn thing(world: &World, id: EntityId) -> Thing {
     if world.life(id).is_some_and(|l| l.died_of.is_some()) {
         notes.push("dead".to_string());
     }
+    if world.is_burning(id) {
+        notes.push("burning".to_string());
+    }
     let contents = if world.is_container(id) {
         world
-            .contents(id)
+            .held(id)
             .into_iter()
             .map(|e| thing(world, e))
             .collect()

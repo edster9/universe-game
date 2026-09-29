@@ -36,6 +36,11 @@ pub struct Material {
     pub resistivity: Option<u64>,
     /// Voltage it gives when shaped as a source of charge, in µV.
     pub voltage: Option<u64>,
+    /// Above this temperature, it catches fire in the open. `None` if it
+    /// doesn't burn on its own.
+    pub ignition_point: Option<Temperature>,
+    /// How fast its burning surface burns away, in mg per m² per second.
+    pub burn_speed: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -85,16 +90,45 @@ pub fn total_mass(composition: &Composition) -> u128 {
     composition.values().map(|m| u128::from(m.mg())).sum()
 }
 
-/// Volume in µm³, if every material's density is known.
+/// Volume in µm³ of the materials whose density is known. A trace of
+/// something with no density (a gas just made by burning, say) doesn't make a
+/// solid's size unknown. `None` only if no density is known at all.
 pub fn volume(materials: &Materials, composition: &Composition) -> Option<u128> {
-    composition
-        .iter()
-        .map(|(id, mass)| {
-            let density = materials[id].density.filter(|&d| d > 0)?;
+    let mut known = false;
+    let mut total = 0u128;
+    for (id, mass) in composition {
+        if let Some(density) = materials[id].density.filter(|&d| d > 0) {
+            known = true;
             // mg × 10¹⁵ / (g per m³) gives µm³.
-            Some(u128::from(mass.mg()) * 1_000_000_000_000_000 / u128::from(density))
-        })
-        .sum()
+            total += u128::from(mass.mg()) * 1_000_000_000_000_000 / u128::from(density);
+        }
+    }
+    known.then_some(total)
+}
+
+/// Surface area in µm², treating the piece as a cube of its volume. `None`
+/// if a density is unknown.
+pub fn surface_area(materials: &Materials, composition: &Composition) -> Option<u128> {
+    let side = cube_root(volume(materials, composition)?);
+    Some(6 * side * side)
+}
+
+/// The whole-number cube root, rounded down.
+pub fn cube_root(n: u128) -> u128 {
+    let (mut low, mut high) = (0u128, 1u128 << 43);
+    while low < high {
+        let mid = (low + high).div_ceil(2);
+        if mid
+            .checked_mul(mid)
+            .and_then(|m| m.checked_mul(mid))
+            .is_some_and(|c| c <= n)
+        {
+            low = mid;
+        } else {
+            high = mid - 1;
+        }
+    }
+    low
 }
 
 /// Heat needed to raise the temperature by one kelvin, in µJ per K.
@@ -205,6 +239,13 @@ mod tests {
             assert!(*m <= c[id]);
         }
         assert_eq!(proportional(&c, Mass::from_mg(6_000_000)), None);
+    }
+
+    #[test]
+    fn cube_roots_are_exact_or_round_down() {
+        assert_eq!(cube_root(27), 3);
+        assert_eq!(cube_root(26), 2);
+        assert_eq!(cube_root(1_000_000_000_000), 10_000);
     }
 
     #[test]

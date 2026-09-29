@@ -1,0 +1,29 @@
+# Stranded, stage 2: an ember against a stick does nothing. The stick barely
+# warms.
+world stranded.toml
+as survivor
+luck average
+
+# Gather fuel from the forest and five stones from the hillside, and build a
+# fire ring to hold the fire.
+go forest
+gather sticks
+gather sticks
+gather grass
+gather grass
+repeat 3
+  gather twigs
+end
+go hillside
+repeat 5
+  gather stones
+end
+assemble fire ring
+drop fire ring
+
+put wood in ring
+rub wood against wood into ring for 1 min
+wait 5 min
+look
+expect not said burning
+expect conserved

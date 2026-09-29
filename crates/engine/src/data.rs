@@ -50,6 +50,15 @@ struct SettingsDef {
     air_clearing: Option<String>,
     /// The longest step nature takes when all is calm.
     calm_step: Option<String>,
+    /// Heat passed to open air per m² of surface per K. Without it, every
+    /// object loses heat at the flat `open_air_heat_loss`.
+    convection: Option<String>,
+    emissivity: Option<String>,
+    touch_transfer: Option<String>,
+    wear_rate: Option<String>,
+    friction_share: Option<String>,
+    flame_share: Option<String>,
+    hand_hardness: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -69,6 +78,10 @@ struct MaterialDef {
     speed_of_sound: Option<String>,
     resistivity: Option<String>,
     voltage: Option<String>,
+    /// Above this temperature it catches fire in the open.
+    ignition_point: Option<String>,
+    /// How fast its burning surface burns away.
+    burn_speed: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -88,8 +101,11 @@ struct ShapeDef {
 struct DesignDef {
     id: String,
     label: String,
-    /// Slot name to the shape or design that fills it.
+    /// Slot name to the shape, design, or material that fills it.
     parts: BTreeMap<String, String>,
+    /// Things can be put in what's built to it.
+    #[serde(default)]
+    holds: bool,
 }
 
 #[derive(Deserialize)]
@@ -368,6 +384,36 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     if let Some(p) = &def.air_clearing {
         settings.air_clearing = parse_percent(p)?;
     }
+    if let Some(c) = &def.convection {
+        settings.convection = Some(parse_quantity(
+            c,
+            property::HEAT_TRANSFER,
+            "a heat transfer like \"10 W/(m2*K)\"",
+        )?);
+    }
+    if let Some(e) = &def.emissivity {
+        settings.emissivity = parse_percent(e)?;
+    }
+    if let Some(c) = &def.touch_transfer {
+        settings.touch_transfer = parse_quantity(
+            c,
+            property::HEAT_TRANSFER,
+            "a heat transfer like \"100 W/(m2*K)\"",
+        )?;
+    }
+    if let Some(w) = &def.wear_rate {
+        settings.wear_rate =
+            parse_quantity(w, property::MASS_PER_SECOND, "a rate like \"10 mg/s\"")?;
+    }
+    if let Some(f) = &def.friction_share {
+        settings.friction_share = parse_percent(f)?;
+    }
+    if let Some(f) = &def.flame_share {
+        settings.flame_share = parse_percent(f)?;
+    }
+    if let Some(h) = &def.hand_hardness {
+        settings.hand_hardness = parse_number(h, 100, "a hardness like \"1\"")?;
+    }
     if let Some(t) = &def.calm_step {
         settings.calm_step = parse_quantity(t, property::DURATION, "a time like \"1 min\"")?.max(1);
     }
@@ -453,7 +499,22 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
                 .as_deref()
                 .map(|v| parse_quantity(v, property::VOLTAGE, "a voltage like \"1.5 V\""))
                 .transpose()?,
+            ignition_point: def.ignition_point.as_deref().map(str::parse).transpose()?,
+            burn_speed: def
+                .burn_speed
+                .as_deref()
+                .map(|b| {
+                    parse_quantity(b, property::BURN_SPEED, "a burn speed like \"15 g/(m2*s)\"")
+                })
+                .transpose()?
+                .unwrap_or(0),
         };
+        if material.ignition_point.is_some() && (material.burn_speed == 0 || !material.burns()) {
+            return fail(format!(
+                "{} has an ignition point, so it needs a burn speed and what it burns to",
+                def.id
+            ));
+        }
         let id = MaterialId(u16::try_from(index).expect("counted above"));
         world.materials.insert(id, material);
     }
@@ -756,9 +817,11 @@ fn load_designs(world: &mut World, defs: &[DesignDef]) -> Result<(), LoadError> 
                 Requirement::Shape(needs.clone())
             } else if design_ids.contains(needs.as_str()) && needs != &def.id {
                 Requirement::Design(needs.clone())
+            } else if let Some(material) = world.material_by_key(needs) {
+                Requirement::Material(material)
             } else {
                 return fail(format!(
-                    "the design {} needs {needs:?}, which isn't a shape or another design",
+                    "the design {} needs {needs:?}, which isn't a shape, a material, or another design",
                     def.id
                 ));
             };
@@ -772,6 +835,7 @@ fn load_designs(world: &mut World, defs: &[DesignDef]) -> Result<(), LoadError> 
             Design {
                 label: def.label.clone(),
                 slots,
+                holds: def.holds,
             },
         );
     }

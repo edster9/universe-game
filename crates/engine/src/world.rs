@@ -46,6 +46,26 @@ pub struct Settings {
     pub air_clearing: u64,
     /// The longest step nature takes when nothing fast is happening, in seconds.
     pub calm_step: u64,
+    /// Heat passed to open air per m² of surface per K, in mW. `None` means
+    /// the old flat rate: everything loses `open_air_heat_loss` whatever its
+    /// size, and nothing radiates.
+    pub convection: Option<u64>,
+    /// How well surfaces radiate heat, in parts per ten thousand.
+    pub emissivity: u64,
+    /// Heat passed between touching things per m² of the smaller one's
+    /// surface per K, in mW.
+    pub touch_transfer: u64,
+    /// Material worn off the softer of two things rubbed together, in mg per
+    /// second.
+    pub wear_rate: u64,
+    /// Share of a worker's extra effort that rubbing turns into heat, in
+    /// parts per ten thousand.
+    pub friction_share: u64,
+    /// Share of the heat a burning piece releases that goes into the things
+    /// held with it, in parts per ten thousand.
+    pub flame_share: u64,
+    /// The hardest material bare hands can pull apart, in hundredths.
+    pub hand_hardness: u64,
 }
 
 impl Default for Settings {
@@ -63,8 +83,28 @@ impl Default for Settings {
             glow_temperature: Temperature::from_mk(1_000_000),
             air_clearing: 10,
             calm_step: 60,
+            convection: None,
+            emissivity: 9_000,
+            touch_transfer: 100_000,
+            wear_rate: 10,
+            friction_share: 5_000,
+            flame_share: 5_000,
+            hand_hardness: 100,
         }
     }
+}
+
+/// Something a person keeps doing over time, advanced by nature each step.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Activity {
+    /// Rubbing two things together: the softer wears into `dust`, and the
+    /// effort becomes heat in the dust.
+    Rubbing {
+        first: EntityId,
+        second: EntityId,
+        dust: EntityId,
+        until: u64,
+    },
 }
 
 /// Where chance comes from. Normal play is seeded. Tests can fix luck so the
@@ -173,6 +213,8 @@ pub struct ShapeDef {
 pub enum Requirement {
     Shape(String),
     Design(String),
+    /// Any solid piece made mostly of this material.
+    Material(MaterialId),
 }
 
 /// A design from data: which parts go together.
@@ -181,6 +223,8 @@ pub struct Design {
     pub label: String,
     /// Slot name and what fills it.
     pub slots: Vec<(String, Requirement)>,
+    /// Things can be put in what's built to this design.
+    pub holds: bool,
 }
 
 /// A container that shapes liquid setting inside it.
@@ -196,6 +240,8 @@ pub struct Form {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Assembly {
     pub design: String,
+    /// The parts it's made of. Anything else inside is being held.
+    pub parts: Vec<EntityId>,
     pub datasheet: Datasheet,
 }
 
@@ -251,6 +297,7 @@ pub struct World {
     /// from the air that has cleared.
     pub(crate) reservoir: BTreeMap<EntityId, Composition>,
     pub(crate) life: BTreeMap<EntityId, Life>,
+    pub(crate) activities: BTreeMap<EntityId, Activity>,
     pub(crate) pieces: BTreeMap<EntityId, Pieces>,
     pub(crate) agents: BTreeSet<EntityId>,
     pub(crate) portable: BTreeSet<EntityId>,
@@ -324,6 +371,33 @@ impl World {
 
     pub fn life(&self, id: EntityId) -> Option<&Life> {
         self.life.get(&id)
+    }
+
+    /// What a person is busy doing, if anything.
+    pub fn activity(&self, id: EntityId) -> Option<&Activity> {
+        self.activities.get(&id)
+    }
+
+    /// The ID the next new entity will get. Laws use it to refer to
+    /// something made earlier in the same set of changes.
+    pub fn next_id(&self) -> EntityId {
+        EntityId(self.next_id)
+    }
+
+    /// True if something is burning: it holds a material that catches fire on
+    /// its own, and is hotter than that material's ignition point.
+    pub fn is_burning(&self, id: EntityId) -> bool {
+        let (Some(composition), Some(temperature)) = (self.matter.get(&id), self.temperature(id))
+        else {
+            return false;
+        };
+        composition.keys().any(|m| {
+            let material = &self.materials[m];
+            material.burns()
+                && material
+                    .ignition_point
+                    .is_some_and(|point| temperature >= point)
+        })
     }
 
     /// True for a body that is alive.
@@ -403,6 +477,9 @@ impl World {
             } else {
                 names
             }
+        } else if !self.shape_of.contains_key(&id) && self.mass(id) < Mass::from_mg(1_000) {
+            // A few grams or less of unshaped solid is dust.
+            format!("{names} dust")
         } else if let Some(shape) = self.shape_of.get(&id) {
             format!(
                 "{names} {}",
@@ -581,6 +658,20 @@ impl World {
         self.wallets.get(&id).copied()
     }
 
+    /// What `holder` is holding: its contents, not counting the parts it's
+    /// made of.
+    pub fn held(&self, holder: EntityId) -> Vec<EntityId> {
+        let parts = self
+            .assemblies
+            .get(&holder)
+            .map(|a| a.parts.as_slice())
+            .unwrap_or_default();
+        self.contents(holder)
+            .into_iter()
+            .filter(|e| !parts.contains(e))
+            .collect()
+    }
+
     /// Everything directly in or held by `holder`, in a fixed order.
     pub fn contents(&self, holder: EntityId) -> Vec<EntityId> {
         self.locations
@@ -704,6 +795,24 @@ impl World {
             }
             if life.died_of.is_none() && !self.is_agent(id) {
                 return Err(format!("{} is alive but isn't a person", self.key(id)));
+            }
+        }
+        for (&agent, activity) in &self.activities {
+            let Activity::Rubbing {
+                first,
+                second,
+                dust,
+                ..
+            } = *activity;
+            if !self.is_agent(agent)
+                || [first, second, dust]
+                    .iter()
+                    .any(|id| !self.matter.contains_key(id))
+            {
+                return Err(format!(
+                    "{} is busy with something that doesn't exist",
+                    self.key(agent)
+                ));
             }
         }
         if self.reservoir.keys().any(|&id| !self.is_place(id)) {

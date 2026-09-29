@@ -21,12 +21,15 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Temperature is heat energy divided by heat capacity | in | slices 1, 2 |
 | Parts of a piece in different states come apart: gas rises into the air, liquid runs out. A body holds its liquids together | in | slice 1, stranded 1 |
 | Liquids in one container pool; gases in one place mix | in | slice 1 |
-| Things warmer than their surroundings lose heat in proportion to the difference | in | slice 1, stranded 1 |
+| Things warmer than their surroundings lose heat in proportion to the difference: through their surface (convection), plus radiation, which grows with the fourth power of temperature. (Worlds without a convection setting use a flat rate) | in | slice 1, stranded 1, 2 |
+| A piece's volume counts the materials whose density is known; its surface is that of a cube of the same volume | in | slice 2, stranded 2 |
+| Things that touch pass heat, in proportion to the difference and to the smaller one's surface, never past an even temperature | in | stranded 2 |
 | Everything inside an insulated chamber shares one temperature | in | slice 1 |
 | Burning turns a fuel into its products and releases its stored energy as heat | in | slice 1, stranded 1 (bodies burn their stores the same way) |
 | Gas in a place's open air passes into its surroundings a little at a time | in | stranded 1 |
-| Anything that burns catches fire above its ignition temperature, anywhere | planned | stranded 2 |
-| Work becomes heat: rubbing spends the worker's energy as heat in what's rubbed | planned | stranded 2 |
+| Anything that burns catches fire above its ignition temperature, anywhere, and burns at a rate set by its surface | in | stranded 2 |
+| A flame heats what it's piled with: a share of the heat a burning piece releases goes to the things held with it, split by their surfaces | in | stranded 2 |
+| Work becomes heat: rubbing wears dust off the softer thing, and a share of the worker's effort heats the dust | in | stranded 2 |
 | A material can change into another above a temperature (clay fires hard) | planned | stranded 4 |
 
 ## Shaping and making
@@ -36,7 +39,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | A tool only works material softer than every part of the target | in | slices 1, 2 |
 | Hardness falls as a material heats, to nothing at its melting point | in | slice 1 |
 | A part is at most as precise as the tool that made it | in | slice 2 |
-| Rubbing two parts together makes both finer, slowly | in | slice 2 |
+| Rubbing two parts together makes both finer, slowly, in proportion to the time spent | in | slice 2, stranded 2 |
+| Bare hands can divide only what's soft enough | in | stranded 2 |
 | Liquid setting in a form takes its shape, to the form's tolerance | in | slices 1, 2 |
 | Taking material from a fixed source needs a tool harder than it | in | slice 1 |
 | Work takes time, set by the tool's edge and the effort | planned | stranded 5 |
@@ -54,6 +58,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Resistance is resistivity × length² ÷ volume | in | slice 2 |
 | Where two surfaces touch, resistance grows with their roughness | in | slice 2 |
 | A glowing part heats until it sheds its share of the power; it gives light above a temperature and fails at its melting point | in | slice 2 |
+| An assembly can hold things if its design says so; a slot can take any piece of a material | in | stranded 2 |
 | An assembly that encloses heat acts as a chamber | planned | stranded 4 |
 | A shape whose role is to cast is a form | planned | stranded 4 |
 | Tension: a material's strength when pulled, measured for a pulling role | planned | stranded 6 |
@@ -79,6 +84,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Chance events draw from the world's seed, its clock, and its history, so the same seed replays the same luck | in | stranded 1 |
 | When nothing fast is happening, nature takes bigger steps | in | stranded 1 |
 | An action that takes time is hard work for a body while it lasts | in | slice 2, stranded 1 |
+| Some work continues over time (rubbing), advanced by nature each second until it ends | in | stranded 2 |
 
 ## Moving
 

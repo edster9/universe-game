@@ -92,6 +92,42 @@ Simplifications to revisit:
 - **Energy is stored in whole microjoules per holder**, which can't hold an ocean's heat. The sea here is 1,000 t. Planet-sized bodies will need bigger numbers.
 - **The body is simple:** no stomach or digestion time, no shivering, and no illness.
 
+### Stage 2: fire. Passed, 2026-09-28.
+
+**Fire from two sticks, built the way people really do it**, from general laws. In [stranded-2-fire.txt](../../data/scripts/stranded-2-fire.txt):
+
+1. Rubbing two sticks for a minute wears off dust, and friction heats it to over 1,000 K, where it smoulders.
+2. Pinches of dry grass packed around the dust catch.
+3. Their flames light a 20 g handful, the handful lights the twigs, and the twigs light 200 g sticks.
+4. The sticks burn at about 1,400 K for ten minutes and more, leaving glowing ash.
+
+**No rule says "tinder, then kindling, then fuel".** That order comes from size, surface, and heat.
+
+The mistakes fail the way they would in reality, and nothing tells them to:
+
+- **An ember against a whole handful of grass:** the ember smoulders, but 20 g of grass only reaches about 420 K. It's too much for the ember to heat.
+- **An ember against a stick:** the stick barely warms.
+- **Rubbing two stones:** the stone dust reaches about 340 K, far too cool to light even a pinch of grass. Stone doesn't burn. (Real stone fire-lighting strikes sparks from flint and iron pyrite, which isn't modelled.)
+
+**Sabotage check:** switching off "a flame heats what it's piled with" makes the fire proof fail, because the fire never spreads past the tinder.
+
+What the attempts found, and what changed:
+
+1. **Heat loss had to depend on size.** With every object losing heat at the same flat rate, a speck of dust could never get hot, so no friction fire was possible. On the island, objects now lose heat through their surface (convection), plus radiation, which dominates once something glows: 100 cm² at 1,300 K sheds about 1.45 kW, hundreds of times what it sheds at 400 K. The slice 1 and slice 2 worlds still use the old flat rate, since their tests were calibrated to it; they should move over.
+2. **Things that touch pass heat to each other**, in proportion to the smaller one's surface. Instant "everything shares one temperature" is kept only for stirred furnaces.
+3. **A flame heats what it's piled with.** A burning piece passes half the heat it releases to the things held with it, split by their surfaces.
+4. **Soft things can be divided by hand**, down to pinches. Anything harder than bare hands can pull apart (wood, stone) can't.
+5. **Rubbing is an activity that takes chosen time** (`rub … for 1 min`), advanced by nature each second, and a living worker's effort becomes heat in the dust. The first version locked the survivor into a 10-minute session while the tinder burned out in 20 seconds.
+6. **Two engine bugs, found by the attempts.** Carbon dioxide made by burning dust briefly made the dust's size unknown, which threw all its heat into the air each second. Now a piece's volume counts the materials whose density is known. And a speck of ash touching ten things gave each a fair share of heat until it reached 0 K. Now a piece never gives away more than would bring it to its coldest neighbour's temperature.
+7. **An assembly can hold things**: a ring of five stones is a fire ring. A design says whether what's built to it holds things, and a slot can take any piece of a material. The ring's own stones are parts, not things in it.
+8. **Naming:** "smallest grass" and "largest wood" pick by mass. "rub wood against wood" means two different pieces.
+
+Simplifications to revisit:
+
+- **Each piece has one temperature throughout.** Fire-starting works because tinder can be divided small, not because the engine models the hot spot inside a bundle.
+- **No oxygen, blowing, wind, rain, or damp wood.** No chance is involved in fire yet.
+- **Fire stays in its container**, and burns don't hurt the survivor.
+
 ## How it's tested
 
 Decided 2026-09-28.

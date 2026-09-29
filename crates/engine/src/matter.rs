@@ -46,6 +46,8 @@ pub struct Material {
     pub becomes: Option<(MaterialId, Temperature)>,
     /// Strength when pulled, in pascals. `None` if it can't take tension.
     pub tensile_strength: Option<u64>,
+    /// Liquids it softens in, so a container of it can't hold them.
+    pub softens_in: Vec<MaterialId>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

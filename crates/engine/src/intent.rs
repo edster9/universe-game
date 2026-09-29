@@ -47,6 +47,11 @@ pub enum Intent {
         source: String,
         tool: String,
     },
+    /// Fill a container from a liquid.
+    Fill {
+        container: String,
+        source: String,
+    },
     Light {
         chamber: String,
     },
@@ -112,6 +117,7 @@ impl fmt::Display for Intent {
             Intent::Give { item, to } => write!(f, "give {item} to {to}"),
             Intent::Pay { to, amount } => write!(f, "pay {to} {amount}"),
             Intent::Dig { source, tool } => write!(f, "dig {source} with {tool}"),
+            Intent::Fill { container, source } => write!(f, "fill {container} from {source}"),
             Intent::Light { chamber } => write!(f, "light {chamber}"),
             Intent::Pour { liquid, into } => write!(f, "pour {liquid} into {into}"),
             Intent::Work {
@@ -231,6 +237,10 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                 to: to.trim().into(),
                 amount: Credits::new(amount),
             }
+        }
+        "fill" => {
+            let (container, source) = two(&["from", "with"], "<container> from <liquid>")?;
+            Intent::Fill { container, source }
         }
         "dig" => {
             let (source, tool) = two(&["with"], "<source> with <tool>")?;

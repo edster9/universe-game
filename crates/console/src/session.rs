@@ -254,11 +254,19 @@ impl Session {
         let carrying = if inv.things.is_empty() {
             "You aren't carrying anything.".to_string()
         } else {
-            format!(
+            let mut lines = vec![format!(
                 "You're carrying {}, {} in all.",
                 things(&inv.things),
                 inv.carried
-            )
+            )];
+            for container in inv.things.iter().filter(|t| !t.contents.is_empty()) {
+                lines.push(format!(
+                    "In {}: {}",
+                    the(&container.label),
+                    things(&container.contents)
+                ));
+            }
+            lines.join("\n")
         };
         format!("{carrying}\nYou have {}.", inv.credits)
     }
@@ -301,6 +309,12 @@ impl Session {
             (Intent::Pay { .. }, Some(&Change::Transfer { to, amount, .. })) => {
                 format!("You pay {} {amount}.", name(to))
             }
+            (Intent::Fill { .. }, Some(Change::Split { take, at, .. })) => format!(
+                "You fill {} with {} of {}.",
+                name(*at),
+                Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
+                w.describe_composition(take)
+            ),
             (Intent::Dig { .. }, Some(Change::Split { take, .. })) => format!(
                 "You dig out {} of {}.",
                 Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),

@@ -1,0 +1,19 @@
+# Where am I?, stage 3: an unfired clay pot turns back to mud in water, so it
+# can't be filled; and a plain lump of clay can't hold anything poured in.
+world stranded.toml
+as survivor
+luck average
+
+go forest
+gather sticks
+go stream
+gather clay
+gather clay
+work smallest clay into pot with wood
+datasheet pot
+expect said can hold: 2 kg
+try fill pot from water
+expect said the clay pot would soften in the stream's water
+try fill lump of clay from water
+expect said can't hold anything poured in
+expect conserved

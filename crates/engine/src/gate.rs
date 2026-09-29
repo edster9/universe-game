@@ -572,6 +572,10 @@ impl World {
                             );
                             self.containers.insert(*entity);
                         }
+                        // So does a shape whose role is to hold things.
+                        if self.shapes[shape].capacity.is_some() {
+                            self.containers.insert(*entity);
+                        }
                         Ok(())
                     }
                     None => {
@@ -706,11 +710,11 @@ impl World {
 
     /// A piece shaped to cast stops being a form when its shape changes.
     fn stop_casting(&mut self, id: EntityId) {
-        let was_casting = self
-            .shape_of
-            .get(&id)
-            .is_some_and(|s| self.shapes[s].casts.is_some());
-        if was_casting {
+        let Some(shape) = self.shape_of.get(&id) else {
+            return;
+        };
+        let def = &self.shapes[shape];
+        if def.casts.is_some() || def.capacity.is_some() {
             self.forms.remove(&id);
             self.containers.remove(&id);
         }

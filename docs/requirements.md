@@ -192,6 +192,15 @@ Added 2026-09-28, when day and night came up.
 - **Later: age.** Typical game characters are always young, fit bodies. We could have an older person, not as strong and not as mobile. Keep to a range: no one under 18 or over 55 for a game like this, for now. Age may be a factor.
 - **Later: body types.** Different body types have different strengths: male, female, and so on. For now keep it as generic as possible.
 
+## How new vocabulary emerges
+
+Added 2026-09-29, **for a conversation after the where-am-I? and living-with-the-island challenges, and before any unplanned (validation) scenarios.**
+
+- After these next scenarios are done, and before we begin the random scenarios to see if we can handle an unplanned scenario, take a pause and discuss an important evolution aspect of the engine: how new vocabulary words emerge as we are training.
+- This could have a major impact on the evolution of the engine, so have it earlier rather than later.
+
+See [ideas/vocabulary.md](ideas/vocabulary.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

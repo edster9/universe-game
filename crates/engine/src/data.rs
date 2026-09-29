@@ -101,6 +101,9 @@ struct MaterialDef {
     becomes: Option<BecomesDef>,
     /// Strength when pulled.
     tensile_strength: Option<String>,
+    /// Materials it softens in, as some earths do when wet.
+    #[serde(default)]
+    softens_in: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -122,6 +125,8 @@ struct ShapeDef {
     heat_loss: Option<String>,
     /// For the pushing role: the share of effort it delivers.
     push: Option<String>,
+    /// For the containing role: the most it holds.
+    holds: Option<String>,
     /// For the casting role: the shape it gives liquid that sets inside.
     casts: Option<String>,
 }
@@ -732,6 +737,18 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
                 .as_deref()
                 .map(|t| parse_quantity(t, property::STRESS, "a strength like \"50 MPa\""))
                 .transpose()?,
+            softens_in: def
+                .softens_in
+                .iter()
+                .map(|m| {
+                    ids.get(m).copied().ok_or_else(|| {
+                        LoadError(format!(
+                            "{} softens in {m:?}, which isn't a material",
+                            def.id
+                        ))
+                    })
+                })
+                .collect::<Result<_, _>>()?,
             becomes: match &def.becomes {
                 Some(becomes) => {
                     let target = *ids.get(&becomes.material).ok_or_else(|| {
@@ -1083,9 +1100,10 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         Some("casting") => Some(Role::Casting),
         Some("pulling") => Some(Role::Pulling),
         Some("pushing") => Some(Role::Pushing),
+        Some("containing") => Some(Role::Containing),
         Some(other) => {
             return fail(format!(
-                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, touching, casting, pulling, and pushing",
+                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, touching, casting, pulling, pushing, and containing",
                 def.id
             ));
         }
@@ -1113,6 +1131,17 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
             def.id
         ));
     }
+    let capacity = def
+        .holds
+        .as_deref()
+        .map(|h| parse_mass(&def.id, h))
+        .transpose()?;
+    if matches!(role, Some(Role::Containing)) != capacity.is_some() {
+        return fail(format!(
+            "the shape {} needs both the containing role and how much it holds, or neither",
+            def.id
+        ));
+    }
     if matches!(role, Some(Role::Casting)) != def.casts.is_some() {
         return fail(format!(
             "the shape {} needs both the casting role and what it casts, or neither",
@@ -1125,6 +1154,7 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         length,
         heat_loss,
         push,
+        capacity,
         casts: def.casts.clone(),
     })
 }

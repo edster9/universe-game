@@ -63,6 +63,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | An assembly can hold things if its design says so; a slot can take any piece of a material | in | stranded 2 |
 | An assembly whose design encloses heat is a chamber | in | stranded 4 |
 | A shaped piece whose shape casts is a form | in | stranded 4 |
+| A shape whose role is containing holds things up to a mass; a container is filled from a liquid, and what it holds is carried with it | in | where am I? 3 |
+| A container can't hold a liquid its material softens in | in | where am I? 3 |
 | Tension: a pulled shape holds its material's strength times its cross-section | in | stranded 6 |
 | Bare hands can shape only what's soft enough, roughly; something already made can't be pulled apart by hand | in | stranded 6 |
 | Buoyancy: something floats in a liquid if it weighs less than the liquid its volume displaces, and carries the difference | in | stranded 7 |

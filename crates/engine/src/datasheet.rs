@@ -65,6 +65,7 @@ pub enum Property {
     Buoyancy,
     Pushes,
     Awake,
+    Capacity,
 }
 
 impl Property {
@@ -116,6 +117,7 @@ impl Property {
             Property::Buoyancy => "buoyancy",
             Property::Pushes => "pushes with",
             Property::Awake => "awake for",
+            Property::Capacity => "can hold",
         }
     }
 }
@@ -488,6 +490,11 @@ fn measure_matter(world: &World, id: EntityId, composition: &Composition, sheet:
         }
         (Some(Role::Touching), _) => {
             sheet.set(Property::TouchTolerance, Value::Length(tolerance));
+        }
+        (Some(Role::Containing), _) => {
+            if let Some(capacity) = def.capacity {
+                sheet.set(Property::Capacity, Value::Mass(capacity));
+            }
         }
         (Some(Role::Pushing), _) => {
             if let Some(push) = def.push {

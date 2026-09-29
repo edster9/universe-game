@@ -1,0 +1,14 @@
+# Skill: explore the island, as a castaway who knows no way off the beach.
+# With average luck each search finds the nearest way not yet known. Ends on
+# the beach, knowing the ways between the beach, the stream, the forest, and
+# the hillside, about three and a half hours later.
+explore
+explore
+go forest
+explore
+explore
+go hillside
+go forest
+go stream
+explore
+go beach

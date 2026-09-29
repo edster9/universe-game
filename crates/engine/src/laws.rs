@@ -119,6 +119,12 @@ pub enum Refusal {
     NothingToCross(String),
     NotAVessel(String),
     DontKnowWay(String),
+    CannotFill(String),
+    WouldSoften {
+        container: String,
+        liquid: String,
+    },
+    Full(String),
     Asleep,
     TooDark,
     NotTired,
@@ -221,6 +227,11 @@ impl fmt::Display for Refusal {
                 write!(f, "there's nothing to cross on the way to {place}")
             }
             Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
+            Refusal::CannotFill(name) => write!(f, "{name} can't hold anything poured in"),
+            Refusal::Full(name) => write!(f, "{name} is full"),
+            Refusal::WouldSoften { container, liquid } => {
+                write!(f, "{container} would soften in {liquid}")
+            }
             Refusal::DontKnowWay(name) => {
                 write!(f, "you don't know a way to {name} from here: try exploring")
             }
@@ -624,6 +635,48 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }])
         }
 
+        Intent::Fill { container, source } => {
+            // Something in hand first, then something here.
+            let vessel = find(
+                world,
+                reach.carried.iter().chain(&reach.around).copied(),
+                container,
+            )
+            .ok_or_else(|| Refusal::NotHere(container.clone()))?;
+            let capacity = world
+                .shape(vessel)
+                .and_then(|s| world.shapes().get(s))
+                .and_then(|def| def.capacity)
+                .filter(|_| world.is_container(vessel))
+                .ok_or_else(|| Refusal::CannotFill(named(world, vessel)))?;
+            let candidates = reach.around.iter().chain(&reach.inside).copied();
+            let from = find(world, candidates.filter(|&e| e != vessel), source)
+                .ok_or_else(|| Refusal::NotHere(source.clone()))?;
+            if !world.is_all(from, State::Liquid) {
+                return Err(Refusal::NotLiquid(named(world, from)));
+            }
+            softens(world, vessel, from)?;
+            let held: u64 = world.held(vessel).iter().map(|&e| world.mass(e).mg()).sum();
+            let amount = capacity
+                .mg()
+                .saturating_sub(held)
+                .min(world.mass(from).mg().saturating_sub(1));
+            if amount == 0 {
+                return Err(Refusal::Full(named(world, vessel)));
+            }
+            if reach.carried.contains(&vessel) {
+                can_carry(world, actor, Mass::from_mg(amount))?;
+            }
+            let composition = world.composition(from).expect("a liquid is matter");
+            let take = matter::proportional(composition, Mass::from_mg(amount))
+                .ok_or_else(|| Refusal::NotLiquid(named(world, from)))?;
+            Ok(vec![Change::Split {
+                from,
+                take,
+                at: vessel,
+            }])
+        }
+
         Intent::Light { chamber } => {
             must_know(world, actor, Process::Light)?;
             let found = find(world, reach.around.iter().copied(), chamber)
@@ -676,6 +729,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if !world.is_container(target) {
                 return Err(Refusal::NotAContainer(named(world, target)));
             }
+            softens(world, target, found)?;
             // A container can't hold anything hotter than it can stand.
             let limit = world
                 .composition(target)
@@ -1003,11 +1057,19 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Drink { source } => {
+            // What's here, then what's in hand, including inside what you carry.
+            let in_carried: Vec<EntityId> = reach
+                .carried
+                .iter()
+                .filter(|&&c| world.is_container(c))
+                .flat_map(|&c| world.held(c))
+                .collect();
             let candidates = reach
                 .around
                 .iter()
                 .chain(&reach.inside)
                 .chain(&reach.carried)
+                .chain(&in_carried)
                 .copied();
             let found =
                 find(world, candidates, source).ok_or_else(|| Refusal::NotHere(source.clone()))?;
@@ -1374,6 +1436,25 @@ fn by_hand(world: &World, target: EntityId) -> Result<(), Refusal> {
         return Err(Refusal::TooHard {
             tool: "your hands".into(),
             target: named(world, target),
+        });
+    }
+    Ok(())
+}
+
+/// Refuses if a container is made of something the liquid would soften, as
+/// some earths turn back to mud when wet.
+fn softens(world: &World, container: EntityId, liquid: EntityId) -> Result<(), Refusal> {
+    let Some(main) = world.composition(container).and_then(matter::dominant) else {
+        return Ok(());
+    };
+    let softens_in = &world.materials()[&main].softens_in;
+    let soaks = world
+        .composition(liquid)
+        .is_some_and(|c| c.keys().any(|m| softens_in.contains(m)));
+    if soaks {
+        return Err(Refusal::WouldSoften {
+            container: named(world, container),
+            liquid: named(world, liquid),
         });
     }
     Ok(())

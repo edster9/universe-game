@@ -73,3 +73,28 @@ Simplifications to revisit:
 - **Exploring finds ways, not places.** Places you can see but haven't reached come with the view (stage 5).
 - **Knowledge is only of ways.** Knowing what things are, and where things are found, comes with recognition and the knowledge slice.
 - **Every search in a place has the same chance**, however far or well hidden a way is; only the order is nearest first.
+
+### Stage 3: carrying water. Passed, 2026-09-29.
+
+**Shape a clay pot, fire it hard in a furnace, fill it at the stream, and drink from it far from water.** [where-3-carry-water.txt](../../data/scripts/where-3-carry-water.txt) does the whole thing as the castaway, starting with exploring, in two shared recipes: [explore-the-island.txt](../../data/scripts/skills/explore-the-island.txt) and [fire-a-pot.txt](../../data/scripts/skills/fire-a-pot.txt).
+
+- **A shape can hold things.** A shape whose role is containing says how much it holds (a pot, 2 kg), and a piece worked into it becomes a container. Its datasheet says "can hold: 2 kg".
+- **`fill pot from water`** takes liquid from a source into a container, up to what it holds and what you can carry. Drinking reaches into a container you carry.
+- **What a container holds is carried too.** A full pot weighs 3 kg against your carrying limit and your walking speed, and `inventory` shows what's inside.
+- **Some materials soften in some liquids.** Unfired clay softens in water, so an unfired pot can't be filled ("the clay pot would soften in the stream's water"). Fired, it holds water. This is data on the material, and the engine applies it to any container and any liquid, when filling or pouring.
+
+The mistakes, in [where-3-unfired-pot.txt](../../data/scripts/where-3-unfired-pot.txt): an unfired pot, and a plain lump of clay, which can't hold anything.
+
+**What the attempt found:**
+
+- **Carried containers didn't weigh what they held.** The carrying limit and walking speed counted only the pot itself. Fixed: things are weighed with their contents.
+- **An open fire can't be built up to big logs.** Sticks burn out before a 2 kg piece of driftwood catches, so a campfire never gets a pot anywhere near 900 K. A furnace does, as a kiln would, so the pot is fired there. Real people fired pots in bonfires; this is a gap in the fire laws, recorded rather than fixed now.
+
+**Sabotage checks:** a containing shape that holds nothing, clay that doesn't soften, and contents that weigh nothing each fail a proof.
+
+Simplifications to revisit:
+
+- **A pot's capacity is a mass**, not a volume.
+- **Drinking leaves the last milligram** in a pot, as it does in any source.
+- **Water in a pot doesn't spill, evaporate, or go stale.**
+

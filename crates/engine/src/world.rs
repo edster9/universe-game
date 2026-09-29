@@ -256,6 +256,8 @@ pub enum Role {
     /// Pushes against a liquid to move a vessel. Measured: the share of the
     /// worker's effort it delivers.
     Pushing,
+    /// Holds things put in it, up to a mass. Measured: what it can hold.
+    Containing,
 }
 
 /// A body's need for sleep.
@@ -290,6 +292,8 @@ pub struct ShapeDef {
     /// For a pushing shape: the share of effort it delivers, in parts per
     /// ten thousand.
     pub push: Option<u64>,
+    /// For a containing shape: the most it holds.
+    pub capacity: Option<Mass>,
     /// For a casting shape: the shape liquid takes when it sets inside.
     pub casts: Option<String>,
 }
@@ -800,9 +804,19 @@ impl World {
         let total: u64 = self
             .contents(holder)
             .iter()
-            .map(|&c| self.mass(c).mg())
+            .map(|&c| self.weight(c).mg())
             .sum();
         Mass::from_mg(total)
+    }
+
+    /// What something weighs in the hand: its own mass, and whatever it holds.
+    pub fn weight(&self, id: EntityId) -> Mass {
+        let inside: u64 = if self.is_container(id) {
+            self.held(id).iter().map(|&e| self.weight(e).mg()).sum()
+        } else {
+            0
+        };
+        Mass::from_mg(self.mass(id).mg() + inside)
     }
 
     /// A place's surrounding temperature now. Where nights are colder, it

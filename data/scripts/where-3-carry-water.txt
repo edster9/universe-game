@@ -1,0 +1,28 @@
+# Where am I?, stage 3: carrying water. The castaway explores, shapes a clay
+# pot with a stone, fires it hard in a furnace, fills it at the stream, and
+# drinks from it far from water. What's in the pot is carried like anything
+# else: a full pot weighs 3 kg.
+world where-am-i.toml
+as survivor
+luck average
+
+include skills/explore-the-island.txt
+include skills/fire-a-pot.txt
+datasheet pot
+expect said can hold: 2 kg
+go forest
+go stream
+fill pot from water
+expect said you fill the fired clay pot with 2 kg of water
+inventory
+expect said in the fired clay pot: water (2 kg)
+expect said 6.4 kg in all
+go forest
+go hillside
+wait 3 h
+drink water
+expect said you drink 500 g of water
+inventory
+expect said in the fired clay pot: water (1.5 kg)
+expect alive
+expect conserved

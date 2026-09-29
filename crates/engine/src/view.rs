@@ -85,12 +85,9 @@ pub fn inventory(world: &World, actor: EntityId) -> Inventory {
         .into_iter()
         .map(|e| thing(world, e))
         .collect();
-    // The loader guarantees the whole world's mass fits in a Mass, so any
-    // part of it does too.
-    let carried = things.iter().map(|t| u128::from(t.mass.mg())).sum::<u128>();
     Inventory {
         things,
-        carried: Mass::from_mg(u64::try_from(carried).expect("world mass fits in a Mass")),
+        carried: world.carried_mass(actor),
         credits: world.wallet(actor).unwrap_or(Credits::ZERO),
     }
 }

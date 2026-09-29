@@ -134,6 +134,7 @@ specific_heat = "900 J/(kg*K)"
 hardness = "1.5"
 density = "1800 kg/m3"
 becomes = { material = "fired-clay", at = "900 K" }
+softens_in = ["water", "seawater"]
 
 [[material]]
 id = "fired-clay"
@@ -219,6 +220,12 @@ id = "rope"
 label = "rope"
 role = "pulling"
 length = "5 m"
+
+[[shape]]
+id = "pot"
+label = "pot"
+role = "containing"
+holds = "2 kg"
 
 [[shape]]
 id = "paddle"

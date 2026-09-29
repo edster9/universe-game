@@ -221,6 +221,20 @@ Added 2026-09-29, after the injury stage. Not to build yet beyond a pointed spea
 
 See [ideas/harm.md](ideas/harm.md).
 
+## From text adventure to the game's interface
+
+Added 2026-09-29, **for a discussion soon**, along with the other pending conversations.
+
+- Years ago there were text adventures such as Zork or The Pawn. They weren't a third-person view of someone walking around in 3D: the situation was explained to you and you prompted what to do. Walk around, go west, go north, gather this, make a fire, look under a rock, open the door.
+- Our engine is very well suited to that kind of setup as its first proving ground: we set the laws of the universe and write scripts that carry out instructions.
+- At some point we have to move to the game's real perspective: translate real-time actions of walking and moving around, creating skills, and buttons for repeating skills, and apply that to the scripting engine, to see how the two marry and go further.
+
+See [ideas/game-interface.md](ideas/game-interface.md).
+
+## Pausing the stages for the big conversations
+
+Added 2026-09-29. The stages' natural path keeps going until a village with many people, houses, people walking into buildings, trading, and money, and that could be many more stages. At some point we have to steer, and solve the outstanding questions that are piling up, perhaps only in early forms, and then continue the stages.
+
 ## Time passing while a player is away
 
 Added 2026-09-29, **for a discussion soon: before the vocabulary conversation and the other planned discussions.** Not to be solved yet.

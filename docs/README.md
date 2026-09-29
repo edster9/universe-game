@@ -30,6 +30,7 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/kinds.md](ideas/kinds.md) | Decided: how living things are classified, humans and future aliens included, and what drives them |
 | [ideas/memory.md](ideas/memory.md) | Decided: what a person knows, certain or only possible, and how maps and seeing for yourself correct it |
 | [ideas/harm.md](ideas/harm.md) | How things cause harm: edge (built), blunt, projectile, and blast, as ways of delivering energy rather than kinds of weapon |
+| [ideas/game-interface.md](ideas/game-interface.md) | For a discussion soon: moving from a text adventure to the game's real-time interface |
 | [ideas/time-away.md](ideas/time-away.md) | For a discussion soon: what happens to a player's person while they're away |
 | [ideas/vocabulary.md](ideas/vocabulary.md) | For a conversation after the next two challenges: how new vocabulary emerges as the engine trains |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |

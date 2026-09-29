@@ -75,6 +75,10 @@ The working proposal is to have both:
 - The character's skill decides the success rate and the quality.
 - Designs make big builds tractable. Nobody hand-assembles a ship from thousands of parts. Without a design, it is impossible in practice even if not in principle.
 
+## Skills
+
+A skill is a saved procedure for doing something, plus the practice to do it well. How skills are learned, saved, and used through a spoken interface is in [skills-and-interface.md](skills-and-interface.md).
+
 ## Machines that build
 
 Later, a machine can carry out a design: a program that encodes the design, running on a computer wired to a fabricator and a robot arm. That is automation, and it is where the in-game computer meets building. The machine still needs the design, the power, the materials, and someone to have built it.

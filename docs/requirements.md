@@ -118,6 +118,19 @@ See [challenges/stranded.md](challenges/stranded.md).
 
 Added 2026-09-28, after stage 2 (fire). It's fine to simplify laws if that makes things easier. We don't have to be extremely granular to mimic a real-world example. This kind of fine tuning would happen a lot, and we don't want to over-engineer: keep the spirit of something alive.
 
+**This is a standing rule** for every design like this: don't overcomplicate.
+
+## Skills, and talking to the game
+
+Added 2026-09-28. Making fire showed a new direction for how the game works.
+
+- **Skills.** The whole fire-making process (grab twigs and grass, a 20-second window to heat and light it) would be very hard to build a user interface for. When a character succeeds at making a fire, the engine can save that as a skill. As you learn things, they become additional skills.
+- **Talking to the game.** A very likely interface is an open microphone: explain what you want to do, an AI model interprets it, and the game engine takes your prompt, checks whether it works with the rules of the world, and applies it.
+- **An adaptive interface.** The user interface itself becomes reflective and adaptive as you learn.
+- **Where skills come from.** A blank mind knows nothing and is trained. Characters start with skills most people would know, such as building a fire. You can go to a library to learn skills beyond basic common sense.
+
+See [ideas/skills-and-interface.md](ideas/skills-and-interface.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

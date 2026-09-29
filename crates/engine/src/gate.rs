@@ -77,6 +77,8 @@ pub enum Change {
     },
     /// A body works hard until `until`.
     Exert { agent: EntityId, until: u64 },
+    /// Someone sees a place, from afar or by being there.
+    See { agent: EntityId, place: EntityId },
     /// Someone learns the way from one place to another.
     Learn {
         agent: EntityId,
@@ -474,6 +476,14 @@ impl World {
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 life.working_until = until;
+                Ok(())
+            }
+
+            &Change::See { agent, place } => {
+                if !self.is_place(place) {
+                    return Err(Fault::NotAPlace(place));
+                }
+                self.seen.entry(agent).or_default().insert(place);
                 Ok(())
             }
 

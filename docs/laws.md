@@ -95,6 +95,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | When nothing fast is happening, nature takes bigger steps. Fixed sources are too big to change fast, however far they lag the air | in | stranded 1 |
 | The world has a time of day. The air is warmest at midday and coldest at midnight, at temperatures each place gives | in | where am I? 1 |
 | The air cools with height, at a rate the world gives; a place's temperatures are as at zero height | in | where am I? 4 |
+| Places have positions. A landmark (a place with a look from afar) can be seen, by day, when it's within the viewer's horizon plus its own; a horizon is √(2 × planet radius × height) | in | where am I? 5 |
+| People remember the places they've seen or been to | in | where am I? 5 |
 | At night it's dark: searching needs light, and something burning in the place gives it | in | where am I? 1 |
 | An action that takes time is hard work for a body while it lasts | in | slice 2, stranded 1 |
 | Some work continues over time (rubbing), advanced by nature each second until it ends. Rubbing into a container stops once something else in it catches: what the rubbing was for | in | stranded 2, where am I? 1 |

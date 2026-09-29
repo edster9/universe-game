@@ -85,6 +85,13 @@ pub struct Settings {
     pub explore_chance: u64,
     /// How much the air cools for each km of height, in mK.
     pub lapse_rate: u64,
+    /// The radius of the world's planet, in µm, which sets how far the
+    /// horizon is. 0 means nothing distant can be seen.
+    pub planet_radius: u64,
+    /// How high a person's eyes are above the ground, in µm.
+    pub eye_height: u64,
+    /// How long taking in the view takes, in seconds.
+    pub survey_time: u64,
 }
 
 impl Default for Settings {
@@ -118,6 +125,9 @@ impl Default for Settings {
             explore_time: 1_800,
             explore_chance: 6_000,
             lapse_rate: 0,
+            planet_radius: 0,
+            eye_height: 1_700_000,
+            survey_time: 600,
         }
     }
 }
@@ -391,6 +401,12 @@ pub struct World {
     pub(crate) distances: BTreeMap<(EntityId, EntityId), u64>,
     /// Each place's height, in µm. Missing means zero.
     pub(crate) heights: BTreeMap<EntityId, u64>,
+    /// Where each place is, in µm east and north of the world's origin.
+    pub(crate) positions: BTreeMap<EntityId, (i64, i64)>,
+    /// How landmarks look from far away. Only these can be seen from afar.
+    pub(crate) from_afar: BTreeMap<EntityId, String>,
+    /// The places each person has seen or been to.
+    pub(crate) seen: BTreeMap<EntityId, BTreeSet<EntityId>>,
     /// Paths that cross a liquid, and the liquid they cross.
     pub(crate) crossings: BTreeMap<(EntityId, EntityId), EntityId>,
     /// The ways out each person knows, as (from, to), for people who have
@@ -825,6 +841,26 @@ impl World {
             0
         };
         Mass::from_mg(self.mass(id).mg() + inside)
+    }
+
+    /// Where a place is, in µm east and north, if it has a position.
+    pub fn position(&self, place: EntityId) -> Option<(i64, i64)> {
+        self.positions.get(&place).copied()
+    }
+
+    /// How a landmark looks from far away.
+    pub fn from_afar(&self, place: EntityId) -> Option<&str> {
+        self.from_afar.get(&place).map(String::as_str)
+    }
+
+    /// How many places someone has seen, from afar or by being there.
+    pub fn places_seen(&self, who: EntityId) -> usize {
+        self.seen.get(&who).map_or(0, BTreeSet::len)
+    }
+
+    /// Whether someone has seen a place, from afar or by being there.
+    pub fn has_seen(&self, who: EntityId, place: EntityId) -> bool {
+        self.seen.get(&who).is_some_and(|s| s.contains(&place))
     }
 
     /// A place's height, in µm.

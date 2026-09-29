@@ -118,6 +118,7 @@ pub enum Refusal {
     },
     NothingToCross(String),
     NotAVessel(String),
+    TooDarkToSee,
     DontKnowWay(String),
     CannotFill(String),
     WouldSoften {
@@ -227,6 +228,7 @@ impl fmt::Display for Refusal {
                 write!(f, "there's nothing to cross on the way to {place}")
             }
             Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
+            Refusal::TooDarkToSee => write!(f, "it's too dark to see far: wait for daylight"),
             Refusal::CannotFill(name) => write!(f, "{name} can't hold anything poured in"),
             Refusal::Full(name) => write!(f, "{name} is full"),
             Refusal::WouldSoften { container, liquid } => {
@@ -380,6 +382,7 @@ fn sleeping_time(world: &World, actor: EntityId, seconds: Option<u64>) -> u64 {
 fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
         Intent::Explore => world.settings().explore_time,
+        Intent::Survey => world.settings().survey_time,
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
         Intent::Go { place, aboard } => {
             let Ok(reach) = Reach::of(world, actor) else {
@@ -509,6 +512,13 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             // What you cross on comes with you.
             if let Some((vessel, _)) = crossing.filter(|(v, _)| !reach.carried.contains(v)) {
                 changes.push(Change::Move { entity: vessel, to });
+            }
+            // Having been there, you've seen it.
+            if !world.has_seen(actor, to) {
+                changes.push(Change::See {
+                    agent: actor,
+                    place: to,
+                });
             }
             // Having come this way, you know the way back.
             if !world.knows_way(actor, to, reach.here) {
@@ -1149,6 +1159,21 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }])
         }
 
+        Intent::Survey => {
+            // Seeing far needs daylight; a fire lights only what's near it.
+            if world.is_night() {
+                return Err(Refusal::TooDarkToSee);
+            }
+            Ok(in_sight(world, reach.here)
+                .into_iter()
+                .filter(|sight| !world.has_seen(actor, sight.place))
+                .map(|sight| Change::See {
+                    agent: actor,
+                    place: sight.place,
+                })
+                .collect())
+        }
+
         Intent::Explore => {
             if world.is_dark(reach.here) {
                 return Err(Refusal::TooDark);
@@ -1364,6 +1389,69 @@ fn way(
             vessel: named(world, vessel),
             liquid: world.label(liquid),
         }),
+    }
+}
+
+/// A landmark seen from somewhere: which way, and how far.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Sight {
+    pub place: EntityId,
+    /// A compass direction, such as "north-east".
+    pub direction: &'static str,
+    /// In µm, along the ground.
+    pub distance: u64,
+}
+
+/// The landmarks in sight from a place, nearest first. Something can be seen
+/// when it's no farther than the viewer's horizon and its own added
+/// together; a horizon is √(2 × planet radius × height).
+pub fn in_sight(world: &World, from: EntityId) -> Vec<Sight> {
+    let radius = u128::from(world.settings().planet_radius);
+    let Some((x, y)) = world.position(from).filter(|_| radius > 0) else {
+        return Vec::new();
+    };
+    let horizon = |height: u64| (2 * radius * u128::from(height)).isqrt();
+    let eye = horizon(world.height(from) + world.settings().eye_height);
+    let mut sights: Vec<Sight> = world
+        .from_afar
+        .keys()
+        .copied()
+        .filter(|&place| place != from)
+        .filter_map(|place| {
+            let (px, py) = world.position(place)?;
+            let (east, north) = (
+                i128::from(px) - i128::from(x),
+                i128::from(py) - i128::from(y),
+            );
+            let distance = u128::try_from(east * east + north * north)
+                .expect("a square")
+                .isqrt();
+            (distance <= eye + horizon(world.height(place))).then(|| Sight {
+                place,
+                direction: compass(east, north),
+                distance: u64::try_from(distance).unwrap_or(u64::MAX),
+            })
+        })
+        .collect();
+    sights.sort_by_key(|s| (s.distance, s.place));
+    sights
+}
+
+/// One of eight compass directions for an offset east and north.
+fn compass(east: i128, north: i128) -> &'static str {
+    // tan 67.5° ≈ 2.414: beyond it, a direction is straight along an axis.
+    let (e, n) = (east.abs() * 1_000, north.abs() * 1_000);
+    let along_east = e > north.abs() * 2_414;
+    let along_north = n > east.abs() * 2_414;
+    match (along_north, along_east, north >= 0, east >= 0) {
+        (true, _, true, _) => "north",
+        (true, _, false, _) => "south",
+        (_, true, _, true) => "east",
+        (_, true, _, false) => "west",
+        (_, _, true, true) => "north-east",
+        (_, _, true, false) => "north-west",
+        (_, _, false, true) => "south-east",
+        (_, _, false, false) => "south-west",
     }
 }
 

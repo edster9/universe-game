@@ -392,6 +392,30 @@ impl Session {
                 "You take it apart.".into()
             }
             (Intent::Eat { item }, _) => format!("You eat the {item}."),
+            (Intent::Survey, _) => {
+                let sights = laws::in_sight(w, w.location(self.player).expect("somewhere"));
+                if sights.is_empty() {
+                    "You take in the view, but nothing stands out in the distance.".into()
+                } else {
+                    let lines: Vec<String> = sights
+                        .iter()
+                        .map(|s| {
+                            let km = (s.distance + 500_000_000) / 1_000_000_000;
+                            let far = if km == 0 {
+                                "under a kilometre away".to_string()
+                            } else {
+                                format!("about {km} km away")
+                            };
+                            format!(
+                                "To the {}, {far}: {}.",
+                                s.direction,
+                                w.from_afar(s.place).unwrap_or_default()
+                            )
+                        })
+                        .collect();
+                    format!("You take in the view.\n{}", lines.join("\n"))
+                }
+            }
             (Intent::Explore, Some(&Change::Learn { to, .. })) => {
                 format!("You find a way to {}.", w.label(to))
             }
@@ -541,6 +565,9 @@ impl Session {
             ),
             &Change::Exert { agent, until } => {
                 format!("{} works hard until {until} s", w.label(agent))
+            }
+            &Change::See { agent, place } => {
+                format!("{} sees {}", w.label(agent), w.label(place))
             }
             &Change::Learn { agent, to, .. } => {
                 format!("{} learns the way to {}", w.label(agent), w.label(to))

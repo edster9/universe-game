@@ -1,0 +1,34 @@
+# Where am I?, stage 5: the view. From the beach, with the horizon under
+# 5 km away, the castaway can make out only the next island and the mountain.
+# After exploring, firing pots, and climbing 1,800 m, the summit's horizon is
+# 150 km away: reef islands, an island with smoke rising from it, and a high
+# island far to the north. Not alone, then. What's seen is remembered. By
+# night, nothing can be seen far.
+world where-am-i.toml
+as survivor
+luck average
+
+survey
+expect said to the east, about 2 km away: a small rocky island
+expect said to the west, about 12 km away: a mountain
+expect not said smoke
+include skills/explore-the-island.txt
+include skills/fire-pots.txt
+go forest
+go stream
+fill pot from water
+fill pot from water
+include skills/climb-the-mountain.txt
+datasheet survivor
+expect said places seen: 8
+survey
+expect said to the south-east, about 35 km away: a scatter of small, flat islands
+expect said to the north-east, about 63 km away: a long, low island, with smoke rising from its southern end
+expect said to the north, about 117 km away: a high island with two peaks
+datasheet survivor
+expect said places seen: 11
+wait 5 h
+try survey
+expect said too dark to see far
+expect alive
+expect conserved

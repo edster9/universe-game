@@ -84,6 +84,8 @@ pub enum Intent {
     },
     /// Search around for a way out not yet known.
     Explore,
+    /// Take in the view: see what lies in the distance.
+    Survey,
     /// Sleep until rested, or for a while.
     Sleep {
         seconds: Option<u64>,
@@ -149,6 +151,7 @@ impl fmt::Display for Intent {
             Intent::Disassemble { item } => write!(f, "take apart {item}"),
             Intent::Eat { item } => write!(f, "eat {item}"),
             Intent::Explore => f.write_str("explore"),
+            Intent::Survey => f.write_str("survey"),
             Intent::Sleep { seconds: None } => f.write_str("sleep"),
             Intent::Sleep {
                 seconds: Some(seconds),
@@ -301,6 +304,7 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
             design: one("<design>")?,
         },
         "explore" | "search" => Intent::Explore,
+        "survey" => Intent::Survey,
         "sleep" => {
             let time = rest.strip_prefix("for ").unwrap_or(&rest).trim();
             let seconds = if time.is_empty() {

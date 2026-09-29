@@ -67,6 +67,7 @@ pub enum Property {
     Awake,
     Capacity,
     Height,
+    PlacesSeen,
 }
 
 impl Property {
@@ -120,6 +121,7 @@ impl Property {
             Property::Awake => "awake for",
             Property::Capacity => "can hold",
             Property::Height => "height",
+            Property::PlacesSeen => "places seen",
         }
     }
 }
@@ -339,6 +341,10 @@ fn measure_thing(world: &World, id: EntityId) -> Datasheet {
         sheet.set(
             Property::Working,
             Value::Flag(life.working_until > world.tick()),
+        );
+        sheet.set(
+            Property::PlacesSeen,
+            Value::Text(world.places_seen(id).to_string()),
         );
         if let Some(sleep) = &life.sleep {
             let text = if world.is_asleep(id) {

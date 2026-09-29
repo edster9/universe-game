@@ -76,6 +76,12 @@ struct SettingsDef {
     explore_chance: Option<String>,
     /// How fast the air cools with height.
     lapse_rate: Option<String>,
+    /// The planet's radius, which sets how far the horizon is.
+    planet_radius: Option<String>,
+    /// How high a person's eyes are.
+    eye_height: Option<String>,
+    /// How long taking in the view takes.
+    survey_time: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -164,6 +170,13 @@ struct PlaceDef {
     crossings: BTreeMap<String, String>,
     /// Height. Its temperatures are given as at zero height.
     height: Option<String>,
+    /// Where it is: how far east and north of the world's origin. Either
+    /// may be negative.
+    east: Option<String>,
+    north: Option<String>,
+    /// How it looks from far away, which makes it a landmark that can be
+    /// seen from afar.
+    from_afar: Option<String>,
     /// The warmest it gets, at midday.
     temperature: Option<String>,
     /// The coldest it gets, at midnight, in a world with days.
@@ -411,6 +424,33 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
         if let Some(h) = &def.height {
             world.heights.insert(place, parse_length(&def.id, h)?);
         }
+        match (&def.east, &def.north) {
+            (Some(east), Some(north)) => {
+                let offset = |text: &str| -> Result<i64, LoadError> {
+                    let (sign, rest) = match text.trim().strip_prefix('-') {
+                        Some(rest) => (-1, rest),
+                        None => (1, text),
+                    };
+                    let length = i64::try_from(parse_length(&def.id, rest)?)
+                        .map_err(|_| LoadError(format!("{}: too far", def.id)))?;
+                    Ok(sign * length)
+                };
+                world
+                    .positions
+                    .insert(place, (offset(east)?, offset(north)?));
+            }
+            (None, None) => {}
+            _ => return fail(format!("{} needs both east and north, or neither", def.id)),
+        }
+        if let Some(looks) = &def.from_afar {
+            if !world.positions.contains_key(&place) {
+                return fail(format!(
+                    "{} is seen from afar, so it needs a position",
+                    def.id
+                ));
+            }
+            world.from_afar.insert(place, looks.clone());
+        }
     }
     for (&place, def) in places.iter().zip(&file.places) {
         let mut exits = Vec::new();
@@ -633,6 +673,15 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     }
     if let Some(c) = &def.explore_chance {
         settings.explore_chance = parse_percent(c)?;
+    }
+    if let Some(r) = &def.planet_radius {
+        settings.planet_radius = parse_quantity(r, property::LENGTH, "a length like \"6371 km\"")?;
+    }
+    if let Some(e) = &def.eye_height {
+        settings.eye_height = parse_quantity(e, property::LENGTH, "a length like \"1.7 m\"")?;
+    }
+    if let Some(t) = &def.survey_time {
+        settings.survey_time = time(t)?.max(1);
     }
     if let Some(l) = &def.lapse_rate {
         settings.lapse_rate = parse_quantity(l, property::LAPSE_RATE, "a rate like \"6.5 K/km\"")?;

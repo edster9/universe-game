@@ -19,6 +19,13 @@
 # cools 6.5 K for every km of height, so the summit is about 12 K colder than
 # the beach, and its nights near 280 K.
 # There's no water above the stream, and no wood above the slopes.
+#
+# Stage 5, the view: places have positions, in km east and north of the
+# beach. Landmarks, places with a look from afar, can be seen when they're
+# within the viewer's horizon plus their own, on a planet of Earth's size.
+# From the beach: the next island and the mountain. From the summit: reef
+# islands 25 km south-east, an island with smoke rising 60 km north-east,
+# and a high island 120 km north. None of them can be reached yet.
 
 uses = ["island-things.toml"]
 
@@ -40,6 +47,9 @@ hand_hardness = "1"
 explore_time = "30 min"
 explore_chance = "60%"
 lapse_rate = "6.5 K/km"
+planet_radius = "6371 km"
+eye_height = "1.7 m"
+survey_time = "10 min"
 hand_push = "5%"
 drag = "300%"
 day = "24 h"
@@ -55,6 +65,8 @@ distances = { stream = "400 m", forest = "300 m", islet = "2 km" }
 crossings = { islet = "sea" }
 temperature = "300 K"
 night = "292 K"
+east = "0 m"
+north = "0 m"
 
 [[place]]
 id = "stream"
@@ -64,6 +76,8 @@ distances = { forest = "300 m" }
 height = "20 m"
 temperature = "300 K"
 night = "292 K"
+east = "-300 m"
+north = "-250 m"
 
 [[place]]
 id = "forest"
@@ -73,6 +87,8 @@ distances = { hillside = "500 m" }
 height = "30 m"
 temperature = "300 K"
 night = "292 K"
+east = "-300 m"
+north = "50 m"
 
 [[place]]
 id = "hillside"
@@ -82,6 +98,8 @@ distances = { slopes = "5 km" }
 height = "150 m"
 temperature = "300 K"
 night = "292 K"
+east = "-750 m"
+north = "0 m"
 
 [[place]]
 id = "slopes"
@@ -91,6 +109,8 @@ distances = { ridge = "5 km" }
 height = "600 m"
 temperature = "300 K"
 night = "292 K"
+east = "-5 km"
+north = "1 km"
 
 [[place]]
 id = "ridge"
@@ -100,6 +120,8 @@ distances = { summit = "3 km" }
 height = "1200 m"
 temperature = "300 K"
 night = "292 K"
+east = "-9.5 km"
+north = "2 km"
 
 [[place]]
 id = "summit"
@@ -108,11 +130,48 @@ exits = ["ridge"]
 height = "1800 m"
 temperature = "300 K"
 night = "292 K"
+east = "-12 km"
+north = "3 km"
+from_afar = "a mountain, its top bare rock"
 
 [[place]]
 id = "islet"
 label = "the next island"
 exits = ["beach"]
+height = "60 m"
+temperature = "300 K"
+night = "292 K"
+east = "2 km"
+north = "0 m"
+from_afar = "a small rocky island"
+
+[[place]]
+id = "reefs"
+label = "the reef islands"
+east = "15 km"
+north = "-20 km"
+height = "10 m"
+from_afar = "a scatter of small, flat islands"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "village-island"
+label = "the village island"
+east = "40 km"
+north = "38 km"
+height = "40 m"
+from_afar = "a long, low island, with smoke rising from its southern end"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "twin-peaks"
+label = "the twin-peaked island"
+east = "-10 km"
+north = "120 km"
+height = "700 m"
+from_afar = "a high island with two peaks, faint in the haze"
 temperature = "300 K"
 night = "292 K"
 

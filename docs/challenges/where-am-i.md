@@ -128,3 +128,34 @@ Simplifications to revisit:
 - **Wind** doesn't add to the cold at height.
 - **The summit night isn't dangerous** for a healthy, fed, watered body. It costs food, but it can't kill yet without rain or wind.
 
+### Stage 5: the view. Passed, 2026-09-29.
+
+**From the summit, the castaway sees they aren't alone.** [where-5-the-view.txt](../../data/scripts/where-5-the-view.txt): on the beach, `survey` shows only "a small rocky island" 2 km east and "a mountain, its top bare rock" 12 km west. After exploring, firing pots, and climbing, the same survey from the summit shows:
+
+> To the east, about 14 km away: a small rocky island.
+> To the south-east, about 35 km away: a scatter of small, flat islands.
+> To the north-east, about 63 km away: a long, low island, with smoke rising from its southern end.
+> To the north, about 117 km away: a high island with two peaks, faint in the haze.
+
+The owner chose this answer, an archipelago with a village, on 2026-09-29, because it sets up both the long voyage and meeting other people.
+
+The new laws:
+
+- **Places have positions**, east and north of the world's origin.
+- **You see as far as the horizon, which grows with height.** A horizon is √(2 × planet radius × height): under 5 km from a person's eyes on the beach, about 150 km from the summit. A landmark can be seen when it's no farther than the viewer's horizon and its own added together, so a high island shows from farther away than a low one. The planet's radius is data, so a smaller world has nearer horizons.
+- **Only landmarks stand out from afar.** A place with a description of how it looks from far away is a landmark; the description is what you're told, not its name, since you don't know it yet.
+- **Seeing needs daylight**, and what you see is remembered: the castaway's "places seen" goes from 8 to 11. Being somewhere counts as having seen it.
+
+**Sabotage checks:** an unlimited horizon lets the beach see the smoke, and a survey that forgets fails the count.
+
+Simplifications to revisit:
+
+- **Nothing blocks the view.** The mountain doesn't hide what's behind it, and the forest doesn't hide the sea.
+- **Air is always clear**, by day; haze, rain, and distance don't dim anything.
+- **At night nothing far can be seen**, not even a village's fires.
+- **Seen places can't be reached yet.** Going there is the long voyage, saved for later.
+
+## The challenge, complete
+
+All five stages passed, 2026-09-29. A castaway who knows nothing about where they are can explore, carry water, climb a mountain over days, and see what's around them, all under laws that know nothing of islands, pots, or mountains. What it added to the engine: day and night, darkness, shivering, sleep, warming by day, exploring and known ways, containers and filling, softening in liquids, heights and climbing, cooling with height, positions, horizons, and landmarks. Next: [living with the island](living-with-the-island.md).
+

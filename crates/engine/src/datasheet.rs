@@ -58,6 +58,8 @@ pub enum Property {
     PieceSize,
     SearchTime,
     FindChance,
+    Needs,
+    GrowsTo,
 }
 
 impl Property {
@@ -102,6 +104,8 @@ impl Property {
             Property::PieceSize => "comes in pieces of",
             Property::SearchTime => "one search takes",
             Property::FindChance => "chance a search finds a piece",
+            Property::Needs => "gathering needs",
+            Property::GrowsTo => "grows back up to",
         }
     }
 }
@@ -248,6 +252,18 @@ pub fn measure(world: &World, id: EntityId) -> Datasheet {
             Property::FindChance,
             Value::Text(format!("{}%", chance / 100)),
         );
+        if let Some(needs) = &pieces.needs {
+            let label = world
+                .shapes()
+                .get(needs)
+                .map(|s| s.label.clone())
+                .or_else(|| world.designs().get(needs).map(|d| d.label.clone()))
+                .unwrap_or_else(|| needs.clone());
+            sheet.set(Property::Needs, Value::Text(format!("a {label}")));
+        }
+    }
+    if let Some(growth) = world.growth(id) {
+        sheet.set(Property::GrowsTo, Value::Mass(growth.limit));
     }
     if let Some(chamber) = world.chamber(id) {
         sheet.set(

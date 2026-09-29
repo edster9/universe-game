@@ -165,16 +165,33 @@ pub struct Life {
     pub died_of: Option<String>,
 }
 
-/// A source made of loose pieces, which can be gathered by hand one piece at
-/// a time. A solid source has to be cut or dug instead.
+/// A source made of loose pieces, which can be gathered one piece at a time.
+/// A solid source has to be cut or dug instead.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Pieces {
     pub size: Mass,
-    /// How long finding a piece takes when the source is full, in seconds.
-    /// It takes longer as the source thins.
+    /// How long one search takes, in seconds.
     pub find_time: u64,
     /// How much the source holds when full.
     pub full: Mass,
+    /// The chance a search of a full source finds a piece, in parts per ten
+    /// thousand. It falls as the source thins.
+    pub chance: u64,
+    /// A shape or design the gatherer must be carrying, if bare hands won't do.
+    pub needs: Option<String>,
+}
+
+/// A living source that grows toward a limit, drawing matter from another
+/// piece (a population growing from what surrounds it) and energy from
+/// sunlight.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Growth {
+    /// Growth when small, in parts per ten thousand of its mass per day. It
+    /// slows as it nears its limit.
+    pub rate: u64,
+    pub limit: Mass,
+    /// Where the matter for growth comes from.
+    pub from: EntityId,
 }
 
 /// What a shaped part does, which decides what gets measured about it.
@@ -299,6 +316,10 @@ pub struct World {
     pub(crate) life: BTreeMap<EntityId, Life>,
     pub(crate) activities: BTreeMap<EntityId, Activity>,
     pub(crate) pieces: BTreeMap<EntityId, Pieces>,
+    pub(crate) growth: BTreeMap<EntityId, Growth>,
+    /// Energy that has entered the world as sunlight. The gate conserves
+    /// total energy minus this.
+    pub(crate) sunlight: u128,
     pub(crate) agents: BTreeSet<EntityId>,
     pub(crate) portable: BTreeSet<EntityId>,
     pub(crate) containers: BTreeSet<EntityId>,
@@ -420,6 +441,15 @@ impl World {
 
     pub fn pieces(&self, id: EntityId) -> Option<&Pieces> {
         self.pieces.get(&id)
+    }
+
+    pub fn growth(&self, id: EntityId) -> Option<&Growth> {
+        self.growth.get(&id)
+    }
+
+    /// Energy that has entered the world as sunlight so far, in µJ.
+    pub fn sunlight(&self) -> u128 {
+        self.sunlight
     }
 
     /// Matter a place's surroundings have taken in.

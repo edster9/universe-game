@@ -17,7 +17,7 @@
 //! expect dead of thirst      the player died of thirst
 //! expect said sea            the last reply mentions "sea"
 //! expect not said burning    the last reply doesn't mention "burning"
-//! expect conserved           mass, energy, and credits are as they started
+//! expect conserved           mass, energy (apart from sunlight), and credits are as they started
 //! expect not said burning    the last reply doesn't mention "burning"
 //! expect time after 2 day    at least this much time has passed
 //! expect time before 3 day   less than this much time has passed
@@ -92,7 +92,7 @@ pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
     };
     let start = (
         world.total_mass(),
-        world.total_energy(),
+        world.total_energy() - world.sunlight(),
         world.total_credits(),
     );
     let mut session = Session::new(world, &player)?;
@@ -206,7 +206,7 @@ fn check(
     if expectation == "conserved" {
         let now = (
             world.total_mass(),
-            world.total_energy(),
+            world.total_energy() - world.sunlight(),
             world.total_credits(),
         );
         return if now == start {

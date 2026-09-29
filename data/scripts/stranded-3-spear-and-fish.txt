@@ -1,0 +1,28 @@
+# Stranded, stage 3: fish can't be caught by hand. Make a spear, and a search
+# of the shallows finds a fish six times in ten while they're plentiful. With
+# average luck, that's every time.
+world stranded.toml
+as survivor
+luck average
+
+try gather fish
+expect said need a spear
+# Make a spear: a stone knocks a flake off flint, the flake shapes a stick
+# into a shaft, and flake and shaft go together.
+go forest
+gather sticks
+go hillside
+gather stones
+gather flint
+work flint into flake with stone
+work wood into shaft with flake
+assemble spear
+go forest
+go beach
+repeat 3
+  gather fish
+  expect said you find 500 g of fish
+  eat fish
+end
+expect alive
+expect conserved

@@ -70,6 +70,13 @@ pub enum Change {
     },
     /// Someone stops what they were doing.
     EndActivity { agent: EntityId },
+    /// A living thing grows by `mass`, turning matter taken from `from` into
+    /// more of itself. The chemical energy it gains comes from sunlight.
+    Grow {
+        entity: EntityId,
+        from: EntityId,
+        mass: Mass,
+    },
     /// Pour everything in `from` into `into`. `from` stops existing.
     Merge { from: EntityId, into: EntityId },
     /// Give a piece of matter a shape and the tolerance it was made to, or
@@ -191,8 +198,9 @@ impl World {
     /// Applies `changes`, all together or not at all. On success they're
     /// logged. On any fault, the world is left exactly as it was.
     pub fn apply(&mut self, cause: Cause, changes: Vec<Change>) -> Result<(), Fault> {
-        let (mass, energy, credits) =
-            (self.total_mass(), self.total_energy(), self.total_credits());
+        let (mass, credits) = (self.total_mass(), self.total_credits());
+        // Energy is conserved except for what enters as sunlight.
+        let energy = self.total_energy() - self.sunlight;
 
         // Keep a copy to restore if anything goes wrong. The log is set
         // aside so it isn't copied every time. When worlds grow large, this
@@ -207,7 +215,7 @@ impl World {
             .and_then(|()| {
                 if self.total_mass() != mass {
                     Err(Fault::NotConserved("mass"))
-                } else if self.total_energy() != energy {
+                } else if self.total_energy() - self.sunlight != energy {
                     Err(Fault::NotConserved("energy"))
                 } else if self.total_credits() != credits {
                     Err(Fault::NotConserved("credits"))
@@ -374,6 +382,28 @@ impl World {
                 .remove(&agent)
                 .map(|_| ())
                 .ok_or(Fault::NotAlive(agent)),
+
+            &Change::Grow { entity, from, mass } => {
+                let source = self.matter.get(&from).ok_or(Fault::NotMatter(from))?;
+                let own = self.matter.get(&entity).ok_or(Fault::NotMatter(entity))?;
+                let taken = matter::proportional(source, mass).ok_or(Fault::WouldEmpty(from))?;
+                // What grows is more of what the living thing is already
+                // made of, in the same shares.
+                let grown = scale(own, mass).ok_or(Fault::WouldEmpty(entity))?;
+                let before = matter::chemical_energy(&self.materials, &taken);
+                let after = matter::chemical_energy(&self.materials, &grown);
+                let from_sun = after
+                    .checked_sub(before)
+                    .ok_or(Fault::NotConserved("energy"))?;
+                let (_, heat) = self.take_part(from, &taken)?;
+                let body = self.matter.get_mut(&entity).expect("checked above");
+                for (material, part) in grown {
+                    add_material(body, material, part).ok_or(Fault::Overflow(entity))?;
+                }
+                self.give_heat(Holder::Thing(entity), heat)?;
+                self.sunlight += from_sun;
+                Ok(())
+            }
 
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
@@ -599,6 +629,35 @@ impl World {
         *store = store.checked_add(amount).ok_or(Fault::Overflow(id))?;
         Ok(())
     }
+}
+
+/// `mass` split in the same shares as `composition`, adding up exactly.
+fn scale(composition: &Composition, mass: Mass) -> Option<Composition> {
+    let total = matter::total_mass(composition);
+    if total == 0 {
+        return None;
+    }
+    let shares: Vec<(MaterialId, u64)> = composition
+        .iter()
+        .map(|(&m, part)| {
+            (
+                m,
+                u64::try_from(u128::from(part.mg()) * 10_000 / total).unwrap_or(0),
+            )
+        })
+        .collect();
+    let mut shares = shares;
+    let given: u64 = shares.iter().map(|(_, s)| s).sum();
+    if let Some(first) = shares.first_mut() {
+        first.1 += 10_000 - given;
+    }
+    let mut grown = Composition::new();
+    for (material, part) in matter::split_by_fractions(mass, &shares) {
+        if part != Mass::ZERO {
+            grown.insert(material, part);
+        }
+    }
+    Some(grown)
 }
 
 fn remove_material(composition: &mut Composition, material: MaterialId, mass: Mass) -> Option<()> {

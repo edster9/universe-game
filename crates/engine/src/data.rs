@@ -158,6 +158,20 @@ struct LifeDef {
 struct PiecesDef {
     size: String,
     find_time: String,
+    /// The chance a search of a full source finds a piece. Certain if not given.
+    chance: Option<String>,
+    /// A shape or design the gatherer must carry.
+    needs: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct GrowsDef {
+    /// Growth per day while small, as a percentage of its mass.
+    rate: String,
+    limit: String,
+    /// The item whose matter it grows from.
+    from: String,
 }
 
 #[derive(Deserialize)]
@@ -188,8 +202,10 @@ struct ItemDef {
     shape: Option<String>,
     /// How closely it matches that shape.
     tolerance: Option<String>,
-    /// It's made of loose pieces that can be gathered by hand.
+    /// It's made of loose pieces that can be gathered.
     pieces: Option<PiecesDef>,
+    /// It's alive and grows.
+    grows: Option<GrowsDef>,
 }
 
 #[derive(Deserialize)]
@@ -324,6 +340,31 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
 
     for def in &file.items {
         load_item(&mut world, def)?;
+    }
+    // Growth refers to other items, which may be listed after it.
+    for def in &file.items {
+        let Some(grows) = &def.grows else { continue };
+        let item = world.find_by_key(&def.id).expect("just loaded");
+        let from = world
+            .find_by_key(&grows.from)
+            .filter(|&f| world.matter.contains_key(&f) && f != item)
+            .ok_or_else(|| {
+                LoadError(format!(
+                    "{} grows from {:?}, which isn't another material item",
+                    def.id, grows.from
+                ))
+            })?;
+        if !world.matter.contains_key(&item) {
+            return fail(format!("{} grows but isn't made of a material", def.id));
+        }
+        world.growth.insert(
+            item,
+            world::Growth {
+                rate: parse_percent(&grows.rate)?,
+                limit: parse_mass(&def.id, &grows.limit)?,
+                from,
+            },
+        );
     }
 
     // Totals must fit in a single value, so no sum of any part of the world
@@ -628,6 +669,27 @@ fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
                     "a time like \"5 min\"",
                 )?,
                 full: mass,
+                chance: pieces
+                    .chance
+                    .as_deref()
+                    .map(parse_percent)
+                    .transpose()?
+                    .unwrap_or(10_000),
+                needs: match &pieces.needs {
+                    Some(needs)
+                        if world.shapes.contains_key(needs)
+                            || world.designs.contains_key(needs) =>
+                    {
+                        Some(needs.clone())
+                    }
+                    Some(needs) => {
+                        return fail(format!(
+                            "{} needs {needs:?}, which isn't a shape or design",
+                            def.id
+                        ));
+                    }
+                    None => None,
+                },
             },
         );
     }

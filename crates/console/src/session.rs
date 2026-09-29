@@ -462,6 +462,7 @@ impl Session {
             Change::Die { agent, cause } => format!("{} dies of {cause}", w.label(*agent)),
             &Change::StartActivity { agent, .. } => format!("{} starts rubbing", w.label(agent)),
             &Change::EndActivity { agent } => format!("{} stops", w.label(agent)),
+            &Change::Grow { entity, mass, .. } => format!("{} grows by {mass}", w.label(entity)),
         }
     }
 

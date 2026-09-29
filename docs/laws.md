@@ -11,7 +11,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Mass is never created or destroyed; every change passes a gate that checks it | in | every slice |
 | Energy is never created or destroyed: heat, chemical energy, and heat given to surroundings add up | in | slices 1, 2 |
 | Credits are never created or destroyed (until money is real, in slice 3) | in | slice 0 |
-| Energy enters only through named sources: sunlight, at a rate per place | planned | stranded 3 |
+| Energy enters only through named sources. Sunlight is the first: it supplies the energy living things store as they grow, and the gate conserves everything else | in | stranded 3 |
 
 ## Matter and heat
 
@@ -45,7 +45,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Taking material from a fixed source needs a tool harder than it | in | slice 1 |
 | Work takes time, set by the tool's edge and the effort | planned | stranded 5 |
 | A source made of loose pieces can be gathered by hand. Each search takes a fixed time, and the thinner the source, the less likely it finds a piece | in | stranded 1 |
-| Taking material from living things | planned | stranded 3 |
+| Some sources need a particular tool to gather from, and each has its own chance per search, falling as it thins | in | stranded 3 |
 
 ## Measuring
 
@@ -75,7 +75,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Eating takes in only what the body digests; the rest is left | in | stranded 1 |
 | You can drink something only if it's nothing but the fluid your body needs | in | stranded 1 |
 | A body dies below its minimum fluid, with nothing left to burn, or outside the temperatures it can live in. It stays where it fell, holding what it carried | in | stranded 1 |
-| Living things grow on sunlight, up to what their place can support | planned | stranded 3 |
+| Living things grow toward a limit, fast while few and slowing as they fill, taking matter from a source and energy from sunlight | in | stranded 3 |
 
 ## Chance and time
 

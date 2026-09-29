@@ -45,7 +45,7 @@ type Law = fn(&World, u64) -> Vec<Change>;
 /// `dt` seconds of nature, as one step.
 fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
     let now = world.tick();
-    let laws: [Law; 13] = [
+    let laws: [Law; 14] = [
         burn,
         burn_in_the_open,
         friction,
@@ -53,6 +53,7 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
         conduct,
         lose_heat,
         live,
+        grow,
         clear_air,
         limits_of_life,
         finish_activities,
@@ -639,6 +640,33 @@ fn limits_of_life(world: &World, _dt: u64) -> Vec<Change> {
             changes.push(Change::Die {
                 agent: id,
                 cause: cause.into(),
+            });
+        }
+    }
+    changes
+}
+
+/// Living sources grow toward their limit, quickly while small and slowing
+/// as they fill up, drawing matter from their source and energy from
+/// sunlight.
+fn grow(world: &World, dt: u64) -> Vec<Change> {
+    let mut changes = Vec::new();
+    for (&id, growth) in &world.growth {
+        let mass = u128::from(world.mass(id).mg());
+        let limit = u128::from(growth.limit.mg());
+        if mass == 0 || mass >= limit {
+            continue;
+        }
+        let amount = u128::from(growth.rate) * mass * (limit - mass) / limit * u128::from(dt)
+            / 10_000
+            / 86_400;
+        let spare = u128::from(world.mass(growth.from).mg()).saturating_sub(1);
+        let amount = amount.min(spare).min(limit - mass);
+        if amount > 0 {
+            changes.push(Change::Grow {
+                entity: id,
+                from: growth.from,
+                mass: Mass::from_mg(u64::try_from(amount).expect("less than the limit")),
             });
         }
     }

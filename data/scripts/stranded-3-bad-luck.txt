@@ -1,0 +1,24 @@
+# Stranded, stage 3: with the worst luck, every search of the shallows comes
+# up empty, spear or not. The time is still spent.
+world stranded.toml
+as survivor
+luck bad
+
+# Make a spear: a stone knocks a flake off flint, the flake shapes a stick
+# into a shaft, and flake and shaft go together.
+go forest
+gather sticks
+go hillside
+gather stones
+gather flint
+work flint into flake with stone
+work wood into shaft with flake
+assemble spear
+go forest
+go beach
+repeat 4
+  gather fish
+  expect said find nothing
+end
+expect time after 1 h
+expect conserved

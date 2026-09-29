@@ -130,6 +130,32 @@ Simplifications to revisit:
 - **No oxygen, blowing, wind, rain, or damp wood.** No chance is involved in fire yet.
 - **Fire stays in its container**, and burns don't hurt the survivor.
 
+### Stage 3: spear and fishing. Passed, 2026-09-28.
+
+Built under the standing rule: nothing more detailed than the spirit needs.
+
+**Making a spear uses laws that already existed.** A stone knocks a flake off flint, because stone is harder than flint on the engine's scale. The flake shapes a stick into a shaft, and flake and shaft assemble into a spear with a 5 mm flint edge.
+
+**Fish need a spear, and luck.** A search of the shallows takes 15 minutes and finds a fish six times in ten while they're plentiful, less as they thin. Without a spear the engine refuses: "you need a spear".
+
+**Living things grow back.** Fish and shellfish grow toward a limit, quickly while few and slowing as they fill up. They take their matter from the sea and their energy from sunlight, the one named way energy enters the world. The gate tracks exactly how much sunlight has come in, and conserves everything else.
+
+- **Proofs:** with average luck, making a spear and fishing lands three fish in three searches, after the engine refused the first bare-handed try. With bad luck, every search comes up empty and the time is still spent.
+- **Growth:** a shellfish bed thinned to under 45 kg grows back by more than 15 kg in a month, never past its limit. Over five days, sunlight brings in exactly the chemical energy the growing fish and shellfish store, to the microjoule.
+- **Trials:** a survivor with a first real skill (make a spear, then fish when hungry) lived through **30 days on 30 of 30 islands**. On seed 1 the fish grew from 150 kg to 209 kg while being fished, so the life is sustainable. The shellfish survivor is still 30 of 30 over ten days.
+- **Sabotage check:** removing the tool requirement fails the spear proof.
+
+What the attempt found:
+
+- **Naming things in hand first.** "work flint …" matched the flint *source* on the ground exactly by its ID, ahead of the flint in hand, and shaped the hillside's nodules into a flake. Working something, and measuring it, now look at what you're holding before what's around you.
+
+Simplifications to revisit:
+
+- **Sunlight is an unlimited named inflow.** A place doesn't yet have a sunlight budget that caps growth.
+- **Fish are one population with a catch chance**, not individual animals.
+- **Knapping is shaping:** flint is just a little softer than stone on the engine's scale, which isn't true to real hardness but keeps one law for all shaping.
+- **Raw fish is eaten raw.** Cooking isn't modelled.
+
 ## How it's tested
 
 Decided 2026-09-28.

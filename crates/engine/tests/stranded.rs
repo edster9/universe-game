@@ -39,7 +39,7 @@ fn intent(line: &str) -> Intent {
 fn totals(world: &World) -> (u128, u128, u128) {
     (
         world.total_mass(),
-        world.total_energy(),
+        world.total_energy() - world.sunlight(),
         world.total_credits(),
     )
 }
@@ -83,12 +83,30 @@ enum Step {
 
 /// A plain survival routine: drink when a kilo short of water, gather and eat
 /// once the last meal is used up and fat starts to drop, throw away shells,
-/// and otherwise rest. It only types
-/// commands and reads what a person could know about themselves.
+/// and otherwise rest. A fisher first makes a spear, as a skill, then fishes
+/// instead of gathering shellfish. It only types commands and reads what a
+/// person could know about themselves.
 struct Survivor {
     body: EntityId,
     starting_fat: Mass,
+    /// Steps still to do of a skill being carried out, last first.
+    plan: std::cell::RefCell<Vec<String>>,
+    fisher: bool,
 }
+
+/// Making a spear, as a skill: the steps, in order.
+const MAKE_A_SPEAR: [&str; 10] = [
+    "go forest",
+    "gather sticks",
+    "go hillside",
+    "gather stones",
+    "gather flint",
+    "work flint into flake with stone",
+    "work wood into shaft with flake",
+    "assemble spear",
+    "go forest",
+    "go beach",
+];
 
 impl Survivor {
     fn new(world: &World) -> Survivor {
@@ -96,17 +114,36 @@ impl Survivor {
         Survivor {
             body,
             starting_fat: material_in(world, body, "fat"),
+            plan: Default::default(),
+            fisher: false,
+        }
+    }
+
+    /// A survivor who first makes a spear, then fishes when hungry.
+    fn fisher(world: &World) -> Survivor {
+        let survivor = Survivor::new(world);
+        *survivor.plan.borrow_mut() = MAKE_A_SPEAR.iter().rev().map(|s| s.to_string()).collect();
+        Survivor {
+            fisher: true,
+            ..survivor
         }
     }
 
     /// Options in order of preference. The first that the laws allow is done.
     fn options(&self, w: &World) -> Vec<Step> {
+        // Carry on with a skill in progress first.
+        if let Some(step) = self.plan.borrow().last() {
+            return vec![Step::Do(step.clone())];
+        }
         let me = self.body;
         let here = w.key(w.location(me).unwrap()).to_string();
         let life = w.life(me).unwrap();
         let mut options = Vec::new();
 
         for piece in w.contents(me) {
+            if w.assembly(piece).is_some() {
+                continue;
+            }
             let food = w
                 .composition(piece)
                 .is_some_and(|c| c.keys().any(|m| life.digests.contains(m)));
@@ -128,12 +165,18 @@ impl Survivor {
         }
         // Eat again once the last meal is used up and the body has started on
         // its fat.
-        let last_meal_gone = material_in(w, me, "shellfish") == Mass::ZERO;
+        let last_meal_gone = material_in(w, me, "shellfish") == Mass::ZERO
+            && material_in(w, me, "fish") == Mass::ZERO;
         let hungry =
             last_meal_gone && material_in(w, me, "fat").mg() + 200_000 < self.starting_fat.mg();
         if hungry {
+            let source = if self.fisher {
+                "gather fish"
+            } else {
+                "gather shellfish-bed"
+            };
             options.push(Step::Do(if here == "beach" {
-                "gather shellfish-bed".into()
+                source.into()
             } else {
                 "go beach".into()
             }));
@@ -163,6 +206,7 @@ impl Survivor {
                     }
                     Step::Do(line) => {
                         let before = world.tick();
+                        let carried_before = world.contents(self.body).len();
                         match perform(world, self.body, intent(&line)) {
                             Ok(_) => {
                                 idle_actions = if world.tick() == before {
@@ -171,6 +215,14 @@ impl Survivor {
                                     0
                                 };
                                 done = true;
+                                // A skill step that worked is done. A search that
+                                // found nothing is tried again.
+                                let mut plan = self.plan.borrow_mut();
+                                let found = !line.starts_with("gather")
+                                    || world.contents(self.body).len() > carried_before;
+                                if plan.last() == Some(&line) && found {
+                                    plan.pop();
+                                }
                             }
                             Err(ActError::Refused(r)) => refused.push(format!("{line}: {r}")),
                             Err(ActError::Fault(f)) => panic!("{line} faulted: {f}"),
@@ -353,6 +405,92 @@ fn trial_a_survivor_who_drinks_and_eats_lives_through_ten_days_on_most_islands()
     let deaths: Vec<_> = outcomes.iter().filter(|o| **o != Outcome::Alive).collect();
     println!(
         "stage 1: {alive} of 30 alive after 10 days; deaths: {deaths:?}; 300 island-days took {:.1?}",
+        started.elapsed()
+    );
+    assert!(alive > 0);
+}
+
+// Stage 3 ---------------------------------------------------------------
+
+#[test]
+fn a_thinned_shellfish_bed_grows_back_toward_its_limit() {
+    let mut w = island(1).with_luck(engine::world::Luck::AVERAGE);
+    let me = id(&w, "survivor");
+    let bed = id(&w, "shellfish-bed");
+    for _ in 0..20 {
+        perform(&mut w, me, intent("gather shellfish-bed")).unwrap();
+        for piece in w.contents(me) {
+            let drop = format!("drop {}", w.key(piece));
+            act(&mut w, me, intent(&drop)).unwrap();
+        }
+    }
+    let thinned = w.mass(bed).mg();
+    assert!(
+        thinned < 45_000_000,
+        "20 searches took the bed down to {thinned} mg"
+    );
+
+    // Left alone, a person lives on fat for a month while the bed regrows.
+    nature::run(&mut w, 30 * DAY).unwrap();
+    let regrown = w.mass(bed).mg();
+    let limit = w.growth(bed).unwrap().limit.mg();
+    assert!(
+        regrown > thinned + 15_000_000,
+        "grew only from {thinned} to {regrown} mg"
+    );
+    assert!(regrown <= limit, "grew past its limit");
+}
+
+#[test]
+fn sunlight_brings_exactly_the_energy_that_growing_things_store() {
+    let mut w = island(1);
+    let (bed, fish) = (id(&w, "shellfish-bed"), id(&w, "fish"));
+    let stored = |w: &World| -> u128 {
+        [bed, fish]
+            .iter()
+            .map(|&e| engine::matter::chemical_energy(w.materials(), w.composition(e).unwrap()))
+            .sum()
+    };
+    let (before, start) = (stored(&w), totals(&w));
+    nature::run(&mut w, 5 * DAY).unwrap();
+    assert!(w.sunlight() > 0, "nothing grew");
+    assert_eq!(stored(&w) - before, w.sunlight());
+    assert_eq!(totals(&w), start, "everything else is conserved");
+}
+
+#[test]
+#[ignore = "a trial: run with `cargo test -- --ignored --nocapture`"]
+fn trial_a_survivor_who_makes_a_spear_and_fishes_lives_through_a_month() {
+    let started = Instant::now();
+    let mut outcomes = Vec::new();
+    for seed in 1..=30 {
+        let mut w = island(seed);
+        let start = totals(&w);
+        let outcome = Survivor::fisher(&w).live(&mut w, 30);
+        assert_eq!(
+            totals(&w),
+            start,
+            "seed {seed}: totals changed apart from sunlight"
+        );
+        assert!(
+            !matches!(outcome, Outcome::Stuck(_)),
+            "seed {seed}: {outcome:?}"
+        );
+        if seed == 1 {
+            let me = id(&w, "survivor");
+            println!(
+                "seed 1 after 30 days: fish in the shallows {}, body fat {}, body water {}",
+                w.mass(id(&w, "fish")),
+                material_in(&w, me, "fat"),
+                fluid(&w, me)
+            );
+        }
+        outcomes.push(outcome);
+    }
+    let alive = outcomes.iter().filter(|o| **o == Outcome::Alive).count();
+    let deaths: Vec<_> = outcomes.iter().filter(|o| **o != Outcome::Alive).collect();
+    println!(
+        "stage 3: {alive} of 30 fishers alive after 30 days; deaths: {deaths:?}; 900 island-days took {:.1?}",
         started.elapsed()
     );
     assert!(alive > 0);

@@ -11,6 +11,12 @@
 # point; a flame heats what it's piled with. Things lose heat to the air
 # through their surface and, when hot, by glowing.
 #
+# Stage 3, spear and fishing: flint on the hillside, knocked into a sharp
+# flake with a stone; the flake shapes a stick into a shaft; flake and shaft
+# make a spear. Fish in the shallows can only be taken with a spear, and a
+# search finds one six times in ten when they're plentiful. Fish and
+# shellfish grow back from the sea, with energy from sunlight.
+#
 # Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
 # and 300 W working; about 2 kg of water lost a day at rest, twice that when
 # working, plus sweat; death after losing about 7 kg of water (10% of body weight).
@@ -134,12 +140,49 @@ hardness = "6"
 density = "2600 kg/m3"
 
 [[material]]
+id = "flint"
+label = "flint"
+melting_point = "1983 K"
+boiling_point = "2503 K"
+specific_heat = "730 J/(kg*K)"
+hardness = "5.5"
+density = "2600 kg/m3"
+
+[[material]]
+id = "fish"
+label = "fish"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "4 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "1050 kg/m3"
+
+[[material]]
 id = "co2"
 label = "carbon dioxide"
 melting_point = "195 K"
 boiling_point = "216 K"
 specific_heat = "840 J/(kg*K)"
 hardness = "0"
+
+[[shape]]
+id = "flake"
+label = "flake"
+role = "cutting"
+length = "5 cm"
+
+[[shape]]
+id = "shaft"
+label = "shaft"
+role = "holding"
+length = "1.5 m"
+
+[[design]]
+id = "spear"
+label = "spear"
+parts = { point = "flake", shaft = "shaft" }
 
 [[design]]
 id = "fire-ring"
@@ -178,7 +221,7 @@ at = "beach"
 mass = "70 kg"
 composition = { water = "60%", flesh = "26%", fat = "14%" }
 temperature = "310 K"
-life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K" }
+life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K" }
 
 [[item]]
 id = "sea"
@@ -196,6 +239,7 @@ mass = "60 kg"
 fixed = true
 composition = { shellfish = "35%", shell = "65%" }
 pieces = { size = "1 kg", find_time = "10 min" }
+grows = { rate = "5%", limit = "80 kg", from = "sea" }
 
 [[item]]
 id = "water"
@@ -249,3 +293,22 @@ mass = "500 kg"
 fixed = true
 material = "stone"
 pieces = { size = "1 kg", find_time = "5 min" }
+
+[[item]]
+id = "fish"
+label = "fish in the shallows"
+at = "beach"
+mass = "150 kg"
+fixed = true
+material = "fish"
+pieces = { size = "500 g", find_time = "15 min", chance = "60%", needs = "spear" }
+grows = { rate = "5%", limit = "300 kg", from = "sea" }
+
+[[item]]
+id = "flint"
+label = "flint nodules"
+at = "hillside"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { size = "500 g", find_time = "10 min" }

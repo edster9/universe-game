@@ -83,6 +83,7 @@ pub enum Refusal {
     NotDrinkable(String),
     NotThirsty,
     NotGatherable(String),
+    NeedsTool { source: String, tool: String },
 }
 
 impl fmt::Display for Refusal {
@@ -137,6 +138,7 @@ impl fmt::Display for Refusal {
             Refusal::CannotEat(name) => write!(f, "you can't eat {name}"),
             Refusal::NotDrinkable(name) => write!(f, "you can't drink {name}"),
             Refusal::NotThirsty => write!(f, "you aren't thirsty"),
+            Refusal::NeedsTool { source, tool } => write!(f, "you need a {tool} for {source}"),
             Refusal::NotGatherable(name) => {
                 write!(f, "{name} isn't loose pieces you can gather by hand")
             }
@@ -230,14 +232,15 @@ pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
 }
 
 /// The chance, in parts per ten thousand, that one search of a source finds
-/// a piece: certain when it's full, less likely as it thins.
+/// a piece: the source's own chance when it's full, less as it thins.
 pub fn finding_chance(world: &World, source: EntityId) -> u64 {
     let Some(pieces) = world.pieces(source) else {
         return 0;
     };
     let full = u128::from(pieces.full.mg()).max(1);
     let now = u128::from(world.mass(source).mg());
-    u64::try_from((now * 10_000 / full).min(10_000)).expect("at most ten thousand")
+    let fullness = (now * 10_000 / full).min(10_000);
+    u64::try_from(fullness * u128::from(pieces.chance) / 10_000).expect("at most ten thousand")
 }
 
 /// Finds something `actor` can see or hold, for measuring. "here" is the
@@ -250,13 +253,8 @@ pub fn find_reachable(world: &World, actor: EntityId, name: &str) -> Option<Enti
     if is_called(world, actor, name) || normalize(name) == "me" {
         return Some(actor);
     }
-    let candidates = reach
-        .carried
-        .iter()
-        .chain(&reach.around)
-        .chain(&reach.inside)
-        .copied();
-    find(world, candidates, name)
+    let nearby = reach.around.iter().chain(&reach.inside).copied();
+    find(world, reach.carried.iter().copied(), name).or_else(|| find(world, nearby, name))
 }
 
 /// What a person can reach from where they stand.
@@ -483,14 +481,11 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 .find(|(key, def)| normalize(key) == wanted || normalize(&def.label) == wanted)
                 .map(|(key, _)| key.clone())
                 .ok_or_else(|| Refusal::UnknownShape(shape.clone()))?;
-            let candidates = reach
-                .carried
-                .iter()
-                .chain(&reach.around)
-                .chain(&reach.inside)
-                .copied();
-            let found =
-                find(world, candidates, item).ok_or_else(|| Refusal::NotHere(item.clone()))?;
+            // What's in hand first, then what's around.
+            let nearby = reach.around.iter().chain(&reach.inside).copied();
+            let found = find(world, reach.carried.iter().copied(), item)
+                .or_else(|| find(world, nearby, item))
+                .ok_or_else(|| Refusal::NotHere(item.clone()))?;
             if world.composition(found).is_none() || world.is_container(found) {
                 return Err(Refusal::CannotWork(named(world, found)));
             }
@@ -801,6 +796,25 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             };
             if world.mass(found) <= pieces.size {
                 return Err(Refusal::Exhausted(named(world, found)));
+            }
+            // Some sources can't be gathered with bare hands.
+            if let Some(needs) = &pieces.needs {
+                let fits = |p: EntityId| {
+                    world.shape(p) == Some(needs.as_str())
+                        || world.assembly(p).is_some_and(|a| &a.design == needs)
+                };
+                if !carried().any(fits) {
+                    let tool = world
+                        .shapes()
+                        .get(needs)
+                        .map(|s| s.label.clone())
+                        .or_else(|| world.designs().get(needs).map(|d| d.label.clone()))
+                        .unwrap_or_else(|| needs.clone());
+                    return Err(Refusal::NeedsTool {
+                        source: named(world, found),
+                        tool,
+                    });
+                }
             }
             // A search takes its time whether or not it finds anything.
             let luck = world.roll(u64::from(actor.0) ^ (u64::from(found.0) << 32));

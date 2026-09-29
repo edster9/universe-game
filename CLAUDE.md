@@ -50,4 +50,4 @@ These hold for every design decision unless the owner changes them.
 
 - Slices 0 to 2 are built. See `docs/slices.md`.
 - The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 5 have passed. Next is stage 6, rope: fibre from bushes twisted into rope, with tension (a material's strength when pulled) as the new law.
-- Directions recorded for later: skills and a spoken interface (`docs/ideas/skills-and-interface.md`), recognising what things are (`docs/ideas/recognition.md`), money (`docs/ideas/money.md`), many universes (`docs/ideas/universes.md`).
+- Directions recorded for later: skills and a spoken interface (`docs/ideas/skills-and-interface.md`), recognising what things are (`docs/ideas/recognition.md`), the skill learning paradigm, flagged for a major conversation (`docs/ideas/skill-learning-paradigm.md`), money (`docs/ideas/money.md`), many universes (`docs/ideas/universes.md`).

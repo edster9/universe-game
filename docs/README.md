@@ -26,6 +26,7 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/knowledge.md](ideas/knowledge.md) | Intelligence as the third input to making anything, and where knowledge lives |
 | [ideas/skills-and-interface.md](ideas/skills-and-interface.md) | Talking to the game, and successes saved as skills |
 | [ideas/recognition.md](ideas/recognition.md) | Knowing what things are: perception and trade depend on what you've learned |
+| [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md) | For a later conversation: what a player can teach their character, and what stops a pasted rocket |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |
 | [ideas/money.md](ideas/money.md) | What money is, before and after the space age, and how it's validated |
 | [slices.md](slices.md) | The first attempt: small text-only slices, each with a test |

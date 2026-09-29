@@ -44,6 +44,9 @@ The interface becomes reflective and adaptive. It shows what a character can do 
 
 ## Open
 
+The biggest open question, how skills are learned and what a player can teach their character from their own head, is its own document for a later conversation: [skill-learning-paradigm.md](skill-learning-paradigm.md).
+
+
 - How does a recorded sequence become a general skill that works with different materials in a different place?
 - Does a failed attempt teach anything?
 - Can skills be traded like designs, and does a copied skill need practice before it works well?

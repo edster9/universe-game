@@ -144,6 +144,21 @@ Added 2026-09-28.
 
 See [ideas/recognition.md](ideas/recognition.md).
 
+## The skill learning paradigm
+
+Added 2026-09-28, **for a major design conversation later.**
+
+- A player can learn skills by talking to someone else, going to a library, and so on, or on their own.
+- But the player at the computer knows things too. I may know how to build a fire when my starting character doesn't, so I tell it: go find some grass, take a stick, start rubbing, you'll notice smoke. That becomes a skill. If I can teach my character to build a fire from what's in my brain, why can't I teach it to build a rocket to the Moon? That's not practical.
+- One way to solve it, to experiment with: make skills hierarchical. A player can't teach a rocket to the Moon because everything before it has to come in order: crawl before you walk, walk before you run. That's how skills can be taught from my brain to my character.
+- We also have to prevent someone downloading a script from the internet, putting it in the prompt, and having their character learn everything. That's not practical either.
+
+See [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md).
+
+## Walking and carrying
+
+Added 2026-09-28. Walking and carrying weren't taken into account and need to come into play. As soon as there's a basic interface, a character will be standing in the middle of a desert and walking around. Walking takes time, consumes energy, and so on.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

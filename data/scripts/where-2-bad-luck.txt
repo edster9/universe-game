@@ -1,0 +1,21 @@
+# Where am I?, stage 2: the worst luck. Every search finds nothing, the
+# castaway never finds the stream, the sea can't be drunk, and they die of
+# thirst on the beach within four days. Dying is an outcome, not a failure.
+world where-am-i.toml
+as survivor
+luck bad
+
+explore
+expect said you search around, but find no new way out
+repeat 4
+  repeat 20
+    try explore
+    try go stream
+    try drink water
+  end
+  try drink sea
+  try sleep
+  wait 4 h
+end
+expect dead of thirst
+expect time before 4 day

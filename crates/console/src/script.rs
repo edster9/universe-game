@@ -26,7 +26,6 @@
 
 use std::path::Path;
 
-use engine::data::load_world;
 use engine::units::{self, property};
 use engine::world::Luck;
 
@@ -85,9 +84,7 @@ pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
         lines.next();
     }
     let world_file = world_file.ok_or("a script must start with \"world <file>\"")?;
-    let text = std::fs::read_to_string(data_dir.join(&world_file))
-        .map_err(|e| format!("can't read {world_file}: {e}"))?;
-    let mut world = load_world(&text).map_err(|e| format!("{world_file}: {e}"))?;
+    let mut world = crate::load_world_file(&data_dir.join(&world_file))?;
     world = match seed {
         Some(seed) => world.with_seed(seed),
         None => world.with_luck(luck),

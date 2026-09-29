@@ -103,6 +103,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | People move between places along exits | in | slice 0 |
 | Walking takes the path's length at the walker's speed, which a full load halves; it's hard work | in | stranded |
 | A body can carry only up to its limit | in | stranded |
+| Someone who has to find their way knows only the ways they've found or walked; walking a way teaches the way back. Only known ways can be seen or taken | in | where am I? 2 |
+| Exploring is a search: each takes a fixed time, needs light, and with some chance finds the nearest way out not yet known | in | where am I? 2 |
 | Some paths cross a liquid, and only something that floats and carries you, with all you hold, can take you across; it comes with you | in | stranded 8 |
 | Some routes can only be crossed in something that floats, taking distance ÷ speed | planned | stranded 8 |
 

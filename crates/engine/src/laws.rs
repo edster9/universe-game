@@ -118,6 +118,7 @@ pub enum Refusal {
     },
     NothingToCross(String),
     NotAVessel(String),
+    DontKnowWay(String),
     Asleep,
     TooDark,
     NotTired,
@@ -220,6 +221,9 @@ impl fmt::Display for Refusal {
                 write!(f, "there's nothing to cross on the way to {place}")
             }
             Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
+            Refusal::DontKnowWay(name) => {
+                write!(f, "you don't know a way to {name} from here: try exploring")
+            }
             Refusal::Asleep => write!(f, "you're asleep"),
             Refusal::TooDark => write!(
                 f,
@@ -364,6 +368,7 @@ fn sleeping_time(world: &World, actor: EntityId, seconds: Option<u64>) -> u64 {
 
 fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
+        Intent::Explore => world.settings().explore_time,
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
         Intent::Go { place, aboard } => {
             let Ok(reach) = Reach::of(world, actor) else {
@@ -493,6 +498,14 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             // What you cross on comes with you.
             if let Some((vessel, _)) = crossing.filter(|(v, _)| !reach.carried.contains(v)) {
                 changes.push(Change::Move { entity: vessel, to });
+            }
+            // Having come this way, you know the way back.
+            if !world.knows_way(actor, to, reach.here) {
+                changes.push(Change::Learn {
+                    agent: actor,
+                    from: to,
+                    to: reach.here,
+                });
             }
             Ok(changes)
         }
@@ -1067,6 +1080,29 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }])
         }
 
+        Intent::Explore => {
+            if world.is_dark(reach.here) {
+                return Err(Refusal::TooDark);
+            }
+            // The nearest way you don't know is the first you'd find. A
+            // search takes its time whether or not it finds anything.
+            let unknown = world
+                .exits(reach.here)
+                .iter()
+                .copied()
+                .filter(|&to| !world.knows_way(actor, reach.here, to))
+                .min_by_key(|&to| (world.distance(reach.here, to), to));
+            let luck = world.roll(u64::from(actor.0) ^ (u64::from(reach.here.0) << 32) ^ 0x5EA7);
+            match unknown {
+                Some(to) if luck < world.settings().explore_chance => Ok(vec![Change::Learn {
+                    agent: actor,
+                    from: reach.here,
+                    to,
+                }]),
+                _ => Ok(Vec::new()),
+            }
+        }
+
         Intent::Sleep { seconds } => {
             let (Some(sleep), Some(awake)) = (
                 world.life(actor).and_then(|l| l.sleep.as_ref()),
@@ -1219,8 +1255,15 @@ fn way(
     place: &str,
     aboard: Option<&str>,
 ) -> Result<(EntityId, Option<(EntityId, EntityId)>), Refusal> {
-    let to = find(world, world.exits(reach.here).iter().copied(), place)
-        .ok_or_else(|| Refusal::NoSuchExit(place.to_string()))?;
+    // Only the ways you know: someone finding their way can't be told that
+    // one exists.
+    let to = find(world, world.known_exits(actor, reach.here), place).ok_or_else(|| {
+        if world.finds_ways(actor) {
+            Refusal::DontKnowWay(place.to_string())
+        } else {
+            Refusal::NoSuchExit(place.to_string())
+        }
+    })?;
     let (liquid, vessel) = match (world.crossing(reach.here, to), aboard) {
         (None, None) => return Ok((to, None)),
         (None, Some(_)) => return Err(Refusal::NothingToCross(world.label(to))),

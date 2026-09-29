@@ -15,6 +15,10 @@ use crate::world::{self, Chamber, Design, Form, Requirement, Role, Settings, Wor
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WorldFile {
+    /// Libraries: other data files whose materials, shapes, and designs this
+    /// world shares. A library holds nothing else.
+    #[serde(default)]
+    uses: Vec<String>,
     #[serde(default)]
     world: SettingsDef,
     #[serde(default, rename = "material")]
@@ -67,6 +71,9 @@ struct SettingsDef {
     starts_at: Option<String>,
     sunrise: Option<String>,
     sunset: Option<String>,
+    /// How long one search for a way out takes, and its chance.
+    explore_time: Option<String>,
+    explore_chance: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -169,6 +176,9 @@ struct AgentDef {
     temperature: Option<String>,
     /// What the body needs to live. Requires a composition.
     life: Option<LifeDef>,
+    /// Starts knowing no way out of anywhere, and must find them.
+    #[serde(default)]
+    lost: bool,
 }
 
 #[derive(Deserialize)]
@@ -299,7 +309,44 @@ fn fail<T>(message: impl Into<String>) -> Result<T, LoadError> {
 /// order (places, then agents, then items), so the same file always builds
 /// the same world.
 pub fn load_world(text: &str) -> Result<World, LoadError> {
+    load_world_with(text, &[])
+}
+
+/// The libraries a world file uses, by name, in order. Whoever reads files
+/// reads them and passes their text to `load_world_with`.
+pub fn libraries(text: &str) -> Result<Vec<String>, LoadError> {
     let file: WorldFile = toml::from_str(text).map_err(|e| LoadError(e.to_string()))?;
+    Ok(file.uses)
+}
+
+/// Builds a world from its data file and the text of each library it uses,
+/// in the order it names them.
+pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadError> {
+    let mut file: WorldFile = toml::from_str(text).map_err(|e| LoadError(e.to_string()))?;
+    if file.uses.len() != libraries.len() {
+        return fail(format!(
+            "this world uses {} libraries ({}), but {} were given",
+            file.uses.len(),
+            file.uses.join(", "),
+            libraries.len()
+        ));
+    }
+    for (name, library) in file.uses.iter().zip(libraries).rev() {
+        let library: WorldFile =
+            toml::from_str(library).map_err(|e| LoadError(format!("{name}: {e}")))?;
+        if !library.uses.is_empty()
+            || !library.places.is_empty()
+            || !library.agents.is_empty()
+            || !library.items.is_empty()
+        {
+            return fail(format!(
+                "{name} is a library, so it holds only materials, shapes, and designs"
+            ));
+        }
+        file.materials.splice(0..0, library.materials);
+        file.shapes.splice(0..0, library.shapes);
+        file.designs.splice(0..0, library.designs);
+    }
     let mut world = World {
         settings: load_settings(&file.world)?,
         seed: file.world.seed.unwrap_or(1),
@@ -407,6 +454,9 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
             }
         }
         world.agents.insert(agent);
+        if def.lost {
+            world.known_ways.insert(agent, BTreeSet::new());
+        }
         world.wallets.insert(agent, Credits::new(def.credits));
         if let Some(life) = &def.life {
             let life = load_life(&world, agent, &def.id, life)?;
@@ -564,6 +614,12 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
         settings.drag = parse_percent(d)?;
     }
     let time = |t: &String| parse_quantity(t, property::DURATION, "a time like \"6 h\"");
+    if let Some(t) = &def.explore_time {
+        settings.explore_time = time(t)?.max(1);
+    }
+    if let Some(c) = &def.explore_chance {
+        settings.explore_chance = parse_percent(c)?;
+    }
     if let Some(d) = &def.day {
         settings.day = time(d)?;
         settings.starts_at = def.starts_at.as_ref().map(time).transpose()?.unwrap_or(0);

@@ -9,7 +9,6 @@ use std::io::{self, BufRead, IsTerminal, Write};
 use std::process::ExitCode;
 
 use console::session::Session;
-use engine::data::load_world;
 
 const DEFAULT_WORLD: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/slice0.toml");
 
@@ -55,17 +54,10 @@ fn main() -> ExitCode {
         }
     }
 
-    let text = match std::fs::read_to_string(&world_path) {
-        Ok(text) => text,
-        Err(e) => {
-            eprintln!("can't read {world_path}: {e}");
-            return ExitCode::FAILURE;
-        }
-    };
-    let world = match load_world(&text) {
+    let world = match console::load_world_file(std::path::Path::new(&world_path)) {
         Ok(world) => world,
         Err(e) => {
-            eprintln!("{world_path}: {e}");
+            eprintln!("{e}");
             return ExitCode::FAILURE;
         }
     };

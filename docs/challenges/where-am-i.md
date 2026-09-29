@@ -53,3 +53,23 @@ Simplifications to revisit:
 - **Sleep has no place or comfort.** Sleeping on bare sand is as good as a bed; shelter comes in the next challenge.
 - **The temperature swing is a straight line** from midday to midnight, not a curve.
 - **Sunlight for growth stays flat**, day and night.
+
+### Stage 2: an unknown island. Passed, 2026-09-29.
+
+The challenge now has its own world, [where-am-i.toml](../../data/where-am-i.toml): the stranded island, with a castaway who knows no way off the beach. The two worlds share their materials, shapes, and designs through a library, [island-things.toml](../../data/island-things.toml), so they can't drift apart; each keeps its own places, people, and items.
+
+- **You know only the ways you've found or walked.** `look` lists "ways out you know", and going anywhere else is refused: "you don't know a way to the stream from here: try exploring". The refusal gives nothing away: it says the same whether or not such a way exists.
+- **Exploring is a search**, like gathering. `explore` takes 30 minutes and, six times in ten, finds the nearest way out you don't know yet, so the forest (300 m) turns up before the stream (400 m). It needs light, like any search. When there's nothing left to find, a search just finds nothing, so the castaway can never be sure they've found every way.
+- **Walking a way teaches the way back**, but not the other ways out of where you arrive.
+
+Proofs: [where-2-explore.txt](../../data/scripts/where-2-explore.txt) explores the beach, the stream, the forest, and the hillside with average luck. [where-2-bad-luck.txt](../../data/scripts/where-2-bad-luck.txt) has every search fail: the castaway never finds the stream and dies of thirst on the beach within four days. That's an outcome, not a failure.
+
+**Trial:** 30 of 30 castaways found water, explored as they needed, and were alive after 10 days. Finding water is easy on this island: the stream is 400 m away, usually two searches. A harder island would test exploring more.
+
+**Sabotage checks:** ignoring the chance of a search lets the unlucky castaway find the stream and live, which fails the bad-luck proof; letting people use ways they don't know fails the explore proof.
+
+Simplifications to revisit:
+
+- **Exploring finds ways, not places.** Places you can see but haven't reached come with the view (stage 5).
+- **Knowledge is only of ways.** Knowing what things are, and where things are found, comes with recognition and the knowledge slice.
+- **Every search in a place has the same chance**, however far or well hidden a way is; only the order is nearest first.

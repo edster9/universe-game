@@ -1,0 +1,42 @@
+# Where am I?, stage 2: an unknown island. The castaway wakes knowing no way
+# off the beach. Exploring takes half an hour a search and, with average
+# luck, finds the nearest way not yet known: the forest, then the stream.
+# Walking a way teaches the way back. Searching needs light.
+world where-am-i.toml
+as survivor
+luck average
+
+look
+expect said ways out you know: none
+try go stream
+expect said you don't know a way to stream from here
+explore
+expect said you find a way to the forest. (that took 30 min.)
+explore
+expect said you find a way to the stream
+go stream
+look
+expect said ways out you know: the beach
+repeat 6
+  try drink water
+end
+explore
+expect said you find a way to the forest
+go forest
+explore
+expect said you find a way to the beach
+explore
+expect said you find a way to the hillside
+go hillside
+explore
+expect said you search around, but find no new way out
+go forest
+go beach
+look
+expect said ways out you know: the stream, the forest
+# Night: too dark to search.
+wait 9 h
+try explore
+expect said too dark to search
+expect alive
+expect conserved

@@ -79,6 +79,10 @@ pub struct Settings {
     /// When the sun rises and sets, in seconds after midnight.
     pub sunrise: u64,
     pub sunset: u64,
+    /// How long one search for a way out takes, in seconds.
+    pub explore_time: u64,
+    /// The chance one search finds a way out, in parts per ten thousand.
+    pub explore_chance: u64,
 }
 
 impl Default for Settings {
@@ -109,6 +113,8 @@ impl Default for Settings {
             starts_at: 0,
             sunrise: 0,
             sunset: 0,
+            explore_time: 1_800,
+            explore_chance: 6_000,
         }
     }
 }
@@ -375,6 +381,9 @@ pub struct World {
     pub(crate) distances: BTreeMap<(EntityId, EntityId), u64>,
     /// Paths that cross a liquid, and the liquid they cross.
     pub(crate) crossings: BTreeMap<(EntityId, EntityId), EntityId>,
+    /// The ways out each person knows, as (from, to), for people who have
+    /// to find their way. Anyone not listed knows every way.
+    pub(crate) known_ways: BTreeMap<EntityId, BTreeSet<(EntityId, EntityId)>>,
     /// Each place's surrounding temperature.
     pub(crate) ambient: BTreeMap<EntityId, Temperature>,
     /// Each place's surrounding temperature in the coldest hour of the night,
@@ -758,6 +767,27 @@ impl World {
     /// How far it is from one place to another, in µm.
     pub fn distance(&self, from: EntityId, to: EntityId) -> u64 {
         self.distances.get(&(from, to)).copied().unwrap_or(0)
+    }
+
+    /// Whether someone knows the way from one place to another.
+    pub fn knows_way(&self, who: EntityId, from: EntityId, to: EntityId) -> bool {
+        self.known_ways
+            .get(&who)
+            .is_none_or(|ways| ways.contains(&(from, to)))
+    }
+
+    /// Whether someone has to find their way, rather than knowing every way.
+    pub fn finds_ways(&self, who: EntityId) -> bool {
+        self.known_ways.contains_key(&who)
+    }
+
+    /// The ways out of a place that someone knows.
+    pub fn known_exits(&self, who: EntityId, place: EntityId) -> Vec<EntityId> {
+        self.exits(place)
+            .iter()
+            .copied()
+            .filter(|&to| self.knows_way(who, place, to))
+            .collect()
     }
 
     /// The liquid a path between two places crosses, if any.

@@ -45,10 +45,11 @@ These hold for every design decision unless the owner changes them.
 - Energy is stored as heat per piece of matter, in whole microjoules; temperature is derived from it.
 - Datasheets (`datasheet.rs`) are measured, never written in data. An assembly is measured once from its parts' datasheets and never looks inside them.
 - Every action has an actor. Things in hand are found before things around.
+- A world's data file can use libraries (`uses = [...]`), data files holding only materials, shapes, and designs that several worlds share, such as `data/island-things.toml`. The console reads them; the engine only merges their text.
 
 ## Where things stand
 
 - Slices 0 to 2 are built. See `docs/slices.md`.
 - The stranded challenge (`docs/challenges/stranded.md`) has passed all 8 stages: the survivor gets off the island by raft, in perfect conditions. Harder crossings are saved for later ("After the crossing").
-- Two more training challenges come before any validation, at the owner's request: `docs/challenges/where-am-i.md` (explore, climb, see where you are) and `docs/challenges/living-with-the-island.md` (wildlife, hunting, shelter, clothing). Where am I? stage 1 (day, night, and sleep) has passed; next is stage 2, an unknown island. After both: validation, then NPCs, then slice 3.
+- Two more training challenges come before any validation, at the owner's request: `docs/challenges/where-am-i.md` (explore, climb, see where you are) and `docs/challenges/living-with-the-island.md` (wildlife, hunting, shelter, clothing). Where am I? stages 1 (day, night, and sleep) and 2 (an unknown island) have passed; next is stage 3, carrying water. After both: validation, then NPCs, then slice 3.
 - Directions recorded for later: skills and a spoken interface (`docs/ideas/skills-and-interface.md`), recognising what things are (`docs/ideas/recognition.md`), the skill learning paradigm, flagged for a major conversation (`docs/ideas/skill-learning-paradigm.md`), money (`docs/ideas/money.md`), many universes (`docs/ideas/universes.md`).

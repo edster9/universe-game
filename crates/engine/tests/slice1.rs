@@ -166,6 +166,7 @@ fn the_engine_names_no_materials_shapes_or_items() {
         COPPER,
         include_str!("../../../data/slice2.toml"),
         include_str!("../../../data/stranded.toml"),
+        include_str!("../../../data/island-things.toml"),
     ] {
         let data: toml::Table = toml::from_str(text).unwrap();
         for section in ["material", "shape", "item", "design"] {

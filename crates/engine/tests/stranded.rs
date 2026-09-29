@@ -8,7 +8,7 @@
 
 use std::time::Instant;
 
-use engine::data::load_world;
+use engine::data::load_world_with;
 use engine::datasheet::{Property, Value, measure};
 use engine::intent::{Command, Intent, parse};
 use engine::laws::{ActError, Refusal, act, perform};
@@ -19,10 +19,17 @@ use engine::world::{EntityId, World};
 use proptest::prelude::*;
 
 const ISLAND: &str = include_str!("../../../data/stranded.toml");
+const THINGS: &str = include_str!("../../../data/island-things.toml");
+const LOST: &str = include_str!("../../../data/where-am-i.toml");
 const DAY: u64 = 86_400;
 
 fn island(seed: u64) -> World {
-    load_world(ISLAND).unwrap().with_seed(seed)
+    load_world_with(ISLAND, &[THINGS]).unwrap().with_seed(seed)
+}
+
+/// The same island, for a castaway who has to find their way.
+fn lost_island(seed: u64) -> World {
+    load_world_with(LOST, &[THINGS]).unwrap().with_seed(seed)
 }
 
 fn id(world: &World, key: &str) -> EntityId {
@@ -162,6 +169,8 @@ impl Survivor {
             } else {
                 "go stream".into()
             }));
+            // Not knowing the way, look for one.
+            options.push(Step::Do("explore".into()));
         }
         // Sleep at night. Waking before dawn, it rests instead.
         if w.is_night() {
@@ -184,6 +193,7 @@ impl Survivor {
             } else {
                 "go beach".into()
             }));
+            options.push(Step::Do("explore".into()));
         }
         options.push(Step::Rest(1_800));
         options
@@ -412,6 +422,32 @@ fn trial_a_survivor_who_drinks_and_eats_lives_through_ten_days_on_most_islands()
     let deaths: Vec<_> = outcomes.iter().filter(|o| **o != Outcome::Alive).collect();
     println!(
         "stage 1: {alive} of 30 alive after 10 days; deaths: {deaths:?}; 300 island-days took {:.1?}",
+        started.elapsed()
+    );
+    assert!(alive > 0);
+}
+
+#[test]
+#[ignore = "a trial: run with `cargo test -- --ignored --nocapture`"]
+fn trial_a_castaway_who_explores_finds_water_and_lives_through_ten_days() {
+    let started = Instant::now();
+    let mut outcomes = Vec::new();
+    for seed in 1..=30 {
+        let mut w = lost_island(seed);
+        let start = totals(&w);
+        let castaway = Survivor::new(&w);
+        let outcome = castaway.live(&mut w, 10);
+        assert_eq!(totals(&w), start, "seed {seed}: totals changed");
+        assert!(
+            !matches!(outcome, Outcome::Stuck(_)),
+            "seed {seed}: {outcome:?}"
+        );
+        outcomes.push(outcome);
+    }
+    let alive = outcomes.iter().filter(|o| **o == Outcome::Alive).count();
+    let deaths: Vec<_> = outcomes.iter().filter(|o| **o != Outcome::Alive).collect();
+    println!(
+        "where am I? 2: {alive} of 30 castaways alive after 10 days; deaths: {deaths:?}; took {:.1?}",
         started.elapsed()
     );
     assert!(alive > 0);

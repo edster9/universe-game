@@ -1,0 +1,255 @@
+# Things found and made on a small island: its materials, the shapes worked
+# from them, and the designs they're put together into. A library: worlds
+# that use it (stranded.toml, where-am-i.toml) share these definitions, and
+# keep their own places, people, and items.
+
+[[material]]
+id = "water"
+label = "water"
+melting_point = "273 K"
+boiling_point = "373 K"
+specific_heat = "4186 J/(kg*K)"
+hardness = "0"
+density = "1000 kg/m3"
+
+[[material]]
+id = "seawater"
+label = "sea water"
+melting_point = "271 K"
+boiling_point = "375 K"
+specific_heat = "3990 J/(kg*K)"
+hardness = "0"
+density = "1025 kg/m3"
+
+[[material]]
+id = "flesh"
+label = "flesh"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.5"
+density = "1060 kg/m3"
+
+[[material]]
+id = "fat"
+label = "fat"
+melting_point = "320 K"
+boiling_point = "3500 K"
+specific_heat = "2300 J/(kg*K)"
+hardness = "0.2"
+energy_density = "37 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "900 kg/m3"
+
+[[material]]
+id = "shellfish"
+label = "shellfish"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "3.5 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "1050 kg/m3"
+
+[[material]]
+id = "shell"
+label = "shell"
+melting_point = "1100 K"
+boiling_point = "3000 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "3"
+density = "2700 kg/m3"
+
+[[material]]
+id = "wood"
+label = "wood"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1700 J/(kg*K)"
+hardness = "2"
+energy_density = "16 MJ/kg"
+burns_to = { co2 = "99%", ash = "1%" }
+ignition_point = "570 K"
+burn_speed = "15 g/(m2*s)"
+density = "600 kg/m3"
+
+[[material]]
+id = "grass"
+label = "dry grass"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "15 MJ/kg"
+burns_to = { co2 = "97%", ash = "3%" }
+ignition_point = "500 K"
+burn_speed = "30 g/(m2*s)"
+density = "100 kg/m3"
+
+[[material]]
+id = "ash"
+label = "ash"
+melting_point = "2300 K"
+boiling_point = "3500 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "1"
+density = "600 kg/m3"
+
+[[material]]
+id = "stone"
+label = "stone"
+melting_point = "1983 K"
+boiling_point = "2503 K"
+specific_heat = "730 J/(kg*K)"
+hardness = "6"
+density = "2600 kg/m3"
+
+[[material]]
+id = "flint"
+label = "flint"
+melting_point = "1983 K"
+boiling_point = "2503 K"
+specific_heat = "730 J/(kg*K)"
+hardness = "5.5"
+density = "2600 kg/m3"
+
+[[material]]
+id = "fish"
+label = "fish"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "4 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "1050 kg/m3"
+
+[[material]]
+id = "clay"
+label = "clay"
+melting_point = "1500 K"
+boiling_point = "3500 K"
+specific_heat = "900 J/(kg*K)"
+hardness = "1.5"
+density = "1800 kg/m3"
+becomes = { material = "fired-clay", at = "900 K" }
+
+[[material]]
+id = "fired-clay"
+label = "fired clay"
+melting_point = "2400 K"
+boiling_point = "3500 K"
+specific_heat = "900 J/(kg*K)"
+hardness = "3"
+density = "1800 kg/m3"
+
+[[material]]
+id = "rock"
+label = "rock"
+melting_point = "2200 K"
+boiling_point = "3200 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "5"
+density = "2700 kg/m3"
+
+[[material]]
+id = "iron"
+label = "iron"
+melting_point = "1811 K"
+boiling_point = "3134 K"
+specific_heat = "449 J/(kg*K)"
+hardness = "4"
+density = "7874 kg/m3"
+
+[[material]]
+id = "fibre"
+label = "plant fibre"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1300 J/(kg*K)"
+hardness = "0.5"
+energy_density = "15 MJ/kg"
+burns_to = { co2 = "97%", ash = "3%" }
+ignition_point = "520 K"
+burn_speed = "20 g/(m2*s)"
+density = "1000 kg/m3"
+tensile_strength = "50 MPa"
+
+[[material]]
+id = "co2"
+label = "carbon dioxide"
+melting_point = "195 K"
+boiling_point = "216 K"
+specific_heat = "840 J/(kg*K)"
+hardness = "0"
+
+[[shape]]
+id = "flake"
+label = "flake"
+role = "cutting"
+length = "5 cm"
+
+[[shape]]
+id = "shaft"
+label = "shaft"
+role = "holding"
+length = "1.5 m"
+
+[[shape]]
+id = "axe-head"
+label = "axe head"
+role = "cutting"
+length = "15 cm"
+
+[[shape]]
+id = "axe-mould"
+label = "axe-head mould"
+role = "casting"
+casts = "axe-head"
+
+[[shape]]
+id = "haft"
+label = "haft"
+role = "holding"
+length = "70 cm"
+
+[[shape]]
+id = "rope"
+label = "rope"
+role = "pulling"
+length = "5 m"
+
+[[shape]]
+id = "paddle"
+label = "paddle"
+role = "pushing"
+length = "1.5 m"
+push = "30%"
+
+[[design]]
+id = "axe"
+label = "axe"
+parts = { head = "axe-head", haft = "haft" }
+
+[[design]]
+id = "furnace"
+label = "furnace"
+parts = { a = "stone", b = "stone", c = "stone", d = "stone", e = "stone", f = "stone", g = "clay", h = "clay" }
+chamber = { burn_rate = "4 g", heat_loss = "36 W/K" }
+
+[[design]]
+id = "spear"
+label = "spear"
+parts = { point = "flake", shaft = "shaft" }
+
+[[design]]
+id = "raft"
+label = "raft"
+parts = { a = "wood", b = "wood", c = "wood", d = "wood", e = "wood", f = "wood", lashing = "rope" }
+
+[[design]]
+id = "fire-ring"
+label = "fire ring"
+holds = true
+parts = { a = "stone", b = "stone", c = "stone", d = "stone", e = "stone" }

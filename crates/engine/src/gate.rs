@@ -77,6 +77,12 @@ pub enum Change {
     },
     /// A body works hard until `until`.
     Exert { agent: EntityId, until: u64 },
+    /// Someone learns the way from one place to another.
+    Learn {
+        agent: EntityId,
+        from: EntityId,
+        to: EntityId,
+    },
     /// A body sleeps until `until`, and wakes less tired.
     Sleep { agent: EntityId, until: u64 },
     /// A body dies. It stays where it is, as matter.
@@ -468,6 +474,16 @@ impl World {
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 life.working_until = until;
+                Ok(())
+            }
+
+            &Change::Learn { agent, from, to } => {
+                if !self.exits(from).contains(&to) {
+                    return Err(Fault::NotAPlace(to));
+                }
+                if let Some(ways) = self.known_ways.get_mut(&agent) {
+                    ways.insert((from, to));
+                }
                 Ok(())
             }
 

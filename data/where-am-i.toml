@@ -1,56 +1,15 @@
-# The stranded challenge: an island, and someone dropped on it with nothing.
-# See docs/challenges/stranded.md. This file grows stage by stage.
+# The "where am I?" challenge: someone wakes on a beach with nothing, and
+# doesn't know where they are. See docs/challenges/where-am-i.md. It's the
+# stranded island (stranded.toml), shared through island-things.toml, with a
+# castaway who has to find their way. This file grows stage by stage.
 #
-# Stage 1, staying alive: a body made of water, flesh, and fat; a stream to
-# drink from; the sea, which can't be drunk; and shellfish on the rocks,
-# gathered by hand.
+# Stage 1, day, night, and sleep: as on the stranded island. 24 hours, the sun
+# up from 06:00 to 18:00, starting at 08:00; 300 K at midday and 292 K at
+# midnight. A body stays awake 16 hours for 8 hours' sleep.
 #
-# Stage 2, fire: tufts of dry grass, twigs, sticks, and driftwood to burn,
-# and loose stones for a fire ring. Rubbing two sticks wears off dust and
-# friction heats it; anything that burns catches fire above its ignition
-# point; a flame heats what it's piled with. Things lose heat to the air
-# through their surface and, when hot, by glowing.
-#
-# Stage 3, spear and fishing: flint on the hillside, knocked into a sharp
-# flake with a stone; the flake shapes a stick into a shaft; flake and shaft
-# make a spear. Fish in the shallows can only be taken with a spear, and a
-# search finds one six times in ten when they're plentiful. Fish and
-# shellfish grow back from the sea, with energy from sunlight.
-#
-# Stage 4, furnace and axe: bog iron and clay at the stream. Clay fires hard
-# at 900 K; unfired, it slumps well below the heat of molten iron. A furnace
-# of stones and clay burns wood hot enough to melt iron out of its rock but
-# not melt the rock. A mould shaped from clay, once fired, casts an axe head.
-#
-# Stage 5, timber: standing trees, felled a 20 kg log at a time with an axe.
-# A log takes an hour with a 1 mm edge, and longer the blunter the axe.
-#
-# Stage 6, rope: fibre stripped by hand from bushes, twisted by hand into
-# 5 m of rope. Twisted plant fibre takes about 50 MPa when pulled, so a rope
-# holds more the thicker it is.
-#
-# Stage 7, raft: six lumps of wood lashed with a rope. Wood is lighter than
-# the sea, so each 20 kg log carries about 14 kg more than itself; six carry
-# a person. The rope must hold the logs it binds.
-#
-# Stage 8, the crossing, in perfect conditions: the next island is 2 km
-# across a calm sea, with no current. Only something that floats and carries
-# you can take you. Paddling pushes a share of the paddler's effort into the
-# water, 30% with a paddle and 5% with bare hands, against the drag of a
-# blunt raft of logs (a drag coefficient of 3).
-#
-# Day and night (challenge 2, stage 1): 24 hours, sun up from 06:00 to 18:00,
-# starting at 08:00. The air is warmest at midday, 300 K, and coolest at
-# midnight, 292 K. A body stays awake 16 hours for 8 hours' sleep, works at
-# two-thirds pace when tired, and drops asleep after 40 hours awake.
-#
-# Walking and carrying: paths between places have lengths; walking takes the
-# distance at 1.2 m/s, slowed to half speed under a full 40 kg load, and is
-# hard work like any other.
-#
-# Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
-# and 300 W working; about 2 kg of water lost a day at rest, twice that when
-# working, plus sweat; death after losing about 7 kg of water (10% of body weight).
+# Stage 2, an unknown island: the castaway knows no way out of anywhere. One
+# search around takes 30 minutes and finds the nearest unknown way out six
+# times in ten. Walking a way teaches the way back.
 
 uses = ["island-things.toml"]
 
@@ -69,6 +28,8 @@ friction_share = "50%"
 rubbing_time = "10 min"
 flame_share = "50%"
 hand_hardness = "1"
+explore_time = "30 min"
+explore_chance = "60%"
 hand_push = "5%"
 drag = "300%"
 day = "24 h"
@@ -117,8 +78,9 @@ night = "292 K"
 
 [[agent]]
 id = "survivor"
-label = "the survivor"
+label = "the castaway"
 at = "beach"
+lost = true
 mass = "70 kg"
 composition = { water = "60%", flesh = "26%", fat = "14%" }
 temperature = "310 K"

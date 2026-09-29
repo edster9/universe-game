@@ -34,6 +34,8 @@ pub struct Look {
     pub night: bool,
     /// Too dark to see by: night, with no fire.
     pub dark: bool,
+    /// Whether the ways out are only those the person knows of.
+    pub finding_ways: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -48,7 +50,11 @@ pub fn look(world: &World, actor: EntityId) -> Option<Look> {
     let here = world.location(actor).filter(|&p| world.is_place(p))?;
     let mut look = Look {
         place: world.label(here),
-        exits: world.exits(here).iter().map(|&e| world.label(e)).collect(),
+        exits: world
+            .known_exits(actor, here)
+            .into_iter()
+            .map(|e| world.label(e))
+            .collect(),
         people: Vec::new(),
         things: Vec::new(),
         air: Vec::new(),
@@ -58,6 +64,7 @@ pub fn look(world: &World, actor: EntityId) -> Option<Look> {
         }),
         night: world.is_night(),
         dark: world.is_dark(here),
+        finding_ways: world.finds_ways(actor),
     };
     for id in world.contents(here).into_iter().filter(|&e| e != actor) {
         if world.is_agent(id) {

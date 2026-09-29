@@ -224,7 +224,12 @@ impl Session {
                 time / 60 % 60
             ));
         }
-        lines.push(format!("Ways out: {}", list_or(&look.exits, "none")));
+        let ways = if look.finding_ways {
+            "Ways out you know"
+        } else {
+            "Ways out"
+        };
+        lines.push(format!("{ways}: {}", list_or(&look.exits, "none")));
         if !look.people.is_empty() {
             lines.push(format!("People here: {}", look.people.join(", ")));
         }
@@ -373,6 +378,10 @@ impl Session {
                 "You take it apart.".into()
             }
             (Intent::Eat { item }, _) => format!("You eat the {item}."),
+            (Intent::Explore, Some(&Change::Learn { to, .. })) => {
+                format!("You find a way to {}.", w.label(to))
+            }
+            (Intent::Explore, _) => "You search around, but find no new way out.".into(),
             (Intent::Sleep { .. }, _) => {
                 let time = w
                     .time_of_day()
@@ -518,6 +527,9 @@ impl Session {
             ),
             &Change::Exert { agent, until } => {
                 format!("{} works hard until {until} s", w.label(agent))
+            }
+            &Change::Learn { agent, to, .. } => {
+                format!("{} learns the way to {}", w.label(agent), w.label(to))
             }
             &Change::Warm { entity, amount, .. } => {
                 format!("{} warms by {amount} from the air", w.label(entity))

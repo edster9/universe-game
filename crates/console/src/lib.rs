@@ -3,3 +3,23 @@
 
 pub mod script;
 pub mod session;
+
+use std::path::Path;
+
+use engine::world::World;
+
+/// Reads a world's data file, and the libraries it uses from the same
+/// folder, and builds the world.
+pub fn load_world_file(path: &Path) -> Result<World, String> {
+    let name = path.display();
+    let text = std::fs::read_to_string(path).map_err(|e| format!("can't read {name}: {e}"))?;
+    let folder = path.parent().unwrap_or(Path::new("."));
+    let mut libraries = Vec::new();
+    for library in engine::data::libraries(&text).map_err(|e| format!("{name}: {e}"))? {
+        let text = std::fs::read_to_string(folder.join(&library))
+            .map_err(|e| format!("can't read {library}, which {name} uses: {e}"))?;
+        libraries.push(text);
+    }
+    let libraries: Vec<&str> = libraries.iter().map(String::as_str).collect();
+    engine::data::load_world_with(&text, &libraries).map_err(|e| format!("{name}: {e}"))
+}

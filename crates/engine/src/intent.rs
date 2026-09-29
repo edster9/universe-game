@@ -77,6 +77,8 @@ pub enum Intent {
     Eat {
         item: String,
     },
+    /// Search around for a way out not yet known.
+    Explore,
     /// Sleep until rested, or for a while.
     Sleep {
         seconds: Option<u64>,
@@ -140,6 +142,7 @@ impl fmt::Display for Intent {
             Intent::Assemble { design } => write!(f, "assemble {design}"),
             Intent::Disassemble { item } => write!(f, "take apart {item}"),
             Intent::Eat { item } => write!(f, "eat {item}"),
+            Intent::Explore => f.write_str("explore"),
             Intent::Sleep { seconds: None } => f.write_str("sleep"),
             Intent::Sleep {
                 seconds: Some(seconds),
@@ -287,6 +290,7 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
         "assemble" | "build" => Intent::Assemble {
             design: one("<design>")?,
         },
+        "explore" | "search" => Intent::Explore,
         "sleep" => {
             let time = rest.strip_prefix("for ").unwrap_or(&rest).trim();
             let seconds = if time.is_empty() {

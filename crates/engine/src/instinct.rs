@@ -44,7 +44,7 @@ pub fn act(world: &mut World) -> Result<(), Fault> {
         match planned {
             Some((intent, plan, fleeing)) => {
                 let mut changes = plan.changes;
-                // Having fled, keep away from there a while.
+                // Having fled or charged, keep away from there a while.
                 if let (true, Some(place), Some(instinct)) =
                     (fleeing, fled_from, world.instinct(creature))
                 {
@@ -109,14 +109,44 @@ fn decide(world: &World, me: EntityId) -> Option<(Intent, bool)> {
         (n > 0).then(|| go(ways[usize::try_from(roll(salt) % n).expect("an index")]))
     };
 
-    // Get away from anything it fears.
-    let threatened = world.contents(here).into_iter().any(|other| {
+    // Get away from anything it fears; cornered or hurt, turn on it.
+    let threat = world.contents(here).into_iter().find(|&other| {
         other != me
             && world.is_living(other)
             && instinct.flees.iter().any(|k| world.is_kind(other, k))
     });
-    if threatened {
-        return any_way(1).map(|go| (go, true));
+    if let Some(threat) = threat {
+        // Fear of what's here beats wariness of a place: flee somewhere it
+        // isn't avoiding if it can, anywhere in its range if it must.
+        let escapes: Vec<EntityId> = world
+            .exits(here)
+            .iter()
+            .copied()
+            .filter(|&to| {
+                world.range(me).is_none_or(|r| r.contains(&to))
+                    && world.crossing(here, to).is_none()
+            })
+            .collect();
+        let calm: Vec<EntityId> = escapes
+            .iter()
+            .copied()
+            .filter(|&to| !world.is_avoiding(me, to))
+            .collect();
+        let choices = if calm.is_empty() { escapes } else { calm };
+        let n = u64::try_from(choices.len()).expect("a few ways");
+        let escape = (n > 0).then(|| go(choices[usize::try_from(roll(1) % n).expect("an index")]));
+        // Hurt, it turns on the threat once, then runs; cornered, it fights.
+        let hurt = world.bleeding(me) > 0 && !world.is_avoiding(me, here);
+        if instinct.charges && (hurt || escape.is_none()) {
+            return Some((
+                Intent::Attack {
+                    target: world.key(threat).to_string(),
+                    with: None,
+                },
+                true,
+            ));
+        }
+        return escape.map(|go| (go, true));
     }
     let plain = |intent: Intent| Some((intent, false));
 

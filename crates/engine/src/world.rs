@@ -92,6 +92,11 @@ pub struct Settings {
     pub eye_height: u64,
     /// How long taking in the view takes, in seconds.
     pub survey_time: u64,
+    /// How fast a wound from an edge 1 mm wide bleeds, in mg per second. A
+    /// finer edge wounds worse, a blunter one less.
+    pub wound_rate: u64,
+    /// The chance a blow at someone awake lands, in parts per ten thousand.
+    pub hit_chance: u64,
 }
 
 impl Default for Settings {
@@ -128,6 +133,8 @@ impl Default for Settings {
             planet_radius: 0,
             eye_height: 1_700_000,
             survey_time: 600,
+            wound_rate: 0,
+            hit_chance: 5_000,
         }
     }
 }
@@ -208,6 +215,12 @@ pub struct Life {
     /// Sleep, if it needs it: how long it can stay awake for each night's
     /// sleep, and how long that sleep takes.
     pub sleep: Option<Sleep>,
+    /// How long a wound takes to bleed half as fast as it did, as it clots,
+    /// in seconds.
+    pub clots: u64,
+    /// Its wounds: how fast each bled when it was made, in mg per second, and
+    /// when.
+    pub wounds: Vec<(u64, u64)>,
     /// Its reserve: the most energy-rich store it digests, and how much of it
     /// the body had to begin with.
     pub reserve: Option<(MaterialId, Mass)>,
@@ -326,6 +339,9 @@ pub struct Kind {
     /// If members act on instinct, the rules they follow. Otherwise they're
     /// persons, acting on commands.
     pub instinct: Option<Instinct>,
+    /// The width of the edge members are born with, such as tusks or claws,
+    /// in µm.
+    pub weapon: Option<u64>,
 }
 
 /// The rules an instinct follows, beyond looking after its own body.
@@ -341,6 +357,9 @@ pub struct Instinct {
     /// How long it keeps away from a place where it met what it flees, in
     /// seconds.
     pub wary: u64,
+    /// Whether, cornered or hurt, it attacks what it fears instead of
+    /// fleeing.
+    pub charges: bool,
 }
 
 /// A body's need for sleep.
@@ -968,6 +987,30 @@ impl World {
     pub fn is_kind(&self, id: EntityId, kind: &str) -> bool {
         self.kind_of(id)
             .is_some_and(|own| self.lineage(own).contains(&kind))
+    }
+
+    /// The natural weapon something is born with, from its nearest kind that
+    /// has one: an edge width in µm.
+    pub fn natural_weapon(&self, id: EntityId) -> Option<u64> {
+        self.lineage(self.kind_of(id)?)
+            .into_iter()
+            .find_map(|k| self.kinds.get(k)?.weapon)
+    }
+
+    /// How fast someone is bleeding now, in mg per second. Each wound bleeds
+    /// half as fast for every clotting time since it was made.
+    pub fn bleeding(&self, id: EntityId) -> u64 {
+        let Some(life) = self.life.get(&id) else {
+            return 0;
+        };
+        life.wounds
+            .iter()
+            .map(|&(rate, since)| {
+                let halvings = self.tick.saturating_sub(since) / life.clots.max(1);
+                rate.checked_shr(u32::try_from(halvings).unwrap_or(u32::MAX))
+                    .unwrap_or(0)
+            })
+            .sum()
     }
 
     /// The instinct something acts on, from its nearest kind that has one.

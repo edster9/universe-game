@@ -95,6 +95,9 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Eating takes in only what the body digests; the rest is left | in | stranded 1 |
 | You can drink something only if it's nothing but the fluid your body needs | in | stranded 1 |
 | A body dies below its minimum fluid, with nothing left to burn, or outside the temperatures it can live in. It stays where it fell, holding what it carried | in | stranded 1 |
+| A wound bleeds the body's fluid at a rate set by the edge that made it (finer is worse), half as fast for every clotting time. Below the minimum, the body dies of bleeding. A wound wakes a sleeper and interrupts what a creature was doing | in | living 3 |
+| A blow needs an edge: a tool's, or one a kind is born with. It always lands on a sleeper, and on someone awake with some chance | in | living 3 |
+| An instinct that fears what's in front of it, cornered or hurt, charges it: once if hurt, then flees; fear beats wariness of a place | in | living 3 |
 | Living things grow toward a limit, fast while few and slowing as they fill, taking matter from a source and energy from sunlight | in | stranded 3 |
 | A body stores food beyond half a day's needs as its reserve again, at up to its resting power and an efficiency its data gives, until the reserve is back where it began | in | living 2 |
 | Living things have kinds, in a tree given in data; a kind gives its members a body, and a mind: a person acts on commands, an instinct on its kind's rules | in | living 2 |

@@ -79,3 +79,29 @@ Simplifications to revisit:
 - **Everyone sees true kinds**, until recognition.
 - **No charging yet**: a cornered boar comes with injury, in stage 3.
 
+### Stage 3: injury. Passed, 2026-09-29.
+
+**Wounds bleed, and bleeding kills the way thirst does.** A wound drains the body's fluid, fast at first and half as fast for every clotting time (ten minutes for people and boars, in data). Below the body's minimum, it dies, "of bleeding" rather than of thirst.
+
+- **An edge makes a wound, and a sharper edge a worse one.** `attack boar with spear`: the wound bleeds at a rate set by the edge's width (20 g a second for a 1 mm edge, in data). A crude flint spear with a 5 mm edge wounds at 4 g a second, and the wound clots before a boar loses enough to die. Hone the flake on a stone for half an hour, down to 2 mm, and the same spear wounds at 10 g a second, which kills. Bare hands have no edge: "you have nothing with an edge to wound with".
+- **Someone asleep can't dodge**; a blow at someone awake lands six times in ten.
+- **A wound wakes a sleeper** and interrupts whatever a creature was doing.
+- **Tusks are a natural weapon**, an edge the boar's kind is born with (5 mm).
+- **A cornered or hurt boar charges.** Its instinct turns on what it fears instead of fleeing: once when hurt, then it runs; again and again only if it's truly trapped.
+
+[living-3-injury.txt](../../data/scripts/living-3-injury.txt): the islander spears a sleeping boar with a crude spear at night; the boar wakes, gores the islander (4 g a second), and runs; both wounds clot, and the islander drinks and lives. [living-3-a-killing-blow.txt](../../data/scripts/living-3-a-killing-blow.txt): with a honed spear, the boar still gores the islander and runs, but dies of bleeding by the stream, where it lies: "a boar (73 kg, dead)". Finding it and butchering it is the next stage.
+
+**What the attempts found:**
+
+- **A boar gored a person to death, again and again.** The herd had fled the forest and was keeping away from it, so at the stream a boar had nowhere to run and charged every few seconds. Now fear of what's in front of it beats wariness of a place (it will flee somewhere it's avoiding if it must), and a hurt creature charges once and then runs.
+- **A wounded boar stood still.** The wound woke it, but it was still "busy" until its night's sleep would have ended. A wound now interrupts.
+- **A tusk wound is serious.** Gored after a thirsty day, the islander's water fell to 36.4 kg, just above the 35 kg that kills.
+
+**Sabotage checks:** an edge that doesn't matter, wounds that don't bleed, and boars that never charge each fail a proof.
+
+Simplifications to revisit:
+
+- **Bleeding drains the same fluid as thirst**, with the same limit: a body can lose about 7 kg of it, far more blood than a real one could.
+- **A wound only bleeds.** It doesn't slow or weaken anyone, and it doesn't need tending or get infected.
+- **A blow is a blow.** Where it lands, how hard, and armour don't count yet.
+

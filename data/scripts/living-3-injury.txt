@@ -1,0 +1,38 @@
+# Living with the island, stage 3: injury. A wound bleeds, fast at first,
+# then half as fast every ten minutes as it clots; bleeding drains the
+# body's fluid, and below its minimum a body dies of bleeding. How bad a
+# wound is depends on the edge: a crude flint spear (5 mm) wounds a boar at
+# 4 g a second, not enough to kill it. Hurt, the boar turns and gores the
+# islander with its tusks, then runs. The islander, wounded too, drinks and
+# lives.
+world living.toml
+as survivor
+luck average
+
+include skills/make-a-spear.txt
+go forest
+go stream
+repeat 6
+  try drink water
+end
+go beach
+wait 14 h
+go forest
+look
+expect said also here: a boar
+try attack boar
+expect said you have nothing with an edge to wound with
+attack boar with spear
+expect said you strike a boar with the spear, and wound it: it's bleeding 4 g a second
+expect said a boar goes for you, and wounds you: you're bleeding 4 g a second
+datasheet survivor
+expect said bleeding: 4 g a second
+wait 3 h
+datasheet survivor
+expect not said bleeding
+go stream
+repeat 12
+  try drink water
+end
+expect alive
+expect conserved

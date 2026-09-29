@@ -1,0 +1,11 @@
+# Skill: make a spear, from the beach, knowing the way around. Knock a flint
+# flake with a stone, shape a stick into a shaft with it, and put them
+# together. Ends on the hillside holding the spear and the stone.
+go forest
+gather sticks
+go hillside
+gather stones
+gather flint
+work flint into flake with stone
+work wood into shaft with flake
+assemble spear

@@ -695,6 +695,8 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
             carried = excess.min(most * u128::from(life.sweat_heat));
             lost += u64::try_from(carried / u128::from(life.sweat_heat)).expect("sweat fits");
         }
+        // Wounds bleed.
+        lost += world.bleeding(id).saturating_mul(dt);
         let lost = lost.min(have.saturating_sub(1));
         if lost > 0 {
             changes.push(Change::Release {
@@ -764,7 +766,9 @@ fn limits_of_life(world: &World, _dt: u64) -> Vec<Change> {
             .keys()
             .any(|m| life.digests.contains(m) && world.materials[m].burns());
         let temperature = world.temperature(id).unwrap_or_default();
-        let cause = if fluid < life.fluid_minimum {
+        let cause = if fluid < life.fluid_minimum && world.bleeding(id) > 0 {
+            Some("bleeding")
+        } else if fluid < life.fluid_minimum {
             Some("thirst")
         } else if !has_stores {
             Some("hunger")

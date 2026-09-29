@@ -128,6 +128,9 @@ pub enum Change {
         from: EntityId,
         to: EntityId,
     },
+    /// A body is wounded, and bleeds at `rate` mg a second, less as it clots.
+    /// A wound wakes a sleeper.
+    Wound { agent: EntityId, rate: u64 },
     /// A body sleeps until `until`, and wakes less tired, in a shelter if it
     /// has one.
     Sleep {
@@ -576,6 +579,37 @@ impl World {
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 life.working_until = until;
+                Ok(())
+            }
+
+            &Change::Wound { agent, rate } => {
+                let now = self.tick;
+                let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
+                if life.died_of.is_some() {
+                    return Err(Fault::NotAlive(agent));
+                }
+                // Forget wounds that have stopped bleeding.
+                let clots = life.clots.max(1);
+                life.wounds.retain(|&(r, since)| {
+                    u32::try_from(now.saturating_sub(since) / clots)
+                        .ok()
+                        .and_then(|k| r.checked_shr(k))
+                        .is_some_and(|left| left > 0)
+                });
+                life.wounds.push((rate, now));
+                // A wound interrupts whatever it was doing.
+                self.busy_until.remove(&agent);
+                let life = self.life.get_mut(&agent).expect("checked above");
+                // A wound wakes a sleeper, who has slept only until now.
+                if let Some(sleep) = life.sleep.as_mut()
+                    && sleep.until > now
+                {
+                    let unslept = u128::from(sleep.until - now) * u128::from(sleep.awake)
+                        / u128::from(sleep.need.max(1));
+                    sleep.debt += u64::try_from(unslept).unwrap_or(u64::MAX);
+                    sleep.since = now;
+                    sleep.until = now;
+                }
                 Ok(())
             }
 

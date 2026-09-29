@@ -1,0 +1,39 @@
+# Living with the island, stage 3: a sharper edge wounds worse. Honing the
+# flint flake on a stone for half an hour takes its edge from 5 mm to 2 mm,
+# so the spear wounds a sleeping boar at 10 g a second: more than it can
+# lose. The boar still gores the islander and runs, and dies of bleeding by
+# the stream, where it lies.
+world living.toml
+as survivor
+luck average
+
+go forest
+gather sticks
+go hillside
+gather stones
+gather flint
+work flint into flake with stone
+rub flake against stone for 30 min
+work wood into shaft with flake
+assemble spear
+datasheet spear
+expect said edge width: 2 mm
+go forest
+go stream
+repeat 6
+  try drink water
+end
+go beach
+wait 13 h
+go forest
+attack boar with spear
+expect said it's bleeding 10 g a second
+expect said a boar goes for you, and wounds you
+wait 1 h
+go stream
+look
+expect said a boar (73.039379 kg, 309 k, dead)
+datasheet boar
+expect said died of: bleeding
+expect alive
+expect conserved

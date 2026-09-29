@@ -19,6 +19,9 @@ use crate::world::{Claim, EntityId, Requirement, World};
 /// How long it takes to take in what a map shows, in seconds.
 const READING_TIME: u64 = 300;
 
+/// How long a blow takes, in seconds.
+const STRIKING_TIME: u64 = 5;
+
 /// Processes a person must know how to do. Knowledge becomes real in slice 4
 /// (docs/ideas/knowledge.md). Until then everyone knows everything, but every
 /// process already asks.
@@ -123,6 +126,7 @@ pub enum Refusal {
     NothingToCross(String),
     NotAVessel(String),
     NothingToRead(String),
+    NoEdge(Option<String>),
     TooDarkToSee,
     NotAShelter(String),
     PutItDown(String),
@@ -235,6 +239,8 @@ impl fmt::Display for Refusal {
                 write!(f, "there's nothing to cross on the way to {place}")
             }
             Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
+            Refusal::NoEdge(Some(name)) => write!(f, "{name} has no edge to wound with"),
+            Refusal::NoEdge(None) => write!(f, "you have nothing with an edge to wound with"),
             Refusal::NothingToRead(name) => write!(f, "there's nothing to read on {name}"),
             Refusal::NotAShelter(name) => write!(f, "{name} gives no shelter"),
             Refusal::PutItDown(name) => write!(f, "put the {name} down first"),
@@ -393,6 +399,7 @@ fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
         Intent::Explore => world.settings().explore_time,
         Intent::Read { .. } => READING_TIME,
+        Intent::Attack { .. } => STRIKING_TIME,
         Intent::Survey => world.settings().survey_time,
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
         Intent::Go { place, aboard } => {
@@ -545,6 +552,40 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }
             changes.extend(arriving(world, actor, reach.here, to));
             Ok(changes)
+        }
+
+        Intent::Attack { target, with } => {
+            let victim = find(world, reach.around.iter().copied(), target)
+                .filter(|&v| world.is_living(v))
+                .ok_or_else(|| Refusal::NotHere(target.clone()))?;
+            // An edge: a tool's, or one the body is born with.
+            let edge = match with {
+                Some(tool) => {
+                    let tool = carrying(tool)?;
+                    let cuts = world
+                        .shape(tool)
+                        .and_then(|s| world.shapes().get(s))
+                        .is_some_and(|s| s.role == Some(crate::world::Role::Cutting))
+                        || world
+                            .assembly(tool)
+                            .is_some_and(|a| a.datasheet.get(Property::EdgeWidth).is_some());
+                    if !cuts {
+                        return Err(Refusal::NoEdge(Some(named(world, tool))));
+                    }
+                    edge_width(world, tool)
+                }
+                None => world.natural_weapon(actor).ok_or(Refusal::NoEdge(None))?,
+            };
+            // Someone asleep can't dodge; someone awake might.
+            let luck = world.roll(u64::from(actor.0) ^ (u64::from(victim.0) << 32) ^ 0xB10);
+            if !world.is_asleep(victim) && luck >= world.settings().hit_chance {
+                return Ok(Vec::new());
+            }
+            let rate = u128::from(world.settings().wound_rate) * 1_000 / u128::from(edge.max(1));
+            Ok(vec![Change::Wound {
+                agent: victim,
+                rate: u64::try_from(rate).unwrap_or(u64::MAX),
+            }])
         }
 
         Intent::Read { item } => {

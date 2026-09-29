@@ -143,6 +143,7 @@ impl Session {
             Ok(Command::Act(intent)) => {
                 let started = self.world.tick();
                 let was_asleep = self.world.is_asleep(self.player);
+                let log_from = self.world.log().len();
                 match laws::perform(&mut self.world, self.player, intent.clone()) {
                     Ok(changes) => {
                         let spent = self.world.tick() - started;
@@ -162,7 +163,7 @@ impl Session {
                         let text = if matches!(intent, Intent::Sleep { .. }) {
                             text
                         } else {
-                            self.with_collapse(text, was_asleep)
+                            self.with_collapse(text, was_asleep, log_from)
                         };
                         Reply::say(text)
                     }
@@ -186,12 +187,15 @@ impl Session {
             units::parse_quantity(time, units::property::DURATION, "a time").ok()
         };
         let was_asleep = self.world.is_asleep(self.player);
+        let log_from = self.world.log().len();
         match seconds {
             Some(n) if (1..=MAX_WAIT).contains(&n) => match nature::run(&mut self.world, n) {
                 Ok(()) if n == 1 => Reply::say("A second passes."),
-                Ok(()) => Reply::say(
-                    self.with_collapse(format!("{} passes.", units::show_duration(n)), was_asleep),
-                ),
+                Ok(()) => Reply::say(self.with_collapse(
+                    format!("{} passes.", units::show_duration(n)),
+                    was_asleep,
+                    log_from,
+                )),
                 Err(fault) => Reply::refuse(format!("!! engine fault: {fault}")),
             },
             _ => Reply::refuse("Try \"wait\", \"wait 60\", or \"wait 2 h\" (up to 30 days)."),
@@ -200,8 +204,38 @@ impl Session {
 
     /// Adds news of the player having dropped asleep from exhaustion, if
     /// they were awake before (`was_asleep` is false).
-    fn with_collapse(&self, text: String, was_asleep: bool) -> String {
-        if !was_asleep && self.world.is_asleep(self.player) {
+    /// Also adds news of anyone who attacked the player since `log_from`.
+    fn with_collapse(&self, text: String, was_asleep: bool, log_from: usize) -> String {
+        let w = &self.world;
+        let mut text = text;
+        for entry in &w.log()[log_from.min(w.log().len())..] {
+            let Cause::Action {
+                actor,
+                intent: Intent::Attack { target, .. },
+            } = &entry.cause
+            else {
+                continue;
+            };
+            if *actor == self.player || target != w.key(self.player) {
+                continue;
+            }
+            let wounded = entry.changes.iter().find_map(|c| match c {
+                &Change::Wound { agent, rate } if agent == self.player => Some(rate),
+                _ => None,
+            });
+            text = match wounded {
+                Some(rate) => format!(
+                    "{text}\n{} goes for you, and wounds you: you're bleeding {} a second.",
+                    sentence_case(&w.label(*actor)),
+                    Mass::from_mg(rate)
+                ),
+                None => format!(
+                    "{text}\n{} goes for you, and misses.",
+                    sentence_case(&w.label(*actor))
+                ),
+            };
+        }
+        if !was_asleep && w.is_asleep(self.player) {
             format!("{text}\nYou're exhausted, and fall asleep where you are.")
         } else {
             text
@@ -382,6 +416,18 @@ impl Session {
                 "You look for the way to {} that {source} showed, but there's none. You correct your memory.",
                 w.label(*to)
             ),
+            (Intent::Attack { with, .. }, Some(&Change::Wound { agent, rate })) => {
+                let with = with
+                    .as_ref()
+                    .map(|t| format!(" with the {t}"))
+                    .unwrap_or_default();
+                format!(
+                    "You strike {}{with}, and wound it: it's bleeding {} a second.",
+                    name(agent),
+                    Mass::from_mg(rate)
+                )
+            }
+            (Intent::Attack { .. }, _) => "You strike, and miss.".into(),
             (Intent::Read { .. }, _) => {
                 let shown: Vec<String> = changes
                     .iter()
@@ -723,6 +769,11 @@ impl Session {
                 "{} keeps away from {} until {until} s",
                 w.label(agent),
                 w.label(place)
+            ),
+            &Change::Wound { agent, rate } => format!(
+                "{} is wounded, bleeding {} a second",
+                w.label(agent),
+                Mass::from_mg(rate)
             ),
             &Change::Occupy { agent, until } => {
                 format!("{} is busy until {until} s", w.label(agent))

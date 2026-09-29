@@ -84,6 +84,11 @@ pub enum Intent {
     },
     /// Search around for a way out not yet known.
     Explore,
+    /// Strike at someone, with something that has an edge.
+    Attack {
+        target: String,
+        with: Option<String>,
+    },
     /// Read something, such as a map.
     Read {
         item: String,
@@ -158,6 +163,11 @@ impl fmt::Display for Intent {
             Intent::Eat { item } => write!(f, "eat {item}"),
             Intent::Explore => f.write_str("explore"),
             Intent::Read { item } => write!(f, "read {item}"),
+            Intent::Attack { target, with: None } => write!(f, "attack {target}"),
+            Intent::Attack {
+                target,
+                with: Some(tool),
+            } => write!(f, "attack {target} with {tool}"),
             Intent::Survey => f.write_str("survey"),
             Intent::Sleep { seconds, shelter } => {
                 f.write_str("sleep")?;
@@ -317,6 +327,16 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
             design: one("<design>")?,
         },
         "explore" | "search" => Intent::Explore,
+        "attack" | "strike" | "stab" => match two(&["with"], "<someone> with <something>") {
+            Ok((target, tool)) => Intent::Attack {
+                target,
+                with: Some(tool),
+            },
+            Err(_) => Intent::Attack {
+                target: one("<someone>")?,
+                with: None,
+            },
+        },
         "read" | "study" => Intent::Read {
             item: one("<thing>")?,
         },

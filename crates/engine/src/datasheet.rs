@@ -71,6 +71,7 @@ pub enum Property {
     Shelters,
     Kind,
     Knows,
+    Bleeding,
 }
 
 impl Property {
@@ -128,6 +129,7 @@ impl Property {
             Property::Shelters => "keeps in",
             Property::Kind => "kind",
             Property::Knows => "knows",
+            Property::Bleeding => "bleeding",
         }
     }
 }
@@ -377,6 +379,13 @@ fn measure_thing(world: &World, id: EntityId) -> Datasheet {
             Property::PlacesSeen,
             Value::Text(world.places_seen(id).to_string()),
         );
+        let bleeding = world.bleeding(id);
+        if bleeding > 0 {
+            sheet.set(
+                Property::Bleeding,
+                Value::Text(format!("{} a second", Mass::from_mg(bleeding))),
+            );
+        }
         if let Some(memory) = world.memory(id) {
             sheet.set(
                 Property::Knows,

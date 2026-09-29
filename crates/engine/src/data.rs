@@ -52,6 +52,8 @@ struct KindDef {
     life: Option<LifeDef>,
     /// Members act on instinct, following these rules.
     instinct: Option<InstinctDef>,
+    /// The width of the edge members are born with: tusks, claws, teeth.
+    weapon: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -66,6 +68,9 @@ struct InstinctDef {
     wander: String,
     /// How long it keeps away from where it met what it flees.
     wary: Option<String>,
+    /// Cornered or hurt, it attacks what it fears.
+    #[serde(default)]
+    charges: bool,
 }
 
 #[derive(Default, Deserialize)]
@@ -115,6 +120,10 @@ struct SettingsDef {
     eye_height: Option<String>,
     /// How long taking in the view takes.
     survey_time: Option<String>,
+    /// How fast a wound from an edge 1 mm wide bleeds.
+    wound_rate: Option<String>,
+    /// The chance a blow at someone awake lands.
+    hit_chance: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -271,6 +280,8 @@ struct LifeDef {
     climb: Option<String>,
     /// How much of a surplus food's energy it keeps when storing it.
     stores: Option<String>,
+    /// How long a wound takes to bleed half as fast, as it clots.
+    clots: Option<String>,
     /// How long it can stay awake before it's tired.
     awake: Option<String>,
     /// How long a full sleep takes.
@@ -764,6 +775,13 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     if let Some(e) = &def.eye_height {
         settings.eye_height = parse_quantity(e, property::LENGTH, "a length like \"1.7 m\"")?;
     }
+    if let Some(w) = &def.wound_rate {
+        settings.wound_rate =
+            parse_quantity(w, property::MASS_PER_SECOND_FLOW, "a rate like \"20 g/s\"")?;
+    }
+    if let Some(h) = &def.hit_chance {
+        settings.hit_chance = parse_percent(h)?;
+    }
     if let Some(t) = &def.survey_time {
         settings.survey_time = time(t)?.max(1);
     }
@@ -1153,6 +1171,7 @@ fn load_kinds(world: &mut World, defs: &[KindDef]) -> Result<(), LoadError> {
                     .map(|w| parse_quantity(w, property::DURATION, "a time like \"3 h\""))
                     .transpose()?
                     .unwrap_or(0),
+                charges: i.charges,
             }),
             None => None,
         };
@@ -1160,6 +1179,11 @@ fn load_kinds(world: &mut World, defs: &[KindDef]) -> Result<(), LoadError> {
             label: def.label.clone(),
             parent: def.parent.clone(),
             instinct,
+            weapon: def
+                .weapon
+                .as_deref()
+                .map(|w| parse_length(&def.id, w))
+                .transpose()?,
         };
         if world.kinds.insert(def.id.clone(), kind).is_some() {
             return fail(format!("the kind {:?} is defined twice", def.id));
@@ -1377,6 +1401,14 @@ fn load_life(
             }
         },
         stores: def.stores.as_deref().map(parse_percent).transpose()?,
+        clots: def
+            .clots
+            .as_deref()
+            .map(|c| parse_quantity(c, property::DURATION, "a time like \"10 min\""))
+            .transpose()?
+            .unwrap_or(600)
+            .max(1),
+        wounds: Vec::new(),
         reserve: {
             // The most energy-rich store it digests that the body holds.
             let digests: Vec<MaterialId> = def

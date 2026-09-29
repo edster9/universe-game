@@ -324,7 +324,7 @@ mass = "80 kg"
 composition = { water = "60%", flesh = "25%", fat = "15%" }
 life = { resting_power = "90 W", working_power = "250 W", heat_loss = "8 W/K", set_point = "311 K", sweat_rate = "0.3 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "40 kg", digests = ["fat", "roots"], gulp = "1 kg", coldest = "303 K", hottest = "317 K", carry = "5 kg", walk = "1.5 m/s", awake = "12 h", sleep = "12 h", tired_pace = "67%", collapse = "36 h", stores = "75%", clots = "10 min" }
 instinct = { flees = ["human"], rest = "30 min", wander = "10%", wary = "3 h", charges = true }
-weapon = "5 mm"
+weapon = { edge = "5 mm" }
 
 [[kind]]
 id = "fish"

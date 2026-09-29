@@ -29,6 +29,7 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md) | For a later conversation: what a player can teach their character, and what stops a pasted rocket |
 | [ideas/kinds.md](ideas/kinds.md) | Decided: how living things are classified, humans and future aliens included, and what drives them |
 | [ideas/memory.md](ideas/memory.md) | Decided: what a person knows, certain or only possible, and how maps and seeing for yourself correct it |
+| [ideas/harm.md](ideas/harm.md) | How things cause harm: edge (built), blunt, projectile, and blast, as ways of delivering energy rather than kinds of weapon |
 | [ideas/time-away.md](ideas/time-away.md) | For a discussion soon: what happens to a player's person while they're away |
 | [ideas/vocabulary.md](ideas/vocabulary.md) | For a conversation after the next two challenges: how new vocabulary emerges as the engine trains |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |

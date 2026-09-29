@@ -52,8 +52,18 @@ struct KindDef {
     life: Option<LifeDef>,
     /// Members act on instinct, following these rules.
     instinct: Option<InstinctDef>,
-    /// The width of the edge members are born with: tusks, claws, teeth.
-    weapon: Option<String>,
+    /// The weapon members are born with, by how it does harm: tusks, claws,
+    /// teeth. See docs/ideas/harm.md.
+    weapon: Option<WeaponDef>,
+}
+
+/// How a natural weapon does harm. Only an edge so far; blunt force comes
+/// later.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WeaponDef {
+    /// The width of its edge or point.
+    edge: String,
 }
 
 #[derive(Deserialize)]
@@ -1181,8 +1191,8 @@ fn load_kinds(world: &mut World, defs: &[KindDef]) -> Result<(), LoadError> {
             instinct,
             weapon: def
                 .weapon
-                .as_deref()
-                .map(|w| parse_length(&def.id, w))
+                .as_ref()
+                .map(|w| parse_length(&def.id, &w.edge))
                 .transpose()?,
         };
         if world.kinds.insert(def.id.clone(), kind).is_some() {

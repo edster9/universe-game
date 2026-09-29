@@ -211,6 +211,16 @@ Added 2026-09-29. **A phase after the animal work, before the vocabulary convers
 - If the map is wrong, you have to correct your memory. The same happens in the space age: given a star chart, you travel somewhere and only when you get there find the chart was wrong, or that the star it showed has since exploded.
 - Even what you do know can change. A marker you spotted on the way out may be gone on the way back, for any number of reasons. Now you're in a contradiction: what you know is no longer there, and you have to correct it. You must be able to keep correcting your memory.
 
+## How things cause harm
+
+Added 2026-09-29, after the injury stage. Not to build yet beyond a pointed spear and an edged weapon, but structure for it now.
+
+- We have the basics: a pointed spear, and an edge (an axe, for example).
+- Soon we need to expand into blunt force, like a hammer; projectiles, like rocks, which can eventually also be a bullet; and eventually explosives, and other things that can cause damage.
+- Structure the data to be oriented that way, and remember the structure of how weapons are classified.
+
+See [ideas/harm.md](ideas/harm.md).
+
 ## Time passing while a player is away
 
 Added 2026-09-29, **for a discussion soon: before the vocabulary conversation and the other planned discussions.** Not to be solved yet.

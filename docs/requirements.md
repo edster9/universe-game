@@ -251,6 +251,7 @@ Added 2026-09-29, **for a conversation after the where-am-I? and living-with-the
 
 - After these next scenarios are done, and before we begin the random scenarios to see if we can handle an unplanned scenario, take a pause and discuss an important evolution aspect of the engine: how new vocabulary words emerge as we are training.
 - This could have a major impact on the evolution of the engine, so have it earlier rather than later.
+- **Updated 2026-09-29:** this is a very, very critical conversation, and it must happen **before continuing living with the island stages 5 and 6**. The owner will explain it in greater detail; once explained in full, its real importance will be clear. Order: time passing first (with the interface), then vocabulary.
 
 See [ideas/vocabulary.md](ideas/vocabulary.md).
 

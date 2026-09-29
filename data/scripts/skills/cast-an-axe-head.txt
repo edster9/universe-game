@@ -1,0 +1,68 @@
+# Skill: cast an iron axe head, starting on the beach of the stranded island
+# with nothing. Gather everything first, make fire, light a furnace from it,
+# smelt bog iron, and cast the head in a clay mould fired in the same
+# furnace. Ends holding an unhoned axe head with a 5 mm edge, a flint flake,
+# and a spare stick.
+# Gather everything first.
+go forest
+repeat 3
+  gather sticks
+end
+repeat 3
+  gather grass
+end
+repeat 3
+  gather twigs
+end
+go beach
+repeat 3
+  gather driftwood
+end
+go stream
+repeat 3
+  gather clay
+end
+gather bog
+go forest
+go hillside
+repeat 12
+  gather stones
+end
+gather flint
+work flint into flake with stone
+work smallest clay into axe-head mould with flake
+assemble fire ring
+drop fire ring
+assemble furnace
+drop furnace
+# Make fire, and feed it up to a log.
+put grass in ring
+rub wood against wood into ring for 1 min
+wait 30
+put grass in ring
+put grass in ring
+wait 10
+repeat 3
+  put smallest wood in ring
+end
+wait 30
+put wood in ring
+# Light the furnace from the fire. The mould fires hard as the furnace heats.
+put mould in furnace
+put iron in furnace
+put largest wood in furnace
+put largest wood in furnace
+light furnace
+wait 3 min
+datasheet mould
+expect said fired clay axe-head mould
+wait 4 min
+look
+expect said molten iron
+pour molten iron into mould
+wait 2 h
+look
+take mould from furnace
+take axe head from mould
+datasheet axe head
+expect said edge width: 5 mm

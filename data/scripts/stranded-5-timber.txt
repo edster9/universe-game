@@ -1,0 +1,21 @@
+# Stranded, stage 5: fell trees with the axe. A log takes an hour with a 1 mm
+# edge; this axe, honed to 2 mm, takes two.
+world stranded.toml
+as survivor
+luck average
+
+include skills/cast-an-axe-head.txt
+include skills/hone-and-haft-an-axe.txt
+go forest
+go stream
+repeat 6
+  try drink water
+end
+go forest
+gather trees
+expect said you find 20 kg of wood. (that took 2 h.)
+drop largest wood
+gather trees
+expect said (that took 2 h.)
+expect alive
+expect conserved

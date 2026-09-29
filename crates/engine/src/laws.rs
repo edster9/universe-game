@@ -7,7 +7,7 @@
 
 use std::fmt;
 
-use crate::datasheet;
+use crate::datasheet::{self, Property, Value};
 use crate::gate::{Cause, Change, Fault};
 use crate::intent::Intent;
 use crate::matter::{self, Composition, State};
@@ -139,7 +139,14 @@ impl fmt::Display for Refusal {
             Refusal::CannotEat(name) => write!(f, "you can't eat {name}"),
             Refusal::NotDrinkable(name) => write!(f, "you can't drink {name}"),
             Refusal::NotThirsty => write!(f, "you aren't thirsty"),
-            Refusal::NeedsTool { source, tool } => write!(f, "you need a {tool} for {source}"),
+            Refusal::NeedsTool { source, tool } => {
+                let article = if tool.starts_with(['a', 'e', 'i', 'o', 'u']) {
+                    "an"
+                } else {
+                    "a"
+                };
+                write!(f, "you need {article} {tool} for {source}")
+            }
             Refusal::NoFlame(name) => write!(f, "there's no flame nearby to light {name} from"),
             Refusal::NotGatherable(name) => {
                 write!(f, "{name} isn't loose pieces you can gather by hand")
@@ -224,11 +231,33 @@ pub fn perform(
 pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
-        Intent::Gather { source } => Reach::of(world, actor)
-            .ok()
-            .and_then(|reach| find(world, reach.around.iter().copied(), source))
-            .and_then(|found| world.pieces(found))
-            .map_or(0, |pieces| pieces.find_time),
+        Intent::Gather { source } => {
+            let Some(reach) = Reach::of(world, actor).ok() else {
+                return 0;
+            };
+            let Some(found) = find(world, reach.around.iter().copied(), source) else {
+                return 0;
+            };
+            let Some(pieces) = world.pieces(found) else {
+                return 0;
+            };
+            // Work with a tool takes longer the blunter the tool.
+            match (
+                pieces.edge,
+                needed_tool(world, &reach.carried, pieces.needs.as_deref()),
+            ) {
+                (Some(reference), Some(tool)) => {
+                    let edge = edge_width(world, tool).max(1);
+                    u64::try_from(
+                        u128::from(pieces.find_time) * u128::from(edge)
+                            / u128::from(reference.max(1)),
+                    )
+                    .unwrap_or(u64::MAX)
+                    .max(1)
+                }
+                _ => pieces.find_time,
+            }
+        }
         _ => 0,
     }
 }
@@ -829,11 +858,9 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }
             // Some sources can't be gathered with bare hands.
             if let Some(needs) = &pieces.needs {
-                let fits = |p: EntityId| {
-                    world.shape(p) == Some(needs.as_str())
-                        || world.assembly(p).is_some_and(|a| &a.design == needs)
-                };
-                if !carried().any(fits) {
+                if let Some(tool) = needed_tool(world, &reach.carried, Some(needs)) {
+                    harder_than(world, tool, found)?;
+                } else {
                     let tool = world
                         .shapes()
                         .get(needs)
@@ -906,10 +933,19 @@ fn harder_than(world: &World, tool: EntityId, target: EntityId) -> Result<(), Re
         world.materials()[&material]
             .hardness_at(world.temperature(id).unwrap_or(reference), reference)
     };
+    // An assembled tool cuts with its edge, as its datasheet measured it.
+    let edge_hardness =
+        world
+            .assembly(tool)
+            .and_then(|a| match a.datasheet.get(Property::EdgeHardness) {
+                Some(Value::Hardness(h)) => Some(*h),
+                _ => None,
+            });
     let tool_hardness = world
         .composition(tool)
         .and_then(matter::dominant)
         .map(|m| hardness(tool, m))
+        .or(edge_hardness)
         .ok_or_else(|| Refusal::NotATool(named(world, tool)))?;
     let target_hardness = world
         .composition(target)
@@ -922,6 +958,33 @@ fn harder_than(world: &World, tool: EntityId, target: EntityId) -> Result<(), Re
             tool: named(world, tool),
             target: named(world, target),
         })
+    }
+}
+
+/// The first thing carried that's the shape or design `needs` names.
+fn needed_tool(world: &World, carried: &[EntityId], needs: Option<&str>) -> Option<EntityId> {
+    let needs = needs?;
+    carried.iter().copied().find(|&p| {
+        world.shape(p) == Some(needs) || world.assembly(p).is_some_and(|a| a.design == needs)
+    })
+}
+
+/// How fine a tool's working edge is, in µm: an assembly's measured edge, a
+/// cutting part's tolerance, or the world's rough tolerance for anything else.
+fn edge_width(world: &World, tool: EntityId) -> u64 {
+    if let Some(Value::Length(edge)) = world
+        .assembly(tool)
+        .and_then(|a| a.datasheet.get(Property::EdgeWidth))
+    {
+        return *edge;
+    }
+    let cutting = world
+        .shape(tool)
+        .and_then(|s| world.shapes().get(s))
+        .is_some_and(|s| s.role == Some(crate::world::Role::Cutting));
+    match world.tolerance(tool) {
+        Some(tolerance) if cutting => tolerance,
+        _ => world.settings().rough_tolerance,
     }
 }
 

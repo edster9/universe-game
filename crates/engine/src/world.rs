@@ -179,6 +179,9 @@ pub struct Pieces {
     pub chance: u64,
     /// A shape or design the gatherer must be carrying, if bare hands won't do.
     pub needs: Option<String>,
+    /// If set, `find_time` is the time with a tool of this edge width, in µm;
+    /// a blunter tool takes longer in proportion.
+    pub edge: Option<u64>,
 }
 
 /// A living source that grows toward a limit, drawing matter from another

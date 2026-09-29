@@ -25,8 +25,8 @@ These hold for every design decision unless the owner changes them.
 
 ## Testing
 
-- **Proofs, every run** (`cargo test --workspace`, about 15 seconds): law checks, conservation property tests, the no-names scan, and every script in `data/scripts/`.
-- **Scripts** are plain command files with `repeat … end`, optional `try` commands, and expectations (`alive`, `dead of`, `said`, `not said`, `time after/before`, `conserved`). See `crates/console/src/script.rs`. Use fixed luck (`luck average|good|bad`), not a seed: a seed's luck shifts whenever the engine's history changes.
+- **Proofs, every run** (`cargo test --workspace`, about 25 seconds): law checks, conservation property tests, the no-names scan, and every script in `data/scripts/`.
+- **Scripts** are plain command files with `include` (shared recipes in `data/scripts/skills/`), `repeat … end`, optional `try` commands, and expectations (`alive`, `dead of`, `said`, `not said`, `time after/before`, `conserved`). See `crates/console/src/script.rs`. Use fixed luck (`luck average|good|bad`), not a seed: a seed's luck shifts whenever the engine's history changes.
 - **Trials, on demand** (`cargo test --workspace -- --ignored --nocapture`): survivors play many seeds with real chance and report success rates. Run them when a law changes and before recording a stage's result.
 - `cargo run -p console -- --script data/scripts/<file>.txt` plays one script and prints its transcript. `cargo run -p console -- --world <file> --as <person-id>` opens the console.
 - Run `cargo fmt --all` and `cargo clippy --workspace --all-targets` before committing.
@@ -49,5 +49,5 @@ These hold for every design decision unless the owner changes them.
 ## Where things stand
 
 - Slices 0 to 2 are built. See `docs/slices.md`.
-- The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 4 have passed. Next is stage 5, timber: felling trees with the axe, where work takes time set by the tool's edge and the effort.
+- The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 5 have passed. Next is stage 6, rope: fibre from bushes twisted into rope, with tension (a material's strength when pulled) as the new law.
 - Directions recorded for later: skills and a spoken interface (`docs/ideas/skills-and-interface.md`), recognising what things are (`docs/ideas/recognition.md`), money (`docs/ideas/money.md`), many universes (`docs/ideas/universes.md`).

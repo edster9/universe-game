@@ -1,0 +1,8 @@
+# Stranded, stage 5: trees can't be felled by hand, or with a spear.
+world stranded.toml
+as survivor
+luck average
+
+go forest
+try gather trees
+expect said you need an axe

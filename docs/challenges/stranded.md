@@ -192,6 +192,24 @@ Simplifications to revisit:
 - **Metal poured into a form inside a furnace cools in the open**, not at the furnace's temperature.
 - **Moving between places takes no time**, which makes gathering everything first cheaper than it should be.
 
+### Stage 5: timber. Passed, 2026-09-28.
+
+**Felling reuses the gathering law.** Standing trees are a source that needs an axe, and each 20 kg log is one piece of work. Two small additions made it work:
+
+- **Work with a tool takes longer the blunter the tool.** A source can say how long a piece takes with a given edge (for trees, an hour with a 1 mm edge), and the time scales with the tool's actual edge width. The honed 2 mm axe fells a log in exactly **2 hours**; the same axe unhoned, with its 5 mm cast edge, takes **5 hours**. Honing now pays off in hours saved.
+- **A tool must be harder than what it takes from.** An assembled tool cuts with its edge's hardness, as its datasheet measured it.
+
+Proofs: [stranded-5-timber.txt](../../data/scripts/stranded-5-timber.txt) casts, hones, and hafts an axe, drinks, and fells two logs at two hours each. [stranded-5-blunt-axe.txt](../../data/scripts/stranded-5-blunt-axe.txt) skips the honing and takes five hours. Trees can't be felled by hand. **Sabotage check:** making the edge not matter fails both timing proofs.
+
+**Scripts can now include recipes.** The axe-making steps live once, in [skills/cast-an-axe-head.txt](../../data/scripts/skills/cast-an-axe-head.txt) and [skills/hone-and-haft-an-axe.txt](../../data/scripts/skills/hone-and-haft-an-axe.txt), and the stage 4 and 5 proofs include them. This is a first, hand-written form of the skills in [skills-and-interface.md](../ideas/skills-and-interface.md).
+
+Simplifications to revisit:
+
+- **Effort doesn't change the time.** Only the edge does; a stronger or more skilled worker isn't faster yet.
+- **No carrying limit, and walking takes no time.** A person could carry every log at once. These start to matter with the raft and the crossing.
+- **Trees don't regrow**, and a felled log is a plain lump of wood with no shape.
+- **The daily test run grew to about 24 seconds**, because several proofs replay the whole axe recipe from nothing.
+
 ## How it's tested
 
 Decided 2026-09-28.

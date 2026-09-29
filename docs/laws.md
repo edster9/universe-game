@@ -44,7 +44,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Bare hands can divide only what's soft enough | in | stranded 2 |
 | Liquid setting in a form takes its shape, to the form's tolerance | in | slices 1, 2 |
 | Taking material from a fixed source needs a tool harder than it | in | slice 1 |
-| Work takes time, set by the tool's edge and the effort | planned | stranded 5 |
+| Work with a tool takes longer the blunter the tool: time scales with its edge width | in | stranded 5 |
+| A needed tool must be harder than the source it takes from; an assembled tool cuts with its edge's hardness | in | stranded 5 |
 | A source made of loose pieces can be gathered by hand. Each search takes a fixed time, and the thinner the source, the less likely it finds a piece | in | stranded 1 |
 | Some sources need a particular tool to gather from, and each has its own chance per search, falling as it thins | in | stranded 3 |
 

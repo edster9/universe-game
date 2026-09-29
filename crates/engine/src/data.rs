@@ -175,6 +175,8 @@ struct PiecesDef {
     chance: Option<String>,
     /// A shape or design the gatherer must carry.
     needs: Option<String>,
+    /// The tool edge that `find_time` assumes; blunter tools take longer.
+    edge: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -709,6 +711,11 @@ fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
                     .map(parse_percent)
                     .transpose()?
                     .unwrap_or(10_000),
+                edge: pieces
+                    .edge
+                    .as_deref()
+                    .map(|e| parse_length(&def.id, e))
+                    .transpose()?,
                 needs: match &pieces.needs {
                     Some(needs)
                         if world.shapes.contains_key(needs)

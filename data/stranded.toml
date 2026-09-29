@@ -22,6 +22,9 @@
 # of stones and clay burns wood hot enough to melt iron out of its rock but
 # not melt the rock. A mould shaped from clay, once fired, casts an axe head.
 #
+# Stage 5, timber: standing trees, felled a 20 kg log at a time with an axe.
+# A log takes an hour with a 1 mm edge, and longer the blunter the axe.
+#
 # Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
 # and 300 W working; about 2 kg of water lost a day at rest, twice that when
 # working, plus sweat; death after losing about 7 kg of water (10% of body weight).
@@ -401,3 +404,12 @@ mass = "500 kg"
 fixed = true
 material = "clay"
 pieces = { size = "1 kg", find_time = "5 min" }
+
+[[item]]
+id = "trees"
+label = "standing trees"
+at = "forest"
+mass = "20 t"
+fixed = true
+material = "wood"
+pieces = { size = "20 kg", find_time = "1 h", edge = "1 mm", needs = "axe" }

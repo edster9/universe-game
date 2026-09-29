@@ -9,6 +9,7 @@
 //! world stranded.toml        the data file to load (first, required)
 //! as survivor                who to play (default: traveller)
 //! luck average               average, good, bad, or seed <n>
+//! include skills/x.txt       the lines of another file, from data/scripts
 //! repeat 10                  repeat the lines up to the matching `end`
 //!   try drink water          a command that may be refused
 //!   go beach                 a command that must not be refused
@@ -45,6 +46,7 @@ pub struct Report {
 /// error says which line failed and why, followed by the end of the
 /// transcript.
 pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
+    let text = expand_includes(text, &data_dir.join("scripts"), 0)?;
     let mut lines = text
         .lines()
         .enumerate()
@@ -107,6 +109,28 @@ pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
         )
     })?;
     Ok(Report { transcript })
+}
+
+/// Replaces each `include <file>` line with that file's lines, so a recipe
+/// (a skill, in effect) can be written once and used by many scripts. Paths
+/// are relative to data/scripts.
+fn expand_includes(text: &str, scripts: &Path, depth: usize) -> Result<String, String> {
+    if depth > 8 {
+        return Err("includes nest more than eight deep".into());
+    }
+    let mut out = Vec::new();
+    for line in text.lines() {
+        match line.trim().strip_prefix("include ") {
+            Some(name) => {
+                let name = name.split('#').next().unwrap_or("").trim();
+                let included = std::fs::read_to_string(scripts.join(name))
+                    .map_err(|e| format!("can't include {name}: {e}"))?;
+                out.push(expand_includes(&included, scripts, depth + 1)?);
+            }
+            None => out.push(line.to_string()),
+        }
+    }
+    Ok(out.join("\n"))
 }
 
 fn parse_block<'a>(

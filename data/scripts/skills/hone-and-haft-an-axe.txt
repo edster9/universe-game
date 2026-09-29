@@ -1,0 +1,5 @@
+# Skill: hone an axe head on a stone for half an hour, shape a haft with the
+# flint flake, and put the axe together.
+rub axe head against stone for 30 min
+work wood into haft with flake
+assemble axe

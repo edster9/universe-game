@@ -1,0 +1,13 @@
+# Stranded, stage 5: an axe that was never honed keeps its 5 mm cast edge,
+# and each log takes five hours instead of two.
+world stranded.toml
+as survivor
+luck average
+
+include skills/cast-an-axe-head.txt
+work wood into haft with flake
+assemble axe
+go forest
+gather trees
+expect said you find 20 kg of wood. (that took 5 h.)
+expect conserved

@@ -11,7 +11,7 @@ use std::fmt;
 use crate::datasheet::{self, Datasheet, Property, Value};
 use crate::gate::{Cause, Change, Fault};
 use crate::intent::Intent;
-use crate::matter::{self, Composition, State};
+use crate::matter::{self, Composition, MaterialId, State};
 use crate::nature;
 use crate::units::{Credits, Mass};
 use crate::world::{Claim, EntityId, Requirement, World};
@@ -21,6 +21,9 @@ const READING_TIME: u64 = 300;
 
 /// How long a blow takes, in seconds.
 const STRIKING_TIME: u64 = 5;
+
+/// How long it takes to butcher a body, in seconds.
+const BUTCHERING_TIME: u64 = 1_800;
 
 /// Processes a person must know how to do. Knowledge becomes real in slice 4
 /// (docs/ideas/knowledge.md). Until then everyone knows everything, but every
@@ -127,6 +130,7 @@ pub enum Refusal {
     NotAVessel(String),
     NothingToRead(String),
     NoEdge(Option<String>),
+    NotDead(String),
     TooDarkToSee,
     NotAShelter(String),
     PutItDown(String),
@@ -240,6 +244,7 @@ impl fmt::Display for Refusal {
             }
             Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
             Refusal::NoEdge(Some(name)) => write!(f, "{name} has no edge to wound with"),
+            Refusal::NotDead(name) => write!(f, "{name} isn't dead"),
             Refusal::NoEdge(None) => write!(f, "you have nothing with an edge to wound with"),
             Refusal::NothingToRead(name) => write!(f, "there's nothing to read on {name}"),
             Refusal::NotAShelter(name) => write!(f, "{name} gives no shelter"),
@@ -400,6 +405,7 @@ fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
         Intent::Explore => world.settings().explore_time,
         Intent::Read { .. } => READING_TIME,
         Intent::Attack { .. } => STRIKING_TIME,
+        Intent::Butcher { .. } => BUTCHERING_TIME,
         Intent::Survey => world.settings().survey_time,
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
         Intent::Go { place, aboard } => {
@@ -554,6 +560,76 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             Ok(changes)
         }
 
+        Intent::Butcher { body, tool } => {
+            let carcass = find(world, reach.around.iter().copied(), body)
+                .ok_or_else(|| Refusal::NotHere(body.clone()))?;
+            let dead = world.life(carcass).is_some_and(|l| l.died_of.is_some());
+            if !dead {
+                return Err(Refusal::NotDead(named(world, carcass)));
+            }
+            let tool = carrying(tool)?;
+            if !has_edge(world, tool) {
+                return Err(Refusal::NoEdge(Some(named(world, tool))));
+            }
+            harder_than(world, tool, carcass)?;
+            let composition = world.composition(carcass).expect("a body is matter");
+            let fluid = world.life(carcass).expect("checked").fluid;
+            // What stays behind is the hardest part: the frame. Everything
+            // else comes away.
+            let parts: Vec<(Mass, MaterialId)> = composition
+                .iter()
+                .filter(|(m, _)| **m != fluid)
+                .map(|(&m, &mass)| (mass, m))
+                .collect();
+            let Some(&(_, kept)) = parts
+                .iter()
+                .max_by_key(|(mass, m)| (world.materials()[m].hardness, *mass))
+            else {
+                return Err(Refusal::NotDead(named(world, carcass)));
+            };
+            // The rest comes away in cuts no heavier than the world's cut; the
+            // body's fluid stays with the frame.
+            let mut changes = Vec::new();
+            for &(mass, material) in &parts {
+                if material == kept {
+                    continue;
+                }
+                let take = Composition::from([(material, mass)]);
+                let total = matter::total_mass(&take);
+                let cut = u128::from(world.settings().cut.mg().max(1));
+                let pieces = total.div_ceil(cut).max(1);
+                for n in 0..pieces {
+                    let share: Composition = take
+                        .iter()
+                        .map(|(&m, &mass)| {
+                            let each = u128::from(mass.mg()) / pieces;
+                            let extra = if n == 0 {
+                                u128::from(mass.mg()) % pieces
+                            } else {
+                                0
+                            };
+                            (
+                                m,
+                                Mass::from_mg(u64::try_from(each + extra).expect("a part")),
+                            )
+                        })
+                        .filter(|(_, m)| m.mg() > 0)
+                        .collect();
+                    if !share.is_empty() {
+                        changes.push(Change::Split {
+                            from: carcass,
+                            take: share,
+                            at: reach.here,
+                        });
+                    }
+                }
+            }
+            if changes.is_empty() {
+                return Err(Refusal::NotDead(named(world, carcass)));
+            }
+            Ok(changes)
+        }
+
         Intent::Attack { target, with } => {
             let victim = find(world, reach.around.iter().copied(), target)
                 .filter(|&v| world.is_living(v))
@@ -562,14 +638,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             let edge = match with {
                 Some(tool) => {
                     let tool = carrying(tool)?;
-                    let cuts = world
-                        .shape(tool)
-                        .and_then(|s| world.shapes().get(s))
-                        .is_some_and(|s| s.role == Some(crate::world::Role::Cutting))
-                        || world
-                            .assembly(tool)
-                            .is_some_and(|a| a.datasheet.get(Property::EdgeWidth).is_some());
-                    if !cuts {
+                    if !has_edge(world, tool) {
                         return Err(Refusal::NoEdge(Some(named(world, tool))));
                     }
                     edge_width(world, tool)
@@ -1124,15 +1193,16 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 .composition(found)
                 .filter(|_| world.assembly(found).is_none() && !world.is_container(found))
                 .ok_or_else(|| Refusal::CannotEat(named(world, found)))?;
-            // Only what the body can digest goes in; the rest is left in the hand.
-            let digestible: Composition = composition
-                .iter()
-                .filter(|(m, _)| life.digests.contains(m))
-                .map(|(&m, &mass)| (m, mass))
-                .collect();
-            if digestible.is_empty() {
+            // What the body can digest goes in, with the fluid in it; the rest
+            // is left in the hand.
+            if !composition.keys().any(|m| life.digests.contains(m)) {
                 return Err(Refusal::CannotEat(named(world, found)));
             }
+            let digestible: Composition = composition
+                .iter()
+                .filter(|(m, _)| life.digests.contains(m) || **m == life.fluid)
+                .map(|(&m, &mass)| (m, mass))
+                .collect();
             if world.in_use(found) {
                 return Err(Refusal::CannotEat(named(world, found)));
             }
@@ -1791,6 +1861,18 @@ fn needed_tool(world: &World, carried: &[EntityId], needs: Option<&str>) -> Opti
 
 /// How fine a tool's working edge is, in µm: an assembly's measured edge, a
 /// cutting part's tolerance, or the world's rough tolerance for anything else.
+/// Whether something has an edge: a cutting shape, or an assembly that
+/// measured one.
+fn has_edge(world: &World, tool: EntityId) -> bool {
+    world
+        .shape(tool)
+        .and_then(|s| world.shapes().get(s))
+        .is_some_and(|s| s.role == Some(crate::world::Role::Cutting))
+        || world
+            .assembly(tool)
+            .is_some_and(|a| a.datasheet.get(Property::EdgeWidth).is_some())
+}
+
 fn edge_width(world: &World, tool: EntityId) -> u64 {
     if let Some(Value::Length(edge)) = world
         .assembly(tool)

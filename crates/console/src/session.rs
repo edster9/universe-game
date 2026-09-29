@@ -428,6 +428,22 @@ impl Session {
                 )
             }
             (Intent::Attack { .. }, _) => "You strike, and miss.".into(),
+            (Intent::Butcher { .. }, _) => {
+                let pieces: Vec<String> = changes
+                    .iter()
+                    .filter_map(|c| match c {
+                        Change::Split { take, .. } => Some(format!(
+                            "{} ({})",
+                            w.describe_composition(take),
+                            Mass::from_mg(
+                                u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)
+                            )
+                        )),
+                        _ => None,
+                    })
+                    .collect();
+                format!("You cut it up: {}.", pieces.join(", "))
+            }
             (Intent::Read { .. }, _) => {
                 let shown: Vec<String> = changes
                     .iter()

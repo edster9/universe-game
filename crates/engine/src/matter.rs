@@ -48,6 +48,9 @@ pub struct Material {
     pub tensile_strength: Option<u64>,
     /// Liquids it softens in, so a container of it can't hold them.
     pub softens_in: Vec<MaterialId>,
+    /// What it spoils into, and the share that spoils each day, in parts per
+    /// ten thousand, as food rots. Spoiling keeps the energy in it.
+    pub decays: Option<(MaterialId, u64)>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -1,0 +1,90 @@
+# Living with the island, stage 4: the hunt. By day, gather what a fire needs
+# and make a honed spear. At night, spear a sleeping boar; it gores the
+# islander, runs, and dies of bleeding by the stream. Butcher it with the
+# spear: cuts of raw meat, fat, and a hide, with its bones and body water
+# left behind. Cook two portions over a fire, raw meat turning to cooked at
+# 340 K, and eat one. Meat spoils; cooked meat keeps longer.
+world living.toml
+as survivor
+luck average
+
+go forest
+repeat 4
+  gather sticks
+end
+repeat 6
+  gather grass
+end
+repeat 4
+  gather twigs
+end
+go hillside
+repeat 6
+  gather stones
+end
+gather flint
+work flint into flake with stone
+rub flake against stone for 30 min
+work largest wood into shaft with flake
+assemble spear
+assemble fire ring
+go forest
+go stream
+repeat 6
+  try drink water
+end
+go beach
+wait 12 h
+go forest
+attack boar with spear
+expect said it's bleeding 10 g a second
+wait 1 h
+go stream
+look
+expect said a boar
+expect said dead
+butcher boar with spear
+expect said you cut it up: fat
+expect said raw meat (4.5
+expect said hide
+take raw meat
+divide raw meat
+divide raw meat
+# Make fire, and cook the portion in it.
+drop fire ring
+put grass in ring
+rub wood against wood into ring
+wait 10
+repeat 5
+  put grass in ring
+end
+wait 10
+repeat 4
+  put smallest wood in ring
+end
+wait 30
+put wood in ring
+put smallest raw meat in ring
+put smallest raw meat in ring
+wait 20 min
+look
+expect said cooked meat
+try take cooked meat from ring
+expect said too hot to touch
+wait 2 h
+take cooked meat from ring
+take cooked meat from ring
+eat cooked meat
+expect said you eat the cooked meat
+# Meat spoils: raw, half a day; cooked, 15% a day. Two days on, the raw cuts
+# are mostly rotten, and the cooked portion mostly still good.
+repeat 12
+  try drink water
+end
+wait 2 day
+look
+expect said lump of rotting flesh and raw meat
+inventory
+expect said lump of cooked meat and rotting flesh
+expect alive
+expect conserved

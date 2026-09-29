@@ -178,6 +178,63 @@ density = "1000 kg/m3"
 tensile_strength = "50 MPa"
 
 [[material]]
+id = "meat"
+label = "raw meat"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "6 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "1060 kg/m3"
+becomes = { material = "cooked-meat", at = "340 K" }
+decays = { into = "rot", rate = "50%" }
+
+[[material]]
+id = "cooked-meat"
+label = "cooked meat"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "6 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "1060 kg/m3"
+decays = { into = "rot", rate = "15%" }
+
+[[material]]
+id = "hide"
+label = "hide"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "2000 J/(kg*K)"
+hardness = "1"
+energy_density = "6 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "1100 kg/m3"
+decays = { into = "rot", rate = "20%" }
+
+[[material]]
+id = "rot"
+label = "rotting flesh"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.3"
+energy_density = "6 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "1060 kg/m3"
+
+[[material]]
+id = "bone"
+label = "bone"
+melting_point = "1900 K"
+boiling_point = "3500 K"
+specific_heat = "1300 J/(kg*K)"
+hardness = "3"
+density = "1900 kg/m3"
+
+[[material]]
 id = "roots"
 label = "roots and nuts"
 melting_point = "3000 K"
@@ -312,17 +369,19 @@ label = "human"
 parent = "mammal"
 mass = "70 kg"
 composition = { water = "60%", flesh = "26%", fat = "14%" }
-life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K", carry = "40 kg", walk = "1.2 m/s", awake = "16 h", sleep = "8 h", tired_pace = "67%", collapse = "40 h", stores = "75%", clots = "10 min" }
+life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish", "meat", "cooked-meat"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K", carry = "40 kg", walk = "1.2 m/s", awake = "16 h", sleep = "8 h", tired_pace = "67%", collapse = "40 h", stores = "75%", clots = "10 min" }
 
 # A wild boar: 80 kg, fed on roots and nuts it roots up, drinking at water,
-# sleeping half the day. It barely sweats. It runs from people.
+# sleeping half the day. It barely sweats. It runs from people, and turns on
+# them cornered or hurt. Its body is meat, fat, bone, and hide, with water.
+# Meat, here, is meat with the water in it, about 6 MJ a kilo.
 [[kind]]
 id = "boar"
 label = "boar"
 parent = "mammal"
 mass = "80 kg"
-composition = { water = "60%", flesh = "25%", fat = "15%" }
-life = { resting_power = "90 W", working_power = "250 W", heat_loss = "8 W/K", set_point = "311 K", sweat_rate = "0.3 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "40 kg", digests = ["fat", "roots"], gulp = "1 kg", coldest = "303 K", hottest = "317 K", carry = "5 kg", walk = "1.5 m/s", awake = "12 h", sleep = "12 h", tired_pace = "67%", collapse = "36 h", stores = "75%", clots = "10 min" }
+composition = { water = "40%", meat = "35%", fat = "15%", bone = "6%", hide = "4%" }
+life = { resting_power = "90 W", working_power = "250 W", heat_loss = "8 W/K", set_point = "311 K", sweat_rate = "0.3 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "25 kg", digests = ["fat", "roots"], gulp = "1 kg", coldest = "303 K", hottest = "317 K", carry = "5 kg", walk = "1.5 m/s", awake = "12 h", sleep = "12 h", tired_pace = "67%", collapse = "36 h", stores = "75%", clots = "10 min" }
 instinct = { flees = ["human"], rest = "30 min", wander = "10%", wary = "3 h", charges = true }
 weapon = { edge = "5 mm" }
 

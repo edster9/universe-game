@@ -110,6 +110,11 @@ pub enum Intent {
     Divide {
         item: String,
     },
+    /// Cut a dead body into its parts with an edged tool.
+    Butcher {
+        body: String,
+        tool: String,
+    },
 }
 
 impl fmt::Display for Intent {
@@ -182,6 +187,7 @@ impl fmt::Display for Intent {
             Intent::Drink { source } => write!(f, "drink from {source}"),
             Intent::Gather { source } => write!(f, "gather from {source}"),
             Intent::Divide { item } => write!(f, "divide {item}"),
+            Intent::Butcher { body, tool } => write!(f, "butcher {body} with {tool}"),
         }
     }
 }
@@ -381,6 +387,10 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                 .trim()
                 .to_string();
             Intent::Gather { source }
+        }
+        "butcher" | "carve" => {
+            let (body, tool) = two(&["with"], "<body> with <something with an edge>")?;
+            Intent::Butcher { body, tool }
         }
         "divide" | "split" => Intent::Divide {
             item: one("<thing>")?,

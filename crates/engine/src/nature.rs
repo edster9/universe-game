@@ -65,7 +65,7 @@ type Law = fn(&World, u64) -> Vec<Change>;
 /// `dt` seconds of nature, as one step.
 fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
     let now = world.tick();
-    let laws: [Law; 16] = [
+    let laws: [Law; 17] = [
         burn,
         burn_in_the_open,
         friction,
@@ -75,6 +75,7 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
         live,
         grow,
         transform,
+        decay,
         clear_air,
         limits_of_life,
         fall_asleep,
@@ -783,6 +784,38 @@ fn limits_of_life(world: &World, _dt: u64) -> Vec<Change> {
             changes.push(Change::Die {
                 agent: id,
                 cause: cause.into(),
+            });
+        }
+    }
+    changes
+}
+
+/// Some materials spoil over time, as food rots: each day a share of them
+/// turns into what they spoil into, keeping its energy. Only what's no
+/// longer alive spoils.
+fn decay(world: &World, dt: u64) -> Vec<Change> {
+    let mut changes = Vec::new();
+    for (&id, composition) in &world.matter {
+        if world.is_living(id) {
+            continue;
+        }
+        for (&material, &mass) in composition {
+            let Some((into, rate)) = world.materials[&material].decays else {
+                continue;
+            };
+            let amount = u128::from(mass.mg()) * u128::from(rate) * u128::from(dt)
+                / 10_000
+                / u128::from(SECONDS_PER_DAY);
+            // The last little bit spoils all at once.
+            let amount = u64::try_from(amount)
+                .expect("less than there is")
+                .max(1)
+                .min(mass.mg());
+            changes.push(Change::Transform {
+                entity: id,
+                from: material,
+                to: into,
+                mass: Mass::from_mg(amount),
             });
         }
     }

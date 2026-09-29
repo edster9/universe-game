@@ -15,7 +15,7 @@ Animals are the first characters in the world that aren't the player, so this ch
 | 1 | Shelter | Build a lean-to and sleep warmer inside it | An assembly built to shelter keeps in a share of a sleeper's body heat |
 | 2 | Animals | Boars roam the forest, feed, and flee people | Kinds of living things; animals are living bodies under the same laws as people, with an instinct in data: flee, keep away, feed, drink, sleep, wander |
 | 3 | Injury | A tusk or a spear wounds; a cornered boar charges | Wounds bleed, which is faster fluid loss; they heal slowly. Bleeding to death is dying of fluid loss, a limit that already exists |
-| 4 | The hunt | Kill a boar, butcher it, cook the meat, and keep what's left | Butchering divides a body with a cutting tool into meat, fat, hide, and bone. Cooking is a change at a temperature, as clay firing is. Meat spoils with time unless it's dried or smoked |
+| 4 | The hunt | Kill a boar, butcher it, cook the meat, and keep what's left | Butchering divides a body with a cutting tool into meat, fat, and hide, leaving the bones. Cooking is a change at a temperature, as clay firing is. Meat spoils with time, cooked meat more slowly |
 | 5 | Hide and shoes | Scrape and dry a hide into leather, and make shoes and clothing | Walking wears what's between you and the ground: bare feet on rough ground are hurt and slowed, and shoes wear through instead. Worn clothing cuts a body's heat loss |
 | 6 | A barrier or tree house | Keep boars out at night | A barrier blocks what can't get past it; height keeps out animals that can't climb |
 
@@ -104,4 +104,37 @@ Simplifications to revisit:
 - **Bleeding drains the same fluid as thirst**, with the same limit: a body can lose about 7 kg of it, far more blood than a real one could.
 - **A wound only bleeds.** It doesn't slow or weaken anyone, and it doesn't need tending or get infected.
 - **A blow is a blow.** Where it lands, how hard, and armour don't count yet.
+
+### Stage 4: the hunt. Passed, 2026-09-29.
+
+[living-4-the-hunt.txt](../../data/scripts/living-4-the-hunt.txt) plays a day and a night:
+
+1. **By day:** gather tinder, twigs, and sticks, stones for a fire ring, and flint; knap a flake, hone it, and make a spear.
+2. **At night:** spear a sleeping boar. It gores the islander, runs, and dies of bleeding by the stream.
+3. **Butcher it** with the spear: six cuts of raw meat of about 4.6 kg, three of fat, a hide, and what was in its gut. The bones and body water stay behind.
+4. **Cook two portions** over a fire in the ring. They're too hot to touch for a while; then eat one.
+5. **Two days later**, the raw cuts are mostly rotting flesh; the cooked portion is still mostly good.
+
+The new laws:
+
+- **Butchering** (`butcher boar with spear`) needs a dead body and something with an edge, takes half an hour, and cuts everything but the frame (the hardest part: bone) and the body's water into pieces no heavier than a cut (5 kg, data).
+- **Eating takes in the water in food** along with what the body digests; before, a food's water was left in the hand.
+- **Spoiling:** a material can spoil into another at a share a day, keeping its energy. Raw meat spoils into rotting flesh at half a day, cooked meat at 15%, a raw hide at 20%; only what's no longer alive spoils. Rotting flesh isn't food.
+- **Cooking** reuses the law that fires clay: raw meat becomes cooked meat at 340 K.
+- **A boar's body** is now water, meat, fat, bone, and hide; meat is taken as meat with its water in it, about 6 MJ a kilo. People can eat meat, raw or cooked.
+
+**What the attempts found:**
+
+- **A rotting carcass heated itself to 331 K.** The first spoiling law released the meat's energy as heat, like slow burning, which at half a day is over a kilowatt inside a body: it cooked the meat and melted the fat. Real spoiling is food becoming unsafe, not vanishing, so it's now a change of material that keeps its energy.
+- **Butchering put all the body's water into the cuts**, where it drained out and pooled with melted fat. The water now stays with the bones.
+- **The recipe made its spear shaft from a twig** ("the smallest wood"), leaving too few twigs for the fire.
+- **Fire at half past midnight needed more tinder.** At 292 K, two tufts burned out before the twigs caught; five caught them. The fire laws' margins are still narrow.
+
+**Sabotage checks:** no spoiling and no cooking each fail the hunt.
+
+Simplifications to revisit:
+
+- **Cold doesn't slow spoiling**, and there's no smoking or drying yet.
+- **Raw meat is safe to eat**; rotting flesh just isn't food. Sickness would come with disease.
+- **Butchering always yields the same parts**, whoever does it.
 

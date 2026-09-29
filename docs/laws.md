@@ -30,7 +30,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Anything that burns catches fire above its ignition temperature, anywhere, and burns at a rate set by its surface | in | stranded 2 |
 | A flame heats what it's piled with: a share of the heat a burning piece releases goes to the things held with it, split by their surfaces | in | stranded 2 |
 | Work becomes heat: rubbing wears dust off the softer thing, and a share of the worker's effort heats the dust | in | stranded 2 |
-| A material can change into another at a temperature (clay fires hard) | in | stranded 4 |
+| A material can change into another at a temperature (clay fires hard; meat cooks) | in | stranded 4, living 4 |
+| A material can spoil into another at a share a day, keeping its energy; only what's no longer alive spoils | in | living 4 |
 | Lighting a chamber needs something burning within reach: fire comes from fire | in | slice 1, stranded 4 |
 
 ## Shaping and making
@@ -92,7 +93,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Below its set point, a body shivers: it burns more, the colder it is, up to its working power | in | where am I? 1 |
 | A body grows tired while awake and rests while asleep, recovering its waking hours at the rate a full night's sleep does. Tired, it works more slowly. Awake too long, it falls asleep where it is and can't act until it wakes | in | where am I? 1 |
 | Above its set point, a body sweats, and sweat carries heat away | in | stranded 1 |
-| Eating takes in only what the body digests; the rest is left | in | stranded 1 |
+| Eating takes in what the body digests and the water in it; the rest is left | in | stranded 1, living 4 |
+| Butchering a dead body with an edge cuts it into pieces no heavier than a cut, leaving its frame and its water | in | living 4 |
 | You can drink something only if it's nothing but the fluid your body needs | in | stranded 1 |
 | A body dies below its minimum fluid, with nothing left to burn, or outside the temperatures it can live in. It stays where it fell, holding what it carried | in | stranded 1 |
 | A wound bleeds the body's fluid at a rate set by the edge that made it (finer is worse), half as fast for every clotting time. Below the minimum, the body dies of bleeding. A wound wakes a sleeper and interrupts what a creature was doing | in | living 3 |

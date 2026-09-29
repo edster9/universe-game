@@ -134,6 +134,8 @@ struct SettingsDef {
     wound_rate: Option<String>,
     /// The chance a blow at someone awake lands.
     hit_chance: Option<String>,
+    /// The most a cut weighs when a body is butchered.
+    cut: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -164,6 +166,15 @@ struct MaterialDef {
     /// Materials it softens in, as some earths do when wet.
     #[serde(default)]
     softens_in: Vec<String>,
+    /// What it spoils into, and how much of it spoils each day.
+    decays: Option<DecaysDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DecaysDef {
+    into: String,
+    rate: String,
 }
 
 #[derive(Deserialize)]
@@ -792,6 +803,9 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     if let Some(h) = &def.hit_chance {
         settings.hit_chance = parse_percent(h)?;
     }
+    if let Some(c) = &def.cut {
+        settings.cut = parse_mass("world", c)?;
+    }
     if let Some(t) = &def.survey_time {
         settings.survey_time = time(t)?.max(1);
     }
@@ -910,6 +924,18 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
                 .as_deref()
                 .map(|t| parse_quantity(t, property::STRESS, "a strength like \"50 MPa\""))
                 .transpose()?,
+            decays: match &def.decays {
+                Some(d) => {
+                    let into = *ids.get(&d.into).ok_or_else(|| {
+                        LoadError(format!(
+                            "{} decays into {:?}, which isn't a material",
+                            def.id, d.into
+                        ))
+                    })?;
+                    Some((into, parse_percent(&d.rate)?))
+                }
+                None => None,
+            },
             softens_in: def
                 .softens_in
                 .iter()
@@ -951,6 +977,17 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
         }
         let id = MaterialId(u16::try_from(index).expect("counted above"));
         world.materials.insert(id, material);
+    }
+    // Spoiling keeps the energy: what a material spoils into must hold as much.
+    for material in world.materials.values() {
+        if let Some((into, _)) = material.decays
+            && world.materials[&into].energy_density != material.energy_density
+        {
+            return fail(format!(
+                "{} spoils into {}, which must have the same energy density",
+                material.label, world.materials[&into].label
+            ));
+        }
     }
     Ok(())
 }

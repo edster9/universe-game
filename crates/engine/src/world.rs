@@ -97,6 +97,8 @@ pub struct Settings {
     pub wound_rate: u64,
     /// The chance a blow at someone awake lands, in parts per ten thousand.
     pub hit_chance: u64,
+    /// The most a cut weighs when a body is butchered.
+    pub cut: Mass,
 }
 
 impl Default for Settings {
@@ -135,6 +137,7 @@ impl Default for Settings {
             survey_time: 600,
             wound_rate: 0,
             hit_chance: 5_000,
+            cut: Mass::from_mg(5_000_000),
         }
     }
 }

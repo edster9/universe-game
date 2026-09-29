@@ -29,6 +29,10 @@
 # 5 m of rope. Twisted plant fibre takes about 50 MPa when pulled, so a rope
 # holds more the thicker it is.
 #
+# Stage 7, raft: six lumps of wood lashed with a rope. Wood is lighter than
+# the sea, so each 20 kg log carries about 14 kg more than itself; six carry
+# a person. The rope must hold the logs it binds.
+#
 # Walking and carrying: paths between places have lengths; walking takes the
 # distance at 1.2 m/s, slowed to half speed under a full 40 kg load, and is
 # hard work like any other.
@@ -285,6 +289,11 @@ chamber = { burn_rate = "4 g", heat_loss = "36 W/K" }
 id = "spear"
 label = "spear"
 parts = { point = "flake", shaft = "shaft" }
+
+[[design]]
+id = "raft"
+label = "raft"
+parts = { a = "wood", b = "wood", c = "wood", d = "wood", e = "wood", f = "wood", lashing = "rope" }
 
 [[design]]
 id = "fire-ring"

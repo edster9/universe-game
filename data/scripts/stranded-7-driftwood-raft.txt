@@ -1,0 +1,28 @@
+# Stranded, stage 7: the wrong raft. Six pieces of driftwood float, but carry
+# only 8.5 kg more, far too little for a person. A rope too thin to hold even
+# them won't lash them together. And bog iron sinks.
+world stranded.toml
+as survivor
+luck average
+
+go forest
+gather bushes
+repeat 5
+  divide smallest fibre
+end
+work smallest fibre into rope
+go beach
+repeat 6
+  gather driftwood
+end
+try assemble raft
+expect said won't hold it together: it holds up to 7.9
+work largest fibre into rope
+assemble raft
+datasheet raft
+expect said buoyancy: floats in the sea, carrying up to 8.5
+go stream
+gather bog
+datasheet iron
+expect said buoyancy: sinks in the stream's water
+expect conserved

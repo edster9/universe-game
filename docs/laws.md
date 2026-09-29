@@ -55,7 +55,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | --- | --- | --- |
 | A shaped part is measured by what its role does: cutting, holding, conducting, glowing, source, touching | in | slice 2 |
 | An assembly is measured once from its parts' datasheets and never looks inside them | in | slice 2 |
-| Masses add; play between parts is the sum of their tolerances | in | slice 2 |
+| Masses and volumes add; play between parts is the sum of their tolerances | in | slice 2, stranded 7 |
 | Electrical parts in an assembly form one series loop | in | slice 2 |
 | Resistance is resistivity × length² ÷ volume | in | slice 2 |
 | Where two surfaces touch, resistance grows with their roughness | in | slice 2 |
@@ -65,7 +65,9 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | A shaped piece whose shape casts is a form | in | stranded 4 |
 | Tension: a pulled shape holds its material's strength times its cross-section | in | stranded 6 |
 | Bare hands can shape only what's soft enough, roughly; something already made can't be pulled apart by hand | in | stranded 6 |
-| Buoyancy: something floats if it's less dense than the water it displaces | planned | stranded 7 |
+| Buoyancy: something floats in a liquid if it weighs less than the liquid its volume displaces, and carries the difference | in | stranded 7 |
+| Whatever pulls an assembly together (a rope) must hold the weight of the rest of its parts | in | stranded 7 |
+| An assembly is built from the biggest fitting parts within reach, in hand or on the ground; if it's too heavy to carry, it stays where it was built | in | stranded 7 |
 | Propulsion against drag gives speed | planned | stranded 8 |
 
 ## Life

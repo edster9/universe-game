@@ -62,6 +62,7 @@ pub enum Property {
     GrowsTo,
     Carrying,
     HoldsUpTo,
+    Buoyancy,
 }
 
 impl Property {
@@ -110,6 +111,7 @@ impl Property {
             Property::GrowsTo => "grows back up to",
             Property::Carrying => "carrying",
             Property::HoldsUpTo => "holds up to",
+            Property::Buoyancy => "buoyancy",
         }
     }
 }
@@ -213,9 +215,54 @@ impl Datasheet {
 /// Measures anything in the world. An assembly returns the datasheet measured
 /// when it was put together.
 pub fn measure(world: &World, id: EntityId) -> Datasheet {
-    if let Some(assembly) = world.assembly(id) {
-        return assembly.datasheet.clone();
+    let mut sheet = match world.assembly(id) {
+        Some(assembly) => assembly.datasheet.clone(),
+        None => measure_thing(world, id),
+    };
+    buoyancy(world, id, &mut sheet);
+    sheet
+}
+
+/// Whether something floats in a liquid where it is, and how much more it
+/// could carry: the mass of liquid its volume displaces, less its own mass.
+fn buoyancy(world: &World, id: EntityId, sheet: &mut Datasheet) {
+    if !world.is_portable(id) || world.is_agent(id) {
+        return;
     }
+    let Some(Value::Volume(volume)) = sheet.get(Property::Volume).cloned() else {
+        return;
+    };
+    let Some(place) = world.place_of(id) else {
+        return;
+    };
+    let liquid = world
+        .contents(place)
+        .into_iter()
+        .find(|&e| !world.is_portable(e) && !world.is_agent(e) && world.is_all(e, State::Liquid));
+    let Some(liquid) = liquid else {
+        return;
+    };
+    let Some(liquid_volume) = world
+        .composition(liquid)
+        .and_then(|c| matter::volume(world.materials(), c))
+        .filter(|&v| v > 0)
+    else {
+        return;
+    };
+    let displaced = volume * u128::from(world.mass(liquid).mg()) / liquid_volume;
+    let own = u128::from(world.mass(id).mg());
+    let text = match displaced.checked_sub(own) {
+        Some(spare) => format!(
+            "floats in {}, carrying up to {} more",
+            world.label(liquid),
+            Mass::from_mg(u64::try_from(spare).unwrap_or(u64::MAX))
+        ),
+        None => format!("sinks in {}", world.label(liquid)),
+    };
+    sheet.set(Property::Buoyancy, Value::Text(text));
+}
+
+fn measure_thing(world: &World, id: EntityId) -> Datasheet {
     let mut sheet = Datasheet::default();
     if world.is_place(id) {
         sheet.set(Property::Ambient, Value::Temperature(world.ambient(id)));
@@ -451,6 +498,17 @@ pub fn measure_assembly(settings: &Settings, parts: &[(String, String, Datasheet
         Property::Wobble,
         Value::Length(sum(Property::Tolerance) + sum(Property::Wobble)),
     );
+    // Volumes add, so an assembly displaces what its parts do.
+    let volumes: Vec<u128> = sheets
+        .iter()
+        .filter_map(|s| match s.get(Property::Volume) {
+            Some(Value::Volume(v)) => Some(*v),
+            _ => None,
+        })
+        .collect();
+    if !volumes.is_empty() {
+        sheet.set(Property::Volume, Value::Volume(volumes.iter().sum()));
+    }
     if let Some(edge) = sheets.iter().find(|s| s.get(Property::EdgeWidth).is_some()) {
         for property in [Property::EdgeWidth, Property::EdgeHardness] {
             if let Some(value) = edge.get(property) {

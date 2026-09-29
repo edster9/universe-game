@@ -235,6 +235,26 @@ Not a stage of its own, but needed from here on: hauling logs to the beach, and 
 
 Simplification: the carried mass counts, not its bulk. Twenty driftwood logs weigh 40 kg; nothing yet says they're too awkward to hold at once.
 
+### Stage 7: raft. Passed, 2026-09-28.
+
+**Fell six logs, twist a rope, haul the logs to the beach, and lash them together.** [stranded-7-raft.txt](../../data/scripts/stranded-7-raft.txt).
+
+- **Buoyancy is the new law.** Something floats in a liquid if it weighs less than the liquid its volume displaces, and the difference is what it can carry. An assembly's volume is the sum of its parts', just as its mass is. The datasheet shows it against whatever liquid is where the thing is: "floats in the sea, carrying up to 85 kg more". Wood is 600 kg/m³ and the sea 1,025, so each 20 kg log carries about 14 kg beyond itself, and six carry a person. At the stream, the same line is measured against the stream's water.
+- **The rope must hold what it binds.** Whatever pulls an assembly together must hold the weight of the rest of its parts. A 250 g rope holds 255 kg, plenty for 120 kg of logs.
+- **Big things are built where they lie.** Assembly now takes parts from the ground as well as from your hands, choosing the biggest that fit. The finished raft weighs 120 kg, so it stays on the beach instead of going into your hands.
+- **The work adds up:** 12 hours of felling with the honed axe, two trips to the stream to drink, and three trips of two logs, each 8 min 20 s under a full 40 kg. Two logs are exactly a full load, so the survivor puts everything else down to haul them, then goes back for the rope and axe.
+
+The mistakes, in [stranded-7-driftwood-raft.txt](../../data/scripts/stranded-7-driftwood-raft.txt): a raft of six 2 kg pieces of driftwood floats, but carries only 8.5 kg more, far too little for a person. A rope twisted from 8 g of fibre holds 8 kg and won't lash even that together. A lump of bog iron sinks in the stream.
+
+**Sabotage checks:** halving the liquid's density fails both proofs; switching off the rope check fails the driftwood proof. The trials are unchanged at 30 of 30.
+
+Simplifications to revisit:
+
+- **A person's own buoyancy isn't shown.** A body's datasheet would ignore what it holds, and nobody swims yet.
+- **The raft doesn't need to be launched.** It's measured against the sea wherever it sits on the beach; stage 8 decides what it takes to cross.
+- **The rope holds the logs' weight as a simple total**, not the forces of waves working the lashing loose.
+- **Parts are chosen biggest first.** A player can't yet say which pieces go into which slot.
+
 ## How it's tested
 
 Decided 2026-09-28.

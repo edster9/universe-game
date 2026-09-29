@@ -7,7 +7,7 @@
 
 use std::fmt;
 
-use crate::datasheet::{self, Property, Value};
+use crate::datasheet::{self, Datasheet, Property, Value};
 use crate::gate::{Cause, Change, Fault};
 use crate::intent::Intent;
 use crate::matter::{self, Composition, State};
@@ -48,8 +48,14 @@ pub enum Refusal {
     Nowhere,
     NoSuchExit(String),
     NotHere(String),
-    InContainer { item: String, container: String },
-    NotInside { item: String, container: String },
+    InContainer {
+        item: String,
+        container: String,
+    },
+    NotInside {
+        item: String,
+        container: String,
+    },
     AlreadyCarrying(String),
     NotCarrying(String),
     CannotCarry(String),
@@ -58,12 +64,18 @@ pub enum Refusal {
     NoOneHere(String),
     NotYourself,
     ZeroAmount,
-    NotEnough { have: Credits, want: Credits },
+    NotEnough {
+        have: Credits,
+        want: Credits,
+    },
     TooMuch,
     DoesntKnowHow(Process),
     NotDiggable(String),
     NotATool(String),
-    TooHard { tool: String, target: String },
+    TooHard {
+        tool: String,
+        target: String,
+    },
     Exhausted(String),
     NotAChamber(String),
     AlreadyLit(String),
@@ -75,7 +87,10 @@ pub enum Refusal {
     TooHot(String),
     CannotWork(String),
     UnknownDesign(String),
-    MissingPart { slot: String, needs: String },
+    MissingPart {
+        slot: String,
+        needs: String,
+    },
     NotAnAssembly(String),
     NotAPart(String),
     AsFineAsItGets(String),
@@ -83,9 +98,20 @@ pub enum Refusal {
     NotDrinkable(String),
     NotThirsty,
     NotGatherable(String),
-    NeedsTool { source: String, tool: String },
+    NeedsTool {
+        source: String,
+        tool: String,
+    },
     NoFlame(String),
-    TooHeavy { carrying: Mass, limit: Mass },
+    TooHeavy {
+        carrying: Mass,
+        limit: Mass,
+    },
+    TooWeak {
+        part: String,
+        holds: Mass,
+        load: Mass,
+    },
     TheyCantCarry(String),
     WouldSpoil(String),
 }
@@ -163,6 +189,10 @@ impl fmt::Display for Refusal {
                     "that's too much to carry: you have {carrying} of the {limit} you can manage"
                 )
             }
+            Refusal::TooWeak { part, holds, load } => write!(
+                f,
+                "the {part} won't hold it together: it holds up to {holds}, and the rest weighs {load}"
+            ),
             Refusal::TheyCantCarry(name) => write!(f, "{name} can't carry that much more"),
             Refusal::NotGatherable(name) => {
                 write!(f, "{name} isn't loose pieces you can gather by hand")
@@ -718,7 +748,16 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 .iter()
                 .find(|(key, def)| normalize(key) == wanted || normalize(&def.label) == wanted)
                 .ok_or_else(|| Refusal::UnknownDesign(design.clone()))?;
-            // Fill each slot with the first carried part that fits it.
+            // Fill each slot with the biggest part within reach that fits it,
+            // taking what's in hand first when two are alike.
+            let mut reachable: Vec<EntityId> = reach
+                .carried
+                .iter()
+                .chain(&reach.around)
+                .copied()
+                .filter(|&p| world.is_portable(p) && !world.is_agent(p))
+                .collect();
+            reachable.sort_by_key(|&p| std::cmp::Reverse(world.mass(p)));
             let mut used: Vec<EntityId> = Vec::new();
             let mut parts = Vec::new();
             for (slot, requirement) in &def.slots {
@@ -738,7 +777,9 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                             && !world.is_container(part)
                     }
                 };
-                let part = carried()
+                let part = reachable
+                    .iter()
+                    .copied()
                     .find(|&p| !used.contains(&p) && fits(p))
                     .ok_or_else(|| Refusal::MissingPart {
                         slot: slot.clone(),
@@ -751,12 +792,54 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     datasheet::measure(world, part),
                 ));
             }
+            // Whatever pulls the parts together must hold the rest of them.
+            let (pulling, rest): (Vec<_>, Vec<_>) = parts
+                .iter()
+                .map(|(_, _, sheet)| sheet)
+                .partition(|sheet| sheet.get(Property::HoldsUpTo).is_some());
+            if let Some(first) = pulling.first() {
+                let mass_of = |sheet: &&Datasheet| match sheet.get(Property::Mass) {
+                    Some(Value::Mass(m)) => m.mg(),
+                    _ => 0,
+                };
+                let holds: u64 = pulling
+                    .iter()
+                    .map(|sheet| match sheet.get(Property::HoldsUpTo) {
+                        Some(Value::Mass(m)) => m.mg(),
+                        _ => 0,
+                    })
+                    .sum();
+                let load: u64 = rest.iter().map(mass_of).sum();
+                if holds < load {
+                    let part = parts
+                        .iter()
+                        .find(|(_, _, sheet)| std::ptr::eq(sheet, *first))
+                        .map_or_else(String::new, |(_, label, _)| label.clone());
+                    return Err(Refusal::TooWeak {
+                        part,
+                        holds: Mass::from_mg(holds),
+                        load: Mass::from_mg(load),
+                    });
+                }
+            }
             // Measure it once, now, from the parts' datasheets.
             let sheet = datasheet::measure_assembly(world.settings(), &parts);
+            // Keep it in hand if it can be carried; otherwise it stays here.
+            let in_hand: u64 = used
+                .iter()
+                .filter(|p| reach.carried.contains(p))
+                .map(|&p| world.mass(p).mg())
+                .sum();
+            let after = world.carried_mass(actor).mg() - in_hand
+                + used.iter().map(|&p| world.mass(p).mg()).sum::<u64>();
+            let fits_in_hand = world
+                .life(actor)
+                .and_then(|l| l.carry_limit)
+                .is_none_or(|limit| after <= limit.mg());
             Ok(vec![Change::Assemble {
                 design: key.clone(),
                 parts: used,
-                at: actor,
+                at: if fits_in_hand { actor } else { reach.here },
                 datasheet: sheet,
             }])
         }

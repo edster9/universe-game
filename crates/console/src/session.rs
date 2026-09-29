@@ -304,15 +304,20 @@ impl Session {
                 }
                 text
             }
-            (Intent::Assemble { .. }, Some(Change::Assemble { .. })) => {
+            (Intent::Assemble { .. }, Some(Change::Assemble { at, .. })) => {
                 let made = w
-                    .contents(self.player)
+                    .contents(*at)
                     .into_iter()
                     .max()
                     .map(name)
                     .unwrap_or_default();
+                let left = if *at == self.player {
+                    ""
+                } else {
+                    " It's too heavy to carry, so it stays here."
+                };
                 format!(
-                    "You put together {made}. Type \"datasheet {}\" to see how it measures up.",
+                    "You put together {made}.{left} Type \"datasheet {}\" to see how it measures up.",
                     made.trim_start_matches("the ")
                 )
             }

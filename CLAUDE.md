@@ -49,5 +49,5 @@ These hold for every design decision unless the owner changes them.
 ## Where things stand
 
 - Slices 0 to 2 are built. See `docs/slices.md`.
-- The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 6 have passed, and walking and carrying are in. Next is stage 7, the raft: logs lashed with rope, with buoyancy as the new law.
+- The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 7 have passed, and walking and carrying are in. Next is stage 8, the crossing: shape a paddle and cross 2 km of open water, with propulsion against drag as the new law.
 - Directions recorded for later: skills and a spoken interface (`docs/ideas/skills-and-interface.md`), recognising what things are (`docs/ideas/recognition.md`), the skill learning paradigm, flagged for a major conversation (`docs/ideas/skill-learning-paradigm.md`), money (`docs/ideas/money.md`), many universes (`docs/ideas/universes.md`).

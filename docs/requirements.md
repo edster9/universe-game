@@ -231,6 +231,29 @@ Added 2026-09-29, **for a discussion soon**, along with the other pending conver
 
 See [ideas/game-interface.md](ideas/game-interface.md).
 
+## Sacrifices, and universes that are configurable
+
+Added 2026-09-29, starting the conversation on time.
+
+- Every game that has attempted anything close to this has had to make sacrifices to be playable and fun. A player who binge-plays for 12 hours won't care about fatigue, the need to sleep, or nutrition. These are the first things engines like this sacrifice.
+- We don't get rid of them: we've solved them as rules. But universes should be configurable. For example, main playing characters can be set not to need sleep or nutrition.
+- Fatigue in general doesn't have to go away: run for a long time and you get tired and have to stop; fighting, your strength goes down as you tire. But the natural cycle of sleep can be removed as a need.
+- NPCs follow the rules. Walk into a village at night and most people are asleep, because they had to sleep; you don't have to.
+- It's up to each universe's administrator to turn things on and off. The norm would be no need for sleep or nutrition for players, which makes the game a lot more fun. Other concepts can come in instead, such as an occasional need for some kind of rest, or rations stocked up to travel long distances in space.
+- We keep the rules in, so we can practise them, and perhaps have introductory tutorials based on hunting.
+- Hunting and cooking definitely stay: you might capture a boar and sell its meat as an early form of currency, or cook for an NPC, who follows the rules of hunger, so feeding them gives you something to trade.
+
+## How time passes
+
+Added 2026-09-29.
+
+- Don't change the overall speed of time (not a 12× world). Running from A to B at 10 km/h takes as long in real time as it would: time isn't going faster for what your body is going through.
+- The day can be shorter or longer, but not because time goes faster: it's the rotation of the planet you're on. Earth is 24 hours; another planet could be 2 hours, 10 hours, or 30 days. It's a setting of the planet.
+- Other world processes are where the game gets fun. Everything has a natural process and time. Digging 100 kg of ore, even with a shovel, might take 5 to 10 minutes in real life; nobody wants to wait five minutes, so digging could be accelerated to 10 or 30 seconds.
+- Making a sword for real, from starting a fire and melting ore to casting, cooling, and hammering, could take two or three days. Everything is configurable: ore melts at its temperature, but might need to stay there only 10 seconds instead of three hours; cooling can be accelerated. Set right, making a sword could be a five-minute process.
+- It still behaves by the world's physics, except that the time for certain processes varies, faster or slower, by our settings. Other engines do this too, but they cut huge corners; we follow real physics.
+- Discuss these two concepts further before the conversation about what happens when you're away, which is different.
+
 ## Pausing the stages for the big conversations
 
 Added 2026-09-29. The stages' natural path keeps going until a village with many people, houses, people walking into buildings, trading, and money, and that could be many more stages. At some point we have to steer, and solve the outstanding questions that are piling up, perhaps only in early forms, and then continue the stages.

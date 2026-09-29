@@ -1,0 +1,10 @@
+# Stranded, stage 1: the sea can't be drunk. Someone who only tries the sea
+# dies of thirst just like someone who never drinks.
+world stranded.toml
+as survivor
+luck average
+
+try drink sea
+expect said can't drink the sea
+wait 4 day
+expect dead of thirst

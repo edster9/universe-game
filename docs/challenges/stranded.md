@@ -66,11 +66,12 @@ The island takes days. When nothing fast is happening (no fire, nothing hot, nob
 
 The island is [data/stranded.toml](../../data/stranded.toml). The survivor is in [crates/engine/tests/stranded.rs](../../crates/engine/tests/stranded.rs).
 
-**30 of 30 survivors were alive after 10 days.** The 300 island-days took about 21 seconds to compute. After ten days on seed 1, the shellfish bed was down from 60 kg to 15 kg, body fat from 9.8 to 9.1 kg, body water steady near 41 kg, and body temperature 310 K. Mass and energy were conserved in every run.
+**Trial: 30 of 30 survivors were alive after 10 days.** The 300 island-days took about 21 seconds to compute. After ten days on seed 1, the shellfish bed was down from 60 kg to 15 kg, body fat from 9.8 to 9.1 kg, body water steady near 41 kg, and body temperature 310 K. Mass and energy were conserved in every run.
 
 What the tests showed:
 
-- **Thirst kills in about three days.** A person who never drinks dies of thirst after 48 to 84 hours. Their body stays where it fell, as matter, with whatever it was carrying.
+- **Thirst kills in about three and a half days** at rest, and in about 12 hours of hard work in the heat. The body stays where it fell, as matter, with whatever it was carrying. (The first data had death after losing 5 kg of water, which killed a hard worker in under 9 hours; it's now 7 kg, about 10% of body weight.)
+- **Proofs:** four scripts. Ten days survived with the right routine; death by thirst with no water; the same when only trying the sea; and death within a day working hard without drinking.
 - **The sea can't be drunk and the stream can.** Nothing names either: you can drink something only if it's nothing but the fluid your body needs.
 - **Eating keeps what the body digests** and leaves the shells in your hand.
 - **A resting body holds 310 K** because 80 W of burned fat balances the heat it loses to 300 K air. No rule sets body temperature.
@@ -90,6 +91,13 @@ Simplifications to revisit:
 - **Shellfish don't regrow yet.** On this island the food runs out in two to three weeks. Growth and sunlight arrive with fish in stage 3.
 - **Energy is stored in whole microjoules per holder**, which can't hold an ocean's heat. The sea here is 1,000 t. Planet-sized bodies will need bigger numbers.
 - **The body is simple:** no stomach or digestion time, no shivering, and no illness.
+
+## How it's tested
+
+Decided 2026-09-28.
+
+- **Proofs, every run.** Scripts in [data/scripts/](../../data/scripts/) play the island with luck fixed: average (every roll lands in the middle), good, or bad. The right steps succeed every time, and deliberate mistakes end as they should. Fixed luck, not a fixed seed, because a seed's luck shifts whenever the engine's history changes.
+- **Trials, on demand.** A survivor plays many seeds with real chance, and the success rate and causes of death are reported here. Only getting stuck, or a conservation failure, fails a trial.
 
 ## Reporting
 

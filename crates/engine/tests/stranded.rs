@@ -1,6 +1,10 @@
-//! The stranded challenge (docs/challenges/stranded.md), stage 1: staying
-//! alive. A survivor plays the island through ordinary commands. Dying is an
-//! outcome; running out of logical options is the only failure.
+//! The stranded challenge (docs/challenges/stranded.md). Two kinds of test:
+//!
+//! - **Proofs** run every time: exact checks of the laws here, and scripted
+//!   walkthroughs with fixed luck in data/scripts.
+//! - **Trials** run on demand (`cargo test -- --ignored`): a survivor plays
+//!   many seeds with real chance and reports how many live. Dying is an
+//!   outcome; running out of logical options is the only failure.
 
 use std::time::Instant;
 
@@ -211,7 +215,7 @@ fn without_water_a_person_dies_of_thirst_in_about_three_days() {
     }
     let hours = died_at.expect("dies within five days");
     assert_eq!(w.life(me).unwrap().died_of.as_deref(), Some("thirst"));
-    assert!((48..=84).contains(&hours), "died after {hours} hours");
+    assert!((72..=96).contains(&hours), "died after {hours} hours");
     assert_eq!(
         totals(&w),
         start,
@@ -319,7 +323,8 @@ fn hard_work_makes_a_body_thirstier() {
 }
 
 #[test]
-fn a_survivor_who_drinks_and_eats_lives_through_ten_days_on_most_islands() {
+#[ignore = "a trial: run with `cargo test -- --ignored --nocapture`"]
+fn trial_a_survivor_who_drinks_and_eats_lives_through_ten_days_on_most_islands() {
     let started = Instant::now();
     let mut outcomes = Vec::new();
     for seed in 1..=30 {
@@ -351,24 +356,6 @@ fn a_survivor_who_drinks_and_eats_lives_through_ten_days_on_most_islands() {
         started.elapsed()
     );
     assert!(alive > 0);
-}
-
-#[test]
-fn a_survivor_who_never_finds_the_stream_dies_of_thirst() {
-    // Take the stream away: the only water left is the sea. The survivor
-    // tries, is refused, and dies of thirst: an outcome, not a failure.
-    let text = ISLAND
-        .replace("exits = [\"stream\", \"forest\"]", "exits = [\"forest\"]")
-        .replace(
-            "exits = [\"beach\", \"stream\", \"hillside\"]",
-            "exits = [\"beach\", \"hillside\"]",
-        );
-    let mut w = load_world(&text).unwrap();
-    let outcome = Survivor::new(&w).live(&mut w, 10);
-    assert!(
-        matches!(&outcome, Outcome::Died { cause, .. } if cause == "thirst"),
-        "{outcome:?}"
-    );
 }
 
 // Random play ------------------------------------------------------------

@@ -1,0 +1,30 @@
+# Stranded, stage 1: the right routine keeps a person alive for ten days.
+# Drink at the stream twice a day, gather and eat shellfish, throw away the
+# shells, and rest. With average luck, searches keep finding shellfish until
+# the bed is half gone; after that the body lives on its fat.
+world stranded.toml
+as survivor
+luck average
+
+repeat 10
+  try go stream        # each day ends at the stream, so this is only needed on day one
+  repeat 6
+    try drink water
+  end
+  go beach
+  repeat 4
+    try gather shellfish
+    try eat shellfish
+    try drop shell
+  end
+  wait 8 h
+  go stream
+  repeat 6
+    try drink water
+  end
+  wait 15 h
+end
+wait 6 h
+
+expect alive
+expect time after 10 day

@@ -1,0 +1,14 @@
+# Stranded, stage 1: working hard in the heat without drinking kills in about
+# half a day, far sooner than resting does. Sweat keeps the body cool, but it
+# costs water.
+world stranded.toml
+as survivor
+luck average
+
+repeat 200
+  try gather shellfish
+  try eat shellfish
+  try drop shell
+end
+expect dead of thirst
+expect time before 1 day

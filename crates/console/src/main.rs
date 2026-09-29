@@ -1,6 +1,7 @@
 //! The text console for the early slices. Usage:
 //!
 //!     cargo run -p console [-- --world <file.toml>] [--as <person-id>]
+//!     cargo run -p console -- --script <file.txt>
 //!
 //! Lines can also be piped in, which is how scripted sessions run.
 
@@ -13,6 +14,33 @@ use engine::data::load_world;
 const DEFAULT_WORLD: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/slice0.toml");
 
 fn main() -> ExitCode {
+    // `--script <file>` plays a script and prints what happened.
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let [flag, path] = args.as_slice()
+        && flag == "--script"
+    {
+        let text = match std::fs::read_to_string(path) {
+            Ok(text) => text,
+            Err(e) => {
+                eprintln!("can't read {path}: {e}");
+                return ExitCode::FAILURE;
+            }
+        };
+        let data = std::path::Path::new(DEFAULT_WORLD)
+            .parent()
+            .expect("the data folder");
+        return match console::script::run(&text, data) {
+            Ok(report) => {
+                println!("{}\n\nThe script passed.", report.transcript.join("\n\n"));
+                ExitCode::SUCCESS
+            }
+            Err(failure) => {
+                eprintln!("The script failed: {failure}");
+                ExitCode::FAILURE
+            }
+        };
+    }
+
     let mut world_path = DEFAULT_WORLD.to_string();
     let mut player = "traveller".to_string();
     let mut args = std::env::args().skip(1);

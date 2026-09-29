@@ -7,7 +7,7 @@
 #
 # Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
 # and 300 W working; about 2 kg of water lost a day at rest, twice that when
-# working, plus sweat; death after losing about 5 kg of water.
+# working, plus sweat; death after losing about 7 kg of water (10% of body weight).
 
 [world]
 reference_temperature = "293 K"
@@ -114,7 +114,7 @@ at = "beach"
 mass = "70 kg"
 composition = { water = "60%", flesh = "26%", fat = "14%" }
 temperature = "310 K"
-life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "37 kg", digests = ["fat", "shellfish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K" }
+life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K" }
 
 [[item]]
 id = "sea"

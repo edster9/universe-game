@@ -40,7 +40,7 @@ Testing tools:
 Things can be named by part of their description (\"lump\"), or by id (\"#12\").";
 
 /// The longest wait allowed in one command: one game day.
-const MAX_WAIT: u64 = 86_400;
+const MAX_WAIT: u64 = 30 * 86_400;
 
 pub struct Session {
     world: World,
@@ -51,6 +51,8 @@ pub struct Session {
 pub struct Reply {
     pub text: String,
     pub quit: bool,
+    /// The command wasn't understood, or the laws refused it.
+    pub refused: bool,
 }
 
 impl Reply {
@@ -58,6 +60,15 @@ impl Reply {
         Reply {
             text: text.into(),
             quit: false,
+            refused: false,
+        }
+    }
+
+    fn refuse(text: impl Into<String>) -> Self {
+        Reply {
+            text: text.into(),
+            quit: false,
+            refused: true,
         }
     }
 }
@@ -92,6 +103,7 @@ impl Session {
             "quit" | "exit" => Reply {
                 text: "Goodbye.".into(),
                 quit: true,
+                refused: false,
             },
             "totals" => Reply::say(self.totals()),
             "time" => Reply::say(format!(
@@ -100,10 +112,10 @@ impl Session {
             )),
             "log" => Reply::say(self.log(rest)),
             "become" => Reply::say(self.become_person(rest)),
-            "wait" | "z" => Reply::say(self.wait(rest)),
+            "wait" | "z" => self.wait(rest),
             "datasheet" | "ds" => Reply::say(self.datasheet(rest)),
             "designs" => Reply::say(self.designs()),
-            _ => Reply::say(self.command(line)),
+            _ => self.command(line),
         };
         // News of the player's own death comes with whatever they were doing.
         let died = self.world.life(self.player).and_then(|l| l.died_of.clone());
@@ -119,44 +131,54 @@ impl Session {
         }
     }
 
-    fn command(&mut self, line: &str) -> String {
+    fn command(&mut self, line: &str) -> Reply {
         match intent::parse(line) {
-            Err(error) => sentence(&error.to_string()),
-            Ok(Command::Look) => self.look(),
-            Ok(Command::Inventory) => self.inventory(),
+            Err(error) => Reply::refuse(sentence(&error.to_string())),
+            Ok(Command::Look) => Reply::say(self.look()),
+            Ok(Command::Inventory) => Reply::say(self.inventory()),
             Ok(Command::Act(intent)) => {
                 let started = self.world.tick();
                 match laws::perform(&mut self.world, self.player, intent.clone()) {
                     Ok(changes) => {
                         let text = self.describe(&intent, &changes);
                         let spent = self.world.tick() - started;
-                        if spent > 0 && !matches!(intent, Intent::Rub { .. }) {
+                        Reply::say(if spent > 0 && !matches!(intent, Intent::Rub { .. }) {
                             format!("{text} (That took {}.)", units::show_duration(spent))
                         } else {
                             text
-                        }
+                        })
                     }
-                    Err(ActError::Refused(refusal)) => sentence(&refusal.to_string()),
-                    Err(fault @ ActError::Fault(_)) => format!("!! {fault}"),
+                    Err(ActError::Refused(refusal)) => {
+                        Reply::refuse(sentence(&refusal.to_string()))
+                    }
+                    Err(fault @ ActError::Fault(_)) => Reply::refuse(format!("!! {fault}")),
                 }
             }
         }
     }
 
-    fn wait(&mut self, seconds: &str) -> String {
-        let seconds = if seconds.is_empty() {
-            Ok(1)
+    /// Waits a number of seconds ("wait 60"), or a time with a unit ("wait 2
+    /// h", "wait 3 day").
+    fn wait(&mut self, time: &str) -> Reply {
+        let seconds = if time.is_empty() {
+            Some(1)
+        } else if let Ok(n) = time.parse::<u64>() {
+            Some(n)
         } else {
-            seconds.parse::<u64>()
+            units::parse_quantity(time, units::property::DURATION, "a time").ok()
         };
         match seconds {
-            Ok(n) if (1..=MAX_WAIT).contains(&n) => match nature::run(&mut self.world, n) {
-                Ok(()) if n == 1 => "A second passes.".into(),
-                Ok(()) => format!("{n} seconds pass."),
-                Err(fault) => format!("!! engine fault: {fault}"),
+            Some(n) if (1..=MAX_WAIT).contains(&n) => match nature::run(&mut self.world, n) {
+                Ok(()) if n == 1 => Reply::say("A second passes."),
+                Ok(()) => Reply::say(format!("{} passes.", units::show_duration(n))),
+                Err(fault) => Reply::refuse(format!("!! engine fault: {fault}")),
             },
-            _ => format!("Try \"wait\" or \"wait 60\" (up to {MAX_WAIT} seconds)."),
+            _ => Reply::refuse("Try \"wait\", \"wait 60\", or \"wait 2 h\" (up to 30 days)."),
         }
+    }
+
+    pub fn player(&self) -> EntityId {
+        self.player
     }
 
     fn look(&self) -> String {

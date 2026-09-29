@@ -1,0 +1,10 @@
+# Stranded, stage 1: a person who never drinks dies of thirst in about three
+# and a half days.
+world stranded.toml
+as survivor
+luck average
+
+wait 3 day
+expect alive
+wait 1 day
+expect dead of thirst

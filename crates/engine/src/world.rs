@@ -67,6 +67,25 @@ impl Default for Settings {
     }
 }
 
+/// Where chance comes from. Normal play is seeded. Tests can fix luck so the
+/// same steps always give the same result however the engine changes: every
+/// roll comes up at one value, and a lower roll is luckier.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Luck {
+    #[default]
+    Seeded,
+    Fixed(u64),
+}
+
+impl Luck {
+    /// Everything that can go right does.
+    pub const GOOD: Luck = Luck::Fixed(0);
+    /// Every roll lands in the middle: better-than-even chances succeed.
+    pub const AVERAGE: Luck = Luck::Fixed(5_000);
+    /// Everything that can go wrong does.
+    pub const BAD: Luck = Luck::Fixed(9_999);
+}
+
 /// A living body's needs and limits, from data. The body itself is matter:
 /// it burns what it has digested to stay warm and alive, loses its vital
 /// fluid, and sweats to cool down.
@@ -198,6 +217,7 @@ pub struct World {
     pub(crate) tick: u64,
     /// Where chance comes from. The same seed replays the same luck.
     pub(crate) seed: u64,
+    pub(crate) luck: Luck,
     pub(crate) settings: Settings,
     pub(crate) materials: Materials,
     pub(crate) shapes: BTreeMap<String, ShapeDef>,
@@ -274,12 +294,24 @@ impl World {
     /// The same world with different luck. Only for setting up a run.
     pub fn with_seed(mut self, seed: u64) -> World {
         self.seed = seed;
+        self.luck = Luck::Seeded;
         self
     }
 
-    /// A number from 0 to 9,999, drawn from the world's seed. The same seed,
-    /// clock, history, and `salt` always give the same number.
+    /// The same world with luck fixed. Only for setting up a run.
+    pub fn with_luck(mut self, luck: Luck) -> World {
+        self.luck = luck;
+        self
+    }
+
+    /// A number from 0 to 9,999, drawn from the world's seed, unless luck is
+    /// fixed. Lower is luckier: something with a chance of `c` in ten thousand
+    /// happens when the roll is below `c`. The same seed, clock, history, and
+    /// `salt` always give the same number.
     pub fn roll(&self, salt: u64) -> u64 {
+        if let Luck::Fixed(value) = self.luck {
+            return value.min(9_999);
+        }
         let mut x = self.seed
             ^ self.tick.wrapping_mul(0x9E37_79B9_7F4A_7C15)
             ^ (self.log.len() as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F)

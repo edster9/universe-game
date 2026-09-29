@@ -21,7 +21,7 @@ The engine plays like a text adventure: a person types a command, the laws decid
 
 ## Claude's take, 2026-09-29, for the owner to refine
 
-Not decided. Interface and time are treated together, with [time away](time-away.md), because they're one question: how the world runs when nobody is typing.
+Superseded in part by the decision below: the world does not run at 12×. Interface and time are treated together, with [time away](time-away.md), because they're one question: how the world runs when nobody is typing.
 
 ### 1. The world runs on its own clock
 
@@ -62,3 +62,16 @@ The tension is the world's speed. At 12×, a real day away is twelve game days: 
 - Places and paths now, and continuous space later: agreed?
 - Time away: standing orders on real stores, and preparation matters?
 - The first client: text, a map, and buttons in the browser?
+
+## Decided, 2026-09-29: time, sacrifices, and processes
+
+Decided with the owner (their words are in "Sacrifices, and universes that are configurable" and "How time passes" in [requirements.md](../requirements.md)). This replaces the 12× proposal above.
+
+- **One clock, one to one.** Everything that happens to a body, and how fast it moves, runs at real speed. So do fire burning its fuel, food spoiling, and the planet's day. Distances become design: the game's places (docked ships, cities) will be small enough to walk, with transport to cross further.
+- **Time is negotiable; matter and energy are not.** A setting may change how long a process takes, never what it takes: iron still has to reach its melting point, with the heat to get it there.
+- **A process's time is a number on the thing, not a global dial.** Work times are on sources and tools, furnace heating on its design, as they are now. Two small additions: a **hold time** on a change of material (clay fires, meat cooks, ore melts after being held at temperature for so long), and **how fast a thing gives up its heat** (a mould or a quench can set a casting in a minute while everything else cools at its real rate).
+- **Realistic and playable are two sets of numbers.** A realistic library of things, used by every test and training challenge, keeps the laws proved against reality. A playable library has the same laws and things with game-friendly numbers. Small sacrifices, such as ten swords from one fire, are acceptable.
+- **Rules are switches a universe's administrator sets**, per kind of mind. The norm: players don't need sleep or food; NPCs do, so a village sleeps at night and can be fed and traded with. The rules stay in the engine, for realistic universes and tutorials. Short-term fatigue, tiring from hard work and recovering with rest, is a separate law to add, whatever the sleep setting.
+- **Sleep belongs to the species**, in its kind's data, not to the planet. On its home planet it usually lines up with night; a colonist elsewhere sleeps by their body. Instinct should sleep by its own rhythm, not "at night".
+
+Still open: where a player's energy comes from when they don't need food. The proposal is **vitality**, a named inflow the universe grants to players, accounted like sunlight.

@@ -72,6 +72,13 @@ pub struct Settings {
     /// How bluntly a vessel meets the liquid it's pushed through (its drag
     /// coefficient), in parts per ten thousand.
     pub drag: u64,
+    /// The length of a day in seconds, or 0 for a world without days.
+    pub day: u64,
+    /// The time of day when the world's clock starts, in seconds.
+    pub starts_at: u64,
+    /// When the sun rises and sets, in seconds after midnight.
+    pub sunrise: u64,
+    pub sunset: u64,
 }
 
 impl Default for Settings {
@@ -98,6 +105,10 @@ impl Default for Settings {
             hand_hardness: 100,
             hand_push: 500,
             drag: 10_000,
+            day: 0,
+            starts_at: 0,
+            sunrise: 0,
+            sunset: 0,
         }
     }
 }
@@ -172,6 +183,9 @@ pub struct Life {
     /// Walking speed with nothing to carry, in mm per second. A full load
     /// halves it.
     pub walking_speed: u64,
+    /// Sleep, if it needs it: how long it can stay awake for each night's
+    /// sleep, and how long that sleep takes.
+    pub sleep: Option<Sleep>,
     /// The tick until which it's working hard.
     pub working_until: u64,
     /// Why it died, or `None` while it's alive.
@@ -236,6 +250,26 @@ pub enum Role {
     /// Pushes against a liquid to move a vessel. Measured: the share of the
     /// worker's effort it delivers.
     Pushing,
+}
+
+/// A body's need for sleep.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Sleep {
+    /// How long it can stay awake before it's tired, in seconds.
+    pub awake: u64,
+    /// How long a full sleep takes after that long awake, in seconds.
+    pub need: u64,
+    /// How fast it works when tired, in parts per ten thousand of its usual
+    /// pace.
+    pub tired_pace: u64,
+    /// After this long awake it falls asleep wherever it is, in seconds.
+    pub collapse: u64,
+    /// Seconds of wakefulness it had at `since`.
+    pub debt: u64,
+    /// The tick `debt` was counted to. Wakefulness grows from here.
+    pub since: u64,
+    /// The tick it's asleep until.
+    pub until: u64,
 }
 
 /// A shape from data, and what it takes to measure it.
@@ -343,6 +377,9 @@ pub struct World {
     pub(crate) crossings: BTreeMap<(EntityId, EntityId), EntityId>,
     /// Each place's surrounding temperature.
     pub(crate) ambient: BTreeMap<EntityId, Temperature>,
+    /// Each place's surrounding temperature in the coldest hour of the night,
+    /// where days are warmer than nights.
+    pub(crate) night_ambient: BTreeMap<EntityId, Temperature>,
     /// Heat each place's surroundings have taken in.
     pub(crate) surroundings: BTreeMap<EntityId, Energy>,
     /// Matter each place's surroundings have taken in: breath, sweat, and gas
@@ -738,11 +775,67 @@ impl World {
         Mass::from_mg(total)
     }
 
+    /// A place's surrounding temperature now. Where nights are colder, it
+    /// falls steadily from the warmest at midday to the coldest at midnight.
     pub fn ambient(&self, place: EntityId) -> Temperature {
-        self.ambient
+        let warmest = self
+            .ambient
             .get(&place)
             .copied()
-            .unwrap_or(self.settings.reference_temperature)
+            .unwrap_or(self.settings.reference_temperature);
+        let (Some(time), Some(coldest)) = (self.time_of_day(), self.night_ambient.get(&place))
+        else {
+            return warmest;
+        };
+        let day = self.settings.day;
+        let noon = (self.settings.sunrise + self.settings.sunset) / 2;
+        let from_noon = time.abs_diff(noon).min(day - time.abs_diff(noon));
+        let span = warmest.mk().saturating_sub(coldest.mk());
+        let drop = u128::from(span) * u128::from(from_noon) / u128::from((day / 2).max(1));
+        Temperature::from_mk(warmest.mk() - u64::try_from(drop).expect("within the span"))
+    }
+
+    /// Seconds since midnight, in a world with days.
+    pub fn time_of_day(&self) -> Option<u64> {
+        let day = self.settings.day;
+        (day > 0).then(|| (self.tick + self.settings.starts_at) % day)
+    }
+
+    /// Whether the sun is down.
+    pub fn is_night(&self) -> bool {
+        self.time_of_day()
+            .is_some_and(|t| t < self.settings.sunrise || t >= self.settings.sunset)
+    }
+
+    /// Whether it's too dark to see at a place: night, with nothing burning
+    /// there to see by.
+    pub fn is_dark(&self, place: EntityId) -> bool {
+        self.is_night()
+            && !self
+                .entities()
+                .any(|e| self.is_burning(e) && self.place_of(e) == Some(place))
+    }
+
+    /// How long someone has been awake since they were last fully rested, in
+    /// seconds. While asleep, what's left once they wake.
+    pub fn awake_for(&self, id: EntityId) -> Option<u64> {
+        let sleep = self.life.get(&id)?.sleep.as_ref()?;
+        Some(sleep.debt + self.tick.saturating_sub(sleep.since))
+    }
+
+    pub fn is_asleep(&self, id: EntityId) -> bool {
+        self.life
+            .get(&id)
+            .and_then(|l| l.sleep.as_ref())
+            .is_some_and(|s| s.until > self.tick)
+    }
+
+    /// Whether someone has been awake longer than they comfortably can.
+    pub fn is_tired(&self, id: EntityId) -> bool {
+        let Some(sleep) = self.life.get(&id).and_then(|l| l.sleep.as_ref()) else {
+            return false;
+        };
+        self.awake_for(id).is_some_and(|a| a > sleep.awake)
     }
 
     pub fn surroundings(&self, place: EntityId) -> Energy {

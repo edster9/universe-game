@@ -31,6 +31,14 @@ pub enum Change {
         to: Holder,
         amount: Energy,
     },
+    /// Something colder than the air around it warms by `amount`. The heat
+    /// comes from what the place's surroundings have taken in and, beyond
+    /// that, from sunlight, which is what warms the air by day.
+    Warm {
+        entity: EntityId,
+        place: EntityId,
+        amount: Energy,
+    },
     /// Burn `mass` of `material` inside `entity`. What burning leaves stays in
     /// the entity, and the chemical energy it released becomes the entity's heat.
     Burn {
@@ -69,6 +77,8 @@ pub enum Change {
     },
     /// A body works hard until `until`.
     Exert { agent: EntityId, until: u64 },
+    /// A body sleeps until `until`, and wakes less tired.
+    Sleep { agent: EntityId, until: u64 },
     /// A body dies. It stays where it is, as matter.
     Die { agent: EntityId, cause: String },
     /// Someone starts something they keep doing over time.
@@ -288,6 +298,21 @@ impl World {
                 self.give_heat(to, amount)
             }
 
+            &Change::Warm {
+                entity,
+                place,
+                amount,
+            } => {
+                if !self.is_place(place) {
+                    return Err(Fault::NotAPlace(place));
+                }
+                let air = self.surroundings.entry(place).or_default();
+                let from_air = (*air).min(amount);
+                *air = air.checked_sub(from_air).expect("no more than it has");
+                self.sunlight += u128::from(amount.uj() - from_air.uj());
+                self.give_heat(Holder::Thing(entity), amount)
+            }
+
             &Change::Burn {
                 entity,
                 material,
@@ -385,11 +410,17 @@ impl World {
                 Ok(())
             }
 
-            &Change::EndActivity { agent } => self
-                .activities
-                .remove(&agent)
-                .map(|_| ())
-                .ok_or(Fault::NotAlive(agent)),
+            &Change::EndActivity { agent } => {
+                self.activities
+                    .remove(&agent)
+                    .ok_or(Fault::NotAlive(agent))?;
+                // Stopping what they were doing ends the hard work too.
+                let now = self.tick;
+                if let Some(life) = self.life.get_mut(&agent) {
+                    life.working_until = life.working_until.min(now);
+                }
+                Ok(())
+            }
 
             &Change::Grow { entity, from, mass } => {
                 let source = self.matter.get(&from).ok_or(Fault::NotMatter(from))?;
@@ -437,6 +468,22 @@ impl World {
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 life.working_until = until;
+                Ok(())
+            }
+
+            &Change::Sleep { agent, until } => {
+                let now = self.tick;
+                let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
+                let sleep = life.sleep.as_mut().ok_or(Fault::NotAlive(agent))?;
+                // Sleep takes off wakefulness at the rate a full night's
+                // sleep does: `awake` for every `need`.
+                let awake = sleep.debt + now.saturating_sub(sleep.since);
+                let rested = u128::from(until.saturating_sub(now)) * u128::from(sleep.awake)
+                    / u128::from(sleep.need.max(1));
+                sleep.debt = u64::try_from(u128::from(awake).saturating_sub(rested))
+                    .expect("no more than it was");
+                sleep.since = until;
+                sleep.until = until;
                 Ok(())
             }
 

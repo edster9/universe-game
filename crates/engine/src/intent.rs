@@ -77,6 +77,10 @@ pub enum Intent {
     Eat {
         item: String,
     },
+    /// Sleep until rested, or for a while.
+    Sleep {
+        seconds: Option<u64>,
+    },
     Drink {
         source: String,
     },
@@ -136,6 +140,10 @@ impl fmt::Display for Intent {
             Intent::Assemble { design } => write!(f, "assemble {design}"),
             Intent::Disassemble { item } => write!(f, "take apart {item}"),
             Intent::Eat { item } => write!(f, "eat {item}"),
+            Intent::Sleep { seconds: None } => f.write_str("sleep"),
+            Intent::Sleep {
+                seconds: Some(seconds),
+            } => write!(f, "sleep for {seconds} s"),
             Intent::Drink { source } => write!(f, "drink from {source}"),
             Intent::Gather { source } => write!(f, "gather from {source}"),
             Intent::Divide { item } => write!(f, "divide {item}"),
@@ -279,6 +287,18 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
         "assemble" | "build" => Intent::Assemble {
             design: one("<design>")?,
         },
+        "sleep" => {
+            let time = rest.strip_prefix("for ").unwrap_or(&rest).trim();
+            let seconds = if time.is_empty() {
+                None
+            } else {
+                Some(
+                    crate::units::parse_quantity(time, crate::units::property::DURATION, "a time")
+                        .map_err(|_| ParseError(format!("{time:?} isn't a time like \"2 h\"")))?,
+                )
+            };
+            Intent::Sleep { seconds }
+        }
         "eat" => Intent::Eat {
             item: one("<thing>")?,
         },

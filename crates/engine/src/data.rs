@@ -61,6 +61,12 @@ struct SettingsDef {
     hand_hardness: Option<String>,
     hand_push: Option<String>,
     drag: Option<String>,
+    /// The length of a day. Without it, the world has no day and night.
+    day: Option<String>,
+    /// The time of day the world starts at, and when the sun rises and sets.
+    starts_at: Option<String>,
+    sunrise: Option<String>,
+    sunset: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -142,7 +148,10 @@ struct PlaceDef {
     /// something that floats can take you.
     #[serde(default)]
     crossings: BTreeMap<String, String>,
+    /// The warmest it gets, at midday.
     temperature: Option<String>,
+    /// The coldest it gets, at midnight, in a world with days.
+    night: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -182,6 +191,14 @@ struct LifeDef {
     carry: Option<String>,
     /// Walking speed unloaded.
     walk: Option<String>,
+    /// How long it can stay awake before it's tired.
+    awake: Option<String>,
+    /// How long a full sleep takes.
+    sleep: Option<String>,
+    /// How fast it works when tired, compared with rested.
+    tired_pace: Option<String>,
+    /// After how long awake it falls asleep wherever it is.
+    collapse: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -329,6 +346,9 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
         world.exits.insert(place, Vec::new());
         if let Some(t) = &def.temperature {
             world.ambient.insert(place, t.parse()?);
+        }
+        if let Some(t) = &def.night {
+            world.night_ambient.insert(place, t.parse()?);
         }
     }
     for (&place, def) in places.iter().zip(&file.places) {
@@ -542,6 +562,28 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     }
     if let Some(d) = &def.drag {
         settings.drag = parse_percent(d)?;
+    }
+    let time = |t: &String| parse_quantity(t, property::DURATION, "a time like \"6 h\"");
+    if let Some(d) = &def.day {
+        settings.day = time(d)?;
+        settings.starts_at = def.starts_at.as_ref().map(time).transpose()?.unwrap_or(0);
+        settings.sunrise = def.sunrise.as_ref().map(time).transpose()?.unwrap_or(0);
+        settings.sunset = def
+            .sunset
+            .as_ref()
+            .map(time)
+            .transpose()?
+            .unwrap_or(settings.day);
+        let day = settings.day;
+        if day == 0
+            || settings.sunrise > settings.sunset
+            || settings.sunset > day
+            || settings.starts_at >= day
+        {
+            return fail(
+                "a day needs sunrise before sunset, and every time within the day".to_string(),
+            );
+        }
     }
     if let Some(t) = &def.calm_step {
         settings.calm_step = parse_quantity(t, property::DURATION, "a time like \"1 min\"")?.max(1);
@@ -930,6 +972,39 @@ fn load_life(
             .map(|w| parse_quantity(w, property::SPEED, "a speed like \"1.2 m/s\""))
             .transpose()?
             .unwrap_or(1_200),
+        sleep: match (&def.awake, &def.sleep) {
+            (Some(awake), Some(need)) => {
+                let time = |t: &str| parse_quantity(t, property::DURATION, "a time like \"8 h\"");
+                let awake = time(awake)?.max(1);
+                Some(world::Sleep {
+                    awake,
+                    need: time(need)?.max(1),
+                    tired_pace: def
+                        .tired_pace
+                        .as_deref()
+                        .map(parse_percent)
+                        .transpose()?
+                        .unwrap_or(10_000)
+                        .max(1),
+                    collapse: def
+                        .collapse
+                        .as_deref()
+                        .map(time)
+                        .transpose()?
+                        .unwrap_or(awake * 5 / 2)
+                        .max(awake),
+                    debt: 0,
+                    since: 0,
+                    until: 0,
+                })
+            }
+            (None, None) => None,
+            _ => {
+                return fail(format!(
+                    "{id} needs both how long it stays awake and how long it sleeps"
+                ));
+            }
+        },
         working_until: 0,
         died_of: None,
     })

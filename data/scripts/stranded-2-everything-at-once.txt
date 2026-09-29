@@ -28,7 +28,7 @@ end
 repeat 3
   put smallest wood in ring
 end
-rub wood against wood into ring for 1 min
+rub wood against wood into ring
 wait 5 min
 look
 expect said lump of wood (20 g

@@ -64,6 +64,7 @@ pub enum Property {
     HoldsUpTo,
     Buoyancy,
     Pushes,
+    Awake,
 }
 
 impl Property {
@@ -114,6 +115,7 @@ impl Property {
             Property::HoldsUpTo => "holds up to",
             Property::Buoyancy => "buoyancy",
             Property::Pushes => "pushes with",
+            Property::Awake => "awake for",
         }
     }
 }
@@ -333,6 +335,19 @@ fn measure_thing(world: &World, id: EntityId) -> Datasheet {
             Property::Working,
             Value::Flag(life.working_until > world.tick()),
         );
+        if let Some(sleep) = &life.sleep {
+            let text = if world.is_asleep(id) {
+                format!(
+                    "asleep, waking in {}",
+                    units::show_duration(sleep.until - world.tick())
+                )
+            } else {
+                let awake = world.awake_for(id).unwrap_or(0);
+                let tired = if world.is_tired(id) { " (tired)" } else { "" };
+                format!("{}{tired}", units::show_duration(awake))
+            };
+            sheet.set(Property::Awake, Value::Text(text));
+        }
         if let Some(cause) = &life.died_of {
             sheet.set(Property::DiedOf, Value::Text(cause.clone()));
         }

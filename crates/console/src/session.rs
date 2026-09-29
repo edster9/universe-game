@@ -46,6 +46,8 @@ pub struct Session {
     world: World,
     player: EntityId,
     announced_death: Option<String>,
+    /// How long the last action took.
+    spent: u64,
 }
 
 pub struct Reply {
@@ -81,6 +83,7 @@ impl Session {
                 world,
                 player: id,
                 announced_death: None,
+                spent: 0,
             }),
             _ => Err(format!(
                 "there's no person with the id {player:?} in this world"
@@ -138,15 +141,23 @@ impl Session {
             Ok(Command::Inventory) => Reply::say(self.inventory()),
             Ok(Command::Act(intent)) => {
                 let started = self.world.tick();
+                let was_asleep = self.world.is_asleep(self.player);
                 match laws::perform(&mut self.world, self.player, intent.clone()) {
                     Ok(changes) => {
-                        let text = self.describe(&intent, &changes);
                         let spent = self.world.tick() - started;
-                        Reply::say(if spent > 0 && !matches!(intent, Intent::Rub { .. }) {
+                        self.spent = spent;
+                        let text = self.describe(&intent, &changes);
+                        let text = if spent > 0 && !matches!(intent, Intent::Rub { .. }) {
                             format!("{text} (That took {}.)", units::show_duration(spent))
                         } else {
                             text
-                        })
+                        };
+                        let text = if matches!(intent, Intent::Sleep { .. }) {
+                            text
+                        } else {
+                            self.with_collapse(text, was_asleep)
+                        };
+                        Reply::say(text)
                     }
                     Err(ActError::Refused(refusal)) => {
                         Reply::refuse(sentence(&refusal.to_string()))
@@ -167,13 +178,26 @@ impl Session {
         } else {
             units::parse_quantity(time, units::property::DURATION, "a time").ok()
         };
+        let was_asleep = self.world.is_asleep(self.player);
         match seconds {
             Some(n) if (1..=MAX_WAIT).contains(&n) => match nature::run(&mut self.world, n) {
                 Ok(()) if n == 1 => Reply::say("A second passes."),
-                Ok(()) => Reply::say(format!("{} passes.", units::show_duration(n))),
+                Ok(()) => Reply::say(
+                    self.with_collapse(format!("{} passes.", units::show_duration(n)), was_asleep),
+                ),
                 Err(fault) => Reply::refuse(format!("!! engine fault: {fault}")),
             },
             _ => Reply::refuse("Try \"wait\", \"wait 60\", or \"wait 2 h\" (up to 30 days)."),
+        }
+    }
+
+    /// Adds news of the player having dropped asleep from exhaustion, if
+    /// they were awake before (`was_asleep` is false).
+    fn with_collapse(&self, text: String, was_asleep: bool) -> String {
+        if !was_asleep && self.world.is_asleep(self.player) {
+            format!("{text}\nYou're exhausted, and fall asleep where you are.")
+        } else {
+            text
         }
     }
 
@@ -186,6 +210,20 @@ impl Session {
             return "You aren't anywhere.".into();
         };
         let mut lines = vec![sentence_case(&look.place)];
+        if let Some((day, time)) = look.time {
+            let light = if look.dark {
+                "night, and dark"
+            } else if look.night {
+                "night, lit by fire"
+            } else {
+                "daylight"
+            };
+            lines.push(format!(
+                "Day {day}, {:02}:{:02}, {light}.",
+                time / 3_600,
+                time / 60 % 60
+            ));
+        }
         lines.push(format!("Ways out: {}", list_or(&look.exits, "none")));
         if !look.people.is_empty() {
             lines.push(format!("People here: {}", look.people.join(", ")));
@@ -284,15 +322,9 @@ impl Session {
                         _ => None,
                     })
                     .collect();
-                let session = match intent {
-                    Intent::Rub {
-                        seconds: Some(s), ..
-                    } => *s,
-                    _ => w.settings().rubbing_time,
-                };
                 let mut text = format!(
                     "You rub them together for {}.",
-                    units::show_duration(session)
+                    units::show_duration(self.spent)
                 );
                 if !parts.is_empty() {
                     text = format!("{text} {}.", sentence_case(&parts.join(", and ")));
@@ -341,6 +373,13 @@ impl Session {
                 "You take it apart.".into()
             }
             (Intent::Eat { item }, _) => format!("You eat the {item}."),
+            (Intent::Sleep { .. }, _) => {
+                let time = w
+                    .time_of_day()
+                    .map(|t| format!(" at {:02}:{:02}", t / 3_600, t / 60 % 60))
+                    .unwrap_or_default();
+                format!("You sleep, and wake{time}.")
+            }
             (Intent::Drink { .. }, Some(Change::Shift { take, .. })) => format!(
                 "You drink {} of {}.",
                 Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
@@ -479,6 +518,12 @@ impl Session {
             ),
             &Change::Exert { agent, until } => {
                 format!("{} works hard until {until} s", w.label(agent))
+            }
+            &Change::Warm { entity, amount, .. } => {
+                format!("{} warms by {amount} from the air", w.label(entity))
+            }
+            &Change::Sleep { agent, until } => {
+                format!("{} sleeps until {until} s", w.label(agent))
             }
             Change::Die { agent, cause } => format!("{} dies of {cause}", w.label(*agent)),
             &Change::StartActivity { agent, .. } => format!("{} starts rubbing", w.label(agent)),

@@ -39,6 +39,11 @@
 # water, 30% with a paddle and 5% with bare hands, against the drag of a
 # blunt raft of logs (a drag coefficient of 3).
 #
+# Day and night (challenge 2, stage 1): 24 hours, sun up from 06:00 to 18:00,
+# starting at 08:00. The air is warmest at midday, 300 K, and coolest at
+# midnight, 292 K. A body stays awake 16 hours for 8 hours' sleep, works at
+# two-thirds pace when tired, and drops asleep after 40 hours awake.
+#
 # Walking and carrying: paths between places have lengths; walking takes the
 # distance at 1.2 m/s, slowed to half speed under a full 40 kg load, and is
 # hard work like any other.
@@ -64,6 +69,10 @@ flame_share = "50%"
 hand_hardness = "1"
 hand_push = "5%"
 drag = "300%"
+day = "24 h"
+starts_at = "8 h"
+sunrise = "6 h"
+sunset = "18 h"
 
 [[material]]
 id = "water"
@@ -323,6 +332,7 @@ exits = ["stream", "forest", "islet"]
 distances = { stream = "400 m", forest = "300 m", islet = "2 km" }
 crossings = { islet = "sea" }
 temperature = "300 K"
+night = "292 K"
 
 [[place]]
 id = "stream"
@@ -330,6 +340,7 @@ label = "the stream"
 exits = ["beach", "forest"]
 distances = { forest = "300 m" }
 temperature = "300 K"
+night = "292 K"
 
 [[place]]
 id = "forest"
@@ -337,18 +348,21 @@ label = "the forest"
 exits = ["beach", "stream", "hillside"]
 distances = { hillside = "500 m" }
 temperature = "300 K"
+night = "292 K"
 
 [[place]]
 id = "hillside"
 label = "the hillside"
 exits = ["forest"]
 temperature = "300 K"
+night = "292 K"
 
 [[place]]
 id = "islet"
 label = "the next island"
 exits = ["beach"]
 temperature = "300 K"
+night = "292 K"
 
 [[agent]]
 id = "survivor"
@@ -357,7 +371,7 @@ at = "beach"
 mass = "70 kg"
 composition = { water = "60%", flesh = "26%", fat = "14%" }
 temperature = "310 K"
-life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K", carry = "40 kg", walk = "1.2 m/s" }
+life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K", carry = "40 kg", walk = "1.2 m/s", awake = "16 h", sleep = "8 h", tired_pace = "67%", collapse = "40 h" }
 
 [[item]]
 id = "sea"

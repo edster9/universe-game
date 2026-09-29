@@ -23,7 +23,7 @@ assemble fire ring
 drop fire ring
 
 put grass in ring
-rub wood against wood into ring for 1 min
+rub wood against wood into ring
 wait 30
 put grass in ring
 put grass in ring

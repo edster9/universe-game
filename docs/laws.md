@@ -11,7 +11,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Mass is never created or destroyed; every change passes a gate that checks it | in | every slice |
 | Energy is never created or destroyed: heat, chemical energy, and heat given to surroundings add up | in | slices 1, 2 |
 | Credits are never created or destroyed (until money is real, in slice 3) | in | slice 0 |
-| Energy enters only through named sources. Sunlight is the first: it supplies the energy living things store as they grow, and the gate conserves everything else | in | stranded 3 |
+| Energy enters only through named sources. Sunlight is the first: it supplies the energy living things store as they grow, and the warmth that heats things back up by day. The gate conserves everything else | in | stranded 3, where am I? 1 |
 
 ## Matter and heat
 
@@ -21,7 +21,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Temperature is heat energy divided by heat capacity | in | slices 1, 2 |
 | Parts of a piece in different states come apart: gas rises into the air, liquid runs out. A body holds its liquids together | in | slice 1, stranded 1 |
 | Liquids in one container pool; gases in one place mix | in | slice 1 |
-| Things warmer than their surroundings lose heat in proportion to the difference: through their surface (convection), plus radiation, which grows with the fourth power of temperature. Something of unknown size (a gas) uses a flat rate | in | slice 1, stranded 1, 2 |
+| Things exchange heat with their surroundings in proportion to the difference, both ways: through their surface (convection), plus radiation, which grows with the fourth power of temperature. Something of unknown size (a gas) uses a flat rate. What warms draws first on the heat the surroundings have taken in, then on sunlight | in | slice 1, stranded 1, 2, where am I? 1 |
 | A piece's volume counts the materials whose density is known; its surface is that of a cube of the same volume | in | slice 2, stranded 2 |
 | Dust and the things being rubbed to make it pass heat, in proportion to the difference and the smaller one's surface, never past an even temperature. (Inside a pile, fire spreads by flame, not by touch) | in | stranded 2 |
 | Everything inside an insulated chamber shares one temperature | in | slice 1 |
@@ -77,6 +77,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | --- | --- | --- |
 | Bodies are matter and burn what they've digested to live, the least energy-rich first, faster when working | in | stranded 1 |
 | Bodies lose their vital fluid steadily, twice as fast when working | in | stranded 1 |
+| Below its set point, a body shivers: it burns more, the colder it is, up to its working power | in | where am I? 1 |
+| A body grows tired while awake and rests while asleep, recovering its waking hours at the rate a full night's sleep does. Tired, it works more slowly. Awake too long, it falls asleep where it is and can't act until it wakes | in | where am I? 1 |
 | Above its set point, a body sweats, and sweat carries heat away | in | stranded 1 |
 | Eating takes in only what the body digests; the rest is left | in | stranded 1 |
 | You can drink something only if it's nothing but the fluid your body needs | in | stranded 1 |
@@ -88,9 +90,11 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Law | Status | Used by |
 | --- | --- | --- |
 | Chance events draw from the world's seed, its clock, and its history, so the same seed replays the same luck | in | stranded 1 |
-| When nothing fast is happening, nature takes bigger steps | in | stranded 1 |
+| When nothing fast is happening, nature takes bigger steps. Fixed sources are too big to change fast, however far they lag the air | in | stranded 1 |
+| The world has a time of day. The air is warmest at midday and coldest at midnight, at temperatures each place gives | in | where am I? 1 |
+| At night it's dark: searching needs light, and something burning in the place gives it | in | where am I? 1 |
 | An action that takes time is hard work for a body while it lasts | in | slice 2, stranded 1 |
-| Some work continues over time (rubbing), advanced by nature each second until it ends | in | stranded 2 |
+| Some work continues over time (rubbing), advanced by nature each second until it ends. Rubbing into a container stops once something else in it catches: what the rubbing was for | in | stranded 2, where am I? 1 |
 
 ## Moving
 

@@ -28,6 +28,12 @@ pub struct Look {
     pub things: Vec<Thing>,
     /// Gases hanging in the place.
     pub air: Vec<Thing>,
+    /// The day, counting from 1, and seconds since midnight, in a world with
+    /// days.
+    pub time: Option<(u64, u64)>,
+    pub night: bool,
+    /// Too dark to see by: night, with no fire.
+    pub dark: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -46,6 +52,12 @@ pub fn look(world: &World, actor: EntityId) -> Option<Look> {
         people: Vec::new(),
         things: Vec::new(),
         air: Vec::new(),
+        time: world.time_of_day().map(|t| {
+            let day = world.settings().day;
+            ((world.tick() + world.settings().starts_at) / day + 1, t)
+        }),
+        night: world.is_night(),
+        dark: world.is_dark(here),
     };
     for id in world.contents(here).into_iter().filter(|&e| e != actor) {
         if world.is_agent(id) {

@@ -35,17 +35,37 @@ pub fn run(world: &mut World, seconds: u64) -> Result<(), Fault> {
     Ok(())
 }
 
+/// Up to `seconds` of nature, stopping early once `busy` is false.
+pub fn run_while(
+    world: &mut World,
+    seconds: u64,
+    busy: impl Fn(&World) -> bool,
+) -> Result<(), Fault> {
+    let mut left = seconds;
+    while left > 0 && busy(world) {
+        let dt = step_size(world, left);
+        step(world, dt)?;
+        left -= dt;
+    }
+    Ok(())
+}
+
 /// One second of nature.
 pub fn tick(world: &mut World) -> Result<(), Fault> {
     step(world, 1)
 }
+
+/// How hard a body shivers: the extra power it burns is this many times
+/// the heat it would lose for the same shortfall below its set point. High
+/// enough to hold a body within a fraction of a kelvin of its set point.
+const SHIVER_GAIN: u128 = 20;
 
 type Law = fn(&World, u64) -> Vec<Change>;
 
 /// `dt` seconds of nature, as one step.
 fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
     let now = world.tick();
-    let laws: [Law; 15] = [
+    let laws: [Law; 16] = [
         burn,
         burn_in_the_open,
         friction,
@@ -57,6 +77,7 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
         transform,
         clear_air,
         limits_of_life,
+        fall_asleep,
         finish_activities,
         separate,
         pool,
@@ -80,7 +101,10 @@ fn step_size(world: &World, left: u64) -> u64 {
         return 1;
     }
     for &id in world.matter.keys() {
-        if world.life.contains_key(&id) {
+        // Bodies keep their own heat, and fixed sources (a body of liquid, a
+        // bank of earth) are too big to change quickly, however far they lag
+        // the air.
+        if world.life.contains_key(&id) || !world.is_portable(id) {
             continue;
         }
         let Some(place) = world.place_of(id) else {
@@ -200,10 +224,12 @@ fn share_heat(world: &World, _dt: u64) -> Vec<Change> {
     changes
 }
 
-/// Anything warmer than its surroundings loses heat to them, in proportion to
-/// the difference. Inside a chamber, its insulation sets the rate, shared out
-/// by heat capacity. A body loses heat at its own rate. Nothing cools below
-/// its surroundings.
+/// Anything warmer than its surroundings loses heat to them, and anything
+/// colder takes heat from them, in proportion to the difference. Inside a
+/// chamber, its insulation sets the rate, shared out by heat capacity. A body
+/// exchanges heat at its own rate. Nothing passes its surroundings'
+/// temperature. Warming draws on the heat the surroundings have taken in, and
+/// beyond that on sunlight.
 fn lose_heat(world: &World, dt: u64) -> Vec<Change> {
     let chamber_capacity: BTreeMap<EntityId, u128> = world
         .chambers
@@ -226,15 +252,16 @@ fn lose_heat(world: &World, dt: u64) -> Vec<Change> {
         };
         let ambient = world.ambient(place);
         let temperature = world.temperature(id).expect("matter");
-        if temperature <= ambient {
+        if temperature == ambient {
             continue;
         }
+        let (hotter, colder) = (temperature.max(ambient), temperature.min(ambient));
         let capacity = world.heat_capacity(id);
         let chamber = world
             .location(id)
             .and_then(|l| world.chamber(l).map(|c| (l, c)));
-        let difference = u128::from(temperature.mk() - ambient.mk());
-        let loss = if let Some(life) = world.life.get(&id) {
+        let difference = u128::from(hotter.mk() - colder.mk());
+        let flow = if let Some(life) = world.life.get(&id) {
             u128::from(life.heat_loss) * difference * u128::from(dt) / 1_000
         } else if let Some((chamber_id, chamber)) = chamber {
             let total = chamber_capacity[&chamber_id];
@@ -254,23 +281,35 @@ fn lose_heat(world: &World, dt: u64) -> Vec<Change> {
             convected
                 + radiated(
                     area,
-                    temperature.mk(),
-                    ambient.mk(),
+                    hotter.mk(),
+                    colder.mk(),
                     world.settings.emissivity,
                     dt,
                 )
         } else {
             u128::from(world.settings.open_air_heat_loss) * difference * u128::from(dt) / 1_000
         };
-        let above_ambient =
-            u128::from(energy.uj()).saturating_sub(matter::energy_at(ambient, capacity));
-        let loss = loss.min(above_ambient);
-        if loss > 0 {
-            changes.push(Change::Heat {
-                from: Holder::Thing(id),
-                to: Holder::Surroundings(place),
-                amount: Energy::from_uj(u64::try_from(loss).expect("part of one piece's heat")),
-            });
+        // Never past the air's temperature, either way.
+        let at_ambient = matter::energy_at(ambient, capacity);
+        let have = u128::from(energy.uj());
+        if temperature > ambient {
+            let loss = flow.min(have.saturating_sub(at_ambient));
+            if loss > 0 {
+                changes.push(Change::Heat {
+                    from: Holder::Thing(id),
+                    to: Holder::Surroundings(place),
+                    amount: Energy::from_uj(u64::try_from(loss).expect("part of one piece's heat")),
+                });
+            }
+        } else {
+            let gain = flow.min(at_ambient.saturating_sub(have));
+            if gain > 0 {
+                changes.push(Change::Warm {
+                    entity: id,
+                    place,
+                    amount: Energy::from_uj(u64::try_from(gain).expect("a piece's worth of heat")),
+                });
+            }
         }
     }
     changes
@@ -517,7 +556,17 @@ fn finish_activities(world: &World, _dt: u64) -> Vec<Change> {
             until,
         } = *activity;
         let holding = |id: EntityId| world.location(id) == Some(agent);
+        // Rubbing into a container stops once something else in it catches:
+        // what the rubbing was for.
+        let caught = world.location(dust).is_some_and(|container| {
+            world.is_container(container)
+                && world
+                    .held(container)
+                    .into_iter()
+                    .any(|e| e != dust && world.is_burning(e))
+        });
         let over = world.tick >= until
+            || caught
             || !world.is_living(agent)
             || !holding(first)
             || !holding(second)
@@ -544,11 +593,16 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
         };
         let working = life.working_until > world.tick;
 
-        // Burning stores.
+        // Burning stores. Below its set point, a body burns more to keep
+        // warm (shivering), the colder the more, up to its working power.
+        let temperature = world.temperature(id).unwrap_or_default();
         let power = if working {
             life.working_power
         } else {
-            life.resting_power
+            let below = u128::from(life.set_point.mk().saturating_sub(temperature.mk()));
+            let shiver = u128::from(life.heat_loss) * below * SHIVER_GAIN / 1_000;
+            let most = u128::from(life.working_power.saturating_sub(life.resting_power));
+            life.resting_power + u64::try_from(shiver.min(most)).expect("at most working power")
         };
         let mut needed = u128::from(power) * u128::from(dt);
         let mut stores: Vec<_> = composition
@@ -604,6 +658,28 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
                 from: Holder::Thing(id),
                 to: Holder::Surroundings(place),
                 amount: Energy::from_uj(u64::try_from(carried).expect("part of the body's heat")),
+            });
+        }
+    }
+    changes
+}
+
+/// A body awake too long falls asleep where it is, until rested.
+fn fall_asleep(world: &World, _dt: u64) -> Vec<Change> {
+    let mut changes = Vec::new();
+    for (&id, life) in &world.life {
+        let Some(sleep) = life.sleep.as_ref().filter(|_| life.died_of.is_none()) else {
+            continue;
+        };
+        if world.is_asleep(id) {
+            continue;
+        }
+        let awake = world.awake_for(id).unwrap_or(0);
+        if awake >= sleep.collapse {
+            let need = u128::from(awake) * u128::from(sleep.need) / u128::from(sleep.awake.max(1));
+            changes.push(Change::Sleep {
+                agent: id,
+                until: world.tick() + u64::try_from(need).unwrap_or(u64::MAX).max(1),
             });
         }
     }

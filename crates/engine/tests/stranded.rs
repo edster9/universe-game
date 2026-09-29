@@ -163,6 +163,10 @@ impl Survivor {
                 "go stream".into()
             }));
         }
+        // Sleep at night. Waking before dawn, it rests instead.
+        if w.is_night() {
+            options.push(Step::Do("sleep".into()));
+        }
         // Eat again once the last meal is used up and the body has started on
         // its fat.
         let last_meal_gone = material_in(w, me, "shellfish") == Mass::ZERO
@@ -331,7 +335,7 @@ fn eating_takes_in_what_the_body_digests_and_leaves_the_shells() {
 }
 
 #[test]
-fn a_resting_body_holds_its_temperature_and_burns_about_seven_megajoules_a_day() {
+fn a_resting_body_holds_its_temperature_and_burns_about_nine_megajoules_a_day() {
     let mut w = island(1);
     let me = id(&w, "survivor");
     let chemical = |w: &World| match measure(w, me).get(Property::StoredEnergy) {
@@ -343,7 +347,10 @@ fn a_resting_body_holds_its_temperature_and_burns_about_seven_megajoules_a_day()
     let t = w.temperature(me).unwrap().mk();
     assert!((309_000..=311_000).contains(&t), "body at {t} mK");
     let burned_mj = (before - chemical(&w)) / 1_000_000_000_000;
-    assert_eq!(burned_mj, 6, "80 W for a day is 6.9 MJ");
+    // 80 W at rest is 6.9 MJ a day. The air averages about 296 K between a
+    // 300 K midday and a 292 K midnight, so the body shivers to hold 310 K,
+    // and burns about 105 W on average.
+    assert_eq!(burned_mj, 9, "resting through a day and a night");
 }
 
 #[test]
@@ -442,7 +449,27 @@ fn a_thinned_shellfish_bed_grows_back_toward_its_limit() {
 }
 
 #[test]
-fn sunlight_brings_exactly_the_energy_that_growing_things_store() {
+fn what_the_night_cools_the_day_warms_again() {
+    // A piece of driftwood, left on the beach from 08:00: it cools toward
+    // 292 K through the night, and is back near 300 K by 14:00.
+    let mut w = island(1);
+    let me = id(&w, "survivor");
+    perform(&mut w, me, intent("gather driftwood")).unwrap();
+    let wood = w.contents(me)[0];
+    act(&mut w, me, intent("drop wood")).unwrap();
+    let start = totals(&w);
+    let until_one = 17 * 3_600 - w.tick();
+    nature::run(&mut w, until_one).unwrap();
+    let night = w.temperature(wood).unwrap().mk();
+    assert!(night < 293_500, "at 01:00 the wood is at {night} mK");
+    nature::run(&mut w, 13 * 3_600).unwrap();
+    let day = w.temperature(wood).unwrap().mk();
+    assert!(day > 298_000, "at 14:00 the wood is at {day} mK");
+    assert_eq!(totals(&w), start, "the warmth came from the sun");
+}
+
+#[test]
+fn sunlight_is_the_only_energy_that_enters_and_it_pays_for_growth() {
     let mut w = island(1);
     let (bed, fish) = (id(&w, "shellfish-bed"), id(&w, "fish"));
     let stored = |w: &World| -> u128 {
@@ -453,9 +480,13 @@ fn sunlight_brings_exactly_the_energy_that_growing_things_store() {
     };
     let (before, start) = (stored(&w), totals(&w));
     nature::run(&mut w, 5 * DAY).unwrap();
-    assert!(w.sunlight() > 0, "nothing grew");
-    assert_eq!(stored(&w) - before, w.sunlight());
-    assert_eq!(totals(&w), start, "everything else is conserved");
+    // Sunlight pays for what growing things store, and also warms things
+    // back up by day after the night has cooled them.
+    let grown = stored(&w) - before;
+    assert!(grown > 0, "nothing grew");
+    assert!(w.sunlight() >= grown, "growth outran the sun");
+    // Everything else is conserved: the world gained exactly the sunlight.
+    assert_eq!(totals(&w), start);
 }
 
 #[test]

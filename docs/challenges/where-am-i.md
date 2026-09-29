@@ -1,0 +1,55 @@
+# Challenge: where am I?
+
+Proposed 2026-09-28 from the owner's direction ("More island scenarios before validation" and "Sleep, and later age and body types" in [requirements.md](../requirements.md)). A training challenge, like [stranded](stranded.md): it exists to find the laws we're missing. Its laws are recorded in [laws.md](../laws.md).
+
+## The story
+
+Someone wakes on a beach with nothing. Before building anything to leave, they want to know where they are. They may be on an island, or on a mainland a few kilometres from a village. There's no way to know if the island across the water is any better. So they explore, find the high ground, and climb it for a view, which may take days, with camps on the way.
+
+It's played on the stranded island, grown: a mountain rises behind the forest.
+
+## Stages
+
+Each stage has a test: proofs with fixed luck that play the right steps and deliberate mistakes, and trials with real chance where survival is in play.
+
+| # | Stage | What happens | New laws it needs |
+| --- | --- | --- | --- |
+| 1 | Day, night, and sleep | Get through the first nights: the air cools, it gets dark, and the survivor must sleep | The world has a time of day. Nights are colder and dark; searching needs light, and a fire gives it. A body grows tired while awake, is slower when tired, and falls asleep where it stands if it goes too long. Below its set point, a body burns more to keep warm (shivering) |
+| 2 | An unknown island | The survivor knows only the beach, and finds the other places by exploring | Each person knows the places they've been or seen. A way out has to be found before it can be taken, by searching, as gathering does |
+| 3 | Carrying water | Fire a clay pot, fill it at the stream, and drink from it later | A portable container holds liquid |
+| 4 | The climb | Take two or three days to climb the mountain, camping on the way | Places have a height. Going up costs time and energy: lifting your weight and your load. The air cools with height |
+| 5 | The view | From the summit, see what lies around: other islands, a coast, maybe smoke from a village | You see as far as the horizon, which grows with height. What you see becomes places you know exist |
+
+## Simplifications planned from the start
+
+- **No age or body types yet.** Every character is the same adult body. Age (18 to 55) and body types are recorded for later.
+- **No weather.** Rain, wind, and storms belong with the harder crossings.
+- **Sunlight for growth stays flat**, day and night, as in the stranded challenge.
+
+## Results
+
+### Stage 1: day, night, and sleep. Passed, 2026-09-28.
+
+The island's day is 24 hours, with the sun up from 06:00 to 18:00, starting at 08:00. The air is warmest at midday (300 K) and coolest at midnight (292 K). `look` now says the day and time, and whether it's daylight, dark, or lit by fire.
+
+- **Night is dark.** Searching for anything, whether shellfish, wood, or stones, is refused in the dark: "it's too dark to search: wait for daylight, or make a fire here". A fire lights the place, and searching works again. Walking and working in the dark are still allowed.
+- **Sleep is a necessity.** A body stays awake 16 hours for 8 hours of sleep. `sleep` sleeps until rested; `sleep for 9 h` sleeps a set time. Tired, past 16 hours, a body works at two-thirds pace: a 400 m walk takes 8 min 17 s instead of 5 min 33 s. After 40 hours awake, it falls asleep where it stands ("You're exhausted, and fall asleep where you are") and can't act until it wakes. You can't sleep when you've barely been awake.
+- **Shivering.** Below its set point, a body burns more to stay warm, up to its working power. At rest through a day and a night it now burns about 9 MJ, not 6.9, and holds 310 K all night.
+
+Proofs: [where-1-sleep.txt](../../data/scripts/where-1-sleep.txt) covers tiredness, sleep, and collapse. [where-1-night-and-fire.txt](../../data/scripts/where-1-night-and-fire.txt) finds it too dark to search at 19:13, makes fire in the dark by rubbing sticks, and gathers driftwood by firelight.
+
+**What the attempt found, and fixed:**
+
+- **Things never warmed back up.** Heat only ever flowed out: anything colder than the air stayed cold. With a constant 300 K this never showed. With nights, a stone cooled at night would stay cold forever. Heat now flows both ways, and the warmth comes from the heat the place's surroundings have taken in and, beyond that, from sunlight, which is what warms the air by day. The gate still balances energy exactly.
+- **Friction fire was tuned on a knife edge.** It worked at exactly 300 K. In the cooler morning, one minute of rubbing no longer lit the tinder, and two minutes lit it and burned it up while still rubbing. Now rubbing into a fire ring stops by itself when something in it catches, as a person would stop, and takes only as long as that took (about 1 min 14 s). Fire works at any hour.
+- **Nature crawled.** The sea lags the night air by several kelvin, and the carbon dioxide from breath stayed cold, so nature took one-second steps all day. The daily run jumped from 16 seconds to over a minute. Fixed sources no longer hold nature to small steps, and warming fixed the rest.
+- **Every long proof had to learn to sleep.** The raft recipe now fells two logs on the first afternoon, sleeps twelve hours by the stream, and fells four more the next day. The ten-day routine sleeps nine hours a night. Working hard without water now kills the next day rather than the same day, because darkness ends the day's work.
+
+**Sabotage checks:** switching off darkness, shivering, tiredness, falling asleep, or warming by day each fails a test. The trials are 30 of 30 alive, for 10 days on shellfish and 30 days fishing; the survivor now sleeps at night.
+
+Simplifications to revisit:
+
+- **Walking in the dark** is allowed at normal speed.
+- **Sleep has no place or comfort.** Sleeping on bare sand is as good as a bed; shelter comes in the next challenge.
+- **The temperature swing is a straight line** from midday to midnight, not a curve.
+- **Sunlight for growth stays flat**, day and night.

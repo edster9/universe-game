@@ -25,8 +25,9 @@ assemble fire ring
 drop fire ring
 
 put grass in ring
-rub wood against wood into ring for 1 min
-wait 30
+# Rub until the tuft catches: rubbing stops by itself when it does.
+rub wood against wood into ring
+wait 10
 look
 expect said lump of dry grass and ash
 expect said burning

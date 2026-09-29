@@ -118,6 +118,10 @@ pub enum Refusal {
     },
     NothingToCross(String),
     NotAVessel(String),
+    Asleep,
+    TooDark,
+    NotTired,
+    NeverSleeps,
     Sinks {
         vessel: String,
         liquid: String,
@@ -216,6 +220,13 @@ impl fmt::Display for Refusal {
                 write!(f, "there's nothing to cross on the way to {place}")
             }
             Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
+            Refusal::Asleep => write!(f, "you're asleep"),
+            Refusal::TooDark => write!(
+                f,
+                "it's too dark to search: wait for daylight, or make a fire here"
+            ),
+            Refusal::NotTired => write!(f, "you aren't tired enough to sleep"),
+            Refusal::NeverSleeps => write!(f, "you don't need sleep"),
             Refusal::Sinks { vessel, liquid } => write!(f, "{vessel} won't float in {liquid}"),
             Refusal::WouldSink {
                 vessel,
@@ -266,7 +277,8 @@ pub struct Plan {
 pub fn plan(world: &World, actor: EntityId, intent: &Intent) -> Result<Plan, Refusal> {
     let mut changes = changes_for(world, actor, intent)?;
     let seconds = duration(world, actor, intent);
-    if seconds > 0 && world.is_living(actor) {
+    let resting = matches!(intent, Intent::Sleep { .. });
+    if seconds > 0 && world.is_living(actor) && !resting {
         changes.push(Change::Exert {
             agent: actor,
             until: world.tick() + seconds,
@@ -301,12 +313,56 @@ pub fn perform(
     world
         .apply(Cause::Action { actor, intent }, plan.changes.clone())
         .map_err(ActError::Fault)?;
-    nature::run(world, plan.seconds).map_err(ActError::Fault)?;
+    // Something kept up over time lasts until it's over, which may be early.
+    let started = plan
+        .changes
+        .iter()
+        .any(|c| matches!(c, Change::StartActivity { .. }));
+    if started {
+        nature::run_while(world, plan.seconds, |w| w.activity(actor).is_some())
+    } else {
+        nature::run(world, plan.seconds)
+    }
+    .map_err(ActError::Fault)?;
     Ok(plan.changes)
 }
 
 /// How many seconds an action takes. Most are quick enough to count as none.
 pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
+    match intent {
+        Intent::Sleep { seconds } => sleeping_time(world, actor, *seconds),
+        Intent::Rub { .. } => usual_duration(world, actor, intent),
+        _ => {
+            // A tired body works more slowly.
+            let usual = usual_duration(world, actor, intent);
+            match world.life(actor).and_then(|l| l.sleep.as_ref()) {
+                Some(sleep) if world.is_tired(actor) => {
+                    u64::try_from(u128::from(usual) * 10_000 / u128::from(sleep.tired_pace.max(1)))
+                        .unwrap_or(u64::MAX)
+                }
+                _ => usual,
+            }
+        }
+    }
+}
+
+/// How long a sleep lasts: as long as asked, or until fully rested, which
+/// takes `need` for every `awake` spent awake.
+fn sleeping_time(world: &World, actor: EntityId, seconds: Option<u64>) -> u64 {
+    if let Some(seconds) = seconds {
+        return seconds;
+    }
+    let (Some(sleep), Some(awake)) = (
+        world.life(actor).and_then(|l| l.sleep.as_ref()),
+        world.awake_for(actor),
+    ) else {
+        return 0;
+    };
+    u64::try_from(u128::from(awake) * u128::from(sleep.need) / u128::from(sleep.awake.max(1)))
+        .unwrap_or(u64::MAX)
+}
+
+fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
         Intent::Go { place, aboard } => {
@@ -422,6 +478,9 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         return Err(Refusal::NotAnAgent);
     }
     let reach = Reach::of(world, actor)?;
+    if world.is_asleep(actor) {
+        return Err(Refusal::Asleep);
+    }
     let carried = || reach.carried.iter().copied();
     let carrying = |name: &String| {
         find(world, carried(), name).ok_or_else(|| Refusal::NotCarrying(name.clone()))
@@ -1008,10 +1067,32 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }])
         }
 
+        Intent::Sleep { seconds } => {
+            let (Some(sleep), Some(awake)) = (
+                world.life(actor).and_then(|l| l.sleep.as_ref()),
+                world.awake_for(actor),
+            ) else {
+                return Err(Refusal::NeverSleeps);
+            };
+            // Too little awake to sleep, unless asked for a set time.
+            if seconds.is_none() && awake < sleep.awake / 16 {
+                return Err(Refusal::NotTired);
+            }
+            let until = world.tick() + sleeping_time(world, actor, *seconds).max(1);
+            Ok(vec![Change::Sleep {
+                agent: actor,
+                until,
+            }])
+        }
+
         Intent::Gather { source } => {
             must_know(world, actor, Process::Gather)?;
             let found = find(world, reach.around.iter().copied(), source)
                 .ok_or_else(|| Refusal::NotHere(source.clone()))?;
+            // Searching needs light: daylight, or something burning here.
+            if world.is_dark(reach.here) {
+                return Err(Refusal::TooDark);
+            }
             let (Some(pieces), Some(composition)) = (world.pieces(found), world.composition(found))
             else {
                 return Err(Refusal::NotGatherable(named(world, found)));

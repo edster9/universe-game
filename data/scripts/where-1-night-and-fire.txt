@@ -1,0 +1,52 @@
+# Where am I?, stage 1: night. The sun sets at 18:00, the air cools toward
+# 292 K at midnight, and it's too dark to search for anything. A body shivers
+# to stay warm. A fire gives light to search by, and rubbing sticks at night
+# works as by day: you rub until the tinder catches.
+world stranded.toml
+as survivor
+luck average
+
+# By day: fuel in sizes, and stones for a ring.
+go forest
+gather sticks
+repeat 3
+  gather grass
+end
+repeat 3
+  gather twigs
+end
+go hillside
+repeat 5
+  gather stones
+end
+assemble fire ring
+go forest
+go beach
+wait 10 h
+look
+expect said night, and dark
+try gather driftwood
+expect said too dark to search
+datasheet survivor
+expect said temperature: 310 k
+# Make fire in the dark.
+drop fire ring
+put grass in ring
+rub wood against wood into ring
+expect said smouldering
+wait 10
+put grass in ring
+put grass in ring
+wait 10
+repeat 3
+  put smallest wood in ring
+end
+wait 30
+put wood in ring
+wait 1 min
+look
+expect said night, lit by fire
+gather driftwood
+expect said you find 2 kg of wood
+expect alive
+expect conserved

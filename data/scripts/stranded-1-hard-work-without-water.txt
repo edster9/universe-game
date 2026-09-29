@@ -1,6 +1,7 @@
 # Stranded, stage 1: working hard in the heat without drinking kills in about
-# half a day, far sooner than resting does. Sweat keeps the body cool, but it
-# costs water.
+# a day and a half, far sooner than resting does. Sweat keeps the body cool,
+# but it costs water. A day of gathering, until it's too dark to search,
+# leaves the body little more than a kilogram of water from death.
 world stranded.toml
 as survivor
 luck average
@@ -10,5 +11,10 @@ repeat 200
   try eat shellfish
   try drop shell
 end
+try gather shellfish
+expect said too dark to search
+repeat 48
+  wait 30 min
+end
 expect dead of thirst
-expect time before 1 day
+expect time before 36 h

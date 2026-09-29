@@ -31,6 +31,8 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/money.md](ideas/money.md) | What money is, before and after the space age, and how it's validated |
 | [slices.md](slices.md) | The first attempt: small text-only slices, each with a test |
 | [challenges/stranded.md](challenges/stranded.md) | The first training challenge: from a desert island to the next island on a raft |
+| [challenges/where-am-i.md](challenges/where-am-i.md) | The second training challenge: explore the island and climb its mountain to see where you are |
+| [challenges/living-with-the-island.md](challenges/living-with-the-island.md) | The third training challenge: wildlife, hunting and cooking, shelter, shoes and clothing |
 | [laws.md](laws.md) | Every law in the engine, stated generally, and what uses it |
 | [technology.md](technology.md) | Rust, the browser, whole-number units, and how player code runs |
 | [ideas/in-game-computer.md](ideas/in-game-computer.md) | Computers as parts, programs as knowledge |

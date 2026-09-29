@@ -1,0 +1,36 @@
+# Where am I?, stage 1: sleep. A body stays awake 16 hours for 8 hours' sleep.
+# Past 16 hours it's tired and works at two-thirds pace; after 40 hours it
+# falls asleep wherever it is, and can't act until it wakes.
+world stranded.toml
+as survivor
+luck average
+
+look
+expect said day 1, 08:00, daylight
+try sleep
+expect said you aren't tired enough to sleep
+wait 17 h
+datasheet survivor
+expect said awake for: 17 h (tired)
+# Tired, the 400 m walk to the stream takes 8 min 17 s instead of 5 min 33 s.
+go stream
+expect said (that took 8 min 17 s.)
+sleep
+expect said you sleep, and wake at 09:42. (that took 8 h 34 min.)
+datasheet survivor
+expect not said tired
+repeat 6
+  try drink water
+end
+# Stay up too long, and the body sleeps anyway.
+wait 39 h
+datasheet survivor
+expect said awake for: 39 h (tired)
+wait 2 h
+expect said you're exhausted, and fall asleep where you are
+try go beach
+expect said you're asleep
+wait 20 h
+go beach
+expect alive
+expect conserved

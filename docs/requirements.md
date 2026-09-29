@@ -170,6 +170,28 @@ Added 2026-09-28, when the crossing came up.
 
 See the stage 8 result and "After the crossing" in [challenges/stranded.md](challenges/stranded.md).
 
+## More island scenarios before validation
+
+Added 2026-09-28. The harder crossing is saved for later.
+
+- Not validation scenarios yet: anything else thrown in now would fail, because we don't have enough yet. First build two more scenarios of what a person would do on an island like this, which will create more laws. Discuss them first.
+- **Explore first.** Even seeing another island a few kilometres away, my instinct wouldn't be to build a raft to get there, unless I knew exactly where I was and what that island is. There's no way to know it's any better than the one I'm on. I'd want to know where I am. I may not even be on an island: I may be on a mainland, a few kilometres from civilisation.
+- **Climb for a view.** Islands usually have a big mountain. Find the high ground and climb it for a bird's-eye view of where I am.
+- **A moving camp.** In the first version, a residence at the beach while the raft is built. But it might take days to reach the top of the mountain: gather wood, make campsites along the way, and go up to take a look. All the other survival skills still apply.
+- **Wildlife.** There's wildlife on the island, such as boars, or other hostile creatures. You have to protect yourself from them, but they're also food: a boar has a lot of meat. Make weapons to fight wild animals, and cook and eat them.
+- **Protection from the elements.** Build a shelter against the night cold, or a barrier against animals; maybe a tree house.
+- **Shoes and clothing.** Anything you have wears out soon, so you must be able to craft shoes and clothing from other materials.
+- **Then validation.** After this exercise, try some validation scenarios.
+- **Then other people.** If all this passes, the next evolution is NPCs: we meet others on the island, friends or foes. Maybe we form colonies and build houses together. That leads into slice 3: building a town, spending, and exploring.
+
+## Sleep, and later age and body types
+
+Added 2026-09-28, when day and night came up.
+
+- If we introduce night, it makes sense to also introduce tiredness. What would a person do at night? It would be illogical for them to keep travelling at night just because they're not tired, and to use that time to keep going. That's not natural. **Make the need to sleep a necessity, now.**
+- **Later: age.** Typical game characters are always young, fit bodies. We could have an older person, not as strong and not as mobile. Keep to a range: no one under 18 or over 55 for a game like this, for now. Age may be a factor.
+- **Later: body types.** Different body types have different strengths: male, female, and so on. For now keep it as generic as possible.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

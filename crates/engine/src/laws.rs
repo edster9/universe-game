@@ -636,13 +636,20 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Fill { container, source } => {
-            // Something in hand first, then something here.
-            let vessel = find(
-                world,
-                reach.carried.iter().chain(&reach.around).copied(),
-                container,
-            )
-            .ok_or_else(|| Refusal::NotHere(container.clone()))?;
+            // Something in hand first, then something here, and one with room
+            // in it before one that's full.
+            let within = || reach.carried.iter().chain(&reach.around).copied();
+            let has_room = |c: EntityId| {
+                let capacity = world
+                    .shape(c)
+                    .and_then(|s| world.shapes().get(s))
+                    .and_then(|def| def.capacity);
+                let held: u64 = world.held(c).iter().map(|&e| world.mass(e).mg()).sum();
+                capacity.is_some_and(|cap| held < cap.mg())
+            };
+            let vessel = find(world, within().filter(|&c| has_room(c)), container)
+                .or_else(|| find(world, within(), container))
+                .ok_or_else(|| Refusal::NotHere(container.clone()))?;
             let capacity = world
                 .shape(vessel)
                 .and_then(|s| world.shapes().get(s))
@@ -1415,8 +1422,19 @@ pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId
     };
     let load = load.min(limit);
     // µm ÷ (mm/s × 1000) is seconds; a load of L of limit M slows it to (2M − L) / 2M.
-    let seconds = distance * 2 * limit / (speed * 1_000 * (2 * limit - load));
-    u64::try_from(seconds).unwrap_or(u64::MAX).max(1)
+    let walking = distance * 2 * limit / (speed * 1_000 * (2 * limit - load));
+    // Going up, a share of the walker's working power lifts them and their
+    // load: m × g × h. Going down costs nothing extra.
+    let rise = u128::from(world.height(to).saturating_sub(world.height(from)));
+    let lifted = u128::from(world.mass(actor).mg() + world.carried_mass(actor).mg());
+    let lifting = u128::from(life.working_power) * u128::from(life.climbing_share) / 10_000;
+    // mg × µm × 9.80665 m/s² is 10⁻¹² J × 9.80665; ÷ µW (10⁻⁶ J/s) gives seconds.
+    let climbing = if rise == 0 || lifting == 0 {
+        0
+    } else {
+        lifted * rise * 980_665 / 100_000 / 1_000_000 / lifting
+    };
+    u64::try_from(walking + climbing).unwrap_or(u64::MAX).max(1)
 }
 
 /// Bare hands can work only what's soft enough everywhere.

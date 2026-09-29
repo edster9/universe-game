@@ -1,0 +1,57 @@
+# Where am I?, stage 4: the climb. The castaway explores the island, fires two
+# pots, fills them at the stream, sleeps, and climbs 13 km and 1,800 m to the
+# summit, finding each way up as they go. It takes most of a day, carrying
+# 15 kg. The air is 12 K colder at the top, so they make a fire and spend a
+# cold night there, drinking from the pots, then come down.
+world where-am-i.toml
+as survivor
+luck average
+
+include skills/explore-the-island.txt
+include skills/fire-pots.txt
+go forest
+go stream
+fill pot from water
+fill pot from water
+include skills/climb-the-mountain.txt
+look
+expect said day 2, 15:16, daylight
+datasheet here
+expect said height: 1800 m
+expect said surroundings at: 286 k
+# Camp: a fire for the night, a drink, and sleep at dusk.
+assemble fire ring
+drop fire ring
+put grass in ring
+rub wood against wood into ring
+wait 10
+put grass in ring
+put grass in ring
+wait 10
+repeat 3
+  put smallest wood in ring
+end
+wait 30
+repeat 3
+  put wood in ring
+end
+drink water
+wait 3 h
+sleep for 12 h
+datasheet survivor
+expect said temperature: 309 k
+drink water
+expect said you drink
+# Going down costs no climbing: the 3 km to the ridge takes 52 min, not 1 h 50.
+take fire ring
+go ridge
+expect said (that took 52 min
+go slopes
+go hillside
+go forest
+go stream
+repeat 6
+  try drink water
+end
+expect alive
+expect conserved

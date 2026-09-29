@@ -83,6 +83,8 @@ pub struct Settings {
     pub explore_time: u64,
     /// The chance one search finds a way out, in parts per ten thousand.
     pub explore_chance: u64,
+    /// How much the air cools for each km of height, in mK.
+    pub lapse_rate: u64,
 }
 
 impl Default for Settings {
@@ -115,6 +117,7 @@ impl Default for Settings {
             sunset: 0,
             explore_time: 1_800,
             explore_chance: 6_000,
+            lapse_rate: 0,
         }
     }
 }
@@ -189,6 +192,9 @@ pub struct Life {
     /// Walking speed with nothing to carry, in mm per second. A full load
     /// halves it.
     pub walking_speed: u64,
+    /// The share of its working power that lifts it when climbing, in parts
+    /// per ten thousand.
+    pub climbing_share: u64,
     /// Sleep, if it needs it: how long it can stay awake for each night's
     /// sleep, and how long that sleep takes.
     pub sleep: Option<Sleep>,
@@ -383,6 +389,8 @@ pub struct World {
     pub(crate) exits: BTreeMap<EntityId, Vec<EntityId>>,
     /// How far it is between two places, in µm. Missing means no distance.
     pub(crate) distances: BTreeMap<(EntityId, EntityId), u64>,
+    /// Each place's height, in µm. Missing means zero.
+    pub(crate) heights: BTreeMap<EntityId, u64>,
     /// Paths that cross a liquid, and the liquid they cross.
     pub(crate) crossings: BTreeMap<(EntityId, EntityId), EntityId>,
     /// The ways out each person knows, as (from, to), for people who have
@@ -819,9 +827,25 @@ impl World {
         Mass::from_mg(self.mass(id).mg() + inside)
     }
 
+    /// A place's height, in µm.
+    pub fn height(&self, place: EntityId) -> u64 {
+        self.heights.get(&place).copied().unwrap_or(0)
+    }
+
     /// A place's surrounding temperature now. Where nights are colder, it
     /// falls steadily from the warmest at midday to the coldest at midnight.
+    /// A place's temperatures are given as at zero height: the air cools with
+    /// height.
     pub fn ambient(&self, place: EntityId) -> Temperature {
+        let cooling = u64::try_from(
+            u128::from(self.settings.lapse_rate) * u128::from(self.height(place)) / 1_000_000_000,
+        )
+        .unwrap_or(u64::MAX);
+        let at_zero_height = self.ambient_at_zero_height(place);
+        Temperature::from_mk(at_zero_height.mk().saturating_sub(cooling))
+    }
+
+    fn ambient_at_zero_height(&self, place: EntityId) -> Temperature {
         let warmest = self
             .ambient
             .get(&place)

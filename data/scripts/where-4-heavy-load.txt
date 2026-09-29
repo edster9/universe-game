@@ -1,0 +1,23 @@
+# Where am I?, stage 4: climbing lifts your weight and your load. Walking
+# 5 km and 450 m up from the hillside to the wooded slopes empty-handed takes
+# 1 h 46 min; coming back down takes 1 h 9 min, since going down costs no
+# climbing; going up again with 25 kg of stones takes 2 h 30 min.
+world where-am-i.toml
+as survivor
+luck average
+
+include skills/explore-the-island.txt
+go forest
+go hillside
+explore
+go slopes
+expect said (that took 1 h 46 min
+go hillside
+expect said (that took 1 h 9 min
+repeat 25
+  gather stones
+end
+go slopes
+expect said (that took 2 h 30 min
+expect alive
+expect conserved

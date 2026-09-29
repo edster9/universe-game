@@ -10,6 +10,15 @@
 # Stage 2, an unknown island: the castaway knows no way out of anywhere. One
 # search around takes 30 minutes and finds the nearest unknown way out six
 # times in ten. Walking a way teaches the way back.
+#
+# Stage 3, carrying water: a clay pot, fired hard, holds 2 kg.
+#
+# Stage 4, the climb: a mountain rises behind the hillside. Wooded slopes
+# 5 km away at 600 m, a bare ridge 5 km further at 1,200 m, and the summit
+# 3 km beyond at 1,800 m. Temperatures are given as at sea level; the air
+# cools 6.5 K for every km of height, so the summit is about 12 K colder than
+# the beach, and its nights near 280 K.
+# There's no water above the stream, and no wood above the slopes.
 
 uses = ["island-things.toml"]
 
@@ -30,6 +39,7 @@ flame_share = "50%"
 hand_hardness = "1"
 explore_time = "30 min"
 explore_chance = "60%"
+lapse_rate = "6.5 K/km"
 hand_push = "5%"
 drag = "300%"
 day = "24 h"
@@ -51,6 +61,7 @@ id = "stream"
 label = "the stream"
 exits = ["beach", "forest"]
 distances = { forest = "300 m" }
+height = "20 m"
 temperature = "300 K"
 night = "292 K"
 
@@ -59,13 +70,42 @@ id = "forest"
 label = "the forest"
 exits = ["beach", "stream", "hillside"]
 distances = { hillside = "500 m" }
+height = "30 m"
 temperature = "300 K"
 night = "292 K"
 
 [[place]]
 id = "hillside"
 label = "the hillside"
-exits = ["forest"]
+exits = ["forest", "slopes"]
+distances = { slopes = "5 km" }
+height = "150 m"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "slopes"
+label = "the wooded slopes"
+exits = ["hillside", "ridge"]
+distances = { ridge = "5 km" }
+height = "600 m"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "ridge"
+label = "the bare ridge"
+exits = ["slopes", "summit"]
+distances = { summit = "3 km" }
+height = "1200 m"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "summit"
+label = "the summit"
+exits = ["ridge"]
+height = "1800 m"
 temperature = "300 K"
 night = "292 K"
 
@@ -211,3 +251,40 @@ mass = "500 kg"
 fixed = true
 material = "fibre"
 pieces = { size = "250 g", find_time = "20 min" }
+
+[[item]]
+id = "slope-sticks"
+label = "fallen sticks"
+at = "slopes"
+mass = "30 kg"
+fixed = true
+material = "wood"
+pieces = { size = "200 g", find_time = "10 min" }
+
+[[item]]
+id = "slope-twigs"
+label = "dry twigs"
+at = "slopes"
+mass = "10 kg"
+fixed = true
+material = "wood"
+pieces = { size = "20 g", find_time = "3 min" }
+
+[[item]]
+id = "slope-grass"
+label = "dry grass"
+at = "slopes"
+mass = "10 kg"
+fixed = true
+material = "grass"
+pieces = { size = "5 g", find_time = "2 min" }
+
+[[item]]
+id = "ridge-stones"
+label = "loose stones"
+at = "ridge"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 min" }
+

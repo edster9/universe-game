@@ -29,6 +29,8 @@ explore
 expect said you find a way to the hillside
 go hillside
 explore
+expect said you find a way to the wooded slopes
+explore
 expect said you search around, but find no new way out
 go forest
 go beach

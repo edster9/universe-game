@@ -66,6 +66,7 @@ pub enum Property {
     Pushes,
     Awake,
     Capacity,
+    Height,
 }
 
 impl Property {
@@ -118,6 +119,7 @@ impl Property {
             Property::Pushes => "pushes with",
             Property::Awake => "awake for",
             Property::Capacity => "can hold",
+            Property::Height => "height",
         }
     }
 }
@@ -306,6 +308,7 @@ fn measure_thing(world: &World, id: EntityId) -> Datasheet {
     let mut sheet = Datasheet::default();
     if world.is_place(id) {
         sheet.set(Property::Ambient, Value::Temperature(world.ambient(id)));
+        sheet.set(Property::Height, Value::Length(world.height(id)));
         sheet.set(Property::HeatTakenIn, Value::Energy(world.surroundings(id)));
         return sheet;
     }

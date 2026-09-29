@@ -94,6 +94,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Chance events draw from the world's seed, its clock, and its history, so the same seed replays the same luck | in | stranded 1 |
 | When nothing fast is happening, nature takes bigger steps. Fixed sources are too big to change fast, however far they lag the air | in | stranded 1 |
 | The world has a time of day. The air is warmest at midday and coldest at midnight, at temperatures each place gives | in | where am I? 1 |
+| The air cools with height, at a rate the world gives; a place's temperatures are as at zero height | in | where am I? 4 |
 | At night it's dark: searching needs light, and something burning in the place gives it | in | where am I? 1 |
 | An action that takes time is hard work for a body while it lasts | in | slice 2, stranded 1 |
 | Some work continues over time (rubbing), advanced by nature each second until it ends. Rubbing into a container stops once something else in it catches: what the rubbing was for | in | stranded 2, where am I? 1 |
@@ -104,6 +105,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | --- | --- | --- |
 | People move between places along exits | in | slice 0 |
 | Walking takes the path's length at the walker's speed, which a full load halves; it's hard work | in | stranded |
+| Places have a height. Going up, a share of the walker's working power lifts their weight and load (mass × gravity × height), adding time; going down costs nothing extra | in | where am I? 4 |
 | A body can carry only up to its limit | in | stranded |
 | Someone who has to find their way knows only the ways they've found or walked; walking a way teaches the way back. Only known ways can be seen or taken | in | where am I? 2 |
 | Exploring is a search: each takes a fixed time, needs light, and with some chance finds the nearest way out not yet known | in | where am I? 2 |

@@ -179,6 +179,8 @@ pub mod property {
     pub const DENSITY: &[(&str, u64)] = &[("kg/m3", 1_000)];
     /// Speed of sound, stored in mm per second.
     pub const SPEED: &[(&str, u64)] = &[("m/s", 1_000)];
+    /// How fast the air cools with height, stored in mK per km.
+    pub const LAPSE_RATE: &[(&str, u64)] = &[("K/km", 1_000)];
     /// Electrical resistivity, stored in pΩ·m.
     pub const RESISTIVITY: &[(&str, u64)] = &[("uOhm*m", 1_000_000), ("nOhm*m", 1_000)];
     /// Voltage, stored in µV.

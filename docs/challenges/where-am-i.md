@@ -76,7 +76,7 @@ Simplifications to revisit:
 
 ### Stage 3: carrying water. Passed, 2026-09-29.
 
-**Shape a clay pot, fire it hard in a furnace, fill it at the stream, and drink from it far from water.** [where-3-carry-water.txt](../../data/scripts/where-3-carry-water.txt) does the whole thing as the castaway, starting with exploring, in two shared recipes: [explore-the-island.txt](../../data/scripts/skills/explore-the-island.txt) and [fire-a-pot.txt](../../data/scripts/skills/fire-a-pot.txt).
+**Shape a clay pot, fire it hard in a furnace, fill it at the stream, and drink from it far from water.** [where-3-carry-water.txt](../../data/scripts/where-3-carry-water.txt) does the whole thing as the castaway, starting with exploring, in two shared recipes: [explore-the-island.txt](../../data/scripts/skills/explore-the-island.txt) and [fire-pots.txt](../../data/scripts/skills/fire-pots.txt).
 
 - **A shape can hold things.** A shape whose role is containing says how much it holds (a pot, 2 kg), and a piece worked into it becomes a container. Its datasheet says "can hold: 2 kg".
 - **`fill pot from water`** takes liquid from a source into a container, up to what it holds and what you can carry. Drinking reaches into a container you carry.
@@ -97,4 +97,34 @@ Simplifications to revisit:
 - **A pot's capacity is a mass**, not a volume.
 - **Drinking leaves the last milligram** in a pot, as it does in any source.
 - **Water in a pot doesn't spill, evaporate, or go stale.**
+
+### Stage 4: the climb. Passed, 2026-09-29.
+
+**A mountain rises behind the hillside**: wooded slopes 5 km away at 600 m, a bare ridge 5 km further at 1,200 m, and the summit 3 km beyond at 1,800 m. There's no water above the stream and no wood above the slopes. [where-4-climb.txt](../../data/scripts/where-4-climb.txt) plays two and a half days:
+
+1. **Day 1:** explore the island, fire two pots, and fill them at the stream: 4 kg of water.
+2. **Day 2:** sleep by the stream, gather tinder, twigs, and sticks at dawn, and climb, finding each way up by exploring. With 15 kg carried: 2 h to the slopes, 2 h 15 min to the ridge (where the castaway picks up stones for a fire ring), and 1 h 50 min to the summit, reached at 15:16.
+3. **The night on top:** a fire, a drink from a pot, and twelve hours' sleep in air that falls to about 280 K.
+4. **Day 3:** down again: 52 min back to the ridge, where going up had taken 1 h 50 min.
+
+The new laws:
+
+- **Places have a height, and climbing lifts your weight and your load.** A share of the climber's working power (45%) goes into lifting mass × gravity × height, so climbing takes time on top of the walk, and more with a heavier load. It's hard work, so it burns food and water. Going down costs nothing extra. For 70 kg with a light load, that comes to about 600 m an hour, the old hikers' rule of thumb.
+- **The air cools with height**, 6.5 K per km. A place's temperatures are given as at zero height, and its height does the rest. The summit is 286 K on a mid-afternoon when the beach is 298 K.
+
+[where-4-heavy-load.txt](../../data/scripts/where-4-heavy-load.txt): the same 5 km and 450 m climb takes 1 h 46 min empty-handed, 1 h 9 min coming back down, and 2 h 30 min going up again with 25 kg of stones.
+
+**What the attempt found:**
+
+- **The first mountain was too small for camps.** At 1,600 m and 5 km away, the castaway was on the ridge by 11:00 on day 2 and could have been back by dark. Making it the size of a real island's peak, a long approach and 1,800 m, made the night on top a necessity: exactly the owner's "it might take days".
+- **Shivering holds the body a kelvin below its set point** in 280 K air: 309 K by morning. It's alive and warm enough, but it's burning about 230 W to stay there.
+- **"Fill the pot" filled the full one.** Filling now picks a container with room in it first.
+
+**Sabotage checks:** free climbing fails the timings; air that doesn't cool with height fails the summit's temperature.
+
+Simplifications to revisit:
+
+- **All ground is equally easy.** Scree, jungle, and cliffs walk like a beach; only distance and height matter.
+- **Wind** doesn't add to the cold at height.
+- **The summit night isn't dangerous** for a healthy, fed, watered body. It costs food, but it can't kill yet without rain or wind.
 

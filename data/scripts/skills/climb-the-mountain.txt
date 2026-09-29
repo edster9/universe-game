@@ -1,0 +1,31 @@
+# Skill: climb the mountain, as the castaway, from the stream in the evening
+# with two full pots of water. Sleep by the stream, gather tinder, twigs, and
+# sticks in the forest at dawn, find the way up at each stage, gather stones
+# on the ridge for a fire ring, and reach the summit in the afternoon.
+repeat 6
+  try drink water
+end
+sleep for 13 h
+repeat 6
+  try drink water
+end
+go forest
+repeat 3
+  gather grass
+end
+repeat 3
+  gather twigs
+end
+repeat 3
+  gather sticks
+end
+go hillside
+explore
+go slopes
+explore
+go ridge
+repeat 5
+  gather stones
+end
+explore
+go summit

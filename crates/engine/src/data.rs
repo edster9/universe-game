@@ -74,6 +74,8 @@ struct SettingsDef {
     /// How long one search for a way out takes, and its chance.
     explore_time: Option<String>,
     explore_chance: Option<String>,
+    /// How fast the air cools with height.
+    lapse_rate: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -160,6 +162,8 @@ struct PlaceDef {
     /// something that floats can take you.
     #[serde(default)]
     crossings: BTreeMap<String, String>,
+    /// Height. Its temperatures are given as at zero height.
+    height: Option<String>,
     /// The warmest it gets, at midday.
     temperature: Option<String>,
     /// The coldest it gets, at midnight, in a world with days.
@@ -206,6 +210,8 @@ struct LifeDef {
     carry: Option<String>,
     /// Walking speed unloaded.
     walk: Option<String>,
+    /// The share of working power that lifts the body when climbing.
+    climb: Option<String>,
     /// How long it can stay awake before it's tired.
     awake: Option<String>,
     /// How long a full sleep takes.
@@ -401,6 +407,9 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
         }
         if let Some(t) = &def.night {
             world.night_ambient.insert(place, t.parse()?);
+        }
+        if let Some(h) = &def.height {
+            world.heights.insert(place, parse_length(&def.id, h)?);
         }
     }
     for (&place, def) in places.iter().zip(&file.places) {
@@ -624,6 +633,9 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     }
     if let Some(c) = &def.explore_chance {
         settings.explore_chance = parse_percent(c)?;
+    }
+    if let Some(l) = &def.lapse_rate {
+        settings.lapse_rate = parse_quantity(l, property::LAPSE_RATE, "a rate like \"6.5 K/km\"")?;
     }
     if let Some(d) = &def.day {
         settings.day = time(d)?;
@@ -1045,6 +1057,12 @@ fn load_life(
             .map(|w| parse_quantity(w, property::SPEED, "a speed like \"1.2 m/s\""))
             .transpose()?
             .unwrap_or(1_200),
+        climbing_share: def
+            .climb
+            .as_deref()
+            .map(parse_percent)
+            .transpose()?
+            .unwrap_or(4_500),
         sleep: match (&def.awake, &def.sleep) {
             (Some(awake), Some(need)) => {
                 let time = |t: &str| parse_quantity(t, property::DURATION, "a time like \"8 h\"");

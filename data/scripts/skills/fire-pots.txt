@@ -1,8 +1,8 @@
-# Skill: make a clay pot and fire it hard in a furnace, starting on the beach
-# and knowing the way around. Gather everything first, shape the pot with a
-# stone, build a fire ring and a furnace on the hillside, make fire, and light
-# the furnace from it. The pot fires at 900 K as the furnace heats, then
-# cools for two hours. Ends on the hillside holding the fired pot.
+# Skill: make two clay pots and fire them hard in a furnace, starting on the
+# beach and knowing the way around. Gather everything first, shape the pots
+# with a stone, build a fire ring and a furnace on the hillside, make fire,
+# and light the furnace from it. The pots fire at 900 K as the furnace
+# heats, then cool for two hours. Ends on the hillside holding both.
 go forest
 repeat 3
   gather sticks
@@ -18,7 +18,7 @@ repeat 3
   gather driftwood
 end
 go stream
-repeat 3
+repeat 4
   gather clay
 end
 go forest
@@ -26,7 +26,8 @@ go hillside
 repeat 12
   gather stones
 end
-work smallest clay into pot with stone
+work lump of clay into pot with stone
+work lump of clay into pot with stone
 assemble fire ring
 drop fire ring
 assemble furnace
@@ -43,6 +44,7 @@ end
 wait 30
 put wood in ring
 put pot in furnace
+put pot in furnace
 put largest wood in furnace
 put largest wood in furnace
 light furnace
@@ -50,4 +52,5 @@ wait 5 min
 datasheet pot
 expect said fired clay pot
 wait 2 h
+take pot from furnace
 take pot from furnace

@@ -338,6 +338,20 @@ struct ItemDef {
     grows: Option<GrowsDef>,
     /// What kind of creature it is, for a population of creatures.
     kind: Option<String>,
+    /// It's a map, and these are what it claims. A map can be wrong.
+    #[serde(default)]
+    map: Vec<ClaimDef>,
+}
+
+/// One thing a map claims: that a place exists, that there's a way between
+/// two places, or that something by a name is at a place.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ClaimDef {
+    place: Option<String>,
+    way: Option<[String; 2]>,
+    at: Option<String>,
+    thing: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -549,6 +563,37 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
 
     for def in &file.items {
         load_item(&mut world, def)?;
+        if !def.map.is_empty() {
+            let item = world.find_by_key(&def.id).expect("just loaded");
+            let place = |key: &str| {
+                world
+                    .find_by_key(key)
+                    .filter(|&p| world.is_place(p))
+                    .ok_or_else(|| {
+                        LoadError(format!(
+                            "{}'s map shows {key:?}, which isn't a place",
+                            def.id
+                        ))
+                    })
+            };
+            let mut claims = Vec::new();
+            for claim in &def.map {
+                claims.push(match (&claim.place, &claim.way, &claim.at, &claim.thing) {
+                    (Some(p), None, None, None) => world::Claim::Place(place(p)?),
+                    (None, Some([a, b]), None, None) => world::Claim::Way(place(a)?, place(b)?),
+                    (None, None, Some(at), Some(thing)) => {
+                        world::Claim::Thing(place(at)?, thing.clone())
+                    }
+                    _ => {
+                        return fail(format!(
+                            "{}'s map has a claim that isn't a place, a way, or a thing at a place",
+                            def.id
+                        ));
+                    }
+                });
+            }
+            world.maps.insert(item, claims);
+        }
         if let Some(kind) = &def.kind {
             if !world.kinds.contains_key(kind) {
                 return fail(format!(
@@ -1208,8 +1253,16 @@ fn load_agent(
     if let Some(kind) = &def.kind {
         world.kind_of.insert(agent, kind.clone());
     }
-    if def.lost {
-        world.known_ways.insert(agent, BTreeSet::new());
+    // Persons remember; creatures on instinct know their range.
+    if world.instinct(agent).is_none() {
+        world.memories.insert(
+            agent,
+            world::Memory {
+                finds_ways: def.lost,
+                places: BTreeSet::from([at]),
+                ..world::Memory::default()
+            },
+        );
     }
     if !def.range.is_empty() {
         let mut range = BTreeSet::new();

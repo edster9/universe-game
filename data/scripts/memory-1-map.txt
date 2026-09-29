@@ -1,0 +1,38 @@
+# Memory: a map. The castaway explores the lower island, then finds a map
+# scratched on bark in the forest. Reading it adds what it shows to their
+# memory as possible, not certain. Going by it, some holds (clay at the
+# stream, the way up from the hillside to the slopes) and some doesn't (no
+# way from the forest straight to the ridge, no spring on the slopes), and
+# the castaway corrects their memory as they see for themselves.
+world where-am-i.toml
+as survivor
+luck average
+
+include skills/explore-the-island.txt
+go forest
+try go ridge
+expect said you don't know a way to ridge
+take map
+read map
+expect said it shows a way from the hillside to the wooded slopes
+expect said you can't be sure of any of it until you see it
+recall
+expect said a spring at the wooded slopes, from the map scratched on a strip of bark
+datasheet survivor
+expect said 0 confirmed, 0 corrected
+go ridge
+expect said you look for the way to the bare ridge that the map scratched on a strip of bark showed, but there's none
+go stream
+expect said clay is here, as the map scratched on a strip of bark showed
+go forest
+go hillside
+# No exploring needed: the map showed the way, and it's there.
+go slopes
+expect said the map scratched on a strip of bark showed a spring here, but there's none. you correct your memory
+recall
+expect said a way from the wooded slopes to the bare ridge, from the map
+expect not said a spring
+datasheet survivor
+expect said 2 confirmed, 2 corrected
+expect alive
+expect conserved

@@ -5,6 +5,7 @@
 //! what something *is* anywhere else in the world (docs/slices.md, "No
 //! oracles").
 
+use std::collections::BTreeSet;
 use std::fmt;
 
 use crate::datasheet::{self, Datasheet, Property, Value};
@@ -13,7 +14,10 @@ use crate::intent::Intent;
 use crate::matter::{self, Composition, State};
 use crate::nature;
 use crate::units::{Credits, Mass};
-use crate::world::{EntityId, Requirement, World};
+use crate::world::{Claim, EntityId, Requirement, World};
+
+/// How long it takes to take in what a map shows, in seconds.
+const READING_TIME: u64 = 300;
 
 /// Processes a person must know how to do. Knowledge becomes real in slice 4
 /// (docs/ideas/knowledge.md). Until then everyone knows everything, but every
@@ -118,6 +122,7 @@ pub enum Refusal {
     },
     NothingToCross(String),
     NotAVessel(String),
+    NothingToRead(String),
     TooDarkToSee,
     NotAShelter(String),
     PutItDown(String),
@@ -230,6 +235,7 @@ impl fmt::Display for Refusal {
                 write!(f, "there's nothing to cross on the way to {place}")
             }
             Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
+            Refusal::NothingToRead(name) => write!(f, "there's nothing to read on {name}"),
             Refusal::NotAShelter(name) => write!(f, "{name} gives no shelter"),
             Refusal::PutItDown(name) => write!(f, "put the {name} down first"),
             Refusal::TooDarkToSee => write!(f, "it's too dark to see far: wait for daylight"),
@@ -386,6 +392,7 @@ fn sleeping_time(world: &World, actor: EntityId, seconds: Option<u64>) -> u64 {
 fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
         Intent::Explore => world.settings().explore_time,
+        Intent::Read { .. } => READING_TIME,
         Intent::Survey => world.settings().survey_time,
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
         Intent::Go { place, aboard } => {
@@ -396,6 +403,10 @@ fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
                 Ok((to, None)) => walking_time(world, actor, reach.here, to),
                 Ok((to, Some((vessel, liquid)))) => {
                     paddling_time(world, actor, vessel, liquid, world.distance(reach.here, to))
+                }
+                // Looking for a way that was told of but isn't there.
+                Err(_) if false_way(world, actor, reach.here, place).is_some() => {
+                    world.settings().explore_time
                 }
                 Err(_) => 0,
             }
@@ -511,28 +522,49 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
     match intent {
         Intent::Go { place, aboard } => {
-            let (to, crossing) = way(world, actor, &reach, place, aboard.as_deref())?;
+            let (to, crossing) = match way(world, actor, &reach, place, aboard.as_deref()) {
+                Ok(found) => found,
+                // A way someone was told of that isn't there: they look for
+                // it, find nothing, and correct their memory.
+                Err(refusal) => {
+                    let Some((to, source)) = false_way(world, actor, reach.here, place) else {
+                        return Err(refusal);
+                    };
+                    return Ok(vec![Change::Settle {
+                        agent: actor,
+                        claim: Claim::Way(reach.here, to),
+                        held: false,
+                        source,
+                    }]);
+                }
+            };
             let mut changes = vec![Change::Move { entity: actor, to }];
             // What you cross on comes with you.
             if let Some((vessel, _)) = crossing.filter(|(v, _)| !reach.carried.contains(v)) {
                 changes.push(Change::Move { entity: vessel, to });
             }
-            // Having been there, you've seen it.
-            if !world.has_seen(actor, to) {
-                changes.push(Change::See {
-                    agent: actor,
-                    place: to,
-                });
-            }
-            // Having come this way, you know the way back.
-            if !world.knows_way(actor, to, reach.here) {
-                changes.push(Change::Learn {
-                    agent: actor,
-                    from: to,
-                    to: reach.here,
-                });
-            }
+            changes.extend(arriving(world, actor, reach.here, to));
             Ok(changes)
+        }
+
+        Intent::Read { item } => {
+            let found = find(world, reach.around_or_carried(), item)
+                .ok_or_else(|| Refusal::NotHere(item.clone()))?;
+            let claims = world
+                .map(found)
+                .ok_or_else(|| Refusal::NothingToRead(named(world, found)))?;
+            if world.memory(actor).is_none() {
+                return Err(Refusal::NothingToRead(named(world, found)));
+            }
+            let source = named(world, found);
+            Ok(claims
+                .iter()
+                .map(|claim| Change::Hear {
+                    agent: actor,
+                    claim: claim.clone(),
+                    source: source.clone(),
+                })
+                .collect())
         }
 
         Intent::Take { item } => {
@@ -1368,6 +1400,96 @@ fn harder_than(world: &World, tool: EntityId, target: EntityId) -> Result<(), Re
 /// Where a way out leads and, if its path crosses a liquid, what you cross
 /// on and what you cross. Only something that floats, and carries you with
 /// all you hold, can take you across.
+/// What a person sees on arriving somewhere: the place and the ways they
+/// came, now certain; what's there, compared with what they remember; and
+/// whether what they were told about it holds.
+fn arriving(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> Vec<Change> {
+    let Some(memory) = world.memory(actor) else {
+        return Vec::new();
+    };
+    let mut changes = Vec::new();
+    if !world.has_seen(actor, to) {
+        changes.push(Change::See {
+            agent: actor,
+            place: to,
+        });
+    }
+    for (a, b) in [(from, to), (to, from)] {
+        if memory.finds_ways && !world.knows_way(actor, a, b) && world.exits(a).contains(&b) {
+            changes.push(Change::Learn {
+                agent: actor,
+                from: a,
+                to: b,
+            });
+        }
+    }
+    // Its fixed things and its creatures: what's worth remembering.
+    let things = notable(world, actor, to);
+    let gone = memory
+        .sightings
+        .get(&to)
+        .map(|(_, before)| before.difference(&things).copied().collect())
+        .unwrap_or_default();
+    for (claim, source) in &memory.possible {
+        if let Claim::Thing(at, name) = claim
+            && *at == to
+        {
+            let held = world
+                .contents(to)
+                .into_iter()
+                .any(|e| is_called(world, e, name) || mentions(world, e, name));
+            changes.push(Change::Settle {
+                agent: actor,
+                claim: claim.clone(),
+                held,
+                source: source.clone(),
+            });
+        }
+    }
+    changes.push(Change::Sight {
+        agent: actor,
+        place: to,
+        things,
+        gone,
+    });
+    changes
+}
+
+/// The things at a place worth remembering: what's fixed there, and who's
+/// there.
+pub fn notable(world: &World, actor: EntityId, place: EntityId) -> BTreeSet<EntityId> {
+    world
+        .contents(place)
+        .into_iter()
+        .filter(|&e| e != actor && !world.is_all(e, State::Gas))
+        .filter(|&e| !world.is_portable(e) || world.is_living(e))
+        .collect()
+}
+
+/// A way someone was told of, from `here` to a place by that name, that
+/// isn't there. Returns the place and who told them.
+fn false_way(
+    world: &World,
+    actor: EntityId,
+    here: EntityId,
+    place: &str,
+) -> Option<(EntityId, String)> {
+    let memory = world.memory(actor)?;
+    memory
+        .possible
+        .iter()
+        .find_map(|(claim, source)| match claim {
+            Claim::Way(from, to)
+                if *from == here
+                    && !world.exits(here).contains(to)
+                    && (is_called(world, *to, place) || mentions(world, *to, place)) =>
+            {
+                Some((*to, source.clone()))
+            }
+            _ => None,
+        })
+}
+
 fn way(
     world: &World,
     actor: EntityId,
@@ -1375,9 +1497,23 @@ fn way(
     place: &str,
     aboard: Option<&str>,
 ) -> Result<(EntityId, Option<(EntityId, EntityId)>), Refusal> {
-    // Only the ways you know: someone finding their way can't be told that
-    // one exists.
-    let to = find(world, world.known_exits(actor, reach.here), place).ok_or_else(|| {
+    // Only the ways you know, or were told of: someone finding their way
+    // can't be told by the world that one exists.
+    let told: Vec<EntityId> = world
+        .memory(actor)
+        .map(|m| {
+            m.possible
+                .keys()
+                .filter_map(|claim| match claim {
+                    Claim::Way(from, to) if *from == reach.here => Some(*to),
+                    _ => None,
+                })
+                .filter(|to| world.exits(reach.here).contains(to))
+                .collect()
+        })
+        .unwrap_or_default();
+    let candidates = world.known_exits(actor, reach.here).into_iter().chain(told);
+    let to = find(world, candidates, place).ok_or_else(|| {
         if world.finds_ways(actor) {
             Refusal::DontKnowWay(place.to_string())
         } else {

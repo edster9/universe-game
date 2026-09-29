@@ -1,0 +1,19 @@
+# Memory: what you saw can change after you've gone. The islander finds the
+# boars asleep by the stream at night; coming back in the morning, they've
+# gone, and the islander's memory is corrected.
+world living.toml
+as survivor
+luck average
+
+wait 15 h
+go stream
+look
+expect said also here: a boar
+wait 9 h
+go forest
+go stream
+expect said gone since you were last here: a boar, a boar, a boar, a boar, a boar, a boar
+datasheet survivor
+expect said 6 corrected
+expect alive
+expect conserved

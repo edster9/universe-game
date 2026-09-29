@@ -96,6 +96,30 @@ pub enum Change {
         place: EntityId,
         until: u64,
     },
+    /// Someone is told or reads something, from `source`. Until they see it,
+    /// it's only possible.
+    Hear {
+        agent: EntityId,
+        claim: crate::world::Claim,
+        source: String,
+    },
+    /// Someone sees what's at a place: its fixed things and creatures.
+    /// `gone` is what they remembered there that isn't any more, which they
+    /// correct.
+    Sight {
+        agent: EntityId,
+        place: EntityId,
+        things: std::collections::BTreeSet<EntityId>,
+        gone: std::collections::BTreeSet<EntityId>,
+    },
+    /// Someone sees for themselves whether something they were told, by
+    /// `source`, is true.
+    Settle {
+        agent: EntityId,
+        claim: crate::world::Claim,
+        held: bool,
+        source: String,
+    },
     /// Someone sees a place, from afar or by being there.
     See { agent: EntityId, place: EntityId },
     /// Someone learns the way from one place to another.
@@ -582,7 +606,69 @@ impl World {
                 if !self.is_place(place) {
                     return Err(Fault::NotAPlace(place));
                 }
-                self.seen.entry(agent).or_default().insert(place);
+                if let Some(memory) = self.memories.get_mut(&agent) {
+                    memory.places.insert(place);
+                    if memory
+                        .possible
+                        .remove(&crate::world::Claim::Place(place))
+                        .is_some()
+                    {
+                        memory.confirmed += 1;
+                    }
+                }
+                Ok(())
+            }
+
+            Change::Hear {
+                agent,
+                claim,
+                source,
+            } => {
+                let memory = self
+                    .memories
+                    .get_mut(agent)
+                    .ok_or(Fault::NotAlive(*agent))?;
+                let known = match claim {
+                    crate::world::Claim::Place(p) => memory.places.contains(p),
+                    crate::world::Claim::Way(a, b) => memory.ways.contains(&(*a, *b)),
+                    crate::world::Claim::Thing(..) => false,
+                };
+                if !known {
+                    memory.possible.insert(claim.clone(), source.clone());
+                }
+                Ok(())
+            }
+
+            Change::Sight {
+                agent,
+                place,
+                things,
+                gone,
+            } => {
+                let now = self.tick;
+                let memory = self
+                    .memories
+                    .get_mut(agent)
+                    .ok_or(Fault::NotAlive(*agent))?;
+                memory.corrected += u64::try_from(gone.len()).expect("a count");
+                memory.sightings.insert(*place, (now, things.clone()));
+                Ok(())
+            }
+
+            Change::Settle {
+                agent, claim, held, ..
+            } => {
+                let memory = self
+                    .memories
+                    .get_mut(agent)
+                    .ok_or(Fault::NotAlive(*agent))?;
+                if memory.possible.remove(claim).is_some() {
+                    if *held {
+                        memory.confirmed += 1;
+                    } else {
+                        memory.corrected += 1;
+                    }
+                }
                 Ok(())
             }
 
@@ -590,8 +676,15 @@ impl World {
                 if !self.exits(from).contains(&to) {
                     return Err(Fault::NotAPlace(to));
                 }
-                if let Some(ways) = self.known_ways.get_mut(&agent) {
-                    ways.insert((from, to));
+                if let Some(memory) = self.memories.get_mut(&agent) {
+                    memory.ways.insert((from, to));
+                    if memory
+                        .possible
+                        .remove(&crate::world::Claim::Way(from, to))
+                        .is_some()
+                    {
+                        memory.confirmed += 1;
+                    }
                 }
                 Ok(())
             }

@@ -8,7 +8,7 @@ use engine::matter;
 use engine::nature;
 use engine::units::{self, Credits, Energy, Mass};
 use engine::view::{self, Thing};
-use engine::world::{EntityId, Requirement, World};
+use engine::world::{Claim, EntityId, Requirement, World};
 
 pub const HELP: &str = "\
 Commands:
@@ -118,6 +118,7 @@ impl Session {
             "wait" | "z" => self.wait(rest),
             "datasheet" | "ds" => Reply::say(self.datasheet(rest)),
             "designs" => Reply::say(self.designs()),
+            "recall" | "memory" => Reply::say(self.recall()),
             _ => self.command(line),
         };
         // News of the player's own death comes with whatever they were doing.
@@ -151,6 +152,12 @@ impl Session {
                             format!("{text} (That took {}.)", units::show_duration(spent))
                         } else {
                             text
+                        };
+                        let news = self.memory_news(&changes);
+                        let text = if news.is_empty() {
+                            text
+                        } else {
+                            format!("{text}\n{}", news.join("\n"))
                         };
                         let text = if matches!(intent, Intent::Sleep { .. }) {
                             text
@@ -199,6 +206,76 @@ impl Session {
         } else {
             text
         }
+    }
+
+    /// What the player's memory learned from what they just did: things gone
+    /// from where they arrived, and what they were told holding or not.
+    fn memory_news(&self, changes: &[Change]) -> Vec<String> {
+        let w = &self.world;
+        let mut news = Vec::new();
+        for change in changes {
+            match change {
+                Change::Sight { gone, .. } if !gone.is_empty() => {
+                    let labels: Vec<String> = gone.iter().map(|&g| w.label(g)).collect();
+                    news.push(format!(
+                        "Gone since you were last here: {}.",
+                        labels.join(", ")
+                    ));
+                }
+                Change::Settle {
+                    claim: Claim::Thing(_, name),
+                    held: true,
+                    source,
+                    ..
+                } => news.push(format!(
+                    "{} is here, as {source} showed.",
+                    sentence_case(name)
+                )),
+                Change::Settle {
+                    claim: Claim::Thing(_, name),
+                    held: false,
+                    source,
+                    ..
+                } => news.push(format!(
+                    "{} showed {name} here, but there's none. You correct your memory.",
+                    sentence_case(source)
+                )),
+                _ => {}
+            }
+        }
+        news
+    }
+
+    /// What the player remembers: what's certain, what's only possible and
+    /// where it came from, and how often they've had to correct themselves.
+    fn recall(&self) -> String {
+        let w = &self.world;
+        let Some(memory) = w.memory(self.player) else {
+            return "You don't remember anything.".into();
+        };
+        let places: Vec<String> = memory.places.iter().map(|&p| w.label(p)).collect();
+        let mut lines = vec![format!("Places you know: {}.", list_or(&places, "none"))];
+        if memory.finds_ways {
+            let ways: Vec<String> = memory
+                .ways
+                .iter()
+                .map(|&(a, b)| format!("{} to {}", w.label(a), w.label(b)))
+                .collect();
+            lines.push(format!("Ways you know: {}.", list_or(&ways, "none")));
+        }
+        if memory.possible.is_empty() {
+            lines.push("Nothing you've been told is still unconfirmed.".into());
+        } else {
+            lines.push("Possible, but not yet seen for yourself:".into());
+            for (claim, source) in &memory.possible {
+                lines.push(format!("  {}, from {source}", claim_text(w, claim)));
+            }
+        }
+        lines.push(format!(
+            "Confirmed with your own eyes: {}. Corrected: {}.",
+            memory.confirmed, memory.corrected
+        ));
+        lines.join("\n")
     }
 
     pub fn player(&self) -> EntityId {
@@ -293,6 +370,34 @@ impl Session {
             }
             (Intent::Go { .. }, Some(&Change::Move { to, .. })) => {
                 format!("You go to {}.", w.label(to))
+            }
+            (
+                Intent::Go { .. },
+                Some(Change::Settle {
+                    claim: Claim::Way(_, to),
+                    source,
+                    ..
+                }),
+            ) => format!(
+                "You look for the way to {} that {source} showed, but there's none. You correct your memory.",
+                w.label(*to)
+            ),
+            (Intent::Read { .. }, _) => {
+                let shown: Vec<String> = changes
+                    .iter()
+                    .filter_map(|c| match c {
+                        Change::Hear { claim, .. } => Some(claim_text(w, claim)),
+                        _ => None,
+                    })
+                    .collect();
+                if shown.is_empty() {
+                    "You study it, but it shows nothing you don't already know.".into()
+                } else {
+                    format!(
+                        "You study it. It shows {}. You can't be sure of any of it until you see it.",
+                        shown.join("; ")
+                    )
+                }
             }
             (Intent::Take { .. } | Intent::TakeFrom { .. }, Some(&Change::Move { entity, .. })) => {
                 format!("You take {}.", name(entity))
@@ -585,6 +690,31 @@ impl Session {
                 w.materials()[&from].label,
                 w.materials()[&into].label
             ),
+            Change::Hear {
+                agent,
+                claim,
+                source,
+            } => format!(
+                "{} hears of {} from {source}",
+                w.label(*agent),
+                claim_text(w, claim)
+            ),
+            Change::Sight {
+                agent, place, gone, ..
+            } => format!(
+                "{} sees what's at {} ({} gone)",
+                w.label(*agent),
+                w.label(*place),
+                gone.len()
+            ),
+            Change::Settle {
+                agent, claim, held, ..
+            } => format!(
+                "{} finds {} {}",
+                w.label(*agent),
+                claim_text(w, claim),
+                if *held { "true" } else { "false" }
+            ),
             &Change::Avoid {
                 agent,
                 place,
@@ -768,5 +898,14 @@ fn sentence(text: &str) -> String {
         text
     } else {
         format!("{text}.")
+    }
+}
+
+/// Something a person was told, in words.
+fn claim_text(world: &engine::world::World, claim: &Claim) -> String {
+    match claim {
+        Claim::Place(p) => world.label(*p),
+        Claim::Way(a, b) => format!("a way from {} to {}", world.label(*a), world.label(*b)),
+        Claim::Thing(at, name) => format!("{name} at {}", world.label(*at)),
     }
 }

@@ -347,3 +347,20 @@ fixed = true
 material = "stone"
 pieces = { size = "1 kg", find_time = "5 min" }
 
+# Memory: a map someone left, scratched on a strip of bark. Some of it is
+# right and some is wrong, and the castaway can't tell which until they go.
+[[item]]
+id = "bark-map"
+label = "map scratched on a strip of bark"
+at = "forest"
+mass = "50 g"
+material = "wood"
+map = [
+  { way = ["hillside", "slopes"] },
+  { way = ["slopes", "ridge"] },
+  { way = ["forest", "ridge"] },
+  { at = "stream", thing = "clay" },
+  { at = "slopes", thing = "a spring" },
+  { place = "village-island" },
+]
+

@@ -74,6 +74,15 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | A pushing shape delivers a share of its user's effort into a liquid; bare hands deliver less | in | stranded 8 |
 | Propulsion against drag gives speed: drag takes ½ × density × bluntness × area × speed³ of power | in | stranded 8 |
 
+## Knowledge
+
+| Law | Status | Used by |
+| --- | --- | --- |
+| A person remembers places, ways, and what's at places. What they've seen for themselves is certain; what they've been told or read is possible, marked with its source | in | memory |
+| Arriving somewhere makes it and the way you came certain, confirms or corrects every claim about what's there, and corrects what you remembered there that has gone | in | memory |
+| A way you were told of can be followed: if it's there, it becomes certain; if not, you spend a search's time and correct your memory | in | memory |
+| Reading a map adds its claims to memory as possible | in | memory |
+
 ## Life
 
 | Law | Status | Used by |

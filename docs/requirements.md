@@ -211,6 +211,16 @@ Added 2026-09-29. **A phase after the animal work, before the vocabulary convers
 - If the map is wrong, you have to correct your memory. The same happens in the space age: given a star chart, you travel somewhere and only when you get there find the chart was wrong, or that the star it showed has since exploded.
 - Even what you do know can change. A marker you spotted on the way out may be gone on the way back, for any number of reasons. Now you're in a contradiction: what you know is no longer there, and you have to correct it. You must be able to keep correcting your memory.
 
+## Time passing while a player is away
+
+Added 2026-09-29, **for a discussion soon: before the vocabulary conversation and the other planned discussions.** Not to be solved yet.
+
+- The passage of time when a player is not playing has suddenly become a big point: a person needs to feed and replenish themselves.
+- If you leave the game, how does your person survive until you come back, from the perspective of others?
+- This has surely come up in many other games that attempted something similar.
+
+See [ideas/time-away.md](ideas/time-away.md).
+
 ## How new vocabulary emerges
 
 Added 2026-09-29, **for a conversation after the where-am-I? and living-with-the-island challenges, and before any unplanned (validation) scenarios.**

@@ -84,6 +84,10 @@ pub enum Intent {
     },
     /// Search around for a way out not yet known.
     Explore,
+    /// Read something, such as a map.
+    Read {
+        item: String,
+    },
     /// Take in the view: see what lies in the distance.
     Survey,
     /// Sleep until rested, or for a while.
@@ -153,6 +157,7 @@ impl fmt::Display for Intent {
             Intent::Disassemble { item } => write!(f, "take apart {item}"),
             Intent::Eat { item } => write!(f, "eat {item}"),
             Intent::Explore => f.write_str("explore"),
+            Intent::Read { item } => write!(f, "read {item}"),
             Intent::Survey => f.write_str("survey"),
             Intent::Sleep { seconds, shelter } => {
                 f.write_str("sleep")?;
@@ -312,6 +317,9 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
             design: one("<design>")?,
         },
         "explore" | "search" => Intent::Explore,
+        "read" | "study" => Intent::Read {
+            item: one("<thing>")?,
+        },
         "survey" => Intent::Survey,
         "sleep" => {
             // "sleep", "sleep for 9 h", "sleep in <shelter>", or both.

@@ -282,6 +282,41 @@ pub enum Role {
     Containing,
 }
 
+/// Something a person can be told or read, and later see for themselves.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Claim {
+    /// A place exists.
+    Place(EntityId),
+    /// There's a way from one place to another.
+    Way(EntityId, EntityId),
+    /// Something by this name is at a place.
+    Thing(EntityId, String),
+}
+
+/// What a person remembers. What they've seen for themselves is certain;
+/// what they've been told or read is only possible, until they see it. See
+/// docs/ideas/memory.md.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Memory {
+    /// Whether they have to find ways out, rather than knowing them all.
+    pub finds_ways: bool,
+    /// Places they've been to or seen.
+    pub places: BTreeSet<EntityId>,
+    /// Ways they've found or walked.
+    pub ways: BTreeSet<(EntityId, EntityId)>,
+    /// What they last saw at each place (its fixed things and creatures),
+    /// and when.
+    pub sightings: BTreeMap<EntityId, (u64, BTreeSet<EntityId>)>,
+    /// What they've been told or read and not yet seen, and where it came
+    /// from.
+    pub possible: BTreeMap<Claim, String>,
+    /// How many possibles they've seen to be true.
+    pub confirmed: u64,
+    /// How many things they've had to correct: possibles that were wrong,
+    /// and things they saw that have gone.
+    pub corrected: u64,
+}
+
 /// A kind of creature or growing thing, from data. Kinds form a hierarchy:
 /// every kind but the broadest has a parent. See docs/ideas/kinds.md.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -442,8 +477,10 @@ pub struct World {
     pub(crate) positions: BTreeMap<EntityId, (i64, i64)>,
     /// How landmarks look from far away. Only these can be seen from afar.
     pub(crate) from_afar: BTreeMap<EntityId, String>,
-    /// The places each person has seen or been to.
-    pub(crate) seen: BTreeMap<EntityId, BTreeSet<EntityId>>,
+    /// What each person remembers. Creatures acting on instinct have none.
+    pub(crate) memories: BTreeMap<EntityId, Memory>,
+    /// What each map claims.
+    pub(crate) maps: BTreeMap<EntityId, Vec<Claim>>,
     /// Kinds of creatures and growing things, by id.
     pub(crate) kinds: BTreeMap<String, Kind>,
     /// What kind each thing is, for things that have one.
@@ -456,9 +493,6 @@ pub struct World {
     pub(crate) avoiding: BTreeMap<EntityId, BTreeMap<EntityId, u64>>,
     /// Paths that cross a liquid, and the liquid they cross.
     pub(crate) crossings: BTreeMap<(EntityId, EntityId), EntityId>,
-    /// The ways out each person knows, as (from, to), for people who have
-    /// to find their way. Anyone not listed knows every way.
-    pub(crate) known_ways: BTreeMap<EntityId, BTreeSet<(EntityId, EntityId)>>,
     /// Each place's surrounding temperature.
     pub(crate) ambient: BTreeMap<EntityId, Temperature>,
     /// Each place's surrounding temperature in the coldest hour of the night,
@@ -844,16 +878,26 @@ impl World {
         self.distances.get(&(from, to)).copied().unwrap_or(0)
     }
 
-    /// Whether someone knows the way from one place to another.
+    /// What someone remembers, if they're a person.
+    pub fn memory(&self, who: EntityId) -> Option<&Memory> {
+        self.memories.get(&who)
+    }
+
+    /// What a map claims, if something is a map.
+    pub fn map(&self, id: EntityId) -> Option<&[Claim]> {
+        self.maps.get(&id).map(Vec::as_slice)
+    }
+
+    /// Whether someone knows for certain the way from one place to another.
     pub fn knows_way(&self, who: EntityId, from: EntityId, to: EntityId) -> bool {
-        self.known_ways
+        self.memories
             .get(&who)
-            .is_none_or(|ways| ways.contains(&(from, to)))
+            .is_none_or(|m| !m.finds_ways || m.ways.contains(&(from, to)))
     }
 
     /// Whether someone has to find their way, rather than knowing every way.
     pub fn finds_ways(&self, who: EntityId) -> bool {
-        self.known_ways.contains_key(&who)
+        self.memories.get(&who).is_some_and(|m| m.finds_ways)
     }
 
     /// The ways out of a place that someone knows.
@@ -954,12 +998,14 @@ impl World {
 
     /// How many places someone has seen, from afar or by being there.
     pub fn places_seen(&self, who: EntityId) -> usize {
-        self.seen.get(&who).map_or(0, BTreeSet::len)
+        self.memories.get(&who).map_or(0, |m| m.places.len())
     }
 
     /// Whether someone has seen a place, from afar or by being there.
     pub fn has_seen(&self, who: EntityId, place: EntityId) -> bool {
-        self.seen.get(&who).is_some_and(|s| s.contains(&place))
+        self.memories
+            .get(&who)
+            .is_some_and(|m| m.places.contains(&place))
     }
 
     /// A place's height, in µm.

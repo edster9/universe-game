@@ -70,6 +70,7 @@ pub enum Property {
     PlacesSeen,
     Shelters,
     Kind,
+    Knows,
 }
 
 impl Property {
@@ -126,6 +127,7 @@ impl Property {
             Property::PlacesSeen => "places seen",
             Property::Shelters => "keeps in",
             Property::Kind => "kind",
+            Property::Knows => "knows",
         }
     }
 }
@@ -375,6 +377,18 @@ fn measure_thing(world: &World, id: EntityId) -> Datasheet {
             Property::PlacesSeen,
             Value::Text(world.places_seen(id).to_string()),
         );
+        if let Some(memory) = world.memory(id) {
+            sheet.set(
+                Property::Knows,
+                Value::Text(format!(
+                    "{} for certain, {} possible; {} confirmed, {} corrected",
+                    memory.places.len() + memory.ways.len(),
+                    memory.possible.len(),
+                    memory.confirmed,
+                    memory.corrected
+                )),
+            );
+        }
         if let Some(sleep) = &life.sleep {
             let text = if world.is_asleep(id) {
                 format!(

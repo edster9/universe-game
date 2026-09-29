@@ -28,6 +28,8 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/recognition.md](ideas/recognition.md) | Knowing what things are: perception and trade depend on what you've learned |
 | [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md) | For a later conversation: what a player can teach their character, and what stops a pasted rocket |
 | [ideas/kinds.md](ideas/kinds.md) | Decided: how living things are classified, humans and future aliens included, and what drives them |
+| [ideas/memory.md](ideas/memory.md) | Decided: what a person knows, certain or only possible, and how maps and seeing for yourself correct it |
+| [ideas/time-away.md](ideas/time-away.md) | For a discussion soon: what happens to a player's person while they're away |
 | [ideas/vocabulary.md](ideas/vocabulary.md) | For a conversation after the next two challenges: how new vocabulary emerges as the engine trains |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |
 | [ideas/money.md](ideas/money.md) | What money is, before and after the space age, and how it's validated |

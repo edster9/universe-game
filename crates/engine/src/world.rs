@@ -41,6 +41,11 @@ pub struct Settings {
     pub touch_resistance: u64,
     /// The temperature at which something hot gives off visible light.
     pub glow_temperature: Temperature,
+    /// Share of the gas in a place's air that passes into its surroundings
+    /// each second, in parts per ten thousand.
+    pub air_clearing: u64,
+    /// The longest step nature takes when nothing fast is happening, in seconds.
+    pub calm_step: u64,
 }
 
 impl Default for Settings {
@@ -56,8 +61,61 @@ impl Default for Settings {
             rubbing_time: 600,
             touch_resistance: 1_000,
             glow_temperature: Temperature::from_mk(1_000_000),
+            air_clearing: 10,
+            calm_step: 60,
         }
     }
+}
+
+/// A living body's needs and limits, from data. The body itself is matter:
+/// it burns what it has digested to stay warm and alive, loses its vital
+/// fluid, and sweats to cool down.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Life {
+    /// Energy it burns at rest, in µW.
+    pub resting_power: u64,
+    /// Energy it burns while working, in µW.
+    pub working_power: u64,
+    /// Heat it loses to its surroundings, in µW per K of difference.
+    pub heat_loss: u64,
+    /// The temperature it sweats to stay under.
+    pub set_point: Temperature,
+    /// Most fluid it can sweat, in mg per day.
+    pub sweat_rate: u64,
+    /// Heat carried off by each mg of sweat, in µJ.
+    pub sweat_heat: u64,
+    /// The fluid it needs.
+    pub fluid: MaterialId,
+    /// Fluid lost through breath and skin at rest, in mg per day. Double
+    /// while working.
+    pub fluid_loss: u64,
+    /// Below this much fluid, it dies.
+    pub fluid_minimum: Mass,
+    /// How much fluid it holds when it has had enough to drink.
+    pub fluid_normal: Mass,
+    /// Materials it can take in from food, and burn for energy.
+    pub digests: BTreeSet<MaterialId>,
+    /// The most it drinks at once.
+    pub gulp: Mass,
+    /// It dies outside this range of body temperature.
+    pub coldest: Temperature,
+    pub hottest: Temperature,
+    /// The tick until which it's working hard.
+    pub working_until: u64,
+    /// Why it died, or `None` while it's alive.
+    pub died_of: Option<String>,
+}
+
+/// A source made of loose pieces, which can be gathered by hand one piece at
+/// a time. A solid source has to be cut or dug instead.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Pieces {
+    pub size: Mass,
+    /// How long finding a piece takes when the source is full, in seconds.
+    /// It takes longer as the source thins.
+    pub find_time: u64,
+    /// How much the source holds when full.
+    pub full: Mass,
 }
 
 /// What a shaped part does, which decides what gets measured about it.
@@ -138,6 +196,8 @@ pub struct Chamber {
 pub struct World {
     pub(crate) next_id: u32,
     pub(crate) tick: u64,
+    /// Where chance comes from. The same seed replays the same luck.
+    pub(crate) seed: u64,
     pub(crate) settings: Settings,
     pub(crate) materials: Materials,
     pub(crate) shapes: BTreeMap<String, ShapeDef>,
@@ -167,6 +227,11 @@ pub struct World {
     pub(crate) ambient: BTreeMap<EntityId, Temperature>,
     /// Heat each place's surroundings have taken in.
     pub(crate) surroundings: BTreeMap<EntityId, Energy>,
+    /// Matter each place's surroundings have taken in: breath, sweat, and gas
+    /// from the air that has cleared.
+    pub(crate) reservoir: BTreeMap<EntityId, Composition>,
+    pub(crate) life: BTreeMap<EntityId, Life>,
+    pub(crate) pieces: BTreeMap<EntityId, Pieces>,
     pub(crate) agents: BTreeSet<EntityId>,
     pub(crate) portable: BTreeSet<EntityId>,
     pub(crate) containers: BTreeSet<EntityId>,
@@ -200,6 +265,47 @@ impl World {
 
     pub fn tick(&self) -> u64 {
         self.tick
+    }
+
+    pub fn seed(&self) -> u64 {
+        self.seed
+    }
+
+    /// The same world with different luck. Only for setting up a run.
+    pub fn with_seed(mut self, seed: u64) -> World {
+        self.seed = seed;
+        self
+    }
+
+    /// A number from 0 to 9,999, drawn from the world's seed. The same seed,
+    /// clock, history, and `salt` always give the same number.
+    pub fn roll(&self, salt: u64) -> u64 {
+        let mut x = self.seed
+            ^ self.tick.wrapping_mul(0x9E37_79B9_7F4A_7C15)
+            ^ (self.log.len() as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F)
+            ^ salt.wrapping_mul(0x1656_67B1_9E37_79F9);
+        // SplitMix64 finaliser.
+        x = (x ^ (x >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        x = (x ^ (x >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        (x ^ (x >> 31)) % 10_000
+    }
+
+    pub fn life(&self, id: EntityId) -> Option<&Life> {
+        self.life.get(&id)
+    }
+
+    /// True for a body that is alive.
+    pub fn is_living(&self, id: EntityId) -> bool {
+        self.life.get(&id).is_some_and(|l| l.died_of.is_none())
+    }
+
+    pub fn pieces(&self, id: EntityId) -> Option<&Pieces> {
+        self.pieces.get(&id)
+    }
+
+    /// Matter a place's surroundings have taken in.
+    pub fn reservoir(&self, place: EntityId) -> Option<&Composition> {
+        self.reservoir.get(&place)
     }
 
     pub fn settings(&self) -> &Settings {
@@ -253,7 +359,18 @@ impl World {
         if states.iter().all(|&s| s == State::Gas) {
             names
         } else if states.iter().all(|&s| s == State::Liquid) {
-            format!("molten {names}")
+            // "Molten" only for what is liquid because it's hot.
+            let ambient = self
+                .place_of(id)
+                .map_or(self.settings.reference_temperature, |p| self.ambient(p));
+            let hot = composition
+                .keys()
+                .any(|m| self.materials[m].melting_point > ambient);
+            if hot {
+                format!("molten {names}")
+            } else {
+                names
+            }
         } else if let Some(shape) = self.shape_of.get(&id) {
             format!(
                 "{names} {}",
@@ -451,7 +568,8 @@ impl World {
     pub fn total_mass(&self) -> u128 {
         let plain: u128 = self.masses.values().map(|m| u128::from(m.mg())).sum();
         let matter: u128 = self.matter.values().map(matter::total_mass).sum();
-        plain + matter
+        let taken_in: u128 = self.reservoir.values().map(matter::total_mass).sum();
+        plain + matter + taken_in
     }
 
     /// Total credits in every wallet. Conserved, like mass.
@@ -467,6 +585,7 @@ impl World {
         let chemical: u128 = self
             .matter
             .values()
+            .chain(self.reservoir.values())
             .map(|c| matter::chemical_energy(&self.materials, c))
             .sum();
         heat + given + chemical
@@ -491,7 +610,9 @@ impl World {
             let holds = self.is_place(location)
                 || self.is_agent(location)
                 || self.is_container(location)
-                || self.assemblies.contains_key(&location);
+                || self.assemblies.contains_key(&location)
+                // A body still holds what it carried, alive or dead.
+                || self.life.contains_key(&location);
             if !holds {
                 return Err(format!(
                     "{} is inside {}, which can't hold things",
@@ -541,6 +662,20 @@ impl World {
             .any(|id| self.matter.contains_key(id) || self.masses.contains_key(id))
         {
             return Err("an assembly has a mass of its own besides its parts".into());
+        }
+        for (&id, life) in &self.life {
+            if !self.matter.contains_key(&id) {
+                return Err(format!(
+                    "{} is alive but isn't made of anything",
+                    self.key(id)
+                ));
+            }
+            if life.died_of.is_none() && !self.is_agent(id) {
+                return Err(format!("{} is alive but isn't a person", self.key(id)));
+            }
+        }
+        if self.reservoir.keys().any(|&id| !self.is_place(id)) {
+            return Err("a reservoir belongs to something that isn't a place".into());
         }
         if self.surroundings.keys().any(|&id| !self.is_place(id)) {
             return Err("surroundings belong to something that isn't a place".into());

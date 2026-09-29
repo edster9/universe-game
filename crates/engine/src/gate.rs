@@ -45,6 +45,24 @@ pub enum Change {
         take: Composition,
         at: EntityId,
     },
+    /// Move part of one piece of matter into another, with its share of the
+    /// heat: eating, drinking.
+    Shift {
+        from: EntityId,
+        to: EntityId,
+        take: Composition,
+    },
+    /// Let part of a piece of matter pass into a place's surroundings, with
+    /// its share of the heat: breath, sweat, gas clearing from the air.
+    Release {
+        from: EntityId,
+        take: Composition,
+        place: EntityId,
+    },
+    /// A body works hard until `until`.
+    Exert { agent: EntityId, until: u64 },
+    /// A body dies. It stays where it is, as matter.
+    Die { agent: EntityId, cause: String },
     /// Pour everything in `from` into `into`. `from` stops existing.
     Merge { from: EntityId, into: EntityId },
     /// Give a piece of matter a shape and the tolerance it was made to, or
@@ -122,6 +140,7 @@ pub enum Fault {
     CannotMerge(EntityId),
     UnknownShape(String),
     UnknownDesign(String),
+    NotAlive(EntityId),
     NotAPart(EntityId),
     NotAnAssembly(EntityId),
     NotConserved(&'static str),
@@ -150,6 +169,7 @@ impl fmt::Display for Fault {
             Fault::CannotMerge(id) => write!(f, "{id:?} can't be merged away"),
             Fault::UnknownShape(shape) => write!(f, "no shape called {shape:?}"),
             Fault::UnknownDesign(design) => write!(f, "no design called {design:?}"),
+            Fault::NotAlive(id) => write!(f, "{id:?} isn't alive"),
             Fault::NotAPart(id) => write!(f, "{id:?} can't be a part"),
             Fault::NotAnAssembly(id) => write!(f, "{id:?} isn't an assembly"),
             Fault::NotConserved(what) => write!(f, "total {what} would change"),
@@ -204,10 +224,10 @@ impl World {
         Ok(())
     }
 
-    /// Moves the world's clock on by one tick. Nature calls this once the
-    /// tick's changes have passed the gate.
-    pub(crate) fn advance_clock(&mut self) {
-        self.tick += 1;
+    /// Moves the world's clock on. Nature calls this once a step's changes
+    /// have passed the gate.
+    pub(crate) fn advance_clock(&mut self, seconds: u64) {
+        self.tick += seconds;
     }
 
     fn apply_one(&mut self, change: &Change) -> Result<(), Fault> {
@@ -286,42 +306,56 @@ impl World {
             }
 
             Change::Split { from, take, at } => {
-                let (from, at) = (*from, *at);
-                self.must_exist(at)?;
-                let source = self.matter.get(&from).ok_or(Fault::NotMatter(from))?;
-                let capacity_before = matter::heat_capacity(&self.materials, source);
-                let mut rest = source.clone();
-                for (&material, &mass) in take {
-                    remove_material(&mut rest, material, mass).ok_or(Fault::NotEnoughMaterial {
-                        entity: from,
-                        material,
-                    })?;
-                }
-                if rest.is_empty() || take.values().all(|m| *m == Mass::ZERO) {
-                    return Err(Fault::WouldEmpty(from));
-                }
-                let heat = self.heat(from).ok_or(Fault::NotMatter(from))?;
-                let taken_heat = if capacity_before == 0 {
-                    0
-                } else {
-                    u128::from(heat.uj()) * matter::heat_capacity(&self.materials, take)
-                        / capacity_before
-                };
-                let taken_heat =
-                    Energy::from_uj(u64::try_from(taken_heat).expect("part of the heat fits"));
-
-                let mut piece: Composition = take.clone();
-                piece.retain(|_, m| *m != Mass::ZERO);
-                self.matter.insert(from, rest);
-                self.heat.insert(
-                    from,
-                    heat.checked_sub(taken_heat).expect("part of the heat"),
-                );
+                self.must_exist(*at)?;
+                let (piece, heat) = self.take_part(*from, take)?;
                 let new = self.spawn(None, None);
                 self.matter.insert(new, piece);
-                self.heat.insert(new, taken_heat);
-                self.locations.insert(new, at);
+                self.heat.insert(new, heat);
+                self.locations.insert(new, *at);
                 self.portable.insert(new);
+                Ok(())
+            }
+
+            Change::Shift { from, to, take } => {
+                if from == to {
+                    return Err(Fault::IntoItself(*from));
+                }
+                if !self.matter.contains_key(to) {
+                    return Err(Fault::NotMatter(*to));
+                }
+                let (piece, heat) = self.take_part(*from, take)?;
+                let target = self.matter.get_mut(to).expect("checked above");
+                for (material, mass) in piece {
+                    add_material(target, material, mass).ok_or(Fault::Overflow(*to))?;
+                }
+                self.give_heat(Holder::Thing(*to), heat)
+            }
+
+            Change::Release { from, take, place } => {
+                if !self.is_place(*place) {
+                    return Err(Fault::NotAPlace(*place));
+                }
+                let (piece, heat) = self.take_part(*from, take)?;
+                let reservoir = self.reservoir.entry(*place).or_default();
+                for (material, mass) in piece {
+                    add_material(reservoir, material, mass).ok_or(Fault::Overflow(*place))?;
+                }
+                self.give_heat(Holder::Surroundings(*place), heat)
+            }
+
+            &Change::Exert { agent, until } => {
+                let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
+                life.working_until = until;
+                Ok(())
+            }
+
+            Change::Die { agent, cause } => {
+                let life = self.life.get_mut(agent).ok_or(Fault::NotAlive(*agent))?;
+                if life.died_of.is_some() {
+                    return Err(Fault::NotAlive(*agent));
+                }
+                life.died_of = Some(cause.clone());
+                self.agents.remove(agent);
                 Ok(())
             }
 
@@ -332,6 +366,7 @@ impl World {
                 let mergeable = self.matter.contains_key(&from)
                     && !self.is_place(from)
                     && !self.is_agent(from)
+                    && !self.life.contains_key(&from)
                     && !self.is_container(from)
                     && self.wallet(from).is_none()
                     && self.contents(from).is_empty();
@@ -355,6 +390,7 @@ impl World {
                 self.portable.remove(&from);
                 self.forms.remove(&from);
                 self.tolerance.remove(&from);
+                self.pieces.remove(&from);
                 Ok(())
             }
 
@@ -453,6 +489,41 @@ impl World {
                 Ok(())
             }
         }
+    }
+
+    /// Takes `take` out of the piece `from`, with heat in proportion to heat
+    /// capacity so both parts keep the same temperature. `from` must keep
+    /// something.
+    fn take_part(
+        &mut self,
+        from: EntityId,
+        take: &Composition,
+    ) -> Result<(Composition, Energy), Fault> {
+        let source = self.matter.get(&from).ok_or(Fault::NotMatter(from))?;
+        let capacity_before = matter::heat_capacity(&self.materials, source);
+        let mut rest = source.clone();
+        for (&material, &mass) in take {
+            remove_material(&mut rest, material, mass).ok_or(Fault::NotEnoughMaterial {
+                entity: from,
+                material,
+            })?;
+        }
+        let mut piece: Composition = take.clone();
+        piece.retain(|_, m| *m != Mass::ZERO);
+        if rest.is_empty() || piece.is_empty() {
+            return Err(Fault::WouldEmpty(from));
+        }
+        let heat = self.heat(from).ok_or(Fault::NotMatter(from))?;
+        let taken = if capacity_before == 0 {
+            0
+        } else {
+            u128::from(heat.uj()) * matter::heat_capacity(&self.materials, &piece) / capacity_before
+        };
+        let taken = Energy::from_uj(u64::try_from(taken).expect("part of the heat fits"));
+        self.matter.insert(from, rest);
+        self.heat
+            .insert(from, heat.checked_sub(taken).expect("part of the heat"));
+        Ok((piece, taken))
     }
 
     fn must_exist(&self, id: EntityId) -> Result<(), Fault> {

@@ -44,6 +44,12 @@ struct SettingsDef {
     rubbing_time: Option<String>,
     touch_resistance: Option<String>,
     glow_temperature: Option<String>,
+    /// Where chance comes from. Tests replace it to try different luck.
+    seed: Option<u64>,
+    /// Share of a place's airborne gas that clears each second.
+    air_clearing: Option<String>,
+    /// The longest step nature takes when all is calm.
+    calm_step: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -105,6 +111,37 @@ struct AgentDef {
     mass: String,
     #[serde(default)]
     credits: u64,
+    /// A body made of materials, as material id to percentage by mass.
+    composition: Option<BTreeMap<String, String>>,
+    /// Starting temperature, if not the surroundings'.
+    temperature: Option<String>,
+    /// What the body needs to live. Requires a composition.
+    life: Option<LifeDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LifeDef {
+    resting_power: String,
+    working_power: String,
+    heat_loss: String,
+    set_point: String,
+    sweat_rate: String,
+    sweat_heat: String,
+    fluid: String,
+    fluid_loss: String,
+    fluid_minimum: String,
+    digests: Vec<String>,
+    gulp: String,
+    coldest: String,
+    hottest: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PiecesDef {
+    size: String,
+    find_time: String,
 }
 
 #[derive(Deserialize)]
@@ -135,6 +172,8 @@ struct ItemDef {
     shape: Option<String>,
     /// How closely it matches that shape.
     tolerance: Option<String>,
+    /// It's made of loose pieces that can be gathered by hand.
+    pieces: Option<PiecesDef>,
 }
 
 #[derive(Deserialize)]
@@ -181,6 +220,7 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
     let file: WorldFile = toml::from_str(text).map_err(|e| LoadError(e.to_string()))?;
     let mut world = World {
         settings: load_settings(&file.world)?,
+        seed: file.world.seed.unwrap_or(1),
         ..World::default()
     };
     load_materials(&mut world, &file.materials)?;
@@ -245,9 +285,25 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
             }
         };
         world.locations.insert(agent, at);
-        world.masses.insert(agent, parse_mass(&def.id, &def.mass)?);
+        let mass = parse_mass(&def.id, &def.mass)?;
+        match parse_composition(&world, &def.id, mass, None, def.composition.as_ref())? {
+            Some(composition) => {
+                let temperature = match &def.temperature {
+                    Some(t) => t.parse()?,
+                    None => world.ambient(at),
+                };
+                insert_matter(&mut world, agent, composition, temperature, &def.id)?;
+            }
+            None => {
+                world.masses.insert(agent, mass);
+            }
+        }
         world.agents.insert(agent);
         world.wallets.insert(agent, Credits::new(def.credits));
+        if let Some(life) = &def.life {
+            let life = load_life(&world, agent, &def.id, life)?;
+            world.life.insert(agent, life);
+        }
     }
 
     for def in &file.items {
@@ -308,6 +364,12 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     }
     if let Some(t) = &def.glow_temperature {
         settings.glow_temperature = t.parse()?;
+    }
+    if let Some(p) = &def.air_clearing {
+        settings.air_clearing = parse_percent(p)?;
+    }
+    if let Some(t) = &def.calm_step {
+        settings.calm_step = parse_quantity(t, property::DURATION, "a time like \"1 min\"")?.max(1);
     }
     Ok(settings)
 }
@@ -400,35 +462,13 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
 
 fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
     let mass = parse_mass(&def.id, &def.mass)?;
-    let composition = match (&def.material, &def.composition) {
-        (Some(_), Some(_)) => {
-            return fail(format!("{} has both a material and a composition", def.id));
-        }
-        (Some(material), None) => Some(Composition::from([(
-            material_id(world, &def.id, material)?,
-            mass,
-        )])),
-        (None, Some(parts)) => {
-            let mut fractions = Vec::new();
-            for (material, share) in parts {
-                fractions.push((
-                    material_id(world, &def.id, material)?,
-                    parse_percent(share)?,
-                ));
-            }
-            if fractions.iter().map(|(_, s)| s).sum::<u64>() != 10_000 {
-                return fail(format!("{}: the composition must add up to 100%", def.id));
-            }
-            let mut composition = Composition::new();
-            for (material, part) in matter::split_by_fractions(mass, &fractions) {
-                if part != Mass::ZERO {
-                    composition.insert(material, part);
-                }
-            }
-            Some(composition)
-        }
-        (None, None) => None,
-    };
+    let composition = parse_composition(
+        world,
+        &def.id,
+        mass,
+        def.material.as_deref(),
+        def.composition.as_ref(),
+    )?;
     if composition.is_none() && def.label.is_none() {
         return fail(format!(
             "{} needs a label, or a material to be described by",
@@ -458,11 +498,7 @@ fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
                         .expect("items start in a place or with a person"),
                 ),
             };
-            let capacity = matter::heat_capacity(&world.materials, &composition);
-            let heat = u64::try_from(matter::energy_at(temperature, capacity))
-                .map_err(|_| LoadError(format!("{} holds too much heat", def.id)))?;
-            world.matter.insert(item, composition);
-            world.heat.insert(item, Energy::from_uj(heat));
+            insert_matter(world, item, composition, temperature, &def.id)?;
         }
         None => {
             if def.temperature.is_some() {
@@ -514,6 +550,26 @@ fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
             },
         );
     }
+    if let Some(pieces) = &def.pieces {
+        if !world.matter.contains_key(&item) {
+            return fail(format!(
+                "{} has pieces but isn't made of a material",
+                def.id
+            ));
+        }
+        world.pieces.insert(
+            item,
+            world::Pieces {
+                size: parse_mass(&def.id, &pieces.size)?,
+                find_time: parse_quantity(
+                    &pieces.find_time,
+                    property::DURATION,
+                    "a time like \"5 min\"",
+                )?,
+                full: mass,
+            },
+        );
+    }
     match (&def.shape, &def.tolerance) {
         (Some(shape), tolerance) => {
             if !world.matter.contains_key(&item) {
@@ -539,6 +595,100 @@ fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
         (None, None) => {}
     }
     Ok(())
+}
+
+fn parse_composition(
+    world: &World,
+    id: &str,
+    mass: Mass,
+    material: Option<&str>,
+    composition: Option<&BTreeMap<String, String>>,
+) -> Result<Option<Composition>, LoadError> {
+    match (material, composition) {
+        (Some(_), Some(_)) => fail(format!("{id} has both a material and a composition")),
+        (Some(material), None) => Ok(Some(Composition::from([(
+            material_id(world, id, material)?,
+            mass,
+        )]))),
+        (None, Some(parts)) => {
+            let mut fractions = Vec::new();
+            for (material, share) in parts {
+                fractions.push((material_id(world, id, material)?, parse_percent(share)?));
+            }
+            if fractions.iter().map(|(_, s)| s).sum::<u64>() != 10_000 {
+                return fail(format!("{id}: the composition must add up to 100%"));
+            }
+            let mut composition = Composition::new();
+            for (material, part) in matter::split_by_fractions(mass, &fractions) {
+                if part != Mass::ZERO {
+                    composition.insert(material, part);
+                }
+            }
+            Ok(Some(composition))
+        }
+        (None, None) => Ok(None),
+    }
+}
+
+fn insert_matter(
+    world: &mut World,
+    id: world::EntityId,
+    composition: Composition,
+    temperature: Temperature,
+    name: &str,
+) -> Result<(), LoadError> {
+    let capacity = matter::heat_capacity(&world.materials, &composition);
+    let heat = u64::try_from(matter::energy_at(temperature, capacity))
+        .map_err(|_| LoadError(format!("{name} holds too much heat")))?;
+    world.matter.insert(id, composition);
+    world.heat.insert(id, Energy::from_uj(heat));
+    Ok(())
+}
+
+fn load_life(
+    world: &World,
+    agent: world::EntityId,
+    id: &str,
+    def: &LifeDef,
+) -> Result<world::Life, LoadError> {
+    let body = world
+        .matter
+        .get(&agent)
+        .ok_or_else(|| LoadError(format!("{id} is alive, so it needs a composition")))?;
+    let power = |text: &str| parse_quantity(text, property::POWER, "a power like \"80 W\"");
+    let rate = |text: &str| parse_quantity(text, property::MASS_RATE, "a rate like \"2 kg/day\"");
+    let fluid = material_id(world, id, &def.fluid)?;
+    let fluid_normal = body.get(&fluid).copied().unwrap_or(Mass::ZERO);
+    let mut digests = BTreeSet::new();
+    for material in &def.digests {
+        digests.insert(material_id(world, id, material)?);
+    }
+    Ok(world::Life {
+        resting_power: power(&def.resting_power)?,
+        working_power: power(&def.working_power)?,
+        heat_loss: parse_quantity(
+            &def.heat_loss,
+            property::HEAT_LOSS,
+            "a heat loss like \"8 W/K\"",
+        )?,
+        set_point: def.set_point.parse()?,
+        sweat_rate: rate(&def.sweat_rate)?,
+        sweat_heat: parse_quantity(
+            &def.sweat_heat,
+            property::ENERGY_DENSITY,
+            "an energy like \"2.4 MJ/kg\"",
+        )?,
+        fluid,
+        fluid_loss: rate(&def.fluid_loss)?,
+        fluid_minimum: parse_mass(id, &def.fluid_minimum)?,
+        fluid_normal,
+        digests,
+        gulp: parse_mass(id, &def.gulp)?,
+        coldest: def.coldest.parse()?,
+        hottest: def.hottest.parse()?,
+        working_until: 0,
+        died_of: None,
+    })
 }
 
 fn parse_length(id: &str, text: &str) -> Result<u64, LoadError> {

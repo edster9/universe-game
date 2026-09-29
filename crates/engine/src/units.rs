@@ -194,7 +194,16 @@ pub mod property {
     /// Resistance per µm of roughness where two surfaces touch, stored in µΩ per µm.
     pub const TOUCH_RESISTANCE: &[(&str, u64)] = &[("Ohm/um", 1_000_000), ("mOhm/um", 1_000)];
     /// A span of time, stored in seconds.
-    pub const DURATION: &[(&str, u64)] = &[("h", 3_600), ("min", 60), ("s", 1)];
+    pub const DURATION: &[(&str, u64)] = &[("day", 86_400), ("h", 3_600), ("min", 60), ("s", 1)];
+    /// Power, stored in µW (so µJ per second).
+    pub const POWER: &[(&str, u64)] = &[("kW", 1_000_000_000), ("W", 1_000_000), ("mW", 1_000)];
+    /// A rate of mass, stored in mg per day.
+    pub const MASS_RATE: &[(&str, u64)] = &[
+        ("kg/day", 1_000_000),
+        ("g/day", 1_000),
+        ("kg/h", 24_000_000),
+        ("g/h", 24_000),
+    ];
 }
 
 /// Units for showing stored whole numbers, largest first.

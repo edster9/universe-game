@@ -1,0 +1,142 @@
+# The stranded challenge: an island, and someone dropped on it with nothing.
+# See docs/challenges/stranded.md. This file grows stage by stage.
+#
+# Stage 1, staying alive: a body made of water, flesh, and fat; a stream to
+# drink from; the sea, which can't be drunk; and shellfish on the rocks,
+# gathered by hand.
+#
+# Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
+# and 300 W working; about 2 kg of water lost a day at rest, twice that when
+# working, plus sweat; death after losing about 5 kg of water.
+
+[world]
+reference_temperature = "293 K"
+open_air_heat_loss = "5 W/K"
+max_touch_temperature = "330 K"
+seed = 1
+air_clearing = "0.1%"
+calm_step = "1 min"
+
+[[material]]
+id = "water"
+label = "water"
+melting_point = "273 K"
+boiling_point = "373 K"
+specific_heat = "4186 J/(kg*K)"
+hardness = "0"
+density = "1000 kg/m3"
+
+[[material]]
+id = "seawater"
+label = "sea water"
+melting_point = "271 K"
+boiling_point = "375 K"
+specific_heat = "3990 J/(kg*K)"
+hardness = "0"
+density = "1025 kg/m3"
+
+[[material]]
+id = "flesh"
+label = "flesh"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.5"
+density = "1060 kg/m3"
+
+[[material]]
+id = "fat"
+label = "fat"
+melting_point = "320 K"
+boiling_point = "3500 K"
+specific_heat = "2300 J/(kg*K)"
+hardness = "0.2"
+energy_density = "37 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "900 kg/m3"
+
+[[material]]
+id = "shellfish"
+label = "shellfish"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "3500 J/(kg*K)"
+hardness = "0.5"
+energy_density = "3.5 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "1050 kg/m3"
+
+[[material]]
+id = "shell"
+label = "shell"
+melting_point = "1100 K"
+boiling_point = "3000 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "3"
+density = "2700 kg/m3"
+
+[[material]]
+id = "co2"
+label = "carbon dioxide"
+melting_point = "195 K"
+boiling_point = "216 K"
+specific_heat = "840 J/(kg*K)"
+hardness = "0"
+
+[[place]]
+id = "beach"
+label = "the beach"
+exits = ["stream", "forest"]
+temperature = "300 K"
+
+[[place]]
+id = "stream"
+label = "the stream"
+exits = ["beach", "forest"]
+temperature = "300 K"
+
+[[place]]
+id = "forest"
+label = "the forest"
+exits = ["beach", "stream", "hillside"]
+temperature = "300 K"
+
+[[place]]
+id = "hillside"
+label = "the hillside"
+exits = ["forest"]
+temperature = "300 K"
+
+[[agent]]
+id = "survivor"
+label = "the survivor"
+at = "beach"
+mass = "70 kg"
+composition = { water = "60%", flesh = "26%", fat = "14%" }
+temperature = "310 K"
+life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "37 kg", digests = ["fat", "shellfish"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K" }
+
+[[item]]
+id = "sea"
+label = "the sea"
+at = "beach"
+mass = "1000 t"
+fixed = true
+material = "seawater"
+
+[[item]]
+id = "shellfish-bed"
+label = "shellfish on the rocks"
+at = "beach"
+mass = "60 kg"
+fixed = true
+composition = { shellfish = "35%", shell = "65%" }
+pieces = { size = "1 kg", find_time = "10 min" }
+
+[[item]]
+id = "water"
+label = "the stream's water"
+at = "stream"
+mass = "50 t"
+fixed = true
+material = "water"

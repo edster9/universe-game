@@ -51,6 +51,13 @@ pub enum Property {
     Ambient,
     HeatTakenIn,
     Credits,
+    Alive,
+    DiedOf,
+    BodyFluid,
+    Working,
+    PieceSize,
+    SearchTime,
+    FindChance,
 }
 
 impl Property {
@@ -88,6 +95,13 @@ impl Property {
             Property::Ambient => "surroundings at",
             Property::HeatTakenIn => "heat taken in",
             Property::Credits => "credits",
+            Property::Alive => "alive",
+            Property::DiedOf => "died of",
+            Property::BodyFluid => "body fluid",
+            Property::Working => "working hard",
+            Property::PieceSize => "comes in pieces of",
+            Property::SearchTime => "one search takes",
+            Property::FindChance => "chance a search finds a piece",
         }
     }
 }
@@ -206,6 +220,34 @@ pub fn measure(world: &World, id: EntityId) -> Datasheet {
     }
     if let Some(composition) = world.composition(id) {
         measure_matter(world, id, composition, &mut sheet);
+    }
+    if let Some(life) = world.life(id) {
+        let fluid = world
+            .composition(id)
+            .and_then(|c| c.get(&life.fluid))
+            .copied()
+            .unwrap_or(Mass::ZERO);
+        sheet.set(Property::Alive, Value::Flag(life.died_of.is_none()));
+        sheet.set(
+            Property::BodyFluid,
+            Value::Text(format!("{fluid} (dies below {})", life.fluid_minimum)),
+        );
+        sheet.set(
+            Property::Working,
+            Value::Flag(life.working_until > world.tick()),
+        );
+        if let Some(cause) = &life.died_of {
+            sheet.set(Property::DiedOf, Value::Text(cause.clone()));
+        }
+    }
+    if let Some(pieces) = world.pieces(id) {
+        sheet.set(Property::PieceSize, Value::Mass(pieces.size));
+        sheet.set(Property::SearchTime, Value::Duration(pieces.find_time));
+        let chance = crate::laws::finding_chance(world, id);
+        sheet.set(
+            Property::FindChance,
+            Value::Text(format!("{}%", chance / 100)),
+        );
     }
     if let Some(chamber) = world.chamber(id) {
         sheet.set(

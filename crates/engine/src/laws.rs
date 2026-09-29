@@ -10,9 +10,9 @@ use std::fmt;
 use crate::datasheet;
 use crate::gate::{Cause, Change, Fault};
 use crate::intent::Intent;
-use crate::matter::{self, State};
+use crate::matter::{self, Composition, State};
 use crate::nature;
-use crate::units::Credits;
+use crate::units::{Credits, Mass};
 use crate::world::{EntityId, Requirement, World};
 
 /// Processes a person must know how to do. Knowledge becomes real in slice 4
@@ -25,6 +25,7 @@ pub enum Process {
     Pour,
     Work,
     Assemble,
+    Gather,
 }
 
 impl fmt::Display for Process {
@@ -35,6 +36,7 @@ impl fmt::Display for Process {
             Process::Pour => "pour",
             Process::Work => "shape things",
             Process::Assemble => "put that together or take it apart",
+            Process::Gather => "gather",
         })
     }
 }
@@ -77,6 +79,10 @@ pub enum Refusal {
     NotAnAssembly(String),
     NotAPart(String),
     AsFineAsItGets(String),
+    CannotEat(String),
+    NotDrinkable(String),
+    NotThirsty,
+    NotGatherable(String),
 }
 
 impl fmt::Display for Refusal {
@@ -128,6 +134,12 @@ impl fmt::Display for Refusal {
             Refusal::AsFineAsItGets(name) => {
                 write!(f, "{name} is as fine as hand work can make it")
             }
+            Refusal::CannotEat(name) => write!(f, "you can't eat {name}"),
+            Refusal::NotDrinkable(name) => write!(f, "you can't drink {name}"),
+            Refusal::NotThirsty => write!(f, "you aren't thirsty"),
+            Refusal::NotGatherable(name) => {
+                write!(f, "{name} isn't loose pieces you can gather by hand")
+            }
         }
     }
 }
@@ -153,6 +165,32 @@ impl fmt::Display for ActError {
 
 impl std::error::Error for ActError {}
 
+/// What an action will change, and how long it takes.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Plan {
+    pub changes: Vec<Change>,
+    pub seconds: u64,
+}
+
+/// Works out what `intent` would do, without changing anything. An action
+/// that takes time is hard work for a living body while it lasts.
+pub fn plan(world: &World, actor: EntityId, intent: &Intent) -> Result<Plan, Refusal> {
+    let mut changes = changes_for(world, actor, intent)?;
+    let seconds = duration(world, actor, intent);
+    if seconds > 0 && world.is_living(actor) {
+        changes.push(Change::Exert {
+            agent: actor,
+            until: world.tick() + seconds,
+        });
+    }
+    Ok(Plan { changes, seconds })
+}
+
+/// Works out what `intent` would change, without changing anything.
+pub fn resolve(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Change>, Refusal> {
+    plan(world, actor, intent).map(|p| p.changes)
+}
+
 /// Checks `intent` against the laws and, if allowed, applies it through the
 /// gate. Returns the changes that were made. The world's clock doesn't move;
 /// see `perform` for actions that take time.
@@ -170,18 +208,36 @@ pub fn perform(
     actor: EntityId,
     intent: Intent,
 ) -> Result<Vec<Change>, ActError> {
-    let seconds = duration(world, &intent);
-    let changes = act(world, actor, intent)?;
-    nature::run(world, seconds).map_err(ActError::Fault)?;
-    Ok(changes)
+    let plan = plan(world, actor, &intent).map_err(ActError::Refused)?;
+    world
+        .apply(Cause::Action { actor, intent }, plan.changes.clone())
+        .map_err(ActError::Fault)?;
+    nature::run(world, plan.seconds).map_err(ActError::Fault)?;
+    Ok(plan.changes)
 }
 
 /// How many seconds an action takes. Most are quick enough to count as none.
-pub fn duration(world: &World, intent: &Intent) -> u64 {
+pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
         Intent::Rub { .. } => world.settings().rubbing_time,
+        Intent::Gather { source } => Reach::of(world, actor)
+            .ok()
+            .and_then(|reach| find(world, reach.around.iter().copied(), source))
+            .and_then(|found| world.pieces(found))
+            .map_or(0, |pieces| pieces.find_time),
         _ => 0,
     }
+}
+
+/// The chance, in parts per ten thousand, that one search of a source finds
+/// a piece: certain when it's full, less likely as it thins.
+pub fn finding_chance(world: &World, source: EntityId) -> u64 {
+    let Some(pieces) = world.pieces(source) else {
+        return 0;
+    };
+    let full = u128::from(pieces.full.mg()).max(1);
+    let now = u128::from(world.mass(source).mg());
+    u64::try_from((now * 10_000 / full).min(10_000)).expect("at most ten thousand")
 }
 
 /// Finds something `actor` can see or hold, for measuring. "here" is the
@@ -242,8 +298,7 @@ impl Reach {
     }
 }
 
-/// Works out what `intent` would change, without changing anything.
-pub fn resolve(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Change>, Refusal> {
+fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Change>, Refusal> {
     if !world.is_agent(actor) {
         return Err(Refusal::NotAnAgent);
     }
@@ -541,6 +596,103 @@ pub fn resolve(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 return Err(Refusal::NotAnAssembly(named(world, found)));
             }
             Ok(vec![Change::Disassemble { assembly: found }])
+        }
+
+        Intent::Eat { item } => {
+            let found = carrying(item)?;
+            let life = world
+                .life(actor)
+                .ok_or_else(|| Refusal::CannotEat(named(world, found)))?;
+            let composition = world
+                .composition(found)
+                .filter(|_| world.assembly(found).is_none() && !world.is_container(found))
+                .ok_or_else(|| Refusal::CannotEat(named(world, found)))?;
+            // Only what the body can digest goes in; the rest is left in the hand.
+            let digestible: Composition = composition
+                .iter()
+                .filter(|(m, _)| life.digests.contains(m))
+                .map(|(&m, &mass)| (m, mass))
+                .collect();
+            if digestible.is_empty() {
+                return Err(Refusal::CannotEat(named(world, found)));
+            }
+            if digestible.len() == composition.len() {
+                Ok(vec![Change::Merge {
+                    from: found,
+                    into: actor,
+                }])
+            } else {
+                Ok(vec![Change::Shift {
+                    from: found,
+                    to: actor,
+                    take: digestible,
+                }])
+            }
+        }
+
+        Intent::Drink { source } => {
+            let candidates = reach
+                .around
+                .iter()
+                .chain(&reach.inside)
+                .chain(&reach.carried)
+                .copied();
+            let found =
+                find(world, candidates, source).ok_or_else(|| Refusal::NotHere(source.clone()))?;
+            let life = world
+                .life(actor)
+                .ok_or_else(|| Refusal::NotDrinkable(named(world, found)))?;
+            // Only something that is nothing but the body's fluid, and liquid.
+            let pure = world
+                .composition(found)
+                .is_some_and(|c| c.len() == 1 && c.contains_key(&life.fluid))
+                && world.is_all(found, State::Liquid);
+            if !pure {
+                return Err(Refusal::NotDrinkable(named(world, found)));
+            }
+            let have = world
+                .composition(actor)
+                .and_then(|c| c.get(&life.fluid))
+                .map_or(0, |m| m.mg());
+            let wanted = life
+                .fluid_normal
+                .mg()
+                .saturating_sub(have)
+                .min(life.gulp.mg());
+            let amount = wanted.min(world.mass(found).mg().saturating_sub(1));
+            if amount == 0 {
+                return Err(Refusal::NotThirsty);
+            }
+            Ok(vec![Change::Shift {
+                from: found,
+                to: actor,
+                take: Composition::from([(life.fluid, Mass::from_mg(amount))]),
+            }])
+        }
+
+        Intent::Gather { source } => {
+            must_know(world, actor, Process::Gather)?;
+            let found = find(world, reach.around.iter().copied(), source)
+                .ok_or_else(|| Refusal::NotHere(source.clone()))?;
+            let (Some(pieces), Some(composition)) = (world.pieces(found), world.composition(found))
+            else {
+                return Err(Refusal::NotGatherable(named(world, found)));
+            };
+            if world.mass(found) <= pieces.size {
+                return Err(Refusal::Exhausted(named(world, found)));
+            }
+            // A search takes its time whether or not it finds anything.
+            let luck = world.roll(u64::from(actor.0) ^ (u64::from(found.0) << 32));
+            if luck >= finding_chance(world, found) {
+                return Ok(Vec::new());
+            }
+            let take = matter::proportional(composition, pieces.size)
+                .expect("there is more than one piece");
+            Ok(vec![Change::Split {
+                from: found,
+                take,
+                at: actor,
+            }])
         }
     }
 }

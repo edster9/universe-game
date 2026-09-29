@@ -11,7 +11,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Mass is never created or destroyed; every change passes a gate that checks it | in | every slice |
 | Energy is never created or destroyed: heat, chemical energy, and heat given to surroundings add up | in | slices 1, 2 |
 | Credits are never created or destroyed (until money is real, in slice 3) | in | slice 0 |
-| Energy enters only through named sources: sunlight, at a rate per place | planned | stranded 1 |
+| Energy enters only through named sources: sunlight, at a rate per place | planned | stranded 3 |
 
 ## Matter and heat
 
@@ -19,11 +19,12 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | --- | --- | --- |
 | A material is solid, liquid, or gas by its melting and boiling points | in | slice 1 |
 | Temperature is heat energy divided by heat capacity | in | slices 1, 2 |
-| Parts of a piece in different states come apart: gas rises into the air, liquid runs out | in | slice 1 |
+| Parts of a piece in different states come apart: gas rises into the air, liquid runs out. A body holds its liquids together | in | slice 1, stranded 1 |
 | Liquids in one container pool; gases in one place mix | in | slice 1 |
-| Things warmer than their surroundings lose heat in proportion to the difference | in | slice 1 |
+| Things warmer than their surroundings lose heat in proportion to the difference | in | slice 1, stranded 1 |
 | Everything inside an insulated chamber shares one temperature | in | slice 1 |
-| Burning turns a fuel into its products and releases its stored energy as heat | in | slice 1 |
+| Burning turns a fuel into its products and releases its stored energy as heat | in | slice 1, stranded 1 (bodies burn their stores the same way) |
+| Gas in a place's open air passes into its surroundings a little at a time | in | stranded 1 |
 | Anything that burns catches fire above its ignition temperature, anywhere | planned | stranded 2 |
 | Work becomes heat: rubbing spends the worker's energy as heat in what's rubbed | planned | stranded 2 |
 | A material can change into another above a temperature (clay fires hard) | planned | stranded 4 |
@@ -39,6 +40,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Liquid setting in a form takes its shape, to the form's tolerance | in | slices 1, 2 |
 | Taking material from a fixed source needs a tool harder than it | in | slice 1 |
 | Work takes time, set by the tool's edge and the effort | planned | stranded 5 |
+| A source made of loose pieces can be gathered by hand. Each search takes a fixed time, and the thinner the source, the less likely it finds a piece | in | stranded 1 |
 | Taking material from living things | planned | stranded 3 |
 
 ## Measuring
@@ -62,18 +64,21 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 
 | Law | Status | Used by |
 | --- | --- | --- |
-| Bodies are matter and burn stored energy to live, faster when working | planned | stranded 1 |
-| Bodies lose water steadily, faster when working or hot | planned | stranded 1 |
-| Eating and drinking add to the body | planned | stranded 1 |
-| Below a share of body water, or with no stored energy, a body dies | planned | stranded 1 |
-| Living things grow on sunlight, up to what their place can support | planned | stranded 1, 3 |
+| Bodies are matter and burn what they've digested to live, the least energy-rich first, faster when working | in | stranded 1 |
+| Bodies lose their vital fluid steadily, twice as fast when working | in | stranded 1 |
+| Above its set point, a body sweats, and sweat carries heat away | in | stranded 1 |
+| Eating takes in only what the body digests; the rest is left | in | stranded 1 |
+| You can drink something only if it's nothing but the fluid your body needs | in | stranded 1 |
+| A body dies below its minimum fluid, with nothing left to burn, or outside the temperatures it can live in. It stays where it fell, holding what it carried | in | stranded 1 |
+| Living things grow on sunlight, up to what their place can support | planned | stranded 3 |
 
 ## Chance and time
 
 | Law | Status | Used by |
 | --- | --- | --- |
-| Chance events draw from the world's seed in a fixed order | planned | stranded 1 |
-| When nothing fast is happening, nature takes bigger steps | planned | stranded 1 |
+| Chance events draw from the world's seed, its clock, and its history, so the same seed replays the same luck | in | stranded 1 |
+| When nothing fast is happening, nature takes bigger steps | in | stranded 1 |
+| An action that takes time is hard work for a body while it lasts | in | slice 2, stranded 1 |
 
 ## Moving
 

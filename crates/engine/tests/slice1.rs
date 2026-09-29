@@ -150,7 +150,12 @@ fn the_same_chain_makes_a_copper_blade_from_a_different_data_file() {
 fn the_engine_names_no_materials_shapes_or_items() {
     let mut forbidden: BTreeSet<String> = BTreeSet::from(["sword".to_string()]);
     let ignore = ["the", "and", "of", "with", "for"];
-    for text in [IRON, COPPER, include_str!("../../../data/slice2.toml")] {
+    for text in [
+        IRON,
+        COPPER,
+        include_str!("../../../data/slice2.toml"),
+        include_str!("../../../data/stranded.toml"),
+    ] {
         let data: toml::Table = toml::from_str(text).unwrap();
         for section in ["material", "shape", "item", "design"] {
             let Some(entries) = data.get(section).and_then(|v| v.as_array()) else {

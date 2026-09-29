@@ -27,9 +27,9 @@ Each stage has a test. A stage passes when the survivor can do it through comman
 
 | # | Stage | What happens | New laws it needs |
 | --- | --- | --- | --- |
-| 1 | Stay alive | Drink from the stream, gather shellfish by hand, get hungry and thirsty, and die if neither is fixed | Bodies are matter and burn their stores to live; eating and drinking; limits of life; sunlight; living things grow; chance |
+| 1 | Stay alive | Drink from the stream, gather shellfish by hand, get hungry and thirsty, and die if neither is fixed | Bodies are matter and burn their stores to live; eating and drinking; limits of life; gathering by hand; chance |
 | 2 | Fire | Rub two dry sticks until one catches, then feed the fire | Work becomes heat; things catch fire above their ignition temperature, anywhere |
-| 3 | Spear and fish | Knock a sharp edge on flint, cut a branch, shape a spear, fish | Taking material from living things; the chance of a catch depends on the tool and on how many fish there are |
+| 3 | Spear and fish | Knock a sharp edge on flint, cut a branch, shape a spear, fish | Taking material from living things; the chance of a catch depends on the tool and on how many fish there are; sunlight; living things grow |
 | 4 | Furnace and axe | Gather bog iron, build a furnace from stone and clay, shape and fire a clay mould, smelt, cast an axe head, fit a handle, sharpen it | An assembly that encloses heat acts as a chamber; a shape that casts is a form; materials change at a temperature (clay fires hard) |
 | 5 | Timber | Fell trees and cut logs, taking hours with a crude axe | Work takes time, set by the tool's edge and the effort |
 | 6 | Rope | Strip fibre from bushes and twist it into rope | Tension: a material's strength when pulled, and a pulling role that's measured |
@@ -59,6 +59,37 @@ Whether a fish bites, a stick catches, or a wave swamps a raft is partly luck. T
 ## Time
 
 The island takes days. When nothing fast is happening (no fire, nothing hot, nobody travelling), nature takes bigger steps, so days of game time pass in seconds of real time, and still replay exactly.
+
+## Results
+
+### Stage 1: stay alive. Passed, 2026-09-28.
+
+The island is [data/stranded.toml](../../data/stranded.toml). The survivor is in [crates/engine/tests/stranded.rs](../../crates/engine/tests/stranded.rs).
+
+**30 of 30 survivors were alive after 10 days.** The 300 island-days took about 21 seconds to compute. After ten days on seed 1, the shellfish bed was down from 60 kg to 15 kg, body fat from 9.8 to 9.1 kg, body water steady near 41 kg, and body temperature 310 K. Mass and energy were conserved in every run.
+
+What the tests showed:
+
+- **Thirst kills in about three days.** A person who never drinks dies of thirst after 48 to 84 hours. Their body stays where it fell, as matter, with whatever it was carrying.
+- **The sea can't be drunk and the stream can.** Nothing names either: you can drink something only if it's nothing but the fluid your body needs.
+- **Eating keeps what the body digests** and leaves the shells in your hand.
+- **A resting body holds 310 K** because 80 W of burned fat balances the heat it loses to 300 K air. No rule sets body temperature.
+- **Hard work makes you thirstier:** twice the fluid loss, plus sweat. Sweat holds a working body within a kelvin of its set point.
+- **Take the stream away** and the survivor tries the sea, is refused, and dies of thirst. That's an outcome, not a failure.
+
+What the first runs found, and what changed:
+
+1. **An engine bug.** When someone died while carrying something, the world's structure check rejected the death, because a dead body couldn't hold things. Now a body keeps holding what it carried.
+2. **A law that was wrong.** Gathering made the survivor search until it found something. As the shellfish thinned, one search ran seven hours in the heat with no break to drink, and two survivors died of thirst mid-search. The law is now: **a search takes a fixed time, and the thinner the source, the less likely it finds anything.**
+3. **A survival-skill mistake.** The survivor judged hunger by body fat, which eating shellfish doesn't restore, so it gathered nonstop and stripped the shellfish bed in two days. It now eats again once its last meal is used up.
+4. **A law with no test.** Switching sweating off didn't fail anything, because two hours of work only warms an unsweating body 5 K. A test now checks sweat holds a working body near its set point, and the sabotage fails it.
+
+Simplifications to revisit:
+
+- **Walking is instant**, and there is no day and night: the air is always 300 K.
+- **Shellfish don't regrow yet.** On this island the food runs out in two to three weeks. Growth and sunlight arrive with fish in stage 3.
+- **Energy is stored in whole microjoules per holder**, which can't hold an ocean's heat. The sea here is 1,000 t. Planet-sized bodies will need bigger numbers.
+- **The body is simple:** no stomach or digestion time, no shivering, and no illness.
 
 ## Reporting
 

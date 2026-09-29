@@ -45,6 +45,7 @@ const MAX_WAIT: u64 = 86_400;
 pub struct Session {
     world: World,
     player: EntityId,
+    announced_death: Option<String>,
 }
 
 pub struct Reply {
@@ -65,7 +66,11 @@ impl Session {
     /// Starts a session acting as the agent whose data ID is `player`.
     pub fn new(world: World, player: &str) -> Result<Self, String> {
         match world.find_by_key(player) {
-            Some(id) if world.is_agent(id) => Ok(Session { world, player: id }),
+            Some(id) if world.is_agent(id) => Ok(Session {
+                world,
+                player: id,
+                announced_death: None,
+            }),
             _ => Err(format!(
                 "there's no person with the id {player:?} in this world"
             )),
@@ -81,7 +86,7 @@ impl Session {
         let (first, rest) = line
             .split_once(' ')
             .map_or((line, ""), |(f, r)| (f, r.trim()));
-        match first.to_lowercase().as_str() {
+        let mut reply = match first.to_lowercase().as_str() {
             "" => Reply::say(""),
             "help" | "?" => Reply::say(HELP),
             "quit" | "exit" => Reply {
@@ -99,6 +104,18 @@ impl Session {
             "datasheet" | "ds" => Reply::say(self.datasheet(rest)),
             "designs" => Reply::say(self.designs()),
             _ => Reply::say(self.command(line)),
+        };
+        // News of the player's own death comes with whatever they were doing.
+        let died = self.world.life(self.player).and_then(|l| l.died_of.clone());
+        match died {
+            Some(cause) if self.announced_death.is_none() => {
+                self.announced_death = Some(cause.clone());
+                reply.text = format!("{}\nYou have died of {cause}.", reply.text)
+                    .trim()
+                    .to_string();
+                reply
+            }
+            _ => reply,
         }
     }
 
@@ -108,8 +125,17 @@ impl Session {
             Ok(Command::Look) => self.look(),
             Ok(Command::Inventory) => self.inventory(),
             Ok(Command::Act(intent)) => {
+                let started = self.world.tick();
                 match laws::perform(&mut self.world, self.player, intent.clone()) {
-                    Ok(changes) => self.describe(&intent, &changes),
+                    Ok(changes) => {
+                        let text = self.describe(&intent, &changes);
+                        let spent = self.world.tick() - started;
+                        if spent > 0 && !matches!(intent, Intent::Rub { .. }) {
+                            format!("{text} (That took {}.)", units::show_duration(spent))
+                        } else {
+                            text
+                        }
+                    }
                     Err(ActError::Refused(refusal)) => sentence(&refusal.to_string()),
                     Err(fault @ ActError::Fault(_)) => format!("!! {fault}"),
                 }
@@ -222,7 +248,7 @@ impl Session {
                     .collect();
                 format!(
                     "You rub them together for {}. {}.",
-                    units::show_duration(laws::duration(w, intent)),
+                    units::show_duration(w.settings().rubbing_time),
                     sentence_case(&parts.join(", and "))
                 )
             }
@@ -241,6 +267,20 @@ impl Session {
             (Intent::Disassemble { .. }, Some(&Change::Disassemble { .. })) => {
                 "You take it apart.".into()
             }
+            (Intent::Eat { item }, _) => format!("You eat the {item}."),
+            (Intent::Drink { .. }, Some(Change::Shift { take, .. })) => format!(
+                "You drink {} of {}.",
+                Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
+                w.describe_composition(take)
+            ),
+            (Intent::Gather { .. }, Some(Change::Exert { .. }) | None) => {
+                "You search but find nothing.".into()
+            }
+            (Intent::Gather { .. }, Some(Change::Split { take, .. })) => format!(
+                "You find {} of {}.",
+                Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
+                w.describe_composition(take)
+            ),
             _ => "Done.".into(),
         }
     }
@@ -346,6 +386,24 @@ impl Session {
                 format!("{} parts assembled into a {design}", parts.len())
             }
             &Change::Disassemble { assembly } => format!("{} taken apart", w.key(assembly)),
+            Change::Shift { from, to, take } => format!(
+                "{} of {} from {} into {}",
+                Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
+                w.describe_composition(take),
+                w.label(*from),
+                w.label(*to)
+            ),
+            Change::Release { from, take, place } => format!(
+                "{} of {} from {} into the surroundings of {}",
+                Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
+                w.describe_composition(take),
+                w.label(*from),
+                w.label(*place)
+            ),
+            &Change::Exert { agent, until } => {
+                format!("{} works hard until {until} s", w.label(agent))
+            }
+            Change::Die { agent, cause } => format!("{} dies of {cause}", w.label(*agent)),
         }
     }
 

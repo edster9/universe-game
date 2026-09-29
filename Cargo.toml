@@ -12,3 +12,8 @@ engine = { path = "crates/engine" }
 serde = { version = "1", features = ["derive"] }
 toml = "0.9"
 proptest = "1"
+
+# The challenge tests simulate many days; build tests optimised so they run
+# in seconds rather than minutes.
+[profile.test]
+opt-level = 3

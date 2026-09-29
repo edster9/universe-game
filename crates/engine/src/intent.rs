@@ -67,6 +67,15 @@ pub enum Intent {
     Disassemble {
         item: String,
     },
+    Eat {
+        item: String,
+    },
+    Drink {
+        source: String,
+    },
+    Gather {
+        source: String,
+    },
 }
 
 impl fmt::Display for Intent {
@@ -86,6 +95,9 @@ impl fmt::Display for Intent {
             Intent::Rub { item, against } => write!(f, "rub {item} against {against}"),
             Intent::Assemble { design } => write!(f, "assemble {design}"),
             Intent::Disassemble { item } => write!(f, "take apart {item}"),
+            Intent::Eat { item } => write!(f, "eat {item}"),
+            Intent::Drink { source } => write!(f, "drink from {source}"),
+            Intent::Gather { source } => write!(f, "gather from {source}"),
         }
     }
 }
@@ -188,6 +200,27 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
         "assemble" | "build" => Intent::Assemble {
             design: one("<design>")?,
         },
+        "eat" => Intent::Eat {
+            item: one("<thing>")?,
+        },
+        "drink" => {
+            let source = one("<liquid>")?;
+            let source = source
+                .strip_prefix("from ")
+                .unwrap_or(&source)
+                .trim()
+                .to_string();
+            Intent::Drink { source }
+        }
+        "gather" | "collect" => {
+            let source = one("<source>")?;
+            let source = source
+                .strip_prefix("from ")
+                .unwrap_or(&source)
+                .trim()
+                .to_string();
+            Intent::Gather { source }
+        }
         "disassemble" | "dismantle" => Intent::Disassemble {
             item: one("<thing>")?,
         },

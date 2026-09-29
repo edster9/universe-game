@@ -83,10 +83,13 @@ fn thing(world: &World, id: EntityId) -> Thing {
     let temperature = world
         .temperature(id)
         .filter(|t| t.mk().abs_diff(ambient.mk()) >= NOTICEABLE_MK);
-    let notes = match world.chamber(id) {
+    let mut notes = match world.chamber(id) {
         Some(chamber) if chamber.lit => vec!["lit".to_string()],
         _ => Vec::new(),
     };
+    if world.life(id).is_some_and(|l| l.died_of.is_some()) {
+        notes.push("dead".to_string());
+    }
     let contents = if world.is_container(id) {
         world
             .contents(id)

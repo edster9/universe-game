@@ -61,6 +61,7 @@ pub enum Property {
     Needs,
     GrowsTo,
     Carrying,
+    HoldsUpTo,
 }
 
 impl Property {
@@ -108,6 +109,7 @@ impl Property {
             Property::Needs => "gathering needs",
             Property::GrowsTo => "grows back up to",
             Property::Carrying => "carrying",
+            Property::HoldsUpTo => "holds up to",
         }
     }
 }
@@ -388,6 +390,23 @@ fn measure_matter(world: &World, id: EntityId, composition: &Composition, sheet:
         }
         (Some(Role::Touching), _) => {
             sheet.set(Property::TouchTolerance, Value::Length(tolerance));
+        }
+        (Some(Role::Pulling), Some(main)) => {
+            // Strength × cross-section, where the cross-section is the volume
+            // spread along the length. Shown as the mass it would hold up.
+            if let (Some(strength), Some(volume), Some(length)) = (
+                main.tensile_strength,
+                matter::volume(materials, composition),
+                def.length,
+            ) {
+                let area = volume / u128::from(length.max(1));
+                // Pa × µm² ÷ 9,806,650 gives the mg a load of that force weighs.
+                let holds = u128::from(strength) * area / 9_806_650;
+                sheet.set(
+                    Property::HoldsUpTo,
+                    Value::Mass(Mass::from_mg(u64::try_from(holds).unwrap_or(u64::MAX))),
+                );
+            }
         }
         _ => {}
     }

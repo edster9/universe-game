@@ -404,7 +404,7 @@ fn command(world: &World, step: &Step) -> Result<Intent, u64> {
         4 => Intent::Work {
             item: a,
             shape: b,
-            tool: c,
+            tool: Some(c),
         },
         5 => Intent::Rub {
             item: a,

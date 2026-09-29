@@ -222,6 +222,9 @@ pub enum Role {
     Touching,
     /// Is a form: liquid setting inside it takes the shape it casts.
     Casting,
+    /// Is pulled along its length. Measured: the load it holds before
+    /// breaking.
+    Pulling,
 }
 
 /// A shape from data, and what it takes to measure it.

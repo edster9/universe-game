@@ -84,6 +84,8 @@ struct MaterialDef {
     burn_speed: Option<String>,
     /// What it turns into, and at what temperature.
     becomes: Option<BecomesDef>,
+    /// Strength when pulled.
+    tensile_strength: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -587,6 +589,11 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
                 .map(|v| parse_quantity(v, property::VOLTAGE, "a voltage like \"1.5 V\""))
                 .transpose()?,
             ignition_point: def.ignition_point.as_deref().map(str::parse).transpose()?,
+            tensile_strength: def
+                .tensile_strength
+                .as_deref()
+                .map(|t| parse_quantity(t, property::STRESS, "a strength like \"50 MPa\""))
+                .transpose()?,
             becomes: match &def.becomes {
                 Some(becomes) => {
                     let target = *ids.get(&becomes.material).ok_or_else(|| {
@@ -903,9 +910,10 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         Some("source") => Some(Role::Source),
         Some("touching") => Some(Role::Touching),
         Some("casting") => Some(Role::Casting),
+        Some("pulling") => Some(Role::Pulling),
         Some(other) => {
             return fail(format!(
-                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, touching, and casting",
+                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, touching, casting, and pulling",
                 def.id
             ));
         }
@@ -915,7 +923,7 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         .as_deref()
         .map(|l| parse_length(&def.id, l))
         .transpose()?;
-    if matches!(role, Some(Role::Conducting | Role::Glowing)) && length.is_none() {
+    if matches!(role, Some(Role::Conducting | Role::Glowing | Role::Pulling)) && length.is_none() {
         return fail(format!(
             "the shape {} conducts, so it needs a length",
             def.id

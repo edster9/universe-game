@@ -44,6 +44,8 @@ pub struct Material {
     /// At or above this temperature, it turns into another material, as some
     /// earths fire hard.
     pub becomes: Option<(MaterialId, Temperature)>,
+    /// Strength when pulled, in pascals. `None` if it can't take tension.
+    pub tensile_strength: Option<u64>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

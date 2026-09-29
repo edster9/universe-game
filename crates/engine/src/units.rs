@@ -195,6 +195,9 @@ pub mod property {
     pub const TOUCH_RESISTANCE: &[(&str, u64)] = &[("Ohm/um", 1_000_000), ("mOhm/um", 1_000)];
     /// A span of time, stored in seconds.
     pub const DURATION: &[(&str, u64)] = &[("day", 86_400), ("h", 3_600), ("min", 60), ("s", 1)];
+    /// Strength when pulled, stored in pascals.
+    pub const STRESS: &[(&str, u64)] =
+        &[("GPa", 1_000_000_000), ("MPa", 1_000_000), ("kPa", 1_000)];
     /// Power, stored in µW (so µJ per second).
     pub const POWER: &[(&str, u64)] = &[("kW", 1_000_000_000), ("W", 1_000_000), ("mW", 1_000)];
     /// Heat passed per square metre of surface per kelvin of difference,

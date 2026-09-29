@@ -210,6 +210,19 @@ Simplifications to revisit:
 - **Trees don't regrow**, and a felled log is a plain lump of wood with no shape.
 - **The daily test run grew to about 24 seconds**, because several proofs replay the whole axe recipe from nothing.
 
+### Stage 6: rope. Passed, 2026-09-28.
+
+**Strip fibre from bushes and twist it by hand into rope.** [stranded-6-rope.txt](../../data/scripts/stranded-6-rope.txt).
+
+- **Working by hand.** `work fibre into rope` needs no tool. Bare hands shape only what's soft enough, to a rough finish. Fibre can be twisted; wood can't ("your hands aren't hard enough").
+- **Tension is the new law.** A material has a strength when pulled (twisted plant fibre, 50 MPa here), and a shape whose role is pulling is measured for what it holds: strength times cross-section, where the cross-section is its volume spread along its length. A 5 m rope from 250 g of fibre holds about 255 kg; from 125 g, exactly half.
+- **Something already made can't be pulled apart by hand**: dividing a rope would spoil it.
+- **Sabotage check:** making strength ignore thickness fails the rope proof.
+
+The trials still have 30 of 30 alive with walking in place. The month-long fisher now ends with 7.7 kg of body fat instead of 8.5 kg, from all the walking to the stream and back.
+
+Simplification: a rope's length is fixed by its shape (5 m); ropes can't be joined or cut to length yet.
+
 ### Walking and carrying. Added 2026-09-28.
 
 Not a stage of its own, but needed from here on: hauling logs to the beach, and any character walking around a world.

@@ -55,7 +55,8 @@ pub enum Intent {
     Work {
         item: String,
         shape: String,
-        tool: String,
+        /// `None` means bare hands.
+        tool: Option<String>,
     },
     Rub {
         item: String,
@@ -98,7 +99,16 @@ impl fmt::Display for Intent {
             Intent::Dig { source, tool } => write!(f, "dig {source} with {tool}"),
             Intent::Light { chamber } => write!(f, "light {chamber}"),
             Intent::Pour { liquid, into } => write!(f, "pour {liquid} into {into}"),
-            Intent::Work { item, shape, tool } => write!(f, "work {item} into {shape} with {tool}"),
+            Intent::Work {
+                item,
+                shape,
+                tool: Some(tool),
+            } => write!(f, "work {item} into {shape} with {tool}"),
+            Intent::Work {
+                item,
+                shape,
+                tool: None,
+            } => write!(f, "work {item} into {shape} by hand"),
             Intent::Rub {
                 item,
                 against,
@@ -207,12 +217,16 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
             Intent::Pour { liquid, into }
         }
         "work" => {
-            let (what, tool) = two(&["with"], "<thing> into <shape> with <tool>")?;
+            // "work <thing> into <shape> with <tool>", or by hand without "with".
+            let (what, tool) = match two(&["with"], "<thing> into <shape> [with <tool>]") {
+                Ok((what, tool)) => (what, Some(tool)),
+                Err(_) => (rest.trim_end_matches(" by hand").to_string(), None),
+            };
             let (item, shape) = what
                 .rsplit_once(" into ")
                 .map(|(a, b)| (a.trim().to_string(), b.trim().to_string()))
                 .filter(|(a, b)| !a.is_empty() && !b.is_empty())
-                .ok_or_else(|| usage("<thing> into <shape> with <tool>"))?;
+                .ok_or_else(|| usage("<thing> into <shape> [with <tool>]"))?;
             Intent::Work { item, shape, tool }
         }
         "rub" => {
@@ -310,7 +324,7 @@ mod tests {
             Ok(Command::Act(Intent::Work {
                 item: "lump of stuff".into(),
                 shape: "long shape".into(),
-                tool: "heavy tool".into()
+                tool: Some("heavy tool".into())
             }))
         );
         assert_eq!(

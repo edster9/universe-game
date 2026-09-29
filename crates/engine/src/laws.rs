@@ -87,6 +87,7 @@ pub enum Refusal {
     NoFlame(String),
     TooHeavy { carrying: Mass, limit: Mass },
     TheyCantCarry(String),
+    WouldSpoil(String),
 }
 
 impl fmt::Display for Refusal {
@@ -117,8 +118,14 @@ impl fmt::Display for Refusal {
             Refusal::NotDiggable(name) => write!(f, "you can't dig {name}"),
             Refusal::NotATool(name) => write!(f, "{name} isn't made of anything that could cut"),
             Refusal::TooHard { tool, target } => {
-                write!(f, "{tool} isn't hard enough to work {target}")
+                let verb = if tool == "your hands" {
+                    "aren't"
+                } else {
+                    "isn't"
+                };
+                write!(f, "{tool} {verb} hard enough to work {target}")
             }
+            Refusal::WouldSpoil(name) => write!(f, "pulling {name} apart would spoil it"),
             Refusal::Exhausted(name) => write!(f, "there's too little left of {name} to dig"),
             Refusal::NotAChamber(name) => write!(f, "you can't light {name}"),
             Refusal::AlreadyLit(name) => write!(f, "{name} is already lit"),
@@ -562,15 +569,24 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if !world.is_all(found, State::Solid) {
                 return Err(Refusal::NotSolid(named(world, found)));
             }
-            let tool = carrying(tool)?;
-            if tool == found {
-                return Err(Refusal::NotYourself);
-            }
-            harder_than(world, tool, found)?;
-            // A part is at most as precise as the tool that made it.
-            let tolerance = world
-                .tolerance(tool)
-                .unwrap_or(world.settings().rough_tolerance);
+            // A part is at most as precise as the tool that made it. Bare
+            // hands shape only what's soft enough, roughly.
+            let tolerance = match tool {
+                Some(tool) => {
+                    let tool = carrying(tool)?;
+                    if tool == found {
+                        return Err(Refusal::NotYourself);
+                    }
+                    harder_than(world, tool, found)?;
+                    world
+                        .tolerance(tool)
+                        .unwrap_or(world.settings().rough_tolerance)
+                }
+                None => {
+                    by_hand(world, found)?;
+                    world.settings().rough_tolerance
+                }
+            };
             Ok(vec![Change::Shape {
                 entity: found,
                 shape: Some((shape_key, tolerance)),
@@ -839,6 +855,10 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if !world.is_all(found, State::Solid) {
                 return Err(Refusal::NotSolid(named(world, found)));
             }
+            // Something already made isn't raw material any more.
+            if world.shape(found).is_some() {
+                return Err(Refusal::WouldSpoil(named(world, found)));
+            }
             // Bare hands pull apart only what's soft enough.
             let reference = world.settings().reference_temperature;
             let temperature = world.temperature(found).unwrap_or(reference);
@@ -1001,6 +1021,28 @@ pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId
     // µm ÷ (mm/s × 1000) is seconds; a load of L of limit M slows it to (2M − L) / 2M.
     let seconds = distance * 2 * limit / (speed * 1_000 * (2 * limit - load));
     u64::try_from(seconds).unwrap_or(u64::MAX).max(1)
+}
+
+/// Bare hands can work only what's soft enough everywhere.
+fn by_hand(world: &World, target: EntityId) -> Result<(), Refusal> {
+    let reference = world.settings().reference_temperature;
+    let temperature = world.temperature(target).unwrap_or(reference);
+    let hardest = world
+        .composition(target)
+        .map(|c| {
+            c.keys()
+                .map(|m| world.materials()[m].hardness_at(temperature, reference))
+                .max()
+                .unwrap_or(0)
+        })
+        .unwrap_or(0);
+    if hardest > world.settings().hand_hardness {
+        return Err(Refusal::TooHard {
+            tool: "your hands".into(),
+            target: named(world, target),
+        });
+    }
+    Ok(())
 }
 
 /// Refuses if taking on `extra` would put someone over what they can carry.

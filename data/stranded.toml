@@ -25,6 +25,10 @@
 # Stage 5, timber: standing trees, felled a 20 kg log at a time with an axe.
 # A log takes an hour with a 1 mm edge, and longer the blunter the axe.
 #
+# Stage 6, rope: fibre stripped by hand from bushes, twisted by hand into
+# 5 m of rope. Twisted plant fibre takes about 50 MPa when pulled, so a rope
+# holds more the thicker it is.
+#
 # Walking and carrying: paths between places have lengths; walking takes the
 # distance at 1.2 m/s, slowed to half speed under a full 40 kg load, and is
 # hard work like any other.
@@ -209,6 +213,20 @@ hardness = "4"
 density = "7874 kg/m3"
 
 [[material]]
+id = "fibre"
+label = "plant fibre"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1300 J/(kg*K)"
+hardness = "0.5"
+energy_density = "15 MJ/kg"
+burns_to = { co2 = "97%", ash = "3%" }
+ignition_point = "520 K"
+burn_speed = "20 g/(m2*s)"
+density = "1000 kg/m3"
+tensile_strength = "50 MPa"
+
+[[material]]
 id = "co2"
 label = "carbon dioxide"
 melting_point = "195 K"
@@ -245,6 +263,12 @@ id = "haft"
 label = "haft"
 role = "holding"
 length = "70 cm"
+
+[[shape]]
+id = "rope"
+label = "rope"
+role = "pulling"
+length = "5 m"
 
 [[design]]
 id = "axe"
@@ -420,3 +444,12 @@ mass = "20 t"
 fixed = true
 material = "wood"
 pieces = { size = "20 kg", find_time = "1 h", edge = "1 mm", needs = "axe" }
+
+[[item]]
+id = "bushes"
+label = "fibrous bushes"
+at = "forest"
+mass = "500 kg"
+fixed = true
+material = "fibre"
+pieces = { size = "250 g", find_time = "20 min" }

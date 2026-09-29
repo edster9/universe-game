@@ -1,0 +1,24 @@
+# Stranded, stage 6: rope. Strip fibre from bushes and twist it by hand into
+# 5 m of rope. Tension is the new law: a rope holds its material's strength
+# times its cross-section, so a rope from twice the fibre holds twice the load.
+world stranded.toml
+as survivor
+luck average
+
+go forest
+gather bushes
+gather bushes
+divide fibre
+work largest fibre into rope
+datasheet rope
+expect said holds up to: 254.9
+drop rope
+work largest fibre into rope
+datasheet rope
+expect said holds up to: 127.4
+try divide rope
+expect said would spoil it
+gather twigs
+try work wood into rope
+expect said your hands aren't hard enough
+expect conserved

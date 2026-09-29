@@ -427,7 +427,7 @@ fn command(world: &World, step: &Step) -> Result<Intent, u64> {
         10 => Intent::Work {
             item: a,
             shape: b,
-            tool: c,
+            tool: Some(c),
         },
         _ => return Err(step.amount + 1),
     })

@@ -253,6 +253,13 @@ Added 2026-09-29.
 - Making a sword for real, from starting a fire and melting ore to casting, cooling, and hammering, could take two or three days. Everything is configurable: ore melts at its temperature, but might need to stay there only 10 seconds instead of three hours; cooling can be accelerated. Set right, making a sword could be a five-minute process.
 - It still behaves by the world's physics, except that the time for certain processes varies, faster or slower, by our settings. Other engines do this too, but they cut huge corners; we follow real physics.
 - Discuss these two concepts further before the conversation about what happens when you're away, which is different.
+- **Refined 2026-09-29.** Everything that happens to your body runs at one speed, and so does how fast you move: one to one. In most games players move very fast and the terrain isn't very big; for now keep it one to one.
+- This game won't be played on a desert island in the end: we're setting the rules. The goal is a space game where you dock and walk around a city. Areas to discover may be small, so walking at normal speed reaches things in a short time, and there will be transport to speed things up.
+- Food spoiling can be real time.
+- The need for sleep should not be tied directly to a planet. Life may evolve with its planet's day and night, as it did on Earth, but a planet with a two-hour day might evolve life differently, and a body or an NPC moving to another planet won't agree with that planet's cycle. On a planet with a 30-day rotation, nobody stays awake 30 days and sleeps 30 nights: colonists' sleep follows their species. So sleep belongs to the species, in the taxonomy: what they're naturally designed to do. The two are usually proportional, but not tied.
+- Fire and fuel keep their real life cycle: 10 kg of wood can't go up in flames in 10 seconds. That can't be fast.
+- Instead of speeding up the physics of a fire (a fire giving too much energy to smelt faster won't work), change the physics of the process: an ore needs a certain temperature, but only so much time at it to melt. Things harden in a short time after melting. That can be changed safely, and things will conserve pretty well.
+- Could you really make 10 swords from 10 kg of wood? In reality no, but here, why not: if you're in the business of making swords, you use the one fire you made. Small sacrifices like that are acceptable, and it's all configurable.
 
 ## Pausing the stages for the big conversations
 

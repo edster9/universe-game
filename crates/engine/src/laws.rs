@@ -119,6 +119,8 @@ pub enum Refusal {
     NothingToCross(String),
     NotAVessel(String),
     TooDarkToSee,
+    NotAShelter(String),
+    PutItDown(String),
     DontKnowWay(String),
     CannotFill(String),
     WouldSoften {
@@ -228,6 +230,8 @@ impl fmt::Display for Refusal {
                 write!(f, "there's nothing to cross on the way to {place}")
             }
             Refusal::NotAVessel(name) => write!(f, "you can't cross on {name}"),
+            Refusal::NotAShelter(name) => write!(f, "{name} gives no shelter"),
+            Refusal::PutItDown(name) => write!(f, "put the {name} down first"),
             Refusal::TooDarkToSee => write!(f, "it's too dark to see far: wait for daylight"),
             Refusal::CannotFill(name) => write!(f, "{name} can't hold anything poured in"),
             Refusal::Full(name) => write!(f, "{name} is full"),
@@ -347,7 +351,7 @@ pub fn perform(
 /// How many seconds an action takes. Most are quick enough to count as none.
 pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
     match intent {
-        Intent::Sleep { seconds } => sleeping_time(world, actor, *seconds),
+        Intent::Sleep { seconds, .. } => sleeping_time(world, actor, *seconds),
         Intent::Rub { .. } => usual_duration(world, actor, intent),
         _ => {
             // A tired body works more slowly.
@@ -1197,7 +1201,28 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }
         }
 
-        Intent::Sleep { seconds } => {
+        Intent::Sleep { seconds, shelter } => {
+            // A shelter must be here, on the ground, and built to shelter.
+            let shelter = match shelter {
+                Some(name) => {
+                    let found =
+                        find(world, reach.around.iter().copied(), name).ok_or_else(|| {
+                            if find(world, carried(), name).is_some() {
+                                Refusal::PutItDown(name.clone())
+                            } else {
+                                Refusal::NotHere(name.clone())
+                            }
+                        })?;
+                    let shelters = world
+                        .assembly(found)
+                        .is_some_and(|a| world.designs()[&a.design].shelter.is_some());
+                    if !shelters {
+                        return Err(Refusal::NotAShelter(named(world, found)));
+                    }
+                    Some(found)
+                }
+                None => None,
+            };
             let (Some(sleep), Some(awake)) = (
                 world.life(actor).and_then(|l| l.sleep.as_ref()),
                 world.awake_for(actor),
@@ -1212,6 +1237,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             Ok(vec![Change::Sleep {
                 agent: actor,
                 until,
+                shelter,
             }])
         }
 

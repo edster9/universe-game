@@ -420,12 +420,19 @@ impl Session {
                 format!("You find a way to {}.", w.label(to))
             }
             (Intent::Explore, _) => "You search around, but find no new way out.".into(),
-            (Intent::Sleep { .. }, _) => {
+            (Intent::Sleep { .. }, first) => {
                 let time = w
                     .time_of_day()
                     .map(|t| format!(" at {:02}:{:02}", t / 3_600, t / 60 % 60))
                     .unwrap_or_default();
-                format!("You sleep, and wake{time}.")
+                let inside = match first {
+                    Some(&Change::Sleep {
+                        shelter: Some(shelter),
+                        ..
+                    }) => format!(" in {}", name(shelter)),
+                    _ => String::new(),
+                };
+                format!("You sleep{inside}, and wake{time}.")
             }
             (Intent::Drink { .. }, Some(Change::Shift { take, .. })) => format!(
                 "You drink {} of {}.",
@@ -575,7 +582,7 @@ impl Session {
             &Change::Warm { entity, amount, .. } => {
                 format!("{} warms by {amount} from the air", w.label(entity))
             }
-            &Change::Sleep { agent, until } => {
+            &Change::Sleep { agent, until, .. } => {
                 format!("{} sleeps until {until} s", w.label(agent))
             }
             Change::Die { agent, cause } => format!("{} dies of {cause}", w.label(*agent)),

@@ -151,6 +151,8 @@ struct DesignDef {
     holds: bool,
     /// What's built to it encloses heat and burns fuel inside.
     chamber: Option<ChamberDef>,
+    /// The share of a sleeper's body heat it keeps in.
+    shelter: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -1136,6 +1138,7 @@ fn load_life(
                     debt: 0,
                     since: 0,
                     until: 0,
+                    shelter: None,
                 })
             }
             (None, None) => None,
@@ -1277,6 +1280,7 @@ fn load_designs(world: &mut World, defs: &[DesignDef]) -> Result<(), LoadError> 
                     }),
                     None => None,
                 },
+                shelter: def.shelter.as_deref().map(parse_percent).transpose()?,
             },
         );
     }

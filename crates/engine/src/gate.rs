@@ -85,8 +85,13 @@ pub enum Change {
         from: EntityId,
         to: EntityId,
     },
-    /// A body sleeps until `until`, and wakes less tired.
-    Sleep { agent: EntityId, until: u64 },
+    /// A body sleeps until `until`, and wakes less tired, in a shelter if it
+    /// has one.
+    Sleep {
+        agent: EntityId,
+        until: u64,
+        shelter: Option<EntityId>,
+    },
     /// A body dies. It stays where it is, as matter.
     Die { agent: EntityId, cause: String },
     /// Someone starts something they keep doing over time.
@@ -497,7 +502,11 @@ impl World {
                 Ok(())
             }
 
-            &Change::Sleep { agent, until } => {
+            &Change::Sleep {
+                agent,
+                until,
+                shelter,
+            } => {
                 let now = self.tick;
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 let sleep = life.sleep.as_mut().ok_or(Fault::NotAlive(agent))?;
@@ -510,6 +519,7 @@ impl World {
                     .expect("no more than it was");
                 sleep.since = until;
                 sleep.until = until;
+                sleep.shelter = shelter;
                 Ok(())
             }
 

@@ -294,6 +294,8 @@ pub struct Sleep {
     pub since: u64,
     /// The tick it's asleep until.
     pub until: u64,
+    /// What it's sleeping in, if anything.
+    pub shelter: Option<EntityId>,
 }
 
 /// A shape from data, and what it takes to measure it.
@@ -333,6 +335,9 @@ pub struct Design {
     pub holds: bool,
     /// What's built to this design encloses heat and burns fuel inside it.
     pub chamber: Option<Chamber>,
+    /// The share of a sleeper's body heat that what's built to this design
+    /// keeps in, in parts per ten thousand.
+    pub shelter: Option<u64>,
 }
 
 /// A container that shapes liquid setting inside it.

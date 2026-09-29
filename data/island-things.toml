@@ -256,6 +256,12 @@ label = "raft"
 parts = { a = "wood", b = "wood", c = "wood", d = "wood", e = "wood", f = "wood", lashing = "rope" }
 
 [[design]]
+id = "lean-to"
+label = "lean-to"
+parts = { a = "wood", b = "wood", c = "wood", d = "wood", e = "wood", f = "wood", g = "fibre", h = "fibre", i = "fibre", j = "fibre" }
+shelter = "60%"
+
+[[design]]
 id = "fire-ring"
 label = "fire ring"
 holds = true

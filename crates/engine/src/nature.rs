@@ -262,7 +262,11 @@ fn lose_heat(world: &World, dt: u64) -> Vec<Change> {
             .and_then(|l| world.chamber(l).map(|c| (l, c)));
         let difference = u128::from(hotter.mk() - colder.mk());
         let flow = if let Some(life) = world.life.get(&id) {
+            // A shelter keeps in a share of a sleeper's heat.
+            let kept = sheltered(world, id).unwrap_or(0).min(10_000);
             u128::from(life.heat_loss) * difference * u128::from(dt) / 1_000
+                * u128::from(10_000 - kept)
+                / 10_000
         } else if let Some((chamber_id, chamber)) = chamber {
             let total = chamber_capacity[&chamber_id];
             let rate = if total == 0 {
@@ -664,6 +668,17 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
     changes
 }
 
+/// The share of heat kept in for someone asleep in a shelter at the same
+/// place, in parts per ten thousand.
+fn sheltered(world: &World, body: EntityId) -> Option<u64> {
+    let sleep = world.life.get(&body)?.sleep.as_ref()?;
+    let shelter = sleep.shelter.filter(|_| sleep.until > world.tick)?;
+    if world.place_of(shelter) != world.place_of(body) {
+        return None;
+    }
+    world.designs[&world.assembly(shelter)?.design].shelter
+}
+
 /// A body awake too long falls asleep where it is, until rested.
 fn fall_asleep(world: &World, _dt: u64) -> Vec<Change> {
     let mut changes = Vec::new();
@@ -678,6 +693,7 @@ fn fall_asleep(world: &World, _dt: u64) -> Vec<Change> {
         if awake >= sleep.collapse {
             let need = u128::from(awake) * u128::from(sleep.need) / u128::from(sleep.awake.max(1));
             changes.push(Change::Sleep {
+                shelter: None,
                 agent: id,
                 until: world.tick() + u64::try_from(need).unwrap_or(u64::MAX).max(1),
             });

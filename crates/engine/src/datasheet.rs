@@ -68,6 +68,7 @@ pub enum Property {
     Capacity,
     Height,
     PlacesSeen,
+    Shelters,
 }
 
 impl Property {
@@ -122,6 +123,7 @@ impl Property {
             Property::Capacity => "can hold",
             Property::Height => "height",
             Property::PlacesSeen => "places seen",
+            Property::Shelters => "keeps in",
         }
     }
 }
@@ -229,6 +231,15 @@ pub fn measure(world: &World, id: EntityId) -> Datasheet {
         Some(assembly) => assembly.datasheet.clone(),
         None => measure_thing(world, id),
     };
+    if let Some(share) = world
+        .assembly(id)
+        .and_then(|a| world.designs()[&a.design].shelter)
+    {
+        sheet.set(
+            Property::Shelters,
+            Value::Text(format!("{}% of a sleeper's heat", share / 100)),
+        );
+    }
     buoyancy(world, id, &mut sheet);
     sheet
 }

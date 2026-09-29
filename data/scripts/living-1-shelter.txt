@@ -1,0 +1,35 @@
+# Living with the island, stage 1: shelter. Six sticks and four lumps of
+# plant fibre make a lean-to that keeps in 60% of a sleeper's body heat.
+# Slept in on the beach, the night costs only what a body burns at rest; it
+# has to be put down first, and not everything gives shelter.
+world living.toml
+as survivor
+luck average
+
+go forest
+repeat 6
+  gather sticks
+end
+repeat 4
+  gather bushes
+end
+go beach
+assemble lean-to
+datasheet lean-to
+expect said keeps in: 60% of a sleeper's heat
+try sleep in lean-to
+expect said put the lean-to down first
+drop lean-to
+go forest
+gather sticks
+go beach
+drop wood
+try sleep in wood
+expect said gives no shelter
+wait 8 h
+sleep in lean-to for 10 h
+expect said you sleep in the lean-to, and wake at 04:51
+datasheet survivor
+expect said temperature: 310 k
+expect alive
+expect conserved

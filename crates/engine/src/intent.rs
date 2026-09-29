@@ -89,6 +89,8 @@ pub enum Intent {
     /// Sleep until rested, or for a while.
     Sleep {
         seconds: Option<u64>,
+        /// A shelter to sleep in.
+        shelter: Option<String>,
     },
     Drink {
         source: String,
@@ -152,10 +154,16 @@ impl fmt::Display for Intent {
             Intent::Eat { item } => write!(f, "eat {item}"),
             Intent::Explore => f.write_str("explore"),
             Intent::Survey => f.write_str("survey"),
-            Intent::Sleep { seconds: None } => f.write_str("sleep"),
-            Intent::Sleep {
-                seconds: Some(seconds),
-            } => write!(f, "sleep for {seconds} s"),
+            Intent::Sleep { seconds, shelter } => {
+                f.write_str("sleep")?;
+                if let Some(shelter) = shelter {
+                    write!(f, " in {shelter}")?;
+                }
+                if let Some(seconds) = seconds {
+                    write!(f, " for {seconds} s")?;
+                }
+                Ok(())
+            }
             Intent::Drink { source } => write!(f, "drink from {source}"),
             Intent::Gather { source } => write!(f, "gather from {source}"),
             Intent::Divide { item } => write!(f, "divide {item}"),
@@ -306,7 +314,15 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
         "explore" | "search" => Intent::Explore,
         "survey" => Intent::Survey,
         "sleep" => {
-            let time = rest.strip_prefix("for ").unwrap_or(&rest).trim();
+            // "sleep", "sleep for 9 h", "sleep in <shelter>", or both.
+            let (shelter, time) = match rest.strip_prefix("in ") {
+                Some(inside) => match inside.rsplit_once(" for ") {
+                    Some((shelter, time)) => (Some(shelter.trim().to_string()), time.to_string()),
+                    None => (Some(inside.trim().to_string()), String::new()),
+                },
+                None => (None, rest.strip_prefix("for ").unwrap_or(&rest).to_string()),
+            };
+            let time = time.trim();
             let seconds = if time.is_empty() {
                 None
             } else {
@@ -315,7 +331,7 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                         .map_err(|_| ParseError(format!("{time:?} isn't a time like \"2 h\"")))?,
                 )
             };
-            Intent::Sleep { seconds }
+            Intent::Sleep { seconds, shelter }
         }
         "eat" => Intent::Eat {
             item: one("<thing>")?,

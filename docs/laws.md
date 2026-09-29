@@ -62,6 +62,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | A glowing part heats until it sheds its share of the power; it gives light above a temperature and fails at its melting point | in | slice 2 |
 | An assembly can hold things if its design says so; a slot can take any piece of a material | in | stranded 2 |
 | An assembly whose design encloses heat is a chamber | in | stranded 4 |
+| An assembly whose design shelters keeps in a share of a sleeper's body heat, while they sleep in it where it stands | in | living 1 |
 | A shaped piece whose shape casts is a form | in | stranded 4 |
 | A shape whose role is containing holds things up to a mass; a container is filled from a liquid, and what it holds is carried with it | in | where am I? 3 |
 | A container can't hold a liquid its material softens in | in | where am I? 3 |

@@ -58,6 +58,19 @@ burns_to = { smoke = "95%", ash = "5%" }
 density = "300 kg/m3"
 
 [[material]]
+id = "wood"
+label = "wood"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1700 J/(kg*K)"
+hardness = "2"
+energy_density = "16 MJ/kg"
+burns_to = { smoke = "99%", ash = "1%" }
+ignition_point = "570 K"
+burn_speed = "15 g/(m2*s)"
+density = "600 kg/m3"
+
+[[material]]
 id = "ash"
 label = "ash"
 melting_point = "2300 K"
@@ -210,3 +223,14 @@ id = "bar"
 at = "forge"
 mass = "1 kg"
 material = "steel"
+
+# A campfire already burning in the forge yard: lighting anything needs a
+# flame nearby.
+[[item]]
+id = "campfire"
+label = "campfire"
+at = "forge"
+mass = "20 kg"
+fixed = true
+material = "wood"
+temperature = "1000 K"

@@ -463,6 +463,17 @@ impl Session {
             &Change::StartActivity { agent, .. } => format!("{} starts rubbing", w.label(agent)),
             &Change::EndActivity { agent } => format!("{} stops", w.label(agent)),
             &Change::Grow { entity, mass, .. } => format!("{} grows by {mass}", w.label(entity)),
+            &Change::Transform {
+                entity,
+                from,
+                to,
+                mass,
+            } => format!(
+                "{mass} of {} in {} becomes {}",
+                w.materials()[&from].label,
+                w.label(entity),
+                w.materials()[&to].label
+            ),
         }
     }
 

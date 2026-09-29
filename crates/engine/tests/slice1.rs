@@ -229,14 +229,16 @@ fn heating_costs_fuel_and_a_chamber_goes_out_when_it_runs_out() {
     ok(&mut w, "take charcoal-small");
     ok(&mut w, "put charcoal-small in hearth");
 
+    // Only what's in the hearth, and the smoke it makes: the forge's campfire
+    // is burning too, but it isn't this test's fuel.
     let chemical = |w: &World| -> u128 {
-        w.entities()
+        w.contents(hearth)
+            .into_iter()
             .filter_map(|e| w.composition(e))
             .map(|c| matter::chemical_energy(w.materials(), c))
             .sum()
     };
-    let heat = |w: &World| -> u128 { w.total_energy() - chemical(w) };
-    let (chemical_before, heat_before) = (chemical(&w), heat(&w));
+    let (chemical_before, total_before) = (chemical(&w), w.total_energy());
 
     ok(&mut w, "light hearth");
     let peak = std::cell::Cell::new(Temperature::from_mk(0));
@@ -258,7 +260,11 @@ fn heating_costs_fuel_and_a_chamber_goes_out_when_it_runs_out() {
     // All 100 g burned: 3 MJ of chemical energy became exactly 3 MJ of heat.
     let released = 100_000u128 * 30_000_000;
     assert_eq!(chemical_before - chemical(&w), released);
-    assert_eq!(heat(&w) - heat_before, released);
+    assert_eq!(
+        w.total_energy(),
+        total_before,
+        "and every joule of it became heat somewhere"
+    );
 
     // That wasn't enough to melt anything, and it's cooling now.
     let iron = w.material_by_key("iron").unwrap();

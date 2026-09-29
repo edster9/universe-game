@@ -49,5 +49,5 @@ These hold for every design decision unless the owner changes them.
 ## Where things stand
 
 - Slices 0 to 2 are built. See `docs/slices.md`.
-- The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 3 have passed. Next is stage 4, furnace and axe.
+- The stranded challenge (`docs/challenges/stranded.md`) is in progress, ahead of slice 3: stages 1 to 4 have passed. Next is stage 5, timber: felling trees with the axe, where work takes time set by the tool's edge and the effort.
 - Directions recorded for later: skills and a spoken interface (`docs/ideas/skills-and-interface.md`), money (`docs/ideas/money.md`), many universes (`docs/ideas/universes.md`).

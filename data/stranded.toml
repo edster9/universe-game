@@ -17,6 +17,11 @@
 # search finds one six times in ten when they're plentiful. Fish and
 # shellfish grow back from the sea, with energy from sunlight.
 #
+# Stage 4, furnace and axe: bog iron and clay at the stream. Clay fires hard
+# at 900 K; unfired, it slumps well below the heat of molten iron. A furnace
+# of stones and clay burns wood hot enough to melt iron out of its rock but
+# not melt the rock. A mould shaped from clay, once fired, casts an axe head.
+#
 # Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
 # and 300 W working; about 2 kg of water lost a day at rest, twice that when
 # working, plus sweat; death after losing about 7 kg of water (10% of body weight).
@@ -160,6 +165,43 @@ burns_to = { co2 = "100%" }
 density = "1050 kg/m3"
 
 [[material]]
+id = "clay"
+label = "clay"
+melting_point = "1500 K"
+boiling_point = "3500 K"
+specific_heat = "900 J/(kg*K)"
+hardness = "1.5"
+density = "1800 kg/m3"
+becomes = { material = "fired-clay", at = "900 K" }
+
+[[material]]
+id = "fired-clay"
+label = "fired clay"
+melting_point = "2400 K"
+boiling_point = "3500 K"
+specific_heat = "900 J/(kg*K)"
+hardness = "3"
+density = "1800 kg/m3"
+
+[[material]]
+id = "rock"
+label = "rock"
+melting_point = "2200 K"
+boiling_point = "3200 K"
+specific_heat = "800 J/(kg*K)"
+hardness = "5"
+density = "2700 kg/m3"
+
+[[material]]
+id = "iron"
+label = "iron"
+melting_point = "1811 K"
+boiling_point = "3134 K"
+specific_heat = "449 J/(kg*K)"
+hardness = "4"
+density = "7874 kg/m3"
+
+[[material]]
 id = "co2"
 label = "carbon dioxide"
 melting_point = "195 K"
@@ -178,6 +220,35 @@ id = "shaft"
 label = "shaft"
 role = "holding"
 length = "1.5 m"
+
+[[shape]]
+id = "axe-head"
+label = "axe head"
+role = "cutting"
+length = "15 cm"
+
+[[shape]]
+id = "axe-mould"
+label = "axe-head mould"
+role = "casting"
+casts = "axe-head"
+
+[[shape]]
+id = "haft"
+label = "haft"
+role = "holding"
+length = "70 cm"
+
+[[design]]
+id = "axe"
+label = "axe"
+parts = { head = "axe-head", haft = "haft" }
+
+[[design]]
+id = "furnace"
+label = "furnace"
+parts = { a = "stone", b = "stone", c = "stone", d = "stone", e = "stone", f = "stone", g = "clay", h = "clay" }
+chamber = { burn_rate = "4 g", heat_loss = "36 W/K" }
 
 [[design]]
 id = "spear"
@@ -312,3 +383,21 @@ mass = "200 kg"
 fixed = true
 material = "flint"
 pieces = { size = "500 g", find_time = "10 min" }
+
+[[item]]
+id = "bog-iron"
+label = "bog iron in the streambed"
+at = "stream"
+mass = "200 kg"
+fixed = true
+composition = { iron = "50%", rock = "50%" }
+pieces = { size = "2 kg", find_time = "10 min" }
+
+[[item]]
+id = "clay-bank"
+label = "clay in the bank"
+at = "stream"
+mass = "500 kg"
+fixed = true
+material = "clay"
+pieces = { size = "1 kg", find_time = "5 min" }

@@ -45,7 +45,7 @@ type Law = fn(&World, u64) -> Vec<Change>;
 /// `dt` seconds of nature, as one step.
 fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
     let now = world.tick();
-    let laws: [Law; 14] = [
+    let laws: [Law; 15] = [
         burn,
         burn_in_the_open,
         friction,
@@ -54,6 +54,7 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
         lose_heat,
         live,
         grow,
+        transform,
         clear_air,
         limits_of_life,
         finish_activities,
@@ -641,6 +642,27 @@ fn limits_of_life(world: &World, _dt: u64) -> Vec<Change> {
                 agent: id,
                 cause: cause.into(),
             });
+        }
+    }
+    changes
+}
+
+/// A material hot enough to turn into another does, as some earths fire hard.
+fn transform(world: &World, _dt: u64) -> Vec<Change> {
+    let mut changes = Vec::new();
+    for (&id, composition) in &world.matter {
+        let temperature = world.temperature(id).unwrap_or_default();
+        for (&material, &mass) in composition {
+            if let Some((to, at)) = world.materials[&material].becomes
+                && temperature >= at
+            {
+                changes.push(Change::Transform {
+                    entity: id,
+                    from: material,
+                    to,
+                    mass,
+                });
+            }
         }
     }
     changes

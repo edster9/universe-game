@@ -156,6 +156,42 @@ Simplifications to revisit:
 - **Knapping is shaping:** flint is just a little softer than stone on the engine's scale, which isn't true to real hardness but keeps one law for all shaping.
 - **Raw fish is eaten raw.** Cooking isn't modelled.
 
+### Stage 4: furnace and axe. Passed, 2026-09-28.
+
+**From bog iron to an axe.** [stranded-4-axe.txt](../../data/scripts/stranded-4-axe.txt) is the whole recipe, written as a script: in effect, a skill.
+
+1. **Gather everything first:** sticks, grass, twigs, driftwood, clay, bog iron, flint, and twelve stones. Gathering takes hours, and a fire made first would be out before the furnace was ready.
+2. Knock a flint flake and shape a lump of clay into an axe-head mould.
+3. Build a fire ring and a furnace (six stones and two lumps of clay).
+4. Make fire, and light the furnace from it.
+5. The mould, in the furnace, fires hard at 900 K as the furnace heats. Wood takes the furnace to about 1,970 K, which melts the iron (1,811 K) out of its rock but not the rock itself (2,200 K).
+6. Pour the molten iron into the mould and let it all cool for two hours. An iron axe head comes out with a 5 mm edge.
+7. Hone the edge on a stone for 30 minutes, down to 2 mm, grinding off 18 g of iron. Fit a flint-shaped haft.
+
+The mistakes fail on their own: **an unfired mould** can't take the iron (unfired clay slumps at 1,500 K), and **a furnace with no flame nearby** won't light.
+
+**Sabotage check:** switching off clay firing fails the axe proof.
+
+New laws, all data-driven:
+
+- **A furnace is an assembly whose design encloses heat.** The design says so, with its burn rate and heat loss. The slice 1 hearth is the same thing, given whole in data.
+- **A mould is a shaped piece whose shape casts.** Clay worked into an axe-head mould becomes a form.
+- **Materials change at a temperature.** Clay becomes fired clay at 900 K.
+- **Fire comes from fire.** Lighting a furnace or hearth needs something burning within reach. Until now `light` made fire from nothing; the slice 1 forge now has a campfire to light its hearth from.
+- **Sharpening:** rubbing any shaped part against anything solid makes it finer, so an edge can be honed on a stone.
+- **Pouring** can go into a form sitting inside another container, such as a mould in a furnace.
+
+What the attempts found:
+
+- **An engine bug:** a design slot asking for "any piece of clay" took the clay *mould*, which the gate then refused as a part. Such a slot now takes only a plain, unshaped lump.
+- **Order matters, as in real life:** a fire made before hours of gathering has gone out by the time it's needed. And a big log or a mould put on a young fire takes its heat and smothers it.
+
+Simplifications to revisit:
+
+- **Iron melts out of its rock** rather than being reduced to a bloom and hammered, as a real bloomery works.
+- **Metal poured into a form inside a furnace cools in the open**, not at the furnace's temperature.
+- **Moving between places takes no time**, which makes gathering everything first cheaper than it should be.
+
 ## How it's tested
 
 Decided 2026-09-28.

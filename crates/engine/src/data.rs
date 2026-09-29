@@ -82,6 +82,15 @@ struct MaterialDef {
     ignition_point: Option<String>,
     /// How fast its burning surface burns away.
     burn_speed: Option<String>,
+    /// What it turns into, and at what temperature.
+    becomes: Option<BecomesDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BecomesDef {
+    material: String,
+    at: String,
 }
 
 #[derive(Deserialize)]
@@ -94,6 +103,8 @@ struct ShapeDef {
     role: Option<String>,
     length: Option<String>,
     heat_loss: Option<String>,
+    /// For the casting role: the shape it gives liquid that sets inside.
+    casts: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -106,6 +117,8 @@ struct DesignDef {
     /// Things can be put in what's built to it.
     #[serde(default)]
     holds: bool,
+    /// What's built to it encloses heat and burns fuel inside.
+    chamber: Option<ChamberDef>,
 }
 
 #[derive(Deserialize)]
@@ -260,6 +273,15 @@ pub fn load_world(text: &str) -> Result<World, LoadError> {
         let def = load_shape(shape)?;
         if world.shapes.insert(shape.id.clone(), def).is_some() {
             return fail(format!("the shape {:?} is defined twice", shape.id));
+        }
+    }
+    for (id, shape) in &world.shapes {
+        if let Some(casts) = &shape.casts
+            && !world.shapes.contains_key(casts)
+        {
+            return fail(format!(
+                "the shape {id} casts {casts:?}, which isn't a shape"
+            ));
         }
     }
     load_designs(&mut world, &file.designs)?;
@@ -541,6 +563,18 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
                 .map(|v| parse_quantity(v, property::VOLTAGE, "a voltage like \"1.5 V\""))
                 .transpose()?,
             ignition_point: def.ignition_point.as_deref().map(str::parse).transpose()?,
+            becomes: match &def.becomes {
+                Some(becomes) => {
+                    let target = *ids.get(&becomes.material).ok_or_else(|| {
+                        LoadError(format!(
+                            "{} becomes {:?}, which isn't a material",
+                            def.id, becomes.material
+                        ))
+                    })?;
+                    Some((target, becomes.at.parse()?))
+                }
+                None => None,
+            },
             burn_speed: def
                 .burn_speed
                 .as_deref()
@@ -828,9 +862,10 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         Some("glowing") => Some(Role::Glowing),
         Some("source") => Some(Role::Source),
         Some("touching") => Some(Role::Touching),
+        Some("casting") => Some(Role::Casting),
         Some(other) => {
             return fail(format!(
-                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, and touching",
+                "the shape {} has the role {other:?}; roles are cutting, holding, conducting, glowing, source, touching, and casting",
                 def.id
             ));
         }
@@ -851,11 +886,18 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         .as_deref()
         .map(|h| parse_quantity(h, property::HEAT_LOSS, "a heat loss like \"1 mW/K\""))
         .transpose()?;
+    if matches!(role, Some(Role::Casting)) != def.casts.is_some() {
+        return fail(format!(
+            "the shape {} needs both the casting role and what it casts, or neither",
+            def.id
+        ));
+    }
     Ok(world::ShapeDef {
         label: def.label.clone(),
         role,
         length,
         heat_loss,
+        casts: def.casts.clone(),
     })
 }
 
@@ -897,7 +939,19 @@ fn load_designs(world: &mut World, defs: &[DesignDef]) -> Result<(), LoadError> 
             Design {
                 label: def.label.clone(),
                 slots,
-                holds: def.holds,
+                holds: def.holds || def.chamber.is_some(),
+                chamber: match &def.chamber {
+                    Some(chamber) => Some(Chamber {
+                        burn_rate: parse_mass(&def.id, &chamber.burn_rate)?,
+                        heat_loss: parse_quantity(
+                            &chamber.heat_loss,
+                            property::HEAT_LOSS,
+                            "a heat loss like \"30 W/K\"",
+                        )?,
+                        lit: false,
+                    }),
+                    None => None,
+                },
             },
         );
     }

@@ -84,6 +84,7 @@ pub enum Refusal {
     NotThirsty,
     NotGatherable(String),
     NeedsTool { source: String, tool: String },
+    NoFlame(String),
 }
 
 impl fmt::Display for Refusal {
@@ -139,6 +140,7 @@ impl fmt::Display for Refusal {
             Refusal::NotDrinkable(name) => write!(f, "you can't drink {name}"),
             Refusal::NotThirsty => write!(f, "you aren't thirsty"),
             Refusal::NeedsTool { source, tool } => write!(f, "you need a {tool} for {source}"),
+            Refusal::NoFlame(name) => write!(f, "there's no flame nearby to light {name} from"),
             Refusal::NotGatherable(name) => {
                 write!(f, "{name} isn't loose pieces you can gather by hand")
             }
@@ -437,6 +439,18 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if !holds_fuel(world, found) {
                 return Err(Refusal::NoFuel(named(world, found)));
             }
+            // Fire comes from fire: something burning must be within reach.
+            let flame = reach
+                .around
+                .iter()
+                .chain(&reach.inside)
+                .chain(&reach.carried)
+                .any(|&e| {
+                    e != found && (world.is_burning(e) || world.chamber(e).is_some_and(|c| c.lit))
+                });
+            if !flame {
+                return Err(Refusal::NoFlame(named(world, found)));
+            }
             Ok(vec![Change::Light {
                 chamber: found,
                 lit: true,
@@ -451,8 +465,16 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if !world.is_all(found, State::Liquid) {
                 return Err(Refusal::NotLiquid(named(world, found)));
             }
-            let target = find(world, reach.around.iter().copied(), into)
-                .ok_or_else(|| Refusal::NotHere(into.clone()))?;
+            // Into something on the ground, or something sitting in another
+            // container, like a form sitting inside a chamber.
+            let targets = reach
+                .around
+                .iter()
+                .chain(&reach.inside)
+                .copied()
+                .filter(|&t| t != found);
+            let target =
+                find(world, targets, into).ok_or_else(|| Refusal::NotHere(into.clone()))?;
             if !world.is_container(target) {
                 return Err(Refusal::NotAContainer(named(world, target)));
             }
@@ -536,14 +558,19 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             // Rubbing two parts together wears each against the other, and
             // both come out finer than either tool that made them.
             let session = seconds.unwrap_or(settings.rubbing_time);
-            let (a, b) = (world.tolerance(first), world.tolerance(second));
-            if let (Some(a), Some(b)) = (a, b) {
-                // A full session improves by the world's rubbing improvement;
-                // a shorter or longer one in proportion.
+            // Every shaped part being rubbed comes out finer: two parts against
+            // each other, or an edge against something hard. A full session improves
+            // by the world's rubbing improvement; shorter or longer, in
+            // proportion.
+            let parts: Vec<(EntityId, u64)> = [first, second]
+                .into_iter()
+                .filter_map(|p| world.tolerance(p).map(|t| (p, t)))
+                .collect();
+            if !parts.is_empty() {
                 let improvement = u128::from(settings.rubbing_improvement) * u128::from(session)
                     / u128::from(settings.rubbing_time.max(1));
                 let keep = 10_000u64.saturating_sub(u64::try_from(improvement).unwrap_or(10_000));
-                for (part, tolerance) in [(first, a), (second, b)] {
+                for &(part, tolerance) in &parts {
                     let finer = (u128::from(tolerance) * u128::from(keep) / 10_000) as u64;
                     let finer = finer.max(settings.finest_tolerance);
                     if finer < tolerance {
@@ -554,7 +581,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     }
                 }
                 if changes.is_empty() {
-                    return Err(Refusal::AsFineAsItGets(named(world, first)));
+                    return Err(Refusal::AsFineAsItGets(named(world, parts[0].0)));
                 }
             }
 
@@ -639,9 +666,12 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     Requirement::Design(inner) => {
                         world.assembly(part).is_some_and(|a| &a.design == inner)
                     }
+                    // A plain lump of the material, not something already shaped.
                     Requirement::Material(material) => {
                         world.composition(part).and_then(matter::dominant) == Some(*material)
                             && world.is_all(part, State::Solid)
+                            && world.shape(part).is_none()
+                            && !world.is_container(part)
                     }
                 };
                 let part = carried()

@@ -30,7 +30,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Anything that burns catches fire above its ignition temperature, anywhere, and burns at a rate set by its surface | in | stranded 2 |
 | A flame heats what it's piled with: a share of the heat a burning piece releases goes to the things held with it, split by their surfaces | in | stranded 2 |
 | Work becomes heat: rubbing wears dust off the softer thing, and a share of the worker's effort heats the dust | in | stranded 2 |
-| A material can change into another above a temperature (clay fires hard) | planned | stranded 4 |
+| A material can change into another at a temperature (clay fires hard) | in | stranded 4 |
+| Lighting a chamber needs something burning within reach: fire comes from fire | in | slice 1, stranded 4 |
 
 ## Shaping and making
 
@@ -39,7 +40,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | A tool only works material softer than every part of the target | in | slices 1, 2 |
 | Hardness falls as a material heats, to nothing at its melting point | in | slice 1 |
 | A part is at most as precise as the tool that made it | in | slice 2 |
-| Rubbing two parts together makes both finer, slowly, in proportion to the time spent | in | slice 2, stranded 2 |
+| Rubbing makes every shaped part involved finer, slowly, in proportion to the time spent: two parts together, or an edge on a stone | in | slice 2, stranded 2, 4 |
 | Bare hands can divide only what's soft enough | in | stranded 2 |
 | Liquid setting in a form takes its shape, to the form's tolerance | in | slices 1, 2 |
 | Taking material from a fixed source needs a tool harder than it | in | slice 1 |
@@ -59,8 +60,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Where two surfaces touch, resistance grows with their roughness | in | slice 2 |
 | A glowing part heats until it sheds its share of the power; it gives light above a temperature and fails at its melting point | in | slice 2 |
 | An assembly can hold things if its design says so; a slot can take any piece of a material | in | stranded 2 |
-| An assembly that encloses heat acts as a chamber | planned | stranded 4 |
-| A shape whose role is to cast is a form | planned | stranded 4 |
+| An assembly whose design encloses heat is a chamber | in | stranded 4 |
+| A shaped piece whose shape casts is a form | in | stranded 4 |
 | Tension: a material's strength when pulled, measured for a pulling role | planned | stranded 6 |
 | Buoyancy: something floats if it's less dense than the water it displaces | planned | stranded 7 |
 | Propulsion against drag gives speed | planned | stranded 8 |

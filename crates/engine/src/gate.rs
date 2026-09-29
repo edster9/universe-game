@@ -59,6 +59,14 @@ pub enum Change {
         take: Composition,
         place: EntityId,
     },
+    /// `mass` of one material in a piece turns into another, as some earths
+    /// fire hard. Their stored energy must match.
+    Transform {
+        entity: EntityId,
+        from: MaterialId,
+        to: MaterialId,
+        mass: Mass,
+    },
     /// A body works hard until `until`.
     Exert { agent: EntityId, until: u64 },
     /// A body dies. It stays where it is, as matter.
@@ -405,6 +413,27 @@ impl World {
                 Ok(())
             }
 
+            &Change::Transform {
+                entity,
+                from,
+                to,
+                mass,
+            } => {
+                let (a, b) = (&self.materials[&from], &self.materials[&to]);
+                if a.energy_density != b.energy_density {
+                    return Err(Fault::NotConserved("energy"));
+                }
+                let composition = self
+                    .matter
+                    .get_mut(&entity)
+                    .ok_or(Fault::NotMatter(entity))?;
+                remove_material(composition, from, mass).ok_or(Fault::NotEnoughMaterial {
+                    entity,
+                    material: from,
+                })?;
+                add_material(composition, to, mass).ok_or(Fault::Overflow(entity))
+            }
+
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 life.working_until = until;
@@ -466,11 +495,24 @@ impl World {
                         Err(Fault::UnknownShape(shape.clone()))
                     }
                     Some((shape, tolerance)) => {
+                        self.stop_casting(*entity);
                         self.shape_of.insert(*entity, shape.clone());
                         self.tolerance.insert(*entity, *tolerance);
+                        // A shape whose role is to cast makes a form.
+                        if let Some(casts) = self.shapes[shape].casts.clone() {
+                            self.forms.insert(
+                                *entity,
+                                crate::world::Form {
+                                    shape: casts,
+                                    tolerance: *tolerance,
+                                },
+                            );
+                            self.containers.insert(*entity);
+                        }
                         Ok(())
                     }
                     None => {
+                        self.stop_casting(*entity);
                         self.shape_of.remove(entity);
                         self.tolerance.remove(entity);
                         Ok(())
@@ -523,6 +565,10 @@ impl World {
                 if self.designs[design].holds {
                     self.containers.insert(new);
                 }
+                // A design that encloses heat makes a chamber.
+                if let Some(chamber) = self.designs[design].chamber.clone() {
+                    self.chambers.insert(new, chamber);
+                }
                 self.locations.insert(new, *at);
                 for &part in parts {
                     self.locations.insert(part, new);
@@ -540,6 +586,7 @@ impl World {
                 }
                 self.assemblies.remove(&assembly);
                 self.containers.remove(&assembly);
+                self.chambers.remove(&assembly);
                 for components in [&mut self.keys, &mut self.labels] {
                     components.remove(&assembly);
                 }
@@ -592,6 +639,18 @@ impl World {
         self.heat
             .insert(from, heat.checked_sub(taken).expect("part of the heat"));
         Ok((piece, taken))
+    }
+
+    /// A piece shaped to cast stops being a form when its shape changes.
+    fn stop_casting(&mut self, id: EntityId) {
+        let was_casting = self
+            .shape_of
+            .get(&id)
+            .is_some_and(|s| self.shapes[s].casts.is_some());
+        if was_casting {
+            self.forms.remove(&id);
+            self.containers.remove(&id);
+        }
     }
 
     fn must_exist(&self, id: EntityId) -> Result<(), Fault> {

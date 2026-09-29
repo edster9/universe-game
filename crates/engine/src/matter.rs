@@ -41,6 +41,9 @@ pub struct Material {
     pub ignition_point: Option<Temperature>,
     /// How fast its burning surface burns away, in mg per m² per second.
     pub burn_speed: u64,
+    /// At or above this temperature, it turns into another material, as some
+    /// earths fire hard.
+    pub becomes: Option<(MaterialId, Temperature)>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

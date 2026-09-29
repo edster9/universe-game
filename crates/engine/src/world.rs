@@ -212,6 +212,8 @@ pub enum Role {
     /// Presses against another surface to carry current. Its roughness sets
     /// the resistance where they touch.
     Touching,
+    /// Is a form: liquid setting inside it takes the shape it casts.
+    Casting,
 }
 
 /// A shape from data, and what it takes to measure it.
@@ -223,6 +225,8 @@ pub struct ShapeDef {
     pub length: Option<u64>,
     /// Heat it sheds per kelvin above its surroundings, in µW per K.
     pub heat_loss: Option<u64>,
+    /// For a casting shape: the shape liquid takes when it sets inside.
+    pub casts: Option<String>,
 }
 
 /// What fills one slot of a design.
@@ -242,6 +246,8 @@ pub struct Design {
     pub slots: Vec<(String, Requirement)>,
     /// Things can be put in what's built to this design.
     pub holds: bool,
+    /// What's built to this design encloses heat and burns fuel inside it.
+    pub chamber: Option<Chamber>,
 }
 
 /// A container that shapes liquid setting inside it.

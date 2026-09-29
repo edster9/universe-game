@@ -21,6 +21,7 @@ A world engine for a small, networked space game. Design docs are in `docs/`; st
 - Laws in code, things in data: engine code never names a particular material, shape, or item, and `tests/slice1.rs` scans the source to enforce it. Things go in `data/*.toml`.
 - No oracles: names resolve only among what the actor can perceive, and programs will only know what their sensors measure.
 - Every action has an actor.
+- Enough physics: simulate the spirit, not every detail. Prefer fewer, broader laws; put fussiness in data; stop refining once a challenge plays right (see "Enough physics" in docs/ideas/world-engine.md).
 - Challenges (`docs/challenges/`) are tested two ways. **Proofs:** scripts in `data/scripts/` with fixed luck (the right steps succeed; deliberate mistakes end as expected). **Trials:** a survivor playing many seeds, marked `#[ignore]`. Dying is an outcome; only running out of options fails. Record each stage's result in the challenge doc, and each law in `docs/laws.md`.
 - Luck: `World::with_luck(Luck::AVERAGE | GOOD | BAD)` fixes every roll; `with_seed(n)` is normal chance. Prefer fixed luck in proofs: a seed's luck changes whenever the engine's history does.
 - Datasheets (`datasheet.rs`) are measured, never written in data. An assembly is measured once from its parts' datasheets and never looks inside them.

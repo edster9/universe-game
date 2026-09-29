@@ -5,11 +5,11 @@
 # drink from; the sea, which can't be drunk; and shellfish on the rocks,
 # gathered by hand.
 #
-# Stage 2, fire: dry grass, sticks, and driftwood to burn, and loose stones
-# for a fire ring. Rubbing two sticks wears off dust and friction heats it;
-# anything that burns catches fire above its ignition point. Heat moves
-# between things that touch, in proportion to the smaller one's surface, and
-# things lose heat to the air by their surface and, when hot, by glowing.
+# Stage 2, fire: tufts of dry grass, twigs, sticks, and driftwood to burn,
+# and loose stones for a fire ring. Rubbing two sticks wears off dust and
+# friction heats it; anything that burns catches fire above its ignition
+# point; a flame heats what it's piled with. Things lose heat to the air
+# through their surface and, when hot, by glowing.
 #
 # Body figures are ordinary human ones: 70 kg, about 60% water; 80 W at rest
 # and 300 W working; about 2 kg of water lost a day at rest, twice that when
@@ -221,7 +221,7 @@ at = "forest"
 mass = "20 kg"
 fixed = true
 material = "grass"
-pieces = { size = "20 g", find_time = "5 min" }
+pieces = { size = "5 g", find_time = "2 min" }
 
 [[item]]
 id = "twigs"
@@ -230,7 +230,7 @@ at = "forest"
 mass = "20 kg"
 fixed = true
 material = "wood"
-pieces = { size = "50 g", find_time = "5 min" }
+pieces = { size = "20 g", find_time = "3 min" }
 
 [[item]]
 id = "sticks"

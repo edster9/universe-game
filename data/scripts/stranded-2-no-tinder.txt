@@ -4,13 +4,14 @@ world stranded.toml
 as survivor
 luck average
 
-# Gather fuel from the forest and five stones from the hillside, and build a
-# fire ring to hold the fire.
+# Gather fuel in sizes (tufts of grass, twigs, sticks) and five stones, and
+# build a fire ring to hold the fire.
 go forest
 gather sticks
 gather sticks
-gather grass
-gather grass
+repeat 3
+  gather grass
+end
 repeat 3
   gather twigs
 end
@@ -21,7 +22,7 @@ end
 assemble fire ring
 drop fire ring
 
-put wood in ring
+put largest wood in ring
 rub wood against wood into ring for 1 min
 wait 5 min
 look

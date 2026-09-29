@@ -114,6 +114,10 @@ Added 2026-09-28. Before modelling towns, run challenge exercises to see whether
 
 See [challenges/stranded.md](challenges/stranded.md).
 
+### Keep the spirit, not every detail
+
+Added 2026-09-28, after stage 2 (fire). It's fine to simplify laws if that makes things easier. We don't have to be extremely granular to mimic a real-world example. This kind of fine tuning would happen a lot, and we don't want to over-engineer: keep the spirit of something alive.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

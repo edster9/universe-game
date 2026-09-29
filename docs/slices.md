@@ -54,7 +54,7 @@ The worlds are [data/slice1-iron.toml](../data/slice1-iron.toml) and [data/slice
 3. light the hearth;
 4. after about four minutes, see the iron run out of the rock as 3 kg of molten iron;
 5. pour it into the clay mould, where it sets as an iron blade;
-6. wait about 17 minutes for it to cool enough to pick up.
+6. wait for it to cool enough to pick up: about two hours, since heat loss became surface-based in the stranded challenge (17 minutes under the original flat rate).
 
 The same commands in the copper world make a copper blade.
 

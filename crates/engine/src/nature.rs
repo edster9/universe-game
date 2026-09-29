@@ -420,23 +420,11 @@ fn friction(world: &World, dt: u64) -> Vec<Change> {
     changes
 }
 
-/// Things that touch pass heat between them, in proportion to the
-/// difference and to the smaller one's surface. Things in the same container
-/// (other than a chamber, which stirs everything to one temperature) touch,
-/// and so do dust and the two things being rubbed to make it.
+/// Dust and the two things being rubbed to make it pass heat between them,
+/// in proportion to the difference and to the smaller one's surface. (Fire
+/// spreads through a pile by flame, not by touch: see `flame`.)
 fn conduct(world: &World, dt: u64) -> Vec<Change> {
     let mut pairs: Vec<(EntityId, EntityId)> = Vec::new();
-    for &holder in &world.containers {
-        if world.chambers.contains_key(&holder) {
-            continue;
-        }
-        let pieces = matter_pieces(world, holder);
-        for (i, &a) in pieces.iter().enumerate() {
-            for &b in &pieces[i + 1..] {
-                pairs.push((a, b));
-            }
-        }
-    }
     for activity in world.activities.values() {
         let Activity::Rubbing {
             first,
@@ -748,6 +736,7 @@ fn pool(world: &World, _dt: u64) -> Vec<Change> {
             || !world.contents(id).is_empty()
             || !world.is_portable(id)
             || world.life.contains_key(&id)
+            || world.in_use(id)
         {
             continue;
         }

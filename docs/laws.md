@@ -21,9 +21,9 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Temperature is heat energy divided by heat capacity | in | slices 1, 2 |
 | Parts of a piece in different states come apart: gas rises into the air, liquid runs out. A body holds its liquids together | in | slice 1, stranded 1 |
 | Liquids in one container pool; gases in one place mix | in | slice 1 |
-| Things warmer than their surroundings lose heat in proportion to the difference: through their surface (convection), plus radiation, which grows with the fourth power of temperature. (Worlds without a convection setting use a flat rate) | in | slice 1, stranded 1, 2 |
+| Things warmer than their surroundings lose heat in proportion to the difference: through their surface (convection), plus radiation, which grows with the fourth power of temperature. Something of unknown size (a gas) uses a flat rate | in | slice 1, stranded 1, 2 |
 | A piece's volume counts the materials whose density is known; its surface is that of a cube of the same volume | in | slice 2, stranded 2 |
-| Things that touch pass heat, in proportion to the difference and to the smaller one's surface, never past an even temperature | in | stranded 2 |
+| Dust and the things being rubbed to make it pass heat, in proportion to the difference and the smaller one's surface, never past an even temperature. (Inside a pile, fire spreads by flame, not by touch) | in | stranded 2 |
 | Everything inside an insulated chamber shares one temperature | in | slice 1 |
 | Burning turns a fuel into its products and releases its stored energy as heat | in | slice 1, stranded 1 (bodies burn their stores the same way) |
 | Gas in a place's open air passes into its surroundings a little at a time | in | stranded 1 |

@@ -81,6 +81,16 @@ Infinite Craft (2024) lets a language model decide what "fire + water" makes. It
 
 AI is useful as a builder: drafting the prehistory catalog, proposing designs the engine then checks against its laws, or playing NPC engineers and traders.
 
+## Enough physics
+
+Decided 2026-09-28. The laws simulate the spirit of the real world, not its every detail.
+
+- **Prefer fewer, broader laws.** Remove a law before adding a finer one.
+- **Put the knobs in data.** How fussy something is to do (how small tinder must be, how fast things cool) should be a number in a data file, not a new law.
+- **Stop refining when the challenge plays right.** The right steps succeed, the wrong ones fail for the right reason, and nothing depends on exact timing a player couldn't reasonably know.
+
+Fire is the example. The first working version needed grass pulled into pinches, packed before rubbing, and fed in an exact order, because heat passed by touch as well as by flame. Removing the touch law inside piles, and gathering grass in tufts, left a sturdy rhythm: a tuft on the ember, then feed the fire one size at a time once the last has caught.
+
 ## What the engine must know in advance
 
 - The laws of each layer.

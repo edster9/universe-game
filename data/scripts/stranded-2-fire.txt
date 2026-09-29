@@ -1,19 +1,19 @@
-# Stranded, stage 2: fire from two sticks, built the way people really do it.
-# Rubbing wears dust off one stick and friction heats it until it smoulders.
-# Pinches of grass packed around it catch; their flames light a handful of
-# grass, that lights the twigs, and the twigs light the sticks. Nothing in the
-# engine says "tinder before kindling": it comes from size, surface, and heat.
+# Stranded, stage 2: fire from two sticks. Rubbing wears dust off one stick
+# and friction heats it until it smoulders. A tuft of grass on the ember
+# catches; then feed the fire one size at a time, once the last size has
+# caught: more tufts, then twigs, then sticks.
 world stranded.toml
 as survivor
 luck average
 
-# Gather fuel from the forest and five stones from the hillside, and build a
-# fire ring to hold the fire.
+# Gather fuel in sizes (tufts of grass, twigs, sticks) and five stones, and
+# build a fire ring to hold the fire.
 go forest
 gather sticks
 gather sticks
-gather grass
-gather grass
+repeat 3
+  gather grass
+end
 repeat 3
   gather twigs
 end
@@ -24,18 +24,14 @@ end
 assemble fire ring
 drop fire ring
 
-# Pull a handful of grass apart until there are pinches, and pack them in.
-divide grass
-divide grass
-divide grass
-repeat 3
-  put smallest grass in ring
-end
+put grass in ring
 rub wood against wood into ring for 1 min
+wait 30
 look
+expect said lump of dry grass and ash
 expect said burning
-wait 10
-put largest grass in ring
+put grass in ring
+put grass in ring
 wait 10
 repeat 3
   put smallest wood in ring

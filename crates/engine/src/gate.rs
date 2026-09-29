@@ -399,6 +399,7 @@ impl World {
                     && !self.is_place(from)
                     && !self.is_agent(from)
                     && !self.life.contains_key(&from)
+                    && !self.in_use(from)
                     && !self.is_container(from)
                     && self.wallet(from).is_none()
                     && self.contents(from).is_empty();

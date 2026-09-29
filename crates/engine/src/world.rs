@@ -46,9 +46,9 @@ pub struct Settings {
     pub air_clearing: u64,
     /// The longest step nature takes when nothing fast is happening, in seconds.
     pub calm_step: u64,
-    /// Heat passed to open air per m² of surface per K, in mW. `None` means
-    /// the old flat rate: everything loses `open_air_heat_loss` whatever its
-    /// size, and nothing radiates.
+    /// Heat passed to open air per m² of surface per K, in mW. Something
+    /// whose size is unknown (a gas with no density) loses heat at the flat
+    /// `open_air_heat_loss` instead.
     pub convection: Option<u64>,
     /// How well surfaces radiate heat, in parts per ten thousand.
     pub emissivity: u64,
@@ -83,7 +83,7 @@ impl Default for Settings {
             glow_temperature: Temperature::from_mk(1_000_000),
             air_clearing: 10,
             calm_step: 60,
-            convection: None,
+            convection: Some(10_000),
             emissivity: 9_000,
             touch_transfer: 100_000,
             wear_rate: 10,
@@ -376,6 +376,19 @@ impl World {
     /// What a person is busy doing, if anything.
     pub fn activity(&self, id: EntityId) -> Option<&Activity> {
         self.activities.get(&id)
+    }
+
+    /// True if someone's activity is using this piece.
+    pub fn in_use(&self, id: EntityId) -> bool {
+        self.activities.values().any(|a| {
+            let Activity::Rubbing {
+                first,
+                second,
+                dust,
+                ..
+            } = *a;
+            [first, second, dust].contains(&id)
+        })
     }
 
     /// The ID the next new entity will get. Laws use it to refer to

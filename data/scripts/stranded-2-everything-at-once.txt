@@ -1,5 +1,5 @@
-# Stranded, stage 2: rubbing two stones only makes warm stone dust. Stone
-# doesn't burn, so there's no flame to light the grass.
+# Stranded, stage 2: pile everything on before there's a flame, and the
+# ember's heat is spread too thin to light anything.
 world stranded.toml
 as survivor
 luck average
@@ -22,11 +22,15 @@ end
 assemble fire ring
 drop fire ring
 
-put grass in ring
-gather stones
-gather stones
-rub stone against stone into ring for 1 min
-wait 1 min
+repeat 3
+  put grass in ring
+end
+repeat 3
+  put smallest wood in ring
+end
+rub wood against wood into ring for 1 min
+wait 5 min
 look
-expect not said burning
+expect said lump of wood (20 g
+expect not said lump of wood and ash
 expect conserved

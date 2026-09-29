@@ -126,7 +126,7 @@ fn run_chain(text: &str, metal: &str) {
     );
 
     let touchable = w.settings().max_touch_temperature;
-    wait_until(&mut w, 5_000, |w| {
+    wait_until(&mut w, 10_000, |w| {
         w.temperature(blade).unwrap() <= touchable
     })
     .unwrap_or_else(|| panic!("the {metal} blade never cooled"));

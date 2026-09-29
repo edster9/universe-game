@@ -700,6 +700,9 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if digestible.is_empty() {
                 return Err(Refusal::CannotEat(named(world, found)));
             }
+            if world.in_use(found) {
+                return Err(Refusal::CannotEat(named(world, found)));
+            }
             if digestible.len() == composition.len() {
                 Ok(vec![Change::Merge {
                     from: found,

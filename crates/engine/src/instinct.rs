@@ -193,6 +193,39 @@ fn decide(world: &World, me: EntityId) -> Option<(Intent, bool)> {
         return toward(here, &ways, |p| drink_at(p).is_some()).and_then(|p| plain(go(p)));
     }
 
+    // Hungry, it goes first for food lying where it can get at it: on the
+    // ground, or in something it can reach into. Food to be had without
+    // searching is worth going out of its way for.
+    if hungry(world, me, life) {
+        let loose = |p: EntityId| -> Option<Intent> {
+            for thing in world.contents(p) {
+                if world.is_container(thing) && !laws::out_of_reach(world, me, thing) {
+                    if let Some(inside) = world
+                        .held(thing)
+                        .into_iter()
+                        .find(|&i| edible_loose(world, life, i))
+                    {
+                        return Some(Intent::TakeFrom {
+                            item: world.key(inside).to_string(),
+                            from: world.key(thing).to_string(),
+                        });
+                    }
+                } else if edible_loose(world, life, thing) {
+                    return Some(Intent::Take {
+                        item: world.key(thing).to_string(),
+                    });
+                }
+            }
+            None
+        };
+        if let Some(take) = loose(here) {
+            return plain(take);
+        }
+        if let Some(p) = toward(here, &ways, |p| loose(p).is_some()) {
+            return plain(go(p));
+        }
+    }
+
     // Forage when hungry, going to food if there's none here.
     if hungry(world, me, life) {
         let food = |p: EntityId| {
@@ -224,6 +257,18 @@ fn digestible(world: &World, life: &Life, id: EntityId) -> bool {
     world
         .composition(id)
         .is_some_and(|c| c.keys().any(|m| life.digests.contains(m)))
+}
+
+/// Food lying loose: something that can be picked up, solid, and all of it
+/// food for this body.
+fn edible_loose(world: &World, life: &Life, id: EntityId) -> bool {
+    world.is_portable(id)
+        && !world.is_agent(id)
+        && world.assembly(id).is_none()
+        && world.is_all(id, State::Solid)
+        && world
+            .composition(id)
+            .is_some_and(|c| c.keys().all(|m| life.digests.contains(m)))
 }
 
 /// Whether something is nothing but the fluid a body needs, and liquid.

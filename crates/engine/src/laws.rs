@@ -77,6 +77,8 @@ pub enum Refusal {
     NothingMade,
     /// Too stiff to wear.
     TooStiff(String),
+    /// What's in it is held higher than the actor can get.
+    OutOfReach(String),
     /// Something else is already on the feet.
     FeetCovered(String),
     NotWearing(String),
@@ -196,6 +198,7 @@ impl fmt::Display for Refusal {
             }
             Refusal::NothingMade => write!(f, "you haven't made anything to name"),
             Refusal::TooStiff(name) => write!(f, "{name} is too stiff to wear"),
+            Refusal::OutOfReach(name) => write!(f, "{name} holds things higher than you can get"),
             Refusal::FeetCovered(name) => write!(f, "you're already wearing {name} on your feet"),
             Refusal::NotWearing(name) => write!(f, "you aren't wearing {name}"),
             Refusal::AlreadyWearing(name) => write!(f, "you're already wearing {name}"),
@@ -817,6 +820,9 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if !world.is_container(container) {
                 return Err(Refusal::NotAContainer(named(world, actor, container)));
             }
+            if out_of_reach(world, actor, container) {
+                return Err(Refusal::OutOfReach(named(world, actor, container)));
+            }
             let found = find(world, actor, world.held(container), item).ok_or_else(|| {
                 Refusal::NotInside {
                     item: item.clone(),
@@ -840,6 +846,9 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 .ok_or_else(|| Refusal::NotHere(into.clone()))?;
             if !world.is_container(container) {
                 return Err(Refusal::NotAContainer(named(world, actor, container)));
+            }
+            if out_of_reach(world, actor, container) {
+                return Err(Refusal::OutOfReach(named(world, actor, container)));
             }
             if world.is_within(container, found) {
                 return Err(Refusal::IntoItself);
@@ -1591,6 +1600,14 @@ fn treading(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> Vec
         }],
         None => Vec::new(),
     }
+}
+
+/// Whether a barrier keeps `actor` out of a container: it holds what's in
+/// it higher than they can climb or jump.
+pub fn out_of_reach(world: &World, actor: EntityId, container: EntityId) -> bool {
+    let barrier = world.design_of(container).and_then(|d| d.barrier);
+    let reach = world.life(actor).and_then(|l| l.reach);
+    matches!((barrier, reach), (Some(barrier), Some(reach)) if barrier > reach)
 }
 
 /// Whether a walk is on ground rough enough to hurt, for someone with

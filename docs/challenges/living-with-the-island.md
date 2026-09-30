@@ -17,7 +17,7 @@ Animals are the first characters in the world that aren't the player, so this ch
 | 3 | Injury | A tusk or a spear wounds; a cornered boar charges | Wounds bleed, which is faster fluid loss; they heal slowly. Bleeding to death is dying of fluid loss, a limit that already exists |
 | 4 | The hunt | Kill a boar, butcher it, cook the meat, and keep what's left | Butchering divides a body with a cutting tool into meat, fat, and hide, leaving the bones. Cooking is a change at a temperature, as clay firing is. Meat spoils with time, cooked meat more slowly |
 | 5 | Hide and shoes | Scrape and dry a hide into leather, and make shoes and clothing | Walking wears what's between you and the ground: bare feet on rough ground are hurt and slowed, and shoes wear through instead. Worn clothing cuts a body's heat loss |
-| 6 | A barrier or tree house | Keep boars out at night | A barrier blocks what can't get past it; height keeps out animals that can't climb |
+| 6 | A barrier or tree house | Keep boars out at night (became: keep boars out of your stores; see its result) | A barrier blocks what can't get past it; height keeps out animals that can't climb |
 
 ## Left out, to keep it simple
 
@@ -177,4 +177,33 @@ Simplified:
 - **A covering is a covering.** Shoes need no particular shape, and a cloak isn't cut to fit; how much of a body something covers is only its weight.
 - **Drying leather is just heat.** No scraping, and at 330 K it's instant, like cooking; hold times come with the processes decided in the time conversation.
 - **Worn-through shoes are only half used up**, and staying on your feet they neither slip nor fall off.
+
+### Stage 6: keeping boars out. Passed, 2026-09-29.
+
+**The stage changed on the way.** The plan was to keep boars away from a sleeper at night, but in this world boars flee people and only charge when cornered or hurt, so a sleeper was never in danger. What they would go for, and didn't yet, is food. So the stage became keeping boars out of your stores, which is also the "safety is made in the world" rule for time away: a camp is raided while its owner is gone.
+
+[living-6-cache.txt](../../data/scripts/living-6-cache.txt) plays it:
+
+1. **Hunt a boar and butcher it by the stream**: three lumps of fat among the cuts.
+2. **At daylight, build a raised cache**: six sticks and two lumps of bush fibre, poles lashed into a platform. Put two lumps of fat in it, and leave one on the ground.
+3. **Spend the night away**, asleep on the beach.
+4. **Come back**: the fat on the ground is gone; "take fat" finds only the fat *in the raised cache*, and the islander takes it down.
+
+The new laws:
+
+- **Raiding**: a hungry creature goes first for food lying where it can get at it: something loose on the ground, or in something it can reach into, all of it food for its body. Food that needs no searching is worth going out of its way for, within its range. Boars eat fat and roots; they flee a person, so they raid only when nobody's there. Six hungry boars find 2 kg of fat left in their forest within the hour, whatever the luck.
+- **A barrier keeps out what can't get over it**: a design can hold what's in it at a height (the raised cache: 2 m), and every body has a reach, how high it can climb or jump (a person 2.5 m, a boar 1 m). Nothing can take from or put into what it can't reach.
+
+Tests in [living.rs](../../crates/engine/tests/living.rs): fat left in the forest is eaten within a day; fat in a raised cache there survives the day, and the islander takes it back.
+
+**Sabotage checks:** a barrier that keeps nothing out, and boars that never raid, each fail the proofs.
+
+Simplified:
+
+- **The cache is a design the islanders already know**, with its height in data, like the lean-to's shelter. Measuring a barrier's height from its parts would need shapes to have heights; nothing needed that yet.
+- **No fence or pen**: a barrier is something you put things in. Keeping creatures out of a place, rather than out of a container, isn't built.
+- **Nothing threatens a sleeper.** A creature that hunts people would be a new instinct rule, if a later challenge wants one.
+- **A person always gets things down.** Reach is a single height; a cache too high for a person would need something to stand on.
+
+**This completes the challenge.** Stages 1 to 6 have passed.
 

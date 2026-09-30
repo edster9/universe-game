@@ -225,6 +225,9 @@ pub struct Life {
     pub hottest: Temperature,
     /// The most it can carry. `None` means no limit.
     pub carry_limit: Option<Mass>,
+    /// How high it can get, climbing or jumping, in µm: a barrier higher
+    /// than this keeps it out. `None` means nothing does.
+    pub reach: Option<u64>,
     /// Walking speed with nothing to carry, in mm per second. A full load
     /// halves it.
     pub walking_speed: u64,
@@ -466,6 +469,9 @@ pub struct Design {
     /// The share of a sleeper's body heat that what's built to this design
     /// keeps in, in parts per ten thousand.
     pub shelter: Option<u64>,
+    /// How high what's built to this design holds what's in it, in µm: out
+    /// of reach of anything that can't get that high.
+    pub barrier: Option<u64>,
 }
 
 /// A container that shapes liquid setting inside it.

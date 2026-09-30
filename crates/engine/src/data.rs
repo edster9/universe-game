@@ -249,6 +249,9 @@ struct DesignDef {
     chamber: Option<ChamberDef>,
     /// The share of a sleeper's body heat it keeps in.
     shelter: Option<String>,
+    /// How high it holds what's put in it, out of reach of what can't get
+    /// that high.
+    barrier: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -333,6 +336,8 @@ struct LifeDef {
     hottest: String,
     /// The most it can carry.
     carry: Option<String>,
+    /// How high it can get, climbing or jumping.
+    reach: Option<String>,
     /// Walking speed unloaded.
     walk: Option<String>,
     /// The share of working power that lifts the body when climbing.
@@ -1482,6 +1487,11 @@ fn load_life(
             .as_deref()
             .map(|c| parse_mass(id, c))
             .transpose()?,
+        reach: def
+            .reach
+            .as_deref()
+            .map(|r| parse_length(id, r))
+            .transpose()?,
         walking_speed: def
             .walk
             .as_deref()
@@ -1748,6 +1758,11 @@ fn load_designs(world: &mut World, defs: &[DesignDef]) -> Result<(), LoadError> 
                     None => None,
                 },
                 shelter: def.shelter.as_deref().map(parse_percent).transpose()?,
+                barrier: def
+                    .barrier
+                    .as_deref()
+                    .map(|b| parse_length(&def.id, b))
+                    .transpose()?,
             },
         );
     }

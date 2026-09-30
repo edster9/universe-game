@@ -387,6 +387,15 @@ label = "lean-to"
 parts = { a = "wood", b = "wood", c = "wood", d = "wood", e = "wood", f = "wood", g = "fibre", h = "fibre", i = "fibre", j = "fibre" }
 shelter = "60%"
 
+# Poles lashed into a platform, high off the ground: what's put on it is out
+# of reach of anything that can't climb or jump that high.
+[[design]]
+id = "cache"
+label = "raised cache"
+parts = { a = "wood", b = "wood", c = "wood", d = "wood", e = "wood", f = "wood", g = "fibre", h = "fibre" }
+holds = true
+barrier = "2 m"
+
 [[design]]
 id = "fire-ring"
 label = "fire ring"
@@ -404,7 +413,7 @@ knows = [
     "flesh", "meat", "cooked-meat", "fat", "hide", "bone", "fish", "shellfish", "shell",
     "roots", "litter", "ash",
     "flake", "shaft", "rope", "pot",
-    "spear", "raft", "lean-to", "fire-ring",
+    "spear", "raft", "lean-to", "fire-ring", "cache",
     "animal", "boar", "tree", "shrub", "human",
 ]
 
@@ -434,7 +443,7 @@ label = "human"
 parent = "mammal"
 mass = "70 kg"
 composition = { water = "60%", flesh = "26%", fat = "14%" }
-life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish", "meat", "cooked-meat"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K", carry = "40 kg", walk = "1.2 m/s", awake = "16 h", sleep = "8 h", tired_pace = "67%", collapse = "40 h", stores = "75%", clots = "10 min" }
+life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", set_point = "310 K", sweat_rate = "1.5 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "35 kg", digests = ["fat", "shellfish", "fish", "meat", "cooked-meat"], gulp = "0.5 kg", coldest = "303 K", hottest = "316 K", carry = "40 kg", walk = "1.2 m/s", awake = "16 h", sleep = "8 h", tired_pace = "67%", collapse = "40 h", stores = "75%", clots = "10 min", reach = "2.5 m" }
 
 # A wild boar: 80 kg, fed on roots and nuts it roots up, drinking at water,
 # sleeping half the day. It barely sweats. It runs from people, and turns on
@@ -447,7 +456,7 @@ looks = "a large bristly beast"
 parent = "mammal"
 mass = "80 kg"
 composition = { water = "40%", meat = "35%", fat = "15%", bone = "6%", hide = "4%" }
-life = { resting_power = "90 W", working_power = "250 W", heat_loss = "8 W/K", set_point = "311 K", sweat_rate = "0.3 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "25 kg", digests = ["fat", "roots"], gulp = "1 kg", coldest = "303 K", hottest = "317 K", carry = "5 kg", walk = "1.5 m/s", awake = "12 h", sleep = "12 h", tired_pace = "67%", collapse = "36 h", stores = "75%", clots = "10 min" }
+life = { resting_power = "90 W", working_power = "250 W", heat_loss = "8 W/K", set_point = "311 K", sweat_rate = "0.3 kg/h", sweat_heat = "2.4 MJ/kg", fluid = "water", fluid_loss = "2 kg/day", fluid_minimum = "25 kg", digests = ["fat", "roots"], gulp = "1 kg", coldest = "303 K", hottest = "317 K", carry = "5 kg", walk = "1.5 m/s", awake = "12 h", sleep = "12 h", tired_pace = "67%", collapse = "36 h", stores = "75%", clots = "10 min", reach = "1 m" }
 instinct = { flees = ["human"], rest = "30 min", wander = "10%", wary = "3 h", charges = true }
 weapon = { edge = "5 mm" }
 

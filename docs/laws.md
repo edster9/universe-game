@@ -112,6 +112,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | A body stores food beyond half a day's needs as its reserve again, at up to its resting power and an efficiency its data gives, until the reserve is back where it began | in | living 2 |
 | Living things have kinds, in a tree given in data; a kind gives its members a body, and a mind: a person acts on commands, an instinct on its kind's rules | in | living 2 |
 | An instinct flees what its kind fears and keeps away from where it met it a while; sleeps at night; eats what it holds; drinks and forages when it needs to, where a search is worth it; and otherwise rests or wanders its range. It only proposes commands | in | living 2 |
+| A hungry instinct goes first for food lying where it can get at it, loose or in something it can reach into, before searching; it raids only where nobody it fears is | in | living 6 |
 
 ## Wearing
 
@@ -122,6 +123,12 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | What's worn on the feet takes the wear: the part heaviest when it was put on loses the roughness for every km, as dust where you arrive. Half gone, it's worn through, and as good as bare feet | in | living 5 |
 | Bare feet on ground rough enough to hurt bleed for every km, and walk at a share of their pace. Creatures on instinct have feet for their ground | in | living 5 |
 | What's worn about the body keeps in its main material's share of body heat, in proportion to how much of a body it covers; with a shelter, a share of what gets past it | in | living 5 |
+
+## Barriers
+
+| Law | Status | Used by |
+| --- | --- | --- |
+| A design can hold what's in it at a height, and every body has a reach, how high it can climb or jump. Nothing can take from or put into what it can't reach | in | living 6 |
 
 ## Chance and time
 

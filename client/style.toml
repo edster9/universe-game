@@ -1,0 +1,105 @@
+# How the first scene draws things: a colour and a simple form for each
+# material and each kind of creature, until the game has real assets (see
+# docs/ideas/assets.md). The engine never draws; this is the client's own
+# data, keyed by the ids in the world's data files.
+#
+# Forms: rock (a lump), log (lying wood), tree, bush, tuft (grass), pool (a
+# flat patch of liquid), mound (a low heap), person, beast, none (not
+# drawn). `size` is a piece's size in metres.
+
+[kind.human]
+form = "person"
+colour = "#d9a066"
+size = 1.75
+
+[kind.boar]
+form = "beast"
+colour = "#5a3a22"
+size = 0.9
+
+[kind.tree]
+form = "tree"
+colour = "#2e6b30"
+size = 9.0
+
+[kind.shrub]
+form = "bush"
+colour = "#3f8f3a"
+size = 1.6
+
+[kind.shellfish]
+form = "rock"
+colour = "#e8e2d4"
+size = 0.35
+
+[kind.fish]
+form = "none"
+
+[material.wood]
+form = "log"
+colour = "#8b5a2b"
+size = 1.2
+
+[material.stone]
+form = "rock"
+colour = "#8a8a8a"
+size = 0.7
+
+[material.flint]
+form = "rock"
+colour = "#4a4f5a"
+size = 0.5
+
+[material.iron]
+form = "rock"
+colour = "#6b3a2a"
+size = 0.45
+
+[material.water]
+form = "pool"
+colour = "#3a7bd5"
+size = 18.0
+
+[material.seawater]
+form = "none"
+
+[material.clay]
+form = "mound"
+colour = "#b5651d"
+size = 4.0
+
+[material.litter]
+form = "mound"
+colour = "#6b4f2a"
+size = 30.0
+
+[material.roots]
+form = "rock"
+colour = "#7a5a3a"
+size = 0.3
+
+[material.grass]
+form = "tuft"
+colour = "#a4c24a"
+size = 0.7
+
+[material.fibre]
+form = "bush"
+colour = "#6f9a3a"
+size = 1.2
+
+[material.shell]
+form = "rock"
+colour = "#f2eee4"
+size = 0.2
+
+[material.shellfish]
+form = "rock"
+colour = "#e8e2d4"
+size = 0.25
+
+# Anything not listed.
+[fallback]
+form = "rock"
+colour = "#b0a090"
+size = 0.3

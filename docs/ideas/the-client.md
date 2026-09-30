@@ -130,6 +130,21 @@ The owner asked to be convinced first: a benchmark run inside WSL, and the same 
 
 **Settled:** the client is always run as a Windows program, built from WSL. MSYS2 isn't needed; it stays a fallback.
 
+## Built, 2026-09-30: the first scene
+
+The owner: go ahead with Bevy and a basic scene render, built as a native Windows program only from now on ("The first scene, and assets for later" in [requirements.md](../requirements.md)).
+
+`client/` is the game's native client (Bevy 0.19, its own newer Rust, outside the engine's workspace so the proofs never compile it). It runs the engine itself, the same code the tests use, on the companion's island, with the clock running (60 times real speed by default), and draws what the world holds:
+
+- **The land is shaped from the engine's own data:** every place's position and height, and the paths between them. Land reaches around each place and along each path over ground, further for higher places (a mountain's base is wider than a hill's), heights blend between places, and the coast slopes into the sea. Sand, grass, rock, and snow by height. The result is a real island: the snow-capped mountain, the long slope down to the home corner (beach, stream, forest, hillside), and the islet out to sea. Nothing is invented but the shape between places.
+- **Things are drawn from a style file** (`client/style.toml`, the client's own data): a colour and a simple form for each material and kind of creature (rocks, logs, trees, bushes, grass, pools, heaps, figures), until the game has real assets ([assets.md](assets.md)). Each fixed source is a cluster of pieces, more for more mass.
+- **People and creatures move:** each is drawn at their place, or, while walking, between where they set off and where they're going, over the time the walk takes. The engine gained `laws::journey`, which tells any client where a walker is heading and when they set off and arrive; the client never re-derives the laws.
+- **Day and night** follow the world's clock: the sun's arc between sunrise and sunset, and the sky's colour.
+- **Controls:** WASD to fly, E/Q up and down, Shift faster, hold the right mouse button to look; Space pauses the world, [ and ] slow it and speed it up.
+- **Checking without watching:** `--shot file.png --after 5 --from x,y,z --look x,y,z` saves a frame and exits. `client/run.sh` builds it for Windows from WSL, copies it to `C:\Users\edste\universe-game\client`, and starts it.
+
+**Simplified, and next:** an overview of the whole world, not yet one character's view (the engine sends only what a character perceives, and the player's view will follow that); no labels; figures are plain capsules; the program is 108 MB until it's stripped. The rendering conversation and the assets conversation come next.
+
 ## Questions for the owner
 
 1. ~~A native client~~ (decided).

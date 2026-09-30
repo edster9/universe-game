@@ -465,6 +465,18 @@ Added 2026-09-30, answering Claude's report ([ideas/the-client.md](ideas/the-cli
 - We solved it by installing the **MSYS2 MinGW64 shell** on Windows: a Linux-type environment with all the toolchains, where Claude built. All the scripts stayed intact, it built natively for Windows, and the source stayed in a Linux-type format.
 - **Consider that for our first prototype**, unless Claude objects and wants to build directly on Windows. There are no good compilers on the Windows side, but we have the MinGW shell and can install whatever we want in it, Rust or anything else. The owner can give its location and access.
 
+### The first scene, and assets for later
+
+Added 2026-09-30, after the WSL benchmark.
+
+- Go ahead and try a basic scene render, and we'll go from there.
+- **Later we need conversations on assets:** where our 3D assets come from (bushes, trees, everything, people, building pieces). Getting them all created is a challenge of its own: build them ourselves, or get free default game assets, or even paid assets if Claude knows good sources. We need something to work with until the day we have our own graphics people producing genuine content.
+- Starting from the basic spear experience (dictated as "sphere"), we need a stick, a rock: things to build our first layer.
+- The rendering world is a complete world of its own, apart from the game underneath. It's a long journey, and we need a starting point somewhere.
+- **We don't need to build for WSL any more: the point was proven. From now on, always build native Windows clients.**
+
+See [ideas/assets.md](ideas/assets.md) and [ideas/the-client.md](ideas/the-client.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

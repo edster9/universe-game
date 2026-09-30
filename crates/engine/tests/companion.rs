@@ -389,6 +389,29 @@ fn whose_a_thing_is_lives_in_minds_and_only_a_theft_seen_is_remembered() {
 }
 
 #[test]
+fn a_walker_s_journey_is_known_while_they_re_on_their_way() {
+    let (mut w, _) = island(|t| t);
+    let islander = w.find_by_key("survivor").unwrap();
+    let (beach, forest) = (
+        w.find_by_key("beach").unwrap(),
+        w.find_by_key("forest").unwrap(),
+    );
+    assert_eq!(engine::laws::journey(&w, islander), None);
+    let Ok(engine::intent::Command::Act(go)) = engine::intent::parse("go forest") else {
+        panic!("a walk");
+    };
+    let now = w.tick();
+    let started = engine::laws::start(&mut w, islander, go).unwrap();
+    let engine::laws::Started::Due(until) = started else {
+        panic!("a walk takes time");
+    };
+    assert_eq!(
+        engine::laws::journey(&w, islander),
+        Some((beach, forest, now, until))
+    );
+}
+
+#[test]
 fn only_a_mind_of_its_own_takes_offers() {
     let (mut w, _) = island(|t| t);
     say(&mut w, "gather driftwood");

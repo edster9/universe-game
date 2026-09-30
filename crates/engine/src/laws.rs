@@ -2620,6 +2620,19 @@ pub(crate) fn best_edge(world: &World, things: &[EntityId]) -> Option<EntityId> 
         .min_by_key(|&t| (edge_width(world, t), t))
 }
 
+/// Where someone on their way is going: the place they set off from, the
+/// place they're heading for, and when they set off and will arrive. What a
+/// client needs to draw a walker on the path. `None` if they aren't walking.
+pub fn journey(world: &World, actor: EntityId) -> Option<(EntityId, EntityId, u64, u64)> {
+    let pending = world.pending(actor)?;
+    let Intent::Go { place, aboard } = &pending.intent else {
+        return None;
+    };
+    let reach = Reach::of(world, actor).ok()?;
+    let (to, _) = way(world, actor, &reach, place, aboard.as_deref()).ok()?;
+    Some((reach.here, to, pending.since, pending.until))
+}
+
 /// How to point at a thing, rather than name it: "#12". Anyone can point at
 /// what they perceive.
 pub fn pointer(id: EntityId) -> String {

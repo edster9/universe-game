@@ -1,0 +1,20 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT"
+description = "The game's native client: the world drawn from the engine's views"
+
+[dependencies]
+engine = { path = "../crates/engine" }
+bevy = { version = "0.19", default-features = false, features = ["3d", "ui", "free_camera", "png"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.9"
+
+# Dependencies build optimised even in debug builds: Bevy is slow otherwise.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+opt-level = 3

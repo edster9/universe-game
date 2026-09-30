@@ -2,7 +2,7 @@
 resolver = "3"
 members = ["crates/engine", "crates/console"]
 # Prototypes build on their own, with their own dependencies.
-exclude = ["prototypes"]
+exclude = ["prototypes", "client"]
 
 [workspace.package]
 version = "0.1.0"

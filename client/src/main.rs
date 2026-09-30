@@ -8,7 +8,8 @@
 //! Controls: hold the right mouse button and drag to look around the
 //! islander, the wheel to come closer or go further; Enter to type a
 //! command, Esc to stop, ` to resize the console; F to fly free (WASD, E/Q
-//! up and down, Shift faster) and F again to snap back; Space pauses the
+//! up and down, Shift faster) and F again to snap back; B the backpack, V
+//! the body (click it for everything measured); Space pauses the
 //! world, [ and ] slow it down and speed it up.
 //!
 //! Options:
@@ -20,6 +21,7 @@
 //! - `--script <file> [--shots <folder>] [--step <seconds>]` plays a script
 //!   through the console, saving a screenshot at each expectation, and exits
 //!   when it's over (with an error if it failed).
+//! - `--open backpack,body` (or `body-all`) opens those windows at the start.
 //! - `--type "<command>; <command>"` types commands at the start, as the
 //!   player would, for trying things without a keyboard.
 
@@ -34,6 +36,7 @@ use engine::world::{EntityId, World as EngineWorld};
 
 mod camera;
 mod draw;
+mod panels;
 mod terminal;
 mod terrain;
 
@@ -101,6 +104,8 @@ pub struct Options {
     pub step: f32,
     /// Commands typed at the start, separated by ";".
     pub typed: String,
+    /// Windows open at the start: backpack, body, body-all.
+    pub open: String,
 }
 
 fn point(text: Option<&String>) -> Option<Vec3> {
@@ -152,6 +157,7 @@ fn main() {
         shots: arg("--shots").cloned().unwrap_or("shots".into()),
         step: number("--step").unwrap_or(0.4),
         typed: arg("--type").cloned().unwrap_or_default(),
+        open: arg("--open").cloned().unwrap_or_default(),
     };
     let data = data_dir();
     let play = match &options.script {
@@ -181,50 +187,66 @@ fn main() {
     let land = Land::of(play_world(&play));
     let speed = number("--speed").unwrap_or(1.0);
 
-    App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Universe game".into(),
-                resolution: (1600, 900).into(),
-                ..default()
-            }),
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            title: "Universe game".into(),
+            resolution: (1600, 900).into(),
             ..default()
-        }))
-        .add_plugins(FreeCameraPlugin)
-        .insert_resource(ClearColor(Color::srgb(0.55, 0.72, 0.9)))
-        .insert_resource(Sim {
-            play,
-            speed,
-            paused: false,
-            owed: 0.0,
-        })
-        .insert_resource(style)
-        .insert_resource(land)
-        .insert_resource(options)
-        .init_resource::<draw::Kit>()
-        .init_resource::<Console>()
-        .init_resource::<terminal::Shots>()
-        .add_systems(Startup, (setup, camera::setup, terminal::setup))
-        .add_systems(
-            Update,
-            (
-                terminal::type_in,
-                controls,
-                run_world,
-                terminal::play_script,
-                draw::draw_scenery,
-                draw::draw_movers,
-                camera::follow,
-                camera::point,
-                day_and_night,
-                hud,
-                terminal::show,
-                terminal::take_shots,
-                shot,
-            )
-                .chain(),
+        }),
+        ..default()
+    }))
+    .add_plugins(FreeCameraPlugin)
+    .insert_resource(ClearColor(Color::srgb(0.55, 0.72, 0.9)))
+    .insert_resource(Sim {
+        play,
+        speed,
+        paused: false,
+        owed: 0.0,
+    })
+    .insert_resource(style)
+    .insert_resource(land)
+    .insert_resource(options)
+    .init_resource::<draw::Kit>()
+    .init_resource::<Console>()
+    .init_resource::<terminal::Shots>()
+    .add_systems(
+        Startup,
+        (setup, camera::setup, terminal::setup, panels::setup),
+    )
+    .add_systems(
+        Update,
+        (
+            terminal::type_in,
+            controls,
+            panels::keys,
+            run_world,
+            terminal::play_script,
+            draw::draw_scenery,
+            draw::draw_movers,
+            camera::follow,
+            camera::point,
+            day_and_night,
+            hud,
+            terminal::show,
+            panels::show,
+            terminal::take_shots,
+            shot,
         )
-        .run();
+            .chain(),
+    );
+    use_system_font(&mut app);
+    app.run();
+}
+
+/// Windows' own Consolas, when it's there, for the text: it has every sign
+/// the engine writes (µ among them), which the built-in font lacks.
+fn use_system_font(app: &mut App) {
+    let Ok(bytes) = std::fs::read("C:\\Windows\\Fonts\\consola.ttf") else {
+        return;
+    };
+    let mut fonts = app.world_mut().resource_mut::<Assets<Font>>();
+    let _ = fonts.insert(AssetId::default(), Font::from_bytes(bytes));
 }
 
 fn play_world(play: &Play) -> &EngineWorld {
@@ -398,7 +420,7 @@ fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud
     let view = if eye.flying {
         "flying free: WASD, E/Q, Shift; F to go back"
     } else {
-        "right-drag to look, wheel to zoom, F to fly"
+        "right-drag to look, wheel to zoom, F to fly, B backpack, V body"
     };
     for mut text in &mut text {
         text.0 =

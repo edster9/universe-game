@@ -14,6 +14,8 @@ pub const HELP: &str = "\
 Commands:
   look                              describe where you are
   inventory                         what you carry, and your credits
+  backpack                          what you carry, a line each
+  body [all]                        how your body is: its vitals, or everything measured
   go <place>                        walk somewhere
   take <thing> [from <container>]   pick something up
   drop <thing>                      put something down
@@ -168,6 +170,8 @@ impl Session {
             "datasheet" | "ds" => Reply::say(self.datasheet(rest)),
             "designs" => Reply::say(self.designs()),
             "recall" | "memory" => Reply::say(self.recall()),
+            "body" => Reply::say(body(&self.world, self.player, rest == "all").join("\n")),
+            "backpack" | "pack" => Reply::say(backpack(&self.world, self.player).join("\n")),
             _ => self.command(line),
         };
         // News of the player's own death comes with whatever they were doing.
@@ -1255,6 +1259,93 @@ impl Session {
 }
 
 /// A datasheet as indented lines.
+/// The vitals, in the order a body window shows them: water, food,
+/// strength, rest, warmth, and wounds.
+const VITALS: &[datasheet::Property] = &[
+    datasheet::Property::DiedOf,
+    datasheet::Property::BodyFluid,
+    datasheet::Property::StoredEnergy,
+    datasheet::Property::Stamina,
+    datasheet::Property::Awake,
+    datasheet::Property::Temperature,
+    datasheet::Property::Bleeding,
+    datasheet::Property::Working,
+];
+
+/// How a person's body is: what the engine measures about it, the same
+/// numbers `datasheet me` shows, never written. Just the vitals, or with
+/// `all`, everything measured; and what they're wearing.
+pub fn body(world: &World, who: EntityId, all: bool) -> Vec<String> {
+    let sheet = datasheet::measure(world, who);
+    let mut lines: Vec<String> = if all {
+        format_datasheet(&sheet)
+            .into_iter()
+            .map(|l| l.trim().to_string())
+            .collect()
+    } else {
+        VITALS
+            .iter()
+            .filter_map(|&p| sheet.get(p).map(|v| format!("{}: {v}", p.name())))
+            .collect()
+    };
+    let worn: Vec<String> = view::inventory(world, who)
+        .things
+        .iter()
+        .filter(|t| t.notes.iter().any(|n| n == "worn" || n == "on your feet"))
+        .map(|t| t.label.clone())
+        .collect();
+    lines.push(format!("wearing: {}", list_or(&worn, "nothing")));
+    lines
+}
+
+/// What a person carries, a line each: alike things together, with how
+/// many and how much, and what's inside anything; then the load.
+pub fn backpack(world: &World, who: EntityId) -> Vec<String> {
+    let inv = view::inventory(world, who);
+    let mut lines = Vec::new();
+    let mut shown: Vec<(String, u64, Mass, Vec<Thing>)> = Vec::new();
+    for thing in &inv.things {
+        let label = if thing.notes.is_empty() {
+            thing.label.clone()
+        } else {
+            format!("{} ({})", thing.label, thing.notes.join(", "))
+        };
+        match shown
+            .iter_mut()
+            .find(|(l, _, _, inner)| *l == label && inner.is_empty() && thing.contents.is_empty())
+        {
+            Some((_, n, mass, _)) => {
+                *n += 1;
+                *mass = Mass::from_mg(mass.mg() + thing.mass.mg());
+            }
+            None => shown.push((label, 1, thing.mass, thing.contents.clone())),
+        }
+    }
+    for (label, n, mass, inner) in shown {
+        let count = if n > 1 {
+            format!(" x{n}")
+        } else {
+            String::new()
+        };
+        lines.push(format!("{label}{count}: {mass}"));
+        for thing in inner {
+            lines.push(format!("  {}: {}", thing.label, thing.mass));
+        }
+    }
+    if lines.is_empty() {
+        lines.push("nothing".into());
+    }
+    let load = match datasheet::measure(world, who).get(datasheet::Property::Carrying) {
+        Some(v) => format!("carrying {v}"),
+        None => format!("carrying {}", inv.carried),
+    };
+    lines.push(load);
+    if inv.credits > Credits::ZERO {
+        lines.push(format!("{}", inv.credits));
+    }
+    lines
+}
+
 pub fn format_datasheet(sheet: &Datasheet) -> Vec<String> {
     let mut lines = Vec::new();
     if !sheet.made_of.is_empty() {

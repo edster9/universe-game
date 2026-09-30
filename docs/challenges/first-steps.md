@@ -107,3 +107,47 @@ These are visual only: no automatic test looks at pixels.
 - Flames are cones, and smoke is see-through balls, until the assets conversation.
 - Hot things that aren't burning, such as embers and ash at 1,000 K, don't glow.
 - The fire's light is the client's own, sized from the burning mass. It isn't the engine's energy, and doesn't need to be: the engine already decides what's lit ("night, lit by fire") and what you can do by it.
+
+## Stage 4, results (2026-09-30)
+
+**Passed.** Two small windows at the top right, translucent like the console.
+
+**The backpack (B)** lists what the islander carries, a line each, with masses. Alike things go together ("lump of wood x2: 400 g"), with what's inside any container, and the load at the bottom ("carrying 415 g of 40 kg"). It updates as things are gathered, dropped, eaten, or burned.
+
+**The body (V)** shows the vitals, measured by the engine, never written:
+- body fluid (thirst), and the level you die below;
+- stored energy (food);
+- stamina, under players' rules;
+- time awake (tiredness), when the body sleeps;
+- temperature;
+- bleeding, when wounded;
+- whether they're working hard;
+- what they're wearing.
+
+Click the body window for everything the engine measures about the islander (what they're made of, mass, how much they know, and so on), and again for just the vitals.
+
+Both windows are the console's own `backpack` and `body [all]` commands, which the text console now has too, so every number is one `datasheet me` shows. `--open backpack,body` (or `body-all`) opens them at the start, for screenshots.
+
+**Proofs:**
+- The console test `the_body_shows_what_the_datasheet_measures_and_the_backpack_what_is_carried`:
+  - every line of the body, compact or full, is a line of the islander's datasheet (apart from what they're wearing, which comes from what they carry);
+  - the vitals start with full stamina;
+  - the backpack groups two sticks and a tuft exactly as expected;
+  - the body changes after gathering.
+- The script `first-steps-4-backpack-and-body.txt`, played by players' rules:
+  - the backpack before gathering (nothing), after (two lumps of wood and three tufts), and after dropping one tuft (two), then empty;
+  - the body before a hard day's work (stamina 3 MJ of 3 MJ), and after hauling driftwood all day (stamina 0).
+  - Played in the client with both windows open (91 commands, 13 screenshots). The screenshots show the windows following each step, and the beach strewn with hauled driftwood.
+
+**Sabotage checks.** Each of these made the test fail:
+- a body line with a word added to the measured value ("about 3 MJ");
+- the backpack not counting alike things;
+- stamina left out of the vitals.
+
+**Found along the way.** The built-in font has no "µ", so "0 µJ" showed a box. The client now uses Windows' own Consolas when it's there.
+
+**Simplified:**
+- No bars or icons: lines of text, as asked ("labels").
+- The windows update every frame from the engine.
+- Clicking works only on the body window. The backpack opens and closes by its key.
+- Hunger and thirst are shown as what the engine measures (stored energy and body fluid), not as words like "hungry". Under players' rules, vitality keeps both up.

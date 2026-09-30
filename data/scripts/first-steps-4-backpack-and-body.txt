@@ -1,0 +1,51 @@
+# First steps, stage 4: the backpack and the body, as the islander on the
+# companion's island, by players' rules. The backpack lists what they carry,
+# alike things together, as they gather, drop, and eat. The body shows the
+# vitals the engine measures, before and after a hard day's work hauling
+# driftwood. In the client, both windows show these same lines. See
+# docs/challenges/first-steps.md.
+world companion.toml
+as survivor
+luck average
+rules player
+
+backpack
+expect said nothing
+expect said carrying 0 mg of 40 kg
+body
+expect said body fluid
+expect said stamina: 3 mj of 3 mj
+expect said wearing: nothing
+
+go forest
+gather sticks
+gather sticks
+repeat 3
+  gather grass
+end
+backpack
+expect said lump of wood x2: 400 g
+expect said lump of dry grass x3: 15 g
+drop grass
+backpack
+expect said lump of dry grass x2: 10 g
+# Everything down, to haul with empty hands.
+drop grass
+drop grass
+drop wood
+drop wood
+backpack
+expect said nothing
+
+# A hard day's work: hauling driftwood up the beach and setting it down.
+go beach
+repeat 36
+  try gather driftwood
+  try drop wood
+end
+body
+expect said stamina: 0 
+body all
+expect said made of
+expect alive
+expect conserved

@@ -265,6 +265,8 @@ Added 2026-09-29.
 
 Added 2026-09-29. The stages' natural path keeps going until a village with many people, houses, people walking into buildings, trading, and money, and that could be many more stages. At some point we have to steer, and solve the outstanding questions that are piling up, perhaps only in early forms, and then continue the stages.
 
+- **Added 2026-09-29:** settle vitality and what a player sees, and put those to bed, before continuing the island scenarios.
+
 ## Time passing while a player is away
 
 Added 2026-09-29, **for a discussion soon: before the vocabulary conversation and the other planned discussions.** Not to be solved yet.

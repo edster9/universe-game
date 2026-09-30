@@ -75,3 +75,46 @@ Decided with the owner (their words are in "Sacrifices, and universes that are c
 - **Sleep belongs to the species**, in its kind's data, not to the planet. On its home planet it usually lines up with night; a colonist elsewhere sleeps by their body. Instinct should sleep by its own rhythm, not "at night".
 
 Still open: where a player's energy comes from when they don't need food. The proposal is **vitality**, a named inflow the universe grants to players, accounted like sunlight.
+
+## Claude's take on vitality, 2026-09-29
+
+**Not decided.** The problem: in the normal universe players don't need food, drink, or sleep, yet their bodies still walk, fight, and keep warm. "Nothing from nowhere" means that energy must come from somewhere.
+
+### Vitality is a named inflow, like sunlight
+
+The universe grants each player's body a steady flow of energy, **vitality**, at a set power, the way the sun grants the island its daylight. The gate accounts for it by name, exactly as it accounts for sunlight, so conservation still holds and the ledger shows where every joule came from. Its size is a universe setting, per kind of mind: NPCs get none and eat; players get enough to live on.
+
+### What it covers, and what it doesn't
+
+- **Living:** yes. Vitality pays the body's resting upkeep and keeps it warm in ordinary conditions. With the rule switches off, the laws that drain a player's food, water, and wakefulness don't run at all. Switching a law off creates nothing, so no matter comes from nowhere.
+- **Hard work: only up to a point.** Vitality flows at a fixed rate. Work faster than that, running, fighting, hauling, and the difference comes out of a small reserve, **stamina**. When it's gone you're exhausted and must slow down or rest while vitality refills it. That *is* the short-term fatigue law already agreed: it falls out of a capped inflow, with no extra machinery.
+- **Harsh places: no.** Vitality covers ordinary warmth, not a blizzard or vacuum. Extreme cold, heat, or no air still kill, so suits, shelter, and gear matter. That's what makes a space game's equipment worth having.
+- **Healing: no, it needs matter.** A wound loses blood, which is matter, and vitality is only energy. So **healing needs something taken in**: food, or medicine, which a universe can make faster. Players who never need to eat still need to eat, or carry medkits, to recover. That keeps food and medicine worth trading, and keeps hunting and cooking meaningful, as the owner wants.
+
+### What it costs to build
+
+Small: a second named inflow in the gate beside sunlight, a stamina reserve on bodies, and the rule switches per kind of mind. Nothing on the island needs it (castaways eat), so it's built when players first differ from NPCs: at the village.
+
+## Claude's take on what a player sees, 2026-09-29
+
+**Not decided.** The owner has said the game will be 3D and real time, and that visuals carry much of recognition ([vocabulary](vocabulary.md)). This take revises "What a player sees, first" above.
+
+### The end state
+
+- **A 3D view in real time**, walking one to one.
+- **Every thing drawn from what it's really made of:** each shape has a simple form in data (a rod of this length and thickness, a sheet, a bowl, a block), and each material a surface look (colour, sheen, grain). An assembly is drawn by putting its parts' forms together. So the engine can draw a thing nobody designed, a player's first spear or someone's odd ship, because it's drawing parts, not looking up a model. **The one "look" of a thing serves three uses:** the eyes (drawing it), recognition (comparing it with your words' examples), and text (describing it).
+- **Labels from your own words** over what you see: "a spear", "something like a raft", or nothing.
+- **Around the view:** what you carry; your skills as buttons; your map from memory, certain places solid, possible ones dashed; notifications; and a command line or microphone, where the text adventure lives on as the way you tell your character what to do.
+
+### The principles
+
+- **The engine sends only what your character perceives.** The client can't show what it wasn't sent, so a modified client can't cheat (slice 8's test).
+- **The engine never draws.** It sends views as data; clients draw them. The text console, a browser page, and a 3D client are all clients of the same views.
+- **Skills are buttons.** A skill is a saved queue of commands; a button starts it, you watch your character do it at the process's speed, and it can be interrupted.
+- **Everyone is busy until their action ends**, as boars already are: results come at the end, and a walker is on the path, where they can be seen and met.
+
+### The path there
+
+1. **Now:** the text console, for tests and development. Unchanged.
+2. **When the village needs it:** a simple browser page on the same views: the scene as text, the map from memory, what you carry, skill buttons, and the command line. Cheap, and enough for NPCs and two players.
+3. **3D, when the world gets real space.** Today the world is places joined by distances. 3D, flight, and orbit all need positions within space. That's the one big engine change ahead. Recommendation: make it when the climb first needs it, at the latest at flight, or earlier if the owner wants to see things walk around sooner. Forms in data can start earlier, since text descriptions and recognition use them too.

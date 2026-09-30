@@ -61,6 +61,20 @@ Getting back is possible because of how the design was made in the first place. 
 
 That makes the climb one of the game's great challenges: how far can you get from a desert island? Metals, then batteries, wires, and motors, then machine tools, then a chip fab. Then teleportation, and beyond, to things nobody has thought of yet, if the laws allow them. See [universes.md](universes.md).
 
+### The owner's route, and why we take it
+
+**Decided 2026-09-29.** The climb isn't only a challenge for players: **it's how we build the engine.** We climb it ourselves, stage by stage, the way we've climbed so far, so that every law is found and refined by needing it. The released game will most likely start at the space age with everything already existing; island-style starts may become tutorials. The route, following human technology:
+
+1. The island (done: fire, tools, metal, a raft, shelter, hunting).
+2. The village: people, trade, money (slice 3).
+3. Electricity.
+4. Explosives.
+5. Industry: pistons, engines, locomotives.
+6. Flight: airplanes, then rockets.
+7. **A spaceship, built, launched, and put into orbit.**
+
+Each rung's things go in their own shared library, like `data/island-things.toml`, so by the top the libraries hold everything a space-age release starts with. Because every rung was built under the laws, the route back down exists by construction: the verifier below confirms it.
+
 **The engine guarantees only that the route exists.** The verifier checks the whole production graph:
 
 - every design is reachable from raw materials, skill, and time, even if extremely slowly;

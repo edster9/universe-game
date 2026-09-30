@@ -1,5 +1,7 @@
 # The skill learning paradigm
 
+> **Decided 2026-09-29** (see "Decided" at the end): the ladder is the production chain; the finer rules of learning are settled in practice.
+
 Recorded 2026-09-28 **for a major design conversation later.** Nothing here is decided. The requirement is "The skill learning paradigm" in [requirements.md](../requirements.md). It builds on [skills-and-interface.md](skills-and-interface.md), [recognition.md](recognition.md), and [knowledge.md](knowledge.md).
 
 ## The question
@@ -81,3 +83,12 @@ It's the same as the player typing each command, which is allowed. Each command 
 2. Should practice make first attempts slower and less reliable, with the numbers in data per kind of process?
 3. Should practice fade without use? (Suggestion: practice fades slowly; the recipe doesn't.)
 4. Is a pasted script acceptable as long as it plays by the same rules as typing?
+
+## Decided
+
+**2026-09-29.** The owner answered by explaining the purpose of the whole climb ("Why we climb from the Stone Age" in [requirements.md](../requirements.md)): it's how we build and refine the engine, and the released game will most likely start at the space age, with everything already existing. So:
+
+- **The ladder is the production chain, and our own climb is its proof.** There's no skill tree in data. Every rung we build under the laws shows that the route exists.
+- **The player's own knowledge counts.** What it can't skip is materials, time, and practice.
+- **A skill is a recipe in the character's own words, plus practice.** Recipes come from a starting culture, from working things out, from being taught, and from reading, and reading and teaching are gated by vocabulary.
+- **The finer rules are for the released game, and are settled in practice:** how much practice helps, whether it fades, and how pasted scripts are treated. The take's suggestions stand as defaults until then: first attempts slower and less reliable, practice fading slowly while recipes stay, and a pasted script treated like typed commands. During the climb, build only what a stage needs: words and recipes now, and practice as a number when a challenge needs it.

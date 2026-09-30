@@ -338,6 +338,18 @@ Added 2026-09-29. The owner agreed with Claude's second take (recognising by res
 
 See [ideas/vocabulary.md](ideas/vocabulary.md).
 
+## Why we climb from the Stone Age
+
+Added 2026-09-29, in answer to Claude's questions on the skill learning paradigm. **This is the purpose of the training.**
+
+- Starting from scratch and going all the way to the space age serves two purposes, and **its real purpose is to refine our game engine from the practical experience of doing it.** We could have started at the space age with everything pre-trained, but we'd have missed the natural evolutionary experience. It doesn't only make the game's evolution better; it actually defines how we build the game.
+- **When the game is released, it will most likely start at a space-age level already**, so everything will already exist. How much your player knows will depend on what they go and learn and apply, and we take it from there.
+- There might be other variations where we do the island experience. Those might be the tutorials and things like that.
+- I see it more as an exercise in building the game by allowing ourselves to evolve. **I want to get to the space age using the exact way we're doing this.** We'll soon reach the village stage. From there we'd reach electricity, and we might make explosives. We might get into industries and make locomotives and pistons. Then we might make rockets, airplanes, and so on.
+- **I actually want to go through the process of building a spaceship, launching it, and reaching orbit, just like the natural human technological evolution.** I think it will be a very, very practical approach. That's why I'm doing it this way: to refine the engine, the laws, and everything through this process.
+
+See "The climb" in [ideas/production.md](ideas/production.md) and "Decided" in [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

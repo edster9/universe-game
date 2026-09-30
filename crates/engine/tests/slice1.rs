@@ -168,6 +168,7 @@ fn the_engine_names_no_materials_shapes_or_items() {
         include_str!("../../../data/stranded.toml"),
         include_str!("../../../data/island-things.toml"),
         include_str!("../../../data/strangers-words.toml"),
+        include_str!("../../../data/far-folk.toml"),
     ] {
         let data: toml::Table = toml::from_str(text).unwrap();
         // A people's own words are names too.

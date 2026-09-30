@@ -1,0 +1,407 @@
+# The "a companion" challenge: the islander and the stranger, living on the
+# same island. See docs/challenges/a-companion.md. It's the island of
+# living-with-the-island (living.toml), with the stranger, whose people are
+# the far-folk (far-folk.toml): they live by the realistic rules, and nobody
+# plays them.
+
+uses = ["island-things.toml", "far-folk.toml"]
+
+[world]
+reference_temperature = "293 K"
+open_air_heat_loss = "5 W/K"
+max_touch_temperature = "330 K"
+seed = 1
+air_clearing = "0.1%"
+calm_step = "1 min"
+convection = "10 W/(m2*K)"
+emissivity = "90%"
+touch_transfer = "100 W/(m2*K)"
+wear_rate = "10 mg/s"
+friction_share = "50%"
+rubbing_time = "10 min"
+flame_share = "50%"
+hand_hardness = "1"
+explore_time = "30 min"
+explore_chance = "60%"
+lapse_rate = "6.5 K/km"
+planet_radius = "6371 km"
+eye_height = "1.7 m"
+survey_time = "10 min"
+wound_rate = "20 g/s"
+hit_chance = "60%"
+hand_push = "5%"
+drag = "300%"
+day = "24 h"
+starts_at = "8 h"
+sunrise = "6 h"
+sunset = "18 h"
+# Ground rough enough to hurt bare feet: the mountain's stony paths. Sand
+# and the forest floor don't. Each place's roughness is how much of a sole a
+# km of walking there wears away.
+bare_feet_limit = "8 g/km"
+bare_feet_pace = "50%"
+bare_feet_wound = "20 mg/s"
+covers = "2 kg"
+
+[[place]]
+id = "beach"
+label = "the beach"
+exits = ["stream", "forest", "islet"]
+distances = { stream = "400 m", forest = "300 m", islet = "2 km" }
+crossings = { islet = "sea" }
+temperature = "300 K"
+night = "292 K"
+east = "0 m"
+north = "0 m"
+
+[[place]]
+id = "stream"
+label = "the stream"
+rough = "1 g/km"
+exits = ["beach", "forest"]
+distances = { forest = "300 m" }
+height = "20 m"
+temperature = "300 K"
+night = "292 K"
+east = "-300 m"
+north = "-250 m"
+
+[[place]]
+id = "forest"
+label = "the forest"
+rough = "1 g/km"
+exits = ["beach", "stream", "hillside"]
+distances = { hillside = "500 m" }
+height = "30 m"
+temperature = "300 K"
+night = "292 K"
+east = "-300 m"
+north = "50 m"
+
+[[place]]
+id = "hillside"
+label = "the hillside"
+rough = "4 g/km"
+exits = ["forest", "slopes"]
+distances = { slopes = "5 km" }
+height = "150 m"
+temperature = "300 K"
+night = "292 K"
+east = "-750 m"
+north = "0 m"
+
+[[place]]
+id = "slopes"
+label = "the wooded slopes"
+rough = "10 g/km"
+exits = ["hillside", "ridge"]
+distances = { ridge = "5 km" }
+height = "600 m"
+temperature = "300 K"
+night = "292 K"
+east = "-5 km"
+north = "1 km"
+
+[[place]]
+id = "ridge"
+label = "the bare ridge"
+rough = "20 g/km"
+exits = ["slopes", "summit"]
+distances = { summit = "3 km" }
+height = "1200 m"
+temperature = "300 K"
+night = "292 K"
+east = "-9.5 km"
+north = "2 km"
+
+[[place]]
+id = "summit"
+label = "the summit"
+rough = "20 g/km"
+exits = ["ridge"]
+height = "1800 m"
+temperature = "300 K"
+night = "292 K"
+east = "-12 km"
+north = "3 km"
+from_afar = "a mountain, its top bare rock"
+
+[[place]]
+id = "islet"
+label = "the next island"
+exits = ["beach"]
+height = "60 m"
+temperature = "300 K"
+night = "292 K"
+east = "2 km"
+north = "0 m"
+from_afar = "a small rocky island"
+
+[[place]]
+id = "reefs"
+label = "the reef islands"
+east = "15 km"
+north = "-20 km"
+height = "10 m"
+from_afar = "a scatter of small, flat islands"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "village-island"
+label = "the village island"
+east = "40 km"
+north = "38 km"
+height = "40 m"
+from_afar = "a long, low island, with smoke rising from its southern end"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "twin-peaks"
+label = "the twin-peaked island"
+east = "-10 km"
+north = "120 km"
+height = "700 m"
+from_afar = "a high island with two peaks, faint in the haze"
+temperature = "300 K"
+night = "292 K"
+
+[[agent]]
+id = "survivor"
+label = "the islander"
+at = "beach"
+kind = "human"
+culture = "islanders"
+temperature = "310 K"
+
+# The stranger, washed up a while ago: they know their way around, and
+# live on their own, by their standing orders, in their own words. They
+# drink at the stream, live on shellfish from the beach, and sleep there.
+[[agent]]
+id = "stranger"
+label = "the stranger"
+at = "beach"
+kind = "human"
+culture = "far-folk"
+temperature = "310 K"
+mind = "resident"
+remembers = ["beach", "stream", "forest", "hillside"]
+orders = [
+    "hungry, carrying pale flesh: eat pale flesh",
+    "carrying shell, not carrying pale flesh: drop shell",
+    "thirsty, at the stream: drink water",
+    "thirsty: go stream",
+    "hungry, at the beach: gather shellfish",
+    "hungry: go beach",
+    "night, not at the beach: go beach",
+]
+
+# A herd of six boars, keeping to the forest, the stream, the hillside, and
+# the wooded slopes.
+[[agent]]
+id = "boar"
+label = "a boar"
+at = "forest"
+kind = "boar"
+count = 6
+temperature = "311 K"
+range = ["forest", "stream", "hillside", "slopes"]
+
+[[item]]
+id = "sea"
+label = "the sea"
+at = "beach"
+mass = "1000 t"
+fixed = true
+material = "seawater"
+
+# A long rocky shore: enough shellfish to feed someone who lives on them,
+# about 7 kg of bed a day at most, growing back from the sea. (The living
+# world's small bed can't feed a person alone.)
+[[item]]
+id = "shellfish-bed"
+label = "shellfish on the rocks"
+at = "beach"
+mass = "400 kg"
+fixed = true
+composition = { shellfish = "35%", shell = "65%" }
+pieces = { size = "1 kg", find_time = "10 min" }
+grows = { rate = "5%", limit = "600 kg", from = "sea" }
+kind = "shellfish"
+
+[[item]]
+id = "water"
+label = "the stream's water"
+at = "stream"
+mass = "50 t"
+fixed = true
+material = "water"
+
+[[item]]
+id = "driftwood"
+label = "driftwood on the sand"
+at = "beach"
+mass = "100 kg"
+fixed = true
+material = "wood"
+pieces = { size = "2 kg", find_time = "15 min" }
+
+[[item]]
+id = "grass"
+label = "dry grass"
+at = "forest"
+mass = "20 kg"
+fixed = true
+material = "grass"
+pieces = { size = "5 g", find_time = "2 min" }
+
+[[item]]
+id = "twigs"
+label = "dry twigs"
+at = "forest"
+mass = "20 kg"
+fixed = true
+material = "wood"
+pieces = { size = "20 g", find_time = "3 min" }
+
+[[item]]
+id = "sticks"
+label = "fallen sticks"
+at = "forest"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { size = "200 g", find_time = "10 min" }
+
+[[item]]
+id = "stones"
+label = "loose stones"
+at = "hillside"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 min" }
+
+[[item]]
+id = "fish"
+label = "fish in the shallows"
+at = "beach"
+mass = "150 kg"
+fixed = true
+material = "fish"
+pieces = { size = "500 g", find_time = "15 min", chance = "60%", needs = "spear" }
+grows = { rate = "5%", limit = "300 kg", from = "sea" }
+kind = "fish"
+
+[[item]]
+id = "flint"
+label = "flint nodules"
+at = "hillside"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { size = "500 g", find_time = "10 min" }
+
+[[item]]
+id = "bog-iron"
+label = "bog iron in the streambed"
+at = "stream"
+mass = "200 kg"
+fixed = true
+composition = { iron = "50%", rock = "50%" }
+pieces = { size = "2 kg", find_time = "10 min" }
+
+[[item]]
+id = "clay-bank"
+label = "clay in the bank"
+at = "stream"
+mass = "500 kg"
+fixed = true
+material = "clay"
+pieces = { size = "1 kg", find_time = "5 min" }
+
+[[item]]
+id = "trees"
+label = "standing trees"
+at = "forest"
+mass = "20 t"
+fixed = true
+material = "wood"
+pieces = { size = "20 kg", find_time = "1 h", edge = "1 mm", needs = "axe" }
+kind = "tree"
+
+[[item]]
+id = "bushes"
+label = "fibrous bushes"
+at = "forest"
+mass = "500 kg"
+fixed = true
+material = "fibre"
+pieces = { size = "250 g", find_time = "20 min" }
+kind = "shrub"
+
+[[item]]
+id = "slope-sticks"
+label = "fallen sticks"
+at = "slopes"
+mass = "30 kg"
+fixed = true
+material = "wood"
+pieces = { size = "200 g", find_time = "10 min" }
+
+[[item]]
+id = "slope-twigs"
+label = "dry twigs"
+at = "slopes"
+mass = "10 kg"
+fixed = true
+material = "wood"
+pieces = { size = "20 g", find_time = "3 min" }
+
+[[item]]
+id = "slope-grass"
+label = "dry grass"
+at = "slopes"
+mass = "10 kg"
+fixed = true
+material = "grass"
+pieces = { size = "5 g", find_time = "2 min" }
+
+[[item]]
+id = "ridge-stones"
+label = "loose stones"
+at = "ridge"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 min" }
+
+[[item]]
+id = "forest-floor"
+label = "the forest floor"
+at = "forest"
+mass = "100 t"
+fixed = true
+material = "litter"
+
+[[item]]
+id = "forage"
+label = "roots and nuts in the leaf litter"
+at = "forest"
+mass = "150 kg"
+fixed = true
+material = "roots"
+pieces = { size = "500 g", find_time = "15 min", chance = "70%" }
+grows = { rate = "20%", limit = "200 kg", from = "forest-floor" }
+
+[[item]]
+id = "slope-forage"
+label = "roots and nuts in the leaf litter"
+at = "slopes"
+mass = "150 kg"
+fixed = true
+material = "roots"
+pieces = { size = "500 g", find_time = "15 min", chance = "70%" }
+grows = { rate = "20%", limit = "200 kg", from = "forest-floor" }
+

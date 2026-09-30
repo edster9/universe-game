@@ -1,0 +1,31 @@
+# A companion, stage 1: a mind of their own. The stranger lives on the
+# island by their standing orders, in their own words, and nobody plays
+# them. The islander watches their day: gathering shellfish on the beach
+# (leaving the shells), going to the stream for water, and back on the beach
+# for the night. Ten days on, they're still living. See
+# docs/challenges/a-companion.md.
+world companion.toml
+as survivor
+luck average
+rules player
+
+look
+expect said also here: the stranger
+wait 2 h
+look
+expect said lump of shell
+wait 2 h
+go stream
+wait 1 h
+look
+expect said also here: the stranger
+wait until 23:00
+go beach
+look
+expect said also here: the stranger
+wait 10 day
+look
+expect said also here: the stranger
+datasheet stranger
+expect said alive: yes
+expect conserved

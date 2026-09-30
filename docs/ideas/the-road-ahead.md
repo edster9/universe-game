@@ -148,3 +148,7 @@ The gate, memory, and two hidden costs the measurements found. Nothing new to pl
 - **A busy world is still costly.** Whenever anything anywhere is hot or busy (a fire, a cooking pot), the whole world steps every second. Measured by forcing that, the same 121 living things take **58 seconds a game day, about 1,500 times faster than real time.** A live server would keep up easily; a month of it in a test would take half an hour. Each body makes a couple of changes a second in fine steps, and that work is real: the remedy is fewer steps where nothing needs them, which is what local time by the cone of influence does.
 
 Not yet done from step 1: local time by the cone of influence, and creatures acting at the end of what they do.
+
+## Decided, 2026-09-30: step 1 closes here
+
+The owner, on Claude's recommendation: **local time by the cone of influence waits for the hamlet** (step 4), when the benchmark will show a busy village with many places; the calm world runs about 53,000 times faster than real time and a busy one about 1,500 times, enough for the companion and the camp. **Creatures acting at the end of what they do moves to step 2**, where the companion's mind uses the same path.

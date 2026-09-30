@@ -18,7 +18,8 @@ use crate::world::{EntityId, Life, World};
 const WORTH_SEARCHING: u64 = 2_000;
 
 /// Lets every creature acting on instinct that's free start what it does
-/// next. What it does takes as long as it would for anyone; with nothing to
+/// next, as a person would: checked now, and, if it takes time, carried out
+/// when it's due. Something quick keeps it busy a minute; with nothing to
 /// do, it rests for a while.
 pub fn act(world: &mut World) -> Result<(), Fault> {
     let free: Vec<EntityId> = world
@@ -36,43 +37,38 @@ pub fn act(world: &mut World) -> Result<(), Fault> {
         let now = world.tick();
         let rest = world.instinct(creature).map_or(1_800, |i| i.rest);
         let fled_from = world.place_of(creature);
-        let planned = decide(world, creature).and_then(|(intent, fleeing)| {
-            laws::plan(world, creature, &intent)
-                .ok()
-                .map(|p| (intent, p, fleeing))
-        });
-        match planned {
-            Some((intent, plan, fleeing)) => {
-                let mut changes = plan.changes;
-                // Having fled or charged, keep away from there a while.
-                if let (true, Some(place), Some(instinct)) =
-                    (fleeing, fled_from, world.instinct(creature))
-                {
-                    changes.push(Change::Avoid {
-                        agent: creature,
-                        place,
-                        until: now + instinct.wary,
-                    });
-                }
-                changes.push(Change::Occupy {
-                    agent: creature,
-                    until: now + plan.seconds.max(60),
-                });
-                world.apply(
-                    Cause::Action {
-                        actor: creature,
-                        intent,
-                    },
-                    changes,
-                )?;
-            }
-            None => world.apply(
-                Cause::Nature { tick: now },
-                vec![Change::Occupy {
-                    agent: creature,
-                    until: now + rest,
-                }],
-            )?,
+        let started = match decide(world, creature) {
+            Some((intent, fleeing)) => match laws::start(world, creature, intent) {
+                Ok(started) => Some((started, fleeing)),
+                Err(laws::ActError::Refused(_)) => None,
+                Err(laws::ActError::Fault(fault)) => return Err(fault),
+            },
+            None => None,
+        };
+        let mut changes = Vec::new();
+        match &started {
+            Some((laws::Started::Due(_), _)) => {}
+            Some((laws::Started::Now { seconds, .. }, _)) => changes.push(Change::Occupy {
+                agent: creature,
+                until: now + seconds.max(&60),
+            }),
+            None => changes.push(Change::Occupy {
+                agent: creature,
+                until: now + rest,
+            }),
+        }
+        // Having fled or charged, keep away from there a while.
+        if let (Some((_, true)), Some(place), Some(instinct)) =
+            (&started, fled_from, world.instinct(creature))
+        {
+            changes.push(Change::Avoid {
+                agent: creature,
+                place,
+                until: now + instinct.wary,
+            });
+        }
+        if !changes.is_empty() {
+            world.apply(Cause::Nature { tick: now }, changes)?;
         }
     }
     Ok(())
@@ -253,7 +249,7 @@ fn decide(world: &World, me: EntityId) -> Option<(Intent, bool)> {
 }
 
 /// Whether a body could take in something.
-fn digestible(world: &World, life: &Life, id: EntityId) -> bool {
+pub(crate) fn digestible(world: &World, life: &Life, id: EntityId) -> bool {
     world
         .composition(id)
         .is_some_and(|c| c.keys().any(|m| life.digests.contains(m)))
@@ -261,7 +257,7 @@ fn digestible(world: &World, life: &Life, id: EntityId) -> bool {
 
 /// Food lying loose: something that can be picked up, solid, and all of it
 /// food for this body.
-fn edible_loose(world: &World, life: &Life, id: EntityId) -> bool {
+pub(crate) fn edible_loose(world: &World, life: &Life, id: EntityId) -> bool {
     world.is_portable(id)
         && !world.is_agent(id)
         && world.assembly(id).is_none()
@@ -272,7 +268,7 @@ fn edible_loose(world: &World, life: &Life, id: EntityId) -> bool {
 }
 
 /// Whether something is nothing but the fluid a body needs, and liquid.
-fn drinkable(world: &World, life: &Life, id: EntityId) -> bool {
+pub(crate) fn drinkable(world: &World, life: &Life, id: EntityId) -> bool {
     world
         .composition(id)
         .is_some_and(|c| c.len() == 1 && c.contains_key(&life.fluid))
@@ -282,7 +278,7 @@ fn drinkable(world: &World, life: &Life, id: EntityId) -> bool {
 /// Hungry: its reserve is down, and it holds less than a day's food at rest
 /// besides. An instinct keeps about a day's food in it, to see it through
 /// the night.
-fn hungry(world: &World, me: EntityId, life: &Life) -> bool {
+pub(crate) fn hungry(world: &World, me: EntityId, life: &Life) -> bool {
     let (Some((reserve, start)), Some(body)) = (life.reserve, world.composition(me)) else {
         return false;
     };

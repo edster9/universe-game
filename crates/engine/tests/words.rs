@@ -12,9 +12,10 @@ use engine::world::{EntityId, Luck, World};
 const WORDS: &str = include_str!("../../../data/strangers-words.toml");
 const WHERE: &str = include_str!("../../../data/where-am-i.toml");
 const THINGS: &str = include_str!("../../../data/island-things.toml");
+const FAR_FOLK: &str = include_str!("../../../data/far-folk.toml");
 
 fn island() -> (World, EntityId, EntityId) {
-    let w = load_world_with(WORDS, &[THINGS])
+    let w = load_world_with(WORDS, &[THINGS, FAR_FOLK])
         .unwrap()
         .with_luck(Luck::AVERAGE);
     let islander = w.find_by_key("islander").unwrap();

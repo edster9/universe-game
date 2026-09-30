@@ -20,6 +20,7 @@ datasheet boar
 expect said kind: boar (mammal, animal, living thing)
 expect said awake for: asleep
 wait 9 h
+wait 10 min
 look
 expect not said a boar
 expect alive

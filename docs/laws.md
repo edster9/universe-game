@@ -115,6 +115,15 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | An instinct flees what its kind fears and keeps away from where it met it a while; sleeps at night; eats what it holds; drinks and forages when it needs to, where a search is worth it; and otherwise rests or wanders its range. It only proposes commands | in | living 2 |
 | A hungry instinct goes first for food lying where it can get at it, loose or in something it can reach into, before searching; it raids only where nobody it fears is | in | living 6 |
 
+## Minds
+
+| Law | Status | Used by |
+| --- | --- | --- |
+| Someone nobody plays can have a mind: a scope (confined or resident) and standing orders, "conditions: command", in their own words. Free, they take the first order whose conditions they can tell hold and that the laws allow | in | a companion 1 |
+| Underneath every scope is the body: sleep at night when tired, eat what's carried when hungry, drink what's where they stand when thirsty | in | a companion 1 |
+| Confined, with no order to follow, they wait; resident, they look after themselves, going for drink or food where they remember seeing it | in | a companion 1 |
+| Everyone acts the same way: creatures, minds, and players start an action, are busy with it, and see it carried out when it's due | in | a companion 1 |
+
 ## Wearing
 
 | Law | Status | Used by |

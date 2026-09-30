@@ -326,6 +326,17 @@ struct AgentDef {
     /// "player" to live by players' rules: on vitality, with no need of
     /// food, drink, or sleep.
     rules: Option<String>,
+    /// For someone nobody plays: how far their mind thinks, "confined" or
+    /// "resident". See docs/ideas/npc-minds.md.
+    mind: Option<String>,
+    /// Their standing orders, first first: "conditions: command", in their
+    /// own words.
+    #[serde(default)]
+    orders: Vec<String>,
+    /// Places they know already, having been there: they remember what's
+    /// fixed there, and who.
+    #[serde(default)]
+    remembers: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -647,6 +658,7 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
             return fail(format!("the culture {:?} is defined twice", def.id));
         }
     }
+    let mut remembering: Vec<(String, Vec<String>)> = Vec::new();
     for def in &file.agents {
         let count = def.count.unwrap_or(1);
         if count == 0 {
@@ -670,6 +682,24 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
                         "{id} has the rules {other:?}; the only rules so far are \"player\""
                     ));
                 }
+            }
+            if let Some(scope) = &def.mind {
+                let scope = crate::mind::Scope::parse(scope).map_err(LoadError)?;
+                let orders = def
+                    .orders
+                    .iter()
+                    .map(|o| crate::mind::Order::parse(o))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|e| LoadError(format!("{id}: {e}")))?;
+                let agent = world.find_by_key(&id).expect("just loaded");
+                world
+                    .minds
+                    .insert(agent, crate::mind::Mind { scope, orders });
+            } else if !def.orders.is_empty() {
+                return fail(format!("{id} has orders but no mind to follow them"));
+            }
+            if !def.remembers.is_empty() {
+                remembering.push((id.clone(), def.remembers.clone()));
             }
             if let Some(culture) = &def.culture {
                 let lexicon = cultures.get(culture).ok_or_else(|| {
@@ -725,6 +755,25 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
             }
             let item = world.find_by_key(&def.id).expect("just loaded");
             world.kind_of.insert(item, kind.clone());
+        }
+    }
+
+    // What people remember of places they know already, now the places'
+    // things are there.
+    for (id, places) in remembering {
+        let agent = world.find_by_key(&id).expect("loaded above");
+        for key in places {
+            let place = world
+                .find_by_key(&key)
+                .filter(|&p| world.is_place(p))
+                .ok_or_else(|| LoadError(format!("{id} remembers {key:?}, which isn't a place")))?;
+            let things = crate::laws::notable(&world, agent, place);
+            let memory = world
+                .memories
+                .get_mut(&agent)
+                .ok_or_else(|| LoadError(format!("{id} remembers places, but has no memory")))?;
+            memory.places.insert(place);
+            memory.sightings.insert(place, (0, things));
         }
     }
     // Crossings refer to items, which are loaded after places.

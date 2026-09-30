@@ -92,6 +92,8 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
     }
     // Creatures acting on instinct choose what to do next.
     crate::instinct::act(world)?;
+    // People nobody plays do the same, by their minds.
+    crate::mind::act(world)?;
     world.advance_clock(dt);
     // Actions that are due are carried out.
     crate::laws::complete_due(world)

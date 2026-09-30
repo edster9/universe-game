@@ -67,7 +67,7 @@ expect said you wear the shoes of leather
 wear largest leather
 expect said you put on the lump of leather
 inventory
-expect said 1.57743 kg, worn
+expect said 1.577444 kg, worn
 expect said on your feet
 
 # Up the stony paths to the ridge and back: the shoes, not the feet, take

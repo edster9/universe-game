@@ -7,7 +7,7 @@
 # barb, but have never seen flint, a shaft, or a spear. What each sees, and
 # what each can say, goes through their own words.
 
-uses = ["island-things.toml"]
+uses = ["island-things.toml", "far-folk.toml"]
 
 [world]
 reference_temperature = "293 K"
@@ -32,16 +32,6 @@ day = "24 h"
 starts_at = "8 h"
 sunrise = "6 h"
 sunset = "18 h"
-
-[[culture]]
-id = "far-folk"
-knows = [
-    "water", "seawater", "wood", "stone", "rock", "iron", "fibre",
-    "flesh", "meat", "cooked-meat", "fat", "hide", "bone", "fish", "shell",
-    "flake", "rope", "pot", "paddle",
-    "animal", "tree", "human",
-]
-words = { flake = "barb" }
 
 [[place]]
 id = "beach"

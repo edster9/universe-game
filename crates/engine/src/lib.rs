@@ -13,6 +13,7 @@ pub mod intent;
 pub mod journal;
 pub mod laws;
 pub mod matter;
+pub mod mind;
 pub mod nature;
 pub mod units;
 pub mod view;

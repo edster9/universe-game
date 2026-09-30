@@ -2402,6 +2402,21 @@ fn person_here(
     Err(Refusal::NoOneHere(name.to_string()))
 }
 
+/// The thing among `candidates` that `viewer` would take `name` to mean.
+pub(crate) fn finds(
+    world: &World,
+    viewer: EntityId,
+    candidates: impl IntoIterator<Item = EntityId>,
+    name: &str,
+) -> Option<EntityId> {
+    find(world, viewer, candidates, name)
+}
+
+/// Whether `viewer` calls `id` by `name`.
+pub(crate) fn calls(world: &World, viewer: EntityId, id: EntityId, name: &str) -> bool {
+    is_called(world, viewer, id, name)
+}
+
 /// The first candidate called exactly `name`, or failing that, the first
 /// whose description contains `name` ("lump" finds "lump of anything"), as
 /// `viewer` calls things. Candidates with the same label are interchangeable,

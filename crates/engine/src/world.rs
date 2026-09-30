@@ -637,6 +637,8 @@ pub struct World {
     /// How each person's last started action came out, until they hear of
     /// it.
     pub(crate) outcomes: Table<EntityId, Outcome>,
+    /// The minds of people nobody plays.
+    pub(crate) minds: Table<EntityId, crate::mind::Mind>,
     /// What has happened to each person that they haven't heard of yet.
     pub(crate) news: Table<EntityId, Vec<News>>,
     /// Places a creature keeps away from, and until when.
@@ -1160,6 +1162,11 @@ impl World {
     }
 
     /// What someone remembers, if they're a person.
+    /// The mind of someone nobody plays, if they have one.
+    pub fn mind(&self, who: EntityId) -> Option<&crate::mind::Mind> {
+        self.minds.get(&who)
+    }
+
     pub fn memory(&self, who: EntityId) -> Option<&Memory> {
         self.memories.get(&who)
     }
@@ -1555,6 +1562,7 @@ impl World {
             busy_until,
             pending,
             outcomes,
+            minds,
             news,
             avoiding,
             crossings,
@@ -1613,6 +1621,7 @@ impl World {
         f(busy_until);
         f(pending);
         f(outcomes);
+        f(minds);
         f(news);
         f(avoiding);
         f(crossings);
@@ -1661,6 +1670,7 @@ impl World {
         ids.extend(self.pending.originals().into_keys().copied());
         ids.extend(self.outcomes.originals().into_keys().copied());
         ids.extend(self.news.originals().into_keys().copied());
+        ids.extend(self.minds.originals().into_keys().copied());
         ids.extend(self.avoiding.originals().into_keys().copied());
         ids.extend(self.ambient.originals().into_keys().copied());
         ids.extend(self.night_ambient.originals().into_keys().copied());

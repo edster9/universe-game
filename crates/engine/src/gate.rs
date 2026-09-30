@@ -131,6 +131,12 @@ pub enum Change {
     /// A body is wounded, and bleeds at `rate` mg a second, less as it clots.
     /// A wound wakes a sleeper.
     Wound { agent: EntityId, rate: u64 },
+    /// Someone notices something that happened to them, and remembers it
+    /// until they hear of it.
+    Notice {
+        agent: EntityId,
+        news: crate::world::News,
+    },
     /// A body sleeps until `until`, and wakes less tired, in a shelter if it
     /// has one.
     Sleep {
@@ -319,22 +325,24 @@ impl std::error::Error for Fault {}
 impl World {
     /// Applies `changes`, all together or not at all. On success they're
     /// logged. On any fault, the world is left exactly as it was.
+    ///
+    /// Every table notes what it held before each change, so a refused set is
+    /// undone from those notes, and conservation and the world's structure
+    /// are checked only where something changed. Builds with debug checks
+    /// (every test run) also check some sets the long way, and undo them to
+    /// prove the notes restore the world exactly.
     pub fn apply(&mut self, cause: Cause, changes: Vec<Change>) -> Result<(), Fault> {
-        let (mass, credits) = (self.own_mass(), self.total_credits());
-        // Energy is conserved except for what enters as sunlight or vitality,
-        // and mass except for what enters as vitality.
-        let energy = self.own_energy();
+        // One set in eight is audited: enough to catch a table that isn't
+        // recording across thousands of sets, without slowing every proof.
+        #[cfg(debug_assertions)]
+        let audit = self.logged.is_multiple_of(8).then(|| self.audit_start());
+        let totals = Totals::of(self);
+        self.journals(|j| j.begin());
 
-        // Keep a copy to restore if anything goes wrong. The log is set
-        // aside so it isn't copied every time. When worlds grow large, this
-        // should become a record of how to undo each change.
-        let log = std::mem::take(&mut self.log);
-        let before = self.clone();
-        self.log = log;
-
-        let result = changes
-            .iter()
-            .try_for_each(|change| self.apply_one(change))
+        let applied = changes.iter().try_for_each(|change| self.apply_one(change));
+        #[cfg(debug_assertions)]
+        let every_change_applied = applied.is_ok();
+        let result = applied
             .map(|()| {
                 // What's no longer on someone isn't worn any more.
                 let worn: Vec<EntityId> = self.worn.keys().copied().collect();
@@ -346,31 +354,135 @@ impl World {
                     }
                 }
             })
-            .and_then(|()| {
-                if self.own_mass() != mass {
-                    Err(Fault::NotConserved("mass"))
-                } else if self.own_energy() != energy {
-                    Err(Fault::NotConserved("energy"))
-                } else if self.total_credits() != credits {
-                    Err(Fault::NotConserved("credits"))
-                } else {
-                    self.check_invariants().map_err(Fault::Invariant)
-                }
-            });
+            .and_then(|()| self.check_changes(&totals));
+
+        #[cfg(debug_assertions)]
+        if let Some(audit) = audit {
+            self.audit_end(audit, &totals, &result, every_change_applied);
+        }
 
         if let Err(fault) = result {
-            let log = std::mem::take(&mut self.log);
-            *self = before;
-            self.log = log;
+            self.journals(|j| j.undo());
+            totals.restore(self);
             return Err(fault);
         }
-        let seq = self.log.len() as u64;
+        self.journals(|j| j.commit());
         self.log.push(LogEntry {
-            seq,
+            seq: self.logged,
             cause,
             changes,
         });
+        self.logged += 1;
+        // Forget the oldest, a batch at a time.
+        if self.log.len() >= self.log_window.saturating_mul(2).max(1) {
+            let forget = self.log.len() - self.log_window;
+            self.log.drain(..forget);
+        }
         Ok(())
+    }
+
+    /// Checks what a set of changes touched: mass, energy, and credits
+    /// conserved (less what entered from named sources), and the world still
+    /// well formed around everything that changed.
+    fn check_changes(&self, totals: &Totals) -> Result<(), Fault> {
+        let (mass, energy, credits) = self.change_in_totals();
+        if mass != self.vital_matter as i128 - totals.vital_matter as i128 {
+            return Err(Fault::NotConserved("mass"));
+        }
+        let entered = (self.sunlight + self.vital_energy) as i128
+            - (totals.sunlight + totals.vital_energy) as i128;
+        if energy != entered {
+            return Err(Fault::NotConserved("energy"));
+        }
+        if credits != 0 {
+            return Err(Fault::NotConserved("credits"));
+        }
+        self.check_touched().map_err(Fault::Invariant)
+    }
+
+    /// How much total mass, energy, and credits have changed since the
+    /// tables began recording, counting only the entries that changed.
+    fn change_in_totals(&self) -> (i128, i128, i128) {
+        fn diff<K: Ord + Clone, V: Clone>(
+            table: &crate::journal::Table<K, V>,
+            measure: impl Fn(&V) -> u128,
+        ) -> i128 {
+            table
+                .originals()
+                .into_iter()
+                .map(|(key, old)| {
+                    table.get(key).map_or(0, &measure) as i128 - old.map_or(0, &measure) as i128
+                })
+                .sum()
+        }
+        let materials = &self.materials;
+        let mass = diff(&self.masses, |m| u128::from(m.mg()))
+            + diff(&self.matter, matter::total_mass)
+            + diff(&self.reservoir, matter::total_mass);
+        let energy = diff(&self.heat, |e| u128::from(e.uj()))
+            + diff(&self.surroundings, |e| u128::from(e.uj()))
+            + diff(&self.matter, |c| matter::chemical_energy(materials, c))
+            + diff(&self.reservoir, |c| matter::chemical_energy(materials, c))
+            + diff(&self.life, |l| {
+                l.vitality.as_ref().map_or(0, |v| u128::from(v.stamina))
+            });
+        let credits = diff(&self.wallets, |c| u128::from(c.amount()));
+        (mass, energy, credits)
+    }
+
+    #[cfg(debug_assertions)]
+    fn audit_start(&mut self) -> Audit {
+        let log = std::mem::take(&mut self.log);
+        let before = self.clone();
+        self.log = log;
+        Audit {
+            before,
+            mass: self.own_mass(),
+            energy: self.own_energy(),
+            credits: self.total_credits(),
+        }
+    }
+
+    /// The long way: the whole world weighed and checked, compared with the
+    /// quick check if every change could be made; then the set undone from the tables' notes, which must
+    /// give back exactly the world before it.
+    #[cfg(debug_assertions)]
+    fn audit_end(
+        &mut self,
+        audit: Audit,
+        totals: &Totals,
+        quick: &Result<(), Fault>,
+        every_change_applied: bool,
+    ) {
+        let full = if self.own_mass() != audit.mass {
+            Err(Fault::NotConserved("mass"))
+        } else if self.own_energy() != audit.energy {
+            Err(Fault::NotConserved("energy"))
+        } else if self.total_credits() != audit.credits {
+            Err(Fault::NotConserved("credits"))
+        } else {
+            self.check_invariants().map_err(Fault::Invariant)
+        };
+        // A change that couldn't be made at all leaves the world half done;
+        // only a complete set is compared.
+        match (quick, &full) {
+            _ if !every_change_applied => {}
+            (Ok(()), Err(fault)) => panic!("the gate's quick check missed: {fault}"),
+            (Err(fault), Ok(())) => {
+                panic!("the gate's quick check refused what the whole world allows: {fault}")
+            }
+            _ => {}
+        }
+        let log = std::mem::take(&mut self.log);
+        let after = self.clone();
+        self.journals(|j| j.undo());
+        totals.restore(self);
+        assert!(
+            *self == audit.before,
+            "undoing a set of changes didn't give back the world before it"
+        );
+        *self = after;
+        self.log = log;
     }
 
     /// Moves the world's clock on. Nature calls this once a step's changes
@@ -390,7 +502,7 @@ impl World {
                 if self.location(entity).is_none() {
                     return Err(Fault::NotLocated(entity));
                 }
-                self.locations.insert(entity, to);
+                self.put(entity, to);
                 Ok(())
             }
 
@@ -422,7 +534,7 @@ impl World {
                 if !self.is_place(place) {
                     return Err(Fault::NotAPlace(place));
                 }
-                let air = self.surroundings.entry(place).or_default();
+                let air = self.surroundings.or_insert_with(place, Default::default);
                 let from_air = (*air).min(amount);
                 *air = air.checked_sub(from_air).expect("no more than it has");
                 self.sunlight += u128::from(amount.uj() - from_air.uj());
@@ -527,7 +639,7 @@ impl World {
                 let new = self.spawn(None, None);
                 self.matter.insert(new, piece);
                 self.heat.insert(new, heat);
-                self.locations.insert(new, *at);
+                self.put(new, *at);
                 self.portable.insert(new);
                 Ok(())
             }
@@ -552,7 +664,7 @@ impl World {
                     return Err(Fault::NotAPlace(*place));
                 }
                 let (piece, heat) = self.take_part(*from, take)?;
-                let reservoir = self.reservoir.entry(*place).or_default();
+                let reservoir = self.reservoir.or_insert_with(*place, Default::default);
                 for (material, mass) in piece {
                     add_material(reservoir, material, mass).ok_or(Fault::Overflow(*place))?;
                 }
@@ -639,6 +751,14 @@ impl World {
                 Ok(())
             }
 
+            Change::Notice { agent, news } => {
+                self.must_exist(*agent)?;
+                self.news
+                    .or_insert_with(*agent, Vec::new)
+                    .push(news.clone());
+                Ok(())
+            }
+
             &Change::Wound { agent, rate } => {
                 let now = self.tick;
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
@@ -693,7 +813,9 @@ impl World {
                 if !self.is_place(place) {
                     return Err(Fault::NotAPlace(place));
                 }
-                self.avoiding.entry(agent).or_default().insert(place, until);
+                self.avoiding
+                    .or_insert_with(agent, Default::default)
+                    .insert(place, until);
                 Ok(())
             }
 
@@ -957,7 +1079,7 @@ impl World {
                 for components in [&mut self.keys, &mut self.labels, &mut self.shape_of] {
                     components.remove(&from);
                 }
-                self.locations.remove(&from);
+                self.unput(from);
                 self.portable.remove(&from);
                 self.forms.remove(&from);
                 self.tolerance.remove(&from);
@@ -1055,9 +1177,9 @@ impl World {
                 if let Some(chamber) = def.and_then(|d| d.chamber) {
                     self.chambers.insert(new, chamber);
                 }
-                self.locations.insert(new, *at);
+                self.put(new, *at);
                 for &part in parts {
-                    self.locations.insert(part, new);
+                    self.put(part, new);
                 }
                 Ok(())
             }
@@ -1068,7 +1190,7 @@ impl World {
                 }
                 let at = self.location(assembly).ok_or(Fault::NotLocated(assembly))?;
                 for part in self.contents(assembly) {
-                    self.locations.insert(part, at);
+                    self.put(part, at);
                 }
                 self.assemblies.remove(&assembly);
                 self.containers.remove(&assembly);
@@ -1076,7 +1198,7 @@ impl World {
                 for components in [&mut self.keys, &mut self.labels] {
                     components.remove(&assembly);
                 }
-                self.locations.remove(&assembly);
+                self.unput(assembly);
                 self.portable.remove(&assembly);
                 Ok(())
             }
@@ -1154,7 +1276,7 @@ impl World {
                 if !self.is_place(id) {
                     return Err(Fault::NotAPlace(id));
                 }
-                (self.surroundings.entry(id).or_default(), id)
+                (self.surroundings.or_insert_with(id, Default::default), id)
             }
         };
         *store = store.checked_sub(amount).ok_or(Fault::NotEnoughHeat(id))?;
@@ -1168,7 +1290,7 @@ impl World {
                 if !self.is_place(id) {
                     return Err(Fault::NotAPlace(id));
                 }
-                (self.surroundings.entry(id).or_default(), id)
+                (self.surroundings.or_insert_with(id, Default::default), id)
             }
         };
         *store = store.checked_add(amount).ok_or(Fault::Overflow(id))?;
@@ -1221,4 +1343,39 @@ fn add_material(composition: &mut Composition, material: MaterialId, mass: Mass)
     let have = composition.entry(material).or_default();
     *have = have.checked_add(mass)?;
     Some(())
+}
+
+/// The running totals the gate keeps outside the tables, as they were before
+/// a set of changes.
+struct Totals {
+    next_id: u32,
+    sunlight: u128,
+    vital_energy: u128,
+    vital_matter: u128,
+}
+
+impl Totals {
+    fn of(world: &World) -> Totals {
+        Totals {
+            next_id: world.next_id,
+            sunlight: world.sunlight,
+            vital_energy: world.vital_energy,
+            vital_matter: world.vital_matter,
+        }
+    }
+
+    fn restore(&self, world: &mut World) {
+        world.next_id = self.next_id;
+        world.sunlight = self.sunlight;
+        world.vital_energy = self.vital_energy;
+        world.vital_matter = self.vital_matter;
+    }
+}
+
+#[cfg(debug_assertions)]
+struct Audit {
+    before: World,
+    mass: u128,
+    energy: u128,
+    credits: u128,
 }

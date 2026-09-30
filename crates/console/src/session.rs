@@ -8,7 +8,7 @@ use engine::matter;
 use engine::nature;
 use engine::units::{self, Credits, Energy, Mass};
 use engine::view::{self, Thing};
-use engine::world::{Claim, EntityId, Requirement, World};
+use engine::world::{Claim, EntityId, News, Requirement, World};
 
 pub const HELP: &str = "\
 Commands:
@@ -157,7 +157,6 @@ impl Session {
             Ok(Command::Act(intent)) => {
                 let started = self.world.tick();
                 let was_asleep = self.world.is_asleep(self.player);
-                let log_from = self.world.log().len();
                 match laws::perform(&mut self.world, self.player, intent.clone()) {
                     Ok(changes) => {
                         let spent = self.world.tick() - started;
@@ -177,7 +176,7 @@ impl Session {
                         let text = if matches!(intent, Intent::Sleep { .. }) {
                             text
                         } else {
-                            self.with_collapse(text, was_asleep, log_from)
+                            self.with_collapse(text, was_asleep)
                         };
                         Reply::say(text)
                     }
@@ -294,7 +293,6 @@ impl Session {
             units::parse_quantity(time, units::property::DURATION, "a time").ok()
         };
         let was_asleep = self.world.is_asleep(self.player);
-        let log_from = self.world.log().len();
         match seconds {
             Some(n) if (1..=MAX_WAIT).contains(&n) => match nature::run(&mut self.world, n) {
                 Ok(()) if n == 1 => {
@@ -302,11 +300,8 @@ impl Session {
                     Reply::say(text)
                 }
                 Ok(()) => {
-                    let text = self.with_collapse(
-                        format!("{} passes.", units::show_duration(n)),
-                        was_asleep,
-                        log_from,
-                    );
+                    let text = self
+                        .with_collapse(format!("{} passes.", units::show_duration(n)), was_asleep);
                     Reply::say(self.with_outcome(text))
                 }
                 Err(fault) => Reply::refuse(format!("!! engine fault: {fault}")),
@@ -344,13 +339,11 @@ impl Session {
             return Reply::say(self.with_outcome("No time passes.".into()));
         }
         let was_asleep = self.world.is_asleep(self.player);
-        let log_from = self.world.log().len();
         match nature::run(&mut self.world, seconds) {
             Ok(()) => {
                 let text = self.with_collapse(
                     format!("{} passes.", units::show_duration(seconds)),
                     was_asleep,
-                    log_from,
                 );
                 Reply::say(self.with_outcome(text))
             }
@@ -359,39 +352,22 @@ impl Session {
     }
 
     /// Adds news of the player having dropped asleep from exhaustion, if
-    /// they were awake before (`was_asleep` is false).
-    /// Also adds news of anyone who attacked the player since `log_from`.
-    fn with_collapse(&self, text: String, was_asleep: bool, log_from: usize) -> String {
-        let w = &self.world;
+    /// they were awake before (`was_asleep` is false), and of anyone who went
+    /// for them since they last heard.
+    fn with_collapse(&mut self, text: String, was_asleep: bool) -> String {
         let mut text = text;
-        for entry in &w.log()[log_from.min(w.log().len())..] {
-            let Cause::Action {
-                actor,
-                intent: Intent::Attack { target, .. },
-            } = &entry.cause
-            else {
-                continue;
-            };
-            if *actor == self.player || target != w.key(self.player) {
-                continue;
-            }
-            let wounded = entry.changes.iter().find_map(|c| match c {
-                &Change::Wound { agent, rate } if agent == self.player => Some(rate),
-                _ => None,
-            });
-            text = match wounded {
+        for news in self.world.take_news(self.player) {
+            let News::Attacked { by, wound } = news;
+            let who = sentence_case(&self.world.label_for(self.player, by));
+            text = match wound {
                 Some(rate) => format!(
-                    "{text}\n{} goes for you, and wounds you: you're bleeding {} a second.",
-                    sentence_case(&w.label_for(self.player, *actor)),
+                    "{text}\n{who} goes for you, and wounds you: you're bleeding {} a second.",
                     Mass::from_mg(rate)
                 ),
-                None => format!(
-                    "{text}\n{} goes for you, and misses.",
-                    sentence_case(&w.label_for(self.player, *actor))
-                ),
+                None => format!("{text}\n{who} goes for you, and misses."),
             };
         }
-        if !was_asleep && w.is_asleep(self.player) {
+        if !was_asleep && self.world.is_asleep(self.player) {
             format!("{text}\nYou're exhausted, and fall asleep where you are.")
         } else {
             text
@@ -1078,6 +1054,10 @@ impl Session {
                 w.label(agent),
                 Mass::from_mg(rate)
             ),
+            Change::Notice {
+                agent,
+                news: News::Attacked { by, .. },
+            } => format!("{} knows {} went for them", w.label(*agent), w.label(*by)),
             &Change::Occupy { agent, until } => {
                 format!("{} is busy until {until} s", w.label(agent))
             }

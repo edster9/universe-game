@@ -10,6 +10,7 @@ pub mod datasheet;
 pub mod gate;
 pub mod instinct;
 pub mod intent;
+pub mod journal;
 pub mod laws;
 pub mod matter;
 pub mod nature;

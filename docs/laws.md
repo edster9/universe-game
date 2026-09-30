@@ -8,7 +8,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 
 | Law | Status | Used by |
 | --- | --- | --- |
-| Mass is never created or destroyed; every change passes a gate that checks it | in | every slice |
+| Mass is never created or destroyed; every change passes a gate that checks it. The gate weighs only what a set of changes touched, and undoes a refused set from what each entry held before; test builds also check one set in eight against the whole world | in | every slice; room to grow |
 | Energy is never created or destroyed: heat, chemical energy, and heat given to surroundings add up | in | slices 1, 2 |
 | Credits are never created or destroyed (until money is real, in slice 3) | in | slice 0 |
 | Energy enters only through named sources. Sunlight is the first: it supplies the energy living things store as they grow, and the warmth that heats things back up by day. The gate conserves everything else | in | stranded 3, where am I? 1 |
@@ -80,6 +80,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 
 | Law | Status | Used by |
 | --- | --- | --- |
+| Someone with a memory knows who went for them, and whether it wounded them, until they hear of it | in | room to grow |
 | A person remembers places, ways, and what's at places. What they've seen for themselves is certain; what they've been told or read is possible, marked with its source | in | memory |
 | Arriving somewhere makes it and the way you came certain, confirms or corrects every claim about what's there, and corrects what you remembered there that has gone | in | memory |
 | A way you were told of can be followed: if it's there, it becomes certain; if not, you spend a search's time and correct your memory | in | memory |

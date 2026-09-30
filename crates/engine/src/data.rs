@@ -523,6 +523,7 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
     let mut world = World {
         settings: load_settings(&file.world)?,
         seed: file.world.seed.unwrap_or(1),
+        log_window: crate::world::LOG_WINDOW,
         ..World::default()
     };
     load_materials(&mut world, &file.materials)?;
@@ -629,7 +630,9 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
                 })?;
             let length = parse_length(&def.id, distance)?;
             world.distances.insert((place, other), length);
-            world.distances.entry((other, place)).or_insert(length);
+            if !world.distances.contains_key(&(other, place)) {
+                world.distances.insert((other, place), length);
+            }
         }
         world.exits.insert(place, exits);
     }
@@ -1138,7 +1141,7 @@ fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
             ));
         }
     };
-    world.locations.insert(item, at);
+    world.put(item, at);
 
     match composition {
         Some(composition) => {
@@ -1427,7 +1430,7 @@ fn load_agent(
             return fail(format!("{id} is at {:?}, which isn't a place", def.at));
         }
     };
-    world.locations.insert(agent, at);
+    world.put(agent, at);
     let mass = parse_mass(id, mass_text)?;
     match parse_composition(world, id, mass, None, composition)? {
         Some(composition) => {

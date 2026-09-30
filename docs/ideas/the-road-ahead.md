@@ -121,3 +121,30 @@ The owner agreed with the direction ("I like where you're going with this") and 
 4. **The browser page at step 2, gaining a map at step 3**, as the rehearsal for 3D.
 
 Then a camp, a hamlet, and the village ([village.md](village.md)); then the rendering conversation, space within places, and 3D.
+
+## Built, 2026-09-30: room to grow, part one
+
+The gate, memory, and two hidden costs the measurements found. Nothing new to play: every story plays as before.
+
+- **The gate checks only what changed.** Every table in the world notes what an entry held before it changed, so a refused set of changes is undone from those notes instead of from a copy of the whole world, and mass, energy, credits, and the world's structure are checked only where something changed. Test builds check one set in eight the long way too, and undo it to prove the notes give back exactly the world before. The list of tables names every part of the world, so the compiler refuses a new one that isn't accounted for.
+- **The log keeps a window, not a history** (the last 1,000 to 2,000 sets of changes). Being attacked is now news the victim remembers until they hear of it, like the outcome of their own action, rather than something the console dug out of the log.
+- **Breath goes straight into the air.** Every body's breath used to become a new piece of gas each step, merged into the air by the next law: 108,000 things made and destroyed a day with 60 boars. It now joins the air's gas in one move, with the same result.
+- **Each thing lists what's inside it.** "What's in this hut?" used to scan the whole world, and was asked constantly.
+
+**The numbers** (30 game days, a player idle, the island's boars):
+
+| | Before | After |
+| --- | --- | --- |
+| 6 boars | 14 s, 626 MB | 4.5 s, 10 MB |
+| 60 boars | 108 s, 5.2 GB | 34 s, 29 MB |
+| The proof suite's stories | 33 s | 9 s |
+
+**The benchmark** (`crates/engine/tests/scale.rs`, on demand): 60 people under players' rules and 60 boars, 121 living things, for 30 days: **49 seconds, 1.6 s a game day, about 53,000 times faster than real time, memory flat at 39 MB.** Everyone is alive at the end.
+
+**What the attempt found:**
+
+- **The audit caught a real gap at once:** the new news table wasn't in the gate's list, so undoing left news behind. That's why the list now names every field.
+- **Sabotage checks:** a table that stops recording, and a weighing that ignores heat, both fail the proofs. Skipping the check that a thing's holder can hold things did *not* fail anything, because laws never propose such a change; a gate-level case (a rope put inside a lantern) now covers it.
+- **A busy world is still costly.** Whenever anything anywhere is hot or busy (a fire, a cooking pot), the whole world steps every second. Measured by forcing that, the same 121 living things take **58 seconds a game day, about 1,500 times faster than real time.** A live server would keep up easily; a month of it in a test would take half an hour. Each body makes a couple of changes a second in fine steps, and that work is real: the remedy is fewer steps where nothing needs them, which is what local time by the cone of influence does.
+
+Not yet done from step 1: local time by the cone of influence, and creatures acting at the end of what they do.

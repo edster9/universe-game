@@ -216,11 +216,12 @@ fn giving_moves_the_thing_and_its_mass() {
 fn the_gate_refuses_bad_changes_on_its_own() {
     let mut w = world();
     let before = w.clone();
-    let (traveller, mara, rope, square) = (
+    let (traveller, mara, rope, square, lantern) = (
         id(&w, "traveller"),
         id(&w, "mara"),
         id(&w, "rope"),
         id(&w, "square"),
+        id(&w, "lantern"),
     );
     let cause = Cause::Action {
         actor: traveller,
@@ -272,6 +273,13 @@ fn the_gate_refuses_bad_changes_on_its_own() {
                 to: rope,
             }],
             "a person inside a rope",
+        ),
+        (
+            vec![Change::Move {
+                entity: rope,
+                to: lantern,
+            }],
+            "a rope inside a lantern, which can't hold things",
         ),
         (
             // The first change is fine; the second fails. Neither may stick.

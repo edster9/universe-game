@@ -957,9 +957,11 @@ fn clear_air(world: &World, dt: u64) -> Vec<Change> {
 /// Parts of a piece in different states come apart: gas rises into the
 /// place's air, and liquid runs out of the solid and stays where the piece is.
 /// Gas held inside something rises out of it. A body holds its liquids, but
-/// not gas.
+/// not gas. Gas joins the gas already loose in the place's air, as pooling
+/// would join it, in one move.
 fn separate(world: &World, _dt: u64) -> Vec<Change> {
     let mut changes = Vec::new();
+    let mut air: BTreeMap<EntityId, Option<EntityId>> = BTreeMap::new();
     for (&id, composition) in &world.matter {
         let (Some(place), Some(location)) = (world.place_of(id), world.location(id)) else {
             continue;
@@ -989,10 +991,23 @@ fn separate(world: &World, _dt: u64) -> Vec<Change> {
             continue;
         }
         if !gas.is_empty() {
-            changes.push(Change::Split {
-                from: id,
-                take: gas,
-                at: place,
+            let into = *air.entry(place).or_insert_with(|| {
+                world
+                    .contents(place)
+                    .into_iter()
+                    .find(|&piece| poolable(world, piece) && world.is_all(piece, State::Gas))
+            });
+            changes.push(match into {
+                Some(to) => Change::Shift {
+                    from: id,
+                    to,
+                    take: gas,
+                },
+                None => Change::Split {
+                    from: id,
+                    take: gas,
+                    at: place,
+                },
             });
         }
         if !body && !liquid.is_empty() && !solid.is_empty() {
@@ -1012,12 +1027,7 @@ fn separate(world: &World, _dt: u64) -> Vec<Change> {
 fn pool(world: &World, _dt: u64) -> Vec<Change> {
     let mut groups: BTreeMap<(EntityId, bool), Vec<EntityId>> = BTreeMap::new();
     for &id in world.matter.keys() {
-        if world.is_container(id)
-            || !world.contents(id).is_empty()
-            || !world.is_portable(id)
-            || world.life.contains_key(&id)
-            || world.in_use(id)
-        {
+        if !poolable(world, id) {
             continue;
         }
         let Some(location) = world.location(id) else {
@@ -1039,6 +1049,17 @@ fn pool(world: &World, _dt: u64) -> Vec<Change> {
             })
         })
         .collect()
+}
+
+/// Whether a piece is loose enough to run together with others: portable
+/// matter, not a body, holding nothing, and not being worked.
+fn poolable(world: &World, id: EntityId) -> bool {
+    world.matter.contains_key(&id)
+        && !world.is_container(id)
+        && world.contents(id).is_empty()
+        && world.is_portable(id)
+        && !world.life.contains_key(&id)
+        && !world.in_use(id)
 }
 
 /// A solid piece inside a form takes the form's shape, made to the form's

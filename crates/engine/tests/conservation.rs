@@ -183,5 +183,5 @@ fn a_busy_afternoon_in_town_conserves_everything() {
         accepted > 1_000,
         "only {accepted} actions were accepted; the test isn't exercising much"
     );
-    assert_eq!(world.log().len(), accepted);
+    assert_eq!(world.logged(), accepted as u64);
 }

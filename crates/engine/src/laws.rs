@@ -897,14 +897,27 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             };
             // Someone asleep can't dodge; someone awake might.
             let luck = world.roll(u64::from(actor.0) ^ (u64::from(victim.0) << 32) ^ 0xB10);
-            if !world.is_asleep(victim) && luck >= world.settings().hit_chance {
-                return Ok(Vec::new());
-            }
+            let hit = world.is_asleep(victim) || luck < world.settings().hit_chance;
             let rate = u128::from(world.settings().wound_rate) * 1_000 / u128::from(edge.max(1));
-            Ok(vec![Change::Wound {
-                agent: victim,
-                rate: u64::try_from(rate).unwrap_or(u64::MAX),
-            }])
+            let rate = u64::try_from(rate).unwrap_or(u64::MAX);
+            let mut changes = Vec::new();
+            if hit {
+                changes.push(Change::Wound {
+                    agent: victim,
+                    rate,
+                });
+            }
+            // Someone with a memory knows who went for them.
+            if world.memory(victim).is_some() {
+                changes.push(Change::Notice {
+                    agent: victim,
+                    news: crate::world::News::Attacked {
+                        by: actor,
+                        wound: hit.then_some(rate),
+                    },
+                });
+            }
+            Ok(changes)
         }
 
         Intent::Read { item } => {

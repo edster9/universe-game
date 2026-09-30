@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::datasheet::Datasheet;
 use crate::gate::LogEntry;
+use crate::journal::{Journal, Set, Table};
 use crate::matter::{self, Composition, MaterialId, Materials, State};
 use crate::units::{Credits, Energy, Mass, Temperature};
 
@@ -449,6 +450,14 @@ pub struct Pending {
     pub until: u64,
 }
 
+/// Something that happened to someone, kept for them to hear of.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum News {
+    /// `by` went for them, and wounded them (bleeding `wound` mg a second) or
+    /// missed.
+    Attacked { by: EntityId, wound: Option<u64> },
+}
+
 /// How an action someone started came out, kept for them to hear of.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Outcome {
@@ -556,6 +565,11 @@ pub struct Chamber {
     pub lit: bool,
 }
 
+/// How many recent sets of changes a world's log keeps unless told
+/// otherwise: enough to look back over, not a whole history. A host that
+/// wants the history keeps it itself.
+pub const LOG_WINDOW: usize = 1_000;
+
 /// Sorted collections throughout, so iteration order never depends on the
 /// machine: the engine must be deterministic.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -572,72 +586,77 @@ pub struct World {
 
     /// The ID each entity was given in the data file, or "#n" if it was made
     /// during play.
-    pub(crate) keys: BTreeMap<EntityId, String>,
+    pub(crate) keys: Table<EntityId, String>,
     /// What people call it, if data named it. Otherwise it's described from
     /// what it's made of.
-    pub(crate) labels: BTreeMap<EntityId, String>,
+    pub(crate) labels: Table<EntityId, String>,
     /// Mass of things with no composition (people, and early-slice items).
-    pub(crate) masses: BTreeMap<EntityId, Mass>,
+    pub(crate) masses: Table<EntityId, Mass>,
     /// What things with a composition are made of.
-    pub(crate) matter: BTreeMap<EntityId, Composition>,
+    pub(crate) matter: Table<EntityId, Composition>,
     /// Heat energy held by each piece of matter.
-    pub(crate) heat: BTreeMap<EntityId, Energy>,
-    pub(crate) shape_of: BTreeMap<EntityId, String>,
+    pub(crate) heat: Table<EntityId, Energy>,
+    pub(crate) shape_of: Table<EntityId, String>,
     /// How closely a shaped part matches its shape, in µm. Smaller is finer.
-    pub(crate) tolerance: BTreeMap<EntityId, u64>,
+    pub(crate) tolerance: Table<EntityId, u64>,
     /// What each entity is in or held by. Places are the only entities that
     /// aren't anywhere.
-    pub(crate) locations: BTreeMap<EntityId, EntityId>,
+    pub(crate) locations: Table<EntityId, EntityId>,
+    /// What's directly in or held by each thing: `locations` the other way
+    /// round, kept in step with it by [`World::put`] and [`World::unput`].
+    pub(crate) inside: Table<EntityId, BTreeSet<EntityId>>,
     /// Being a place means having exits, even if there are none.
-    pub(crate) exits: BTreeMap<EntityId, Vec<EntityId>>,
+    pub(crate) exits: Table<EntityId, Vec<EntityId>>,
     /// How far it is between two places, in µm. Missing means no distance.
-    pub(crate) distances: BTreeMap<(EntityId, EntityId), u64>,
+    pub(crate) distances: Table<(EntityId, EntityId), u64>,
     /// How rough each place's ground is: the mg of a sole that a km of
     /// walking wears away. Missing means smooth.
-    pub(crate) roughness: BTreeMap<EntityId, u64>,
+    pub(crate) roughness: Table<EntityId, u64>,
     /// What people are wearing. What's worn stays among what they carry.
-    pub(crate) worn: BTreeMap<EntityId, Worn>,
+    pub(crate) worn: Table<EntityId, Worn>,
     /// Each place's height, in µm. Missing means zero.
-    pub(crate) heights: BTreeMap<EntityId, u64>,
+    pub(crate) heights: Table<EntityId, u64>,
     /// Where each place is, in µm east and north of the world's origin.
-    pub(crate) positions: BTreeMap<EntityId, (i64, i64)>,
+    pub(crate) positions: Table<EntityId, (i64, i64)>,
     /// How landmarks look from far away. Only these can be seen from afar.
-    pub(crate) from_afar: BTreeMap<EntityId, String>,
+    pub(crate) from_afar: Table<EntityId, String>,
     /// What each person remembers. Creatures acting on instinct have none.
-    pub(crate) memories: BTreeMap<EntityId, Memory>,
+    pub(crate) memories: Table<EntityId, Memory>,
     /// What each map claims.
-    pub(crate) maps: BTreeMap<EntityId, Vec<Claim>>,
+    pub(crate) maps: Table<EntityId, Vec<Claim>>,
     /// Kinds of creatures and growing things, by id.
     pub(crate) kinds: BTreeMap<String, Kind>,
     /// What kind each thing is, for things that have one.
-    pub(crate) kind_of: BTreeMap<EntityId, String>,
+    pub(crate) kind_of: Table<EntityId, String>,
     /// The places a creature keeps to.
-    pub(crate) ranges: BTreeMap<EntityId, BTreeSet<EntityId>>,
+    pub(crate) ranges: Table<EntityId, BTreeSet<EntityId>>,
     /// The tick until which a creature acting on instinct is busy.
-    pub(crate) busy_until: BTreeMap<EntityId, u64>,
+    pub(crate) busy_until: Table<EntityId, u64>,
     /// Actions people have started and not yet carried out.
-    pub(crate) pending: BTreeMap<EntityId, Pending>,
+    pub(crate) pending: Table<EntityId, Pending>,
     /// How each person's last started action came out, until they hear of
     /// it.
-    pub(crate) outcomes: BTreeMap<EntityId, Outcome>,
+    pub(crate) outcomes: Table<EntityId, Outcome>,
+    /// What has happened to each person that they haven't heard of yet.
+    pub(crate) news: Table<EntityId, Vec<News>>,
     /// Places a creature keeps away from, and until when.
-    pub(crate) avoiding: BTreeMap<EntityId, BTreeMap<EntityId, u64>>,
+    pub(crate) avoiding: Table<EntityId, BTreeMap<EntityId, u64>>,
     /// Paths that cross a liquid, and the liquid they cross.
-    pub(crate) crossings: BTreeMap<(EntityId, EntityId), EntityId>,
+    pub(crate) crossings: Table<(EntityId, EntityId), EntityId>,
     /// Each place's surrounding temperature.
-    pub(crate) ambient: BTreeMap<EntityId, Temperature>,
+    pub(crate) ambient: Table<EntityId, Temperature>,
     /// Each place's surrounding temperature in the coldest hour of the night,
     /// where days are warmer than nights.
-    pub(crate) night_ambient: BTreeMap<EntityId, Temperature>,
+    pub(crate) night_ambient: Table<EntityId, Temperature>,
     /// Heat each place's surroundings have taken in.
-    pub(crate) surroundings: BTreeMap<EntityId, Energy>,
+    pub(crate) surroundings: Table<EntityId, Energy>,
     /// Matter each place's surroundings have taken in: breath, sweat, and gas
     /// from the air that has cleared.
-    pub(crate) reservoir: BTreeMap<EntityId, Composition>,
-    pub(crate) life: BTreeMap<EntityId, Life>,
-    pub(crate) activities: BTreeMap<EntityId, Activity>,
-    pub(crate) pieces: BTreeMap<EntityId, Pieces>,
-    pub(crate) growth: BTreeMap<EntityId, Growth>,
+    pub(crate) reservoir: Table<EntityId, Composition>,
+    pub(crate) life: Table<EntityId, Life>,
+    pub(crate) activities: Table<EntityId, Activity>,
+    pub(crate) pieces: Table<EntityId, Pieces>,
+    pub(crate) growth: Table<EntityId, Growth>,
     /// Energy that has entered the world as sunlight. The gate conserves
     /// total energy minus this.
     pub(crate) sunlight: u128,
@@ -645,17 +664,22 @@ pub struct World {
     /// vitality. The gate conserves the totals less these too.
     pub(crate) vital_energy: u128,
     pub(crate) vital_matter: u128,
-    pub(crate) agents: BTreeSet<EntityId>,
-    pub(crate) portable: BTreeSet<EntityId>,
-    pub(crate) containers: BTreeSet<EntityId>,
-    pub(crate) chambers: BTreeMap<EntityId, Chamber>,
-    pub(crate) forms: BTreeMap<EntityId, Form>,
-    pub(crate) assemblies: BTreeMap<EntityId, Assembly>,
+    pub(crate) agents: Set<EntityId>,
+    pub(crate) portable: Set<EntityId>,
+    pub(crate) containers: Set<EntityId>,
+    pub(crate) chambers: Table<EntityId, Chamber>,
+    pub(crate) forms: Table<EntityId, Form>,
+    pub(crate) assemblies: Table<EntityId, Assembly>,
     /// Each person's own words, if they have them. Someone without is from a
     /// world with no cultures, and calls everything by its name from data.
-    pub(crate) lexicons: BTreeMap<EntityId, crate::words::Lexicon>,
-    pub(crate) wallets: BTreeMap<EntityId, Credits>,
+    pub(crate) lexicons: Table<EntityId, crate::words::Lexicon>,
+    pub(crate) wallets: Table<EntityId, Credits>,
+    /// The most recent sets of changes that passed the gate, oldest first.
     pub(crate) log: Vec<LogEntry>,
+    /// How many sets of changes have ever passed the gate.
+    pub(crate) logged: u64,
+    /// How many recent sets the log keeps; older ones are forgotten.
+    pub(crate) log_window: usize,
 }
 
 impl World {
@@ -710,7 +734,7 @@ impl World {
         }
         let mut x = self.seed
             ^ self.tick.wrapping_mul(0x9E37_79B9_7F4A_7C15)
-            ^ (self.log.len() as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F)
+            ^ self.logged.wrapping_mul(0xC2B2_AE3D_27D4_EB4F)
             ^ salt.wrapping_mul(0x1656_67B1_9E37_79F9);
         // SplitMix64 finaliser.
         x = (x ^ (x >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -1290,6 +1314,11 @@ impl World {
     /// How someone's last started action came out, if they haven't heard
     /// yet. Hearing of it takes it away: it's news for a person, not part of
     /// the world, so it doesn't pass through the gate.
+    /// What has happened to someone since they last heard, oldest first.
+    pub fn take_news(&mut self, id: EntityId) -> Vec<News> {
+        self.news.remove(&id).unwrap_or_default()
+    }
+
     pub fn take_outcome(&mut self, id: EntityId) -> Option<Outcome> {
         self.outcomes.remove(&id)
     }
@@ -1419,16 +1448,48 @@ impl World {
 
     /// Everything directly in or held by `holder`, in a fixed order.
     pub fn contents(&self, holder: EntityId) -> Vec<EntityId> {
-        self.locations
-            .iter()
-            .filter(|&(_, &location)| location == holder)
-            .map(|(&id, _)| id)
-            .collect()
+        self.inside
+            .get(&holder)
+            .map(|held| held.iter().copied().collect())
+            .unwrap_or_default()
     }
 
-    /// Every change that has passed the gate, oldest first.
+    /// Puts `id` in or on `holder`, wherever it was before.
+    pub(crate) fn put(&mut self, id: EntityId, holder: EntityId) {
+        self.unput(id);
+        self.locations.insert(id, holder);
+        self.inside.or_insert_with(holder, BTreeSet::new).insert(id);
+    }
+
+    /// Takes `id` out of wherever it is, leaving it nowhere.
+    pub(crate) fn unput(&mut self, id: EntityId) {
+        if let Some(old) = self.locations.remove(&id) {
+            let now_empty = self.inside.get_mut(&old).is_some_and(|held| {
+                held.remove(&id);
+                held.is_empty()
+            });
+            if now_empty {
+                self.inside.remove(&old);
+            }
+        }
+    }
+
+    /// The most recent sets of changes that passed the gate, oldest first.
+    /// Each has its number in the order they passed.
     pub fn log(&self) -> &[LogEntry] {
         &self.log
+    }
+
+    /// How many sets of changes have ever passed the gate.
+    pub fn logged(&self) -> u64 {
+        self.logged
+    }
+
+    /// The same world, keeping the last `sets` sets of changes in its log.
+    /// Only for setting up a run.
+    pub fn with_log_window(mut self, sets: usize) -> World {
+        self.log_window = sets;
+        self
     }
 
     /// Total mass of everything in the world. Only the gate could change it,
@@ -1465,6 +1526,359 @@ impl World {
         heat + given + chemical + stamina
     }
 
+    /// Calls `f` on every table that records its changes. Every field of
+    /// the world is named here, so a new one can't be left out by accident:
+    /// a table must record, and anything else the gate changes must be
+    /// restored by [`crate::gate`]'s totals.
+    pub(crate) fn journals(&mut self, mut f: impl FnMut(&mut dyn Journal)) {
+        let World {
+            keys,
+            labels,
+            masses,
+            matter,
+            heat,
+            shape_of,
+            tolerance,
+            locations,
+            inside,
+            exits,
+            distances,
+            roughness,
+            worn,
+            heights,
+            positions,
+            from_afar,
+            memories,
+            maps,
+            kind_of,
+            ranges,
+            busy_until,
+            pending,
+            outcomes,
+            news,
+            avoiding,
+            crossings,
+            ambient,
+            night_ambient,
+            surroundings,
+            reservoir,
+            life,
+            activities,
+            pieces,
+            growth,
+            agents,
+            portable,
+            containers,
+            chambers,
+            forms,
+            assemblies,
+            lexicons,
+            wallets,
+            next_id: _,
+            tick: _,
+            seed: _,
+            luck: _,
+            settings: _,
+            materials: _,
+            shapes: _,
+            designs: _,
+            kinds: _,
+            sunlight: _,
+            vital_energy: _,
+            vital_matter: _,
+            log: _,
+            logged: _,
+            log_window: _,
+        } = self;
+        f(keys);
+        f(labels);
+        f(masses);
+        f(matter);
+        f(heat);
+        f(shape_of);
+        f(tolerance);
+        f(locations);
+        f(inside);
+        f(exits);
+        f(distances);
+        f(roughness);
+        f(worn);
+        f(heights);
+        f(positions);
+        f(from_afar);
+        f(memories);
+        f(maps);
+        f(kind_of);
+        f(ranges);
+        f(busy_until);
+        f(pending);
+        f(outcomes);
+        f(news);
+        f(avoiding);
+        f(crossings);
+        f(ambient);
+        f(night_ambient);
+        f(surroundings);
+        f(reservoir);
+        f(life);
+        f(activities);
+        f(pieces);
+        f(growth);
+        f(agents);
+        f(portable);
+        f(containers);
+        f(chambers);
+        f(forms);
+        f(assemblies);
+        f(lexicons);
+        f(wallets);
+    }
+
+    /// Every entity with an entry that changed since the tables began
+    /// recording.
+    fn touched(&self) -> BTreeSet<EntityId> {
+        let mut ids = BTreeSet::new();
+        ids.extend(self.keys.originals().into_keys().copied());
+        ids.extend(self.labels.originals().into_keys().copied());
+        ids.extend(self.masses.originals().into_keys().copied());
+        ids.extend(self.matter.originals().into_keys().copied());
+        ids.extend(self.heat.originals().into_keys().copied());
+        ids.extend(self.shape_of.originals().into_keys().copied());
+        ids.extend(self.tolerance.originals().into_keys().copied());
+        ids.extend(self.locations.originals().into_keys().copied());
+        ids.extend(self.inside.originals().into_keys().copied());
+        ids.extend(self.exits.originals().into_keys().copied());
+        ids.extend(self.roughness.originals().into_keys().copied());
+        ids.extend(self.worn.originals().into_keys().copied());
+        ids.extend(self.heights.originals().into_keys().copied());
+        ids.extend(self.positions.originals().into_keys().copied());
+        ids.extend(self.from_afar.originals().into_keys().copied());
+        ids.extend(self.memories.originals().into_keys().copied());
+        ids.extend(self.maps.originals().into_keys().copied());
+        ids.extend(self.kind_of.originals().into_keys().copied());
+        ids.extend(self.ranges.originals().into_keys().copied());
+        ids.extend(self.busy_until.originals().into_keys().copied());
+        ids.extend(self.pending.originals().into_keys().copied());
+        ids.extend(self.outcomes.originals().into_keys().copied());
+        ids.extend(self.news.originals().into_keys().copied());
+        ids.extend(self.avoiding.originals().into_keys().copied());
+        ids.extend(self.ambient.originals().into_keys().copied());
+        ids.extend(self.night_ambient.originals().into_keys().copied());
+        ids.extend(self.surroundings.originals().into_keys().copied());
+        ids.extend(self.reservoir.originals().into_keys().copied());
+        ids.extend(self.life.originals().into_keys().copied());
+        ids.extend(self.activities.originals().into_keys().copied());
+        ids.extend(self.pieces.originals().into_keys().copied());
+        ids.extend(self.growth.originals().into_keys().copied());
+        ids.extend(self.agents.originals().into_keys().copied());
+        ids.extend(self.portable.originals().into_keys().copied());
+        ids.extend(self.containers.originals().into_keys().copied());
+        ids.extend(self.chambers.originals().into_keys().copied());
+        ids.extend(self.forms.originals().into_keys().copied());
+        ids.extend(self.assemblies.originals().into_keys().copied());
+        ids.extend(self.lexicons.originals().into_keys().copied());
+        ids.extend(self.wallets.originals().into_keys().copied());
+        ids.extend(
+            self.distances
+                .originals()
+                .into_keys()
+                .flat_map(|&(a, b)| [a, b]),
+        );
+        ids.extend(
+            self.crossings
+                .originals()
+                .into_keys()
+                .flat_map(|&(a, b)| [a, b]),
+        );
+        ids
+    }
+
+    /// The structural rules of [`World::check_invariants`], for just what
+    /// changed since the tables began recording: everything touched, and
+    /// whatever is in something that's gone or can no longer hold things.
+    pub(crate) fn check_touched(&self) -> Result<(), String> {
+        let touched = self.touched();
+        // Things that were there before and are gone, or could hold things
+        // before and can't now: whatever is in them must be checked too.
+        let mut was: Vec<(EntityId, bool)> = Vec::new();
+        was.extend(
+            self.keys
+                .originals()
+                .into_iter()
+                .map(|(&k, v)| (k, v.is_some())),
+        );
+        was.extend(self.agents.originals().into_iter().map(|(&k, v)| (k, v)));
+        was.extend(
+            self.containers
+                .originals()
+                .into_iter()
+                .map(|(&k, v)| (k, v)),
+        );
+        was.extend(
+            self.assemblies
+                .originals()
+                .into_iter()
+                .map(|(&k, v)| (k, v.is_some())),
+        );
+        was.extend(
+            self.life
+                .originals()
+                .into_iter()
+                .map(|(&k, v)| (k, v.is_some())),
+        );
+        was.extend(
+            self.exits
+                .originals()
+                .into_iter()
+                .map(|(&k, v)| (k, v.is_some())),
+        );
+        let vacated: BTreeSet<EntityId> = was
+            .into_iter()
+            .filter(|&(id, there)| there && (!self.exists(id) || !self.holds(id)))
+            .map(|(id, _)| id)
+            .collect();
+        for &id in &touched {
+            self.check_entity(id)?;
+        }
+        if !vacated.is_empty() {
+            for (&id, location) in &self.locations {
+                if vacated.contains(location) {
+                    self.check_entity(id)?;
+                }
+            }
+            for (&agent, activity) in &self.activities {
+                let Activity::Rubbing {
+                    first,
+                    second,
+                    dust,
+                    ..
+                } = *activity;
+                if [first, second, dust].iter().any(|id| vacated.contains(id)) {
+                    self.check_entity(agent)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Whether something can have things in or on it.
+    fn holds(&self, id: EntityId) -> bool {
+        self.is_place(id)
+            || self.is_agent(id)
+            || self.is_container(id)
+            || self.assemblies.contains_key(&id)
+            // A body still holds what it carried, alive or dead.
+            || self.life.contains_key(&id)
+    }
+
+    /// The structural rules for one entity, whether or not it still exists.
+    fn check_entity(&self, id: EntityId) -> Result<(), String> {
+        if let Some(&location) = self.locations.get(&id) {
+            if !self.exists(location) {
+                return Err(format!(
+                    "{} is inside something that doesn't exist",
+                    self.key(id)
+                ));
+            }
+            if self.is_place(id) {
+                return Err(format!("the place {} is inside something", self.key(id)));
+            }
+            if self.is_agent(id) && !self.is_place(location) {
+                return Err(format!("{} isn't standing in a place", self.key(id)));
+            }
+            if !self.holds(location) {
+                return Err(format!(
+                    "{} is inside {}, which can't hold things",
+                    self.key(id),
+                    self.key(location)
+                ));
+            }
+        }
+        let listed = |holder: &EntityId| self.inside.get(holder).is_some_and(|h| h.contains(&id));
+        if self
+            .locations
+            .get(&id)
+            .is_some_and(|holder| !listed(holder))
+        {
+            return Err(format!("{} isn't listed in what holds it", self.key(id)));
+        }
+        if let Some(held) = self.inside.get(&id)
+            && (held.is_empty() || held.iter().any(|x| self.locations.get(x) != Some(&id)))
+        {
+            return Err(format!("{} lists something that isn't in it", self.key(id)));
+        }
+        if self.exists(id) {
+            if !self.is_place(id) && self.location(id).is_none() {
+                return Err(format!("{} is nowhere", self.key(id)));
+            }
+            if self.place_of(id).is_none() {
+                return Err(format!("{} is inside itself", self.key(id)));
+            }
+        }
+        if let Some(composition) = self.matter.get(&id) {
+            if !self.exists(id)
+                || composition.is_empty()
+                || composition.values().any(|m| *m == Mass::ZERO)
+            {
+                return Err(format!(
+                    "{} has an empty or broken composition",
+                    self.key(id)
+                ));
+            }
+            if self.masses.contains_key(&id) || !self.heat.contains_key(&id) {
+                return Err(format!(
+                    "{} has matter but mixed-up mass or heat",
+                    self.key(id)
+                ));
+            }
+        }
+        if self.heat.contains_key(&id) && !self.matter.contains_key(&id) {
+            return Err("heat is held by something that isn't matter".into());
+        }
+        if self.tolerance.contains_key(&id) && !self.shape_of.contains_key(&id) {
+            return Err("a tolerance belongs to something with no shape".into());
+        }
+        if self.assemblies.contains_key(&id)
+            && (self.matter.contains_key(&id) || self.masses.contains_key(&id))
+        {
+            return Err("an assembly has a mass of its own besides its parts".into());
+        }
+        if let Some(life) = self.life.get(&id) {
+            if !self.matter.contains_key(&id) {
+                return Err(format!(
+                    "{} is alive but isn't made of anything",
+                    self.key(id)
+                ));
+            }
+            if life.died_of.is_none() && !self.is_agent(id) {
+                return Err(format!("{} is alive but isn't a person", self.key(id)));
+            }
+        }
+        if let Some(&Activity::Rubbing {
+            first,
+            second,
+            dust,
+            ..
+        }) = self.activities.get(&id)
+            && (!self.is_agent(id)
+                || [first, second, dust]
+                    .iter()
+                    .any(|thing| !self.matter.contains_key(thing)))
+        {
+            return Err(format!(
+                "{} is busy with something that doesn't exist",
+                self.key(id)
+            ));
+        }
+        if self.reservoir.contains_key(&id) && !self.is_place(id) {
+            return Err("a reservoir belongs to something that isn't a place".into());
+        }
+        if self.surroundings.contains_key(&id) && !self.is_place(id) {
+            return Err("surroundings belong to something that isn't a place".into());
+        }
+        Ok(())
+    }
+
     /// Structural rules that must always hold. The gate checks these after
     /// every change.
     pub fn check_invariants(&self) -> Result<(), String> {
@@ -1494,6 +1908,14 @@ impl World {
                     self.key(location)
                 ));
             }
+        }
+        let listed: usize = self.inside.values().map(BTreeSet::len).sum();
+        if listed != self.locations.len()
+            || self.inside.iter().any(|(holder, held)| {
+                held.is_empty() || held.iter().any(|x| self.locations.get(x) != Some(holder))
+            })
+        {
+            return Err("what things hold doesn't match where things are".into());
         }
         for id in self.entities() {
             if !self.is_place(id) && self.location(id).is_none() {

@@ -512,6 +512,16 @@ Added 2026-09-30, agreeing to all of Claude's proposals for the actor's view.
 - **A statistics window about our body:** click on it and expand all our vitals (nutrition, hunger, tiredness, health, bleeding, everything about the person), in a window we can open and close.
 - These are our first milestones. **Put together a plan in the order Claude thinks best.** Once we pass these initial challenges, we can expand: other players, towns, and everything else.
 
+### Moving by keys, and by commands
+
+Added 2026-09-30, after stages 1 and 2.
+
+- **For now, in normal mode, WASD doesn't move the islander.** The islander moves only through commands to go places.
+- **In free camera mode, WASD pans around and goes places** (the camera, not the islander).
+- **Later, WASD moves the islander, like a real game.** If the islander is under a command to walk somewhere and I touch WASD, that's an interruption: I take over.
+
+**Decided, 2026-09-30:** as the owner describes. This replaces "while I'm flying freely, my regular WASD controls still move the player" from the first milestones: in free flight, WASD flies the camera. Walking by keys comes with stage 6, being near things; a key pressed during a commanded walk cuts it short where the islander is, and they walk on by hand from there.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

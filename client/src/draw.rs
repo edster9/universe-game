@@ -125,15 +125,16 @@ fn id_seed(world: &EngineWorld, id: EntityId) -> u64 {
 /// time, with the fraction of a second not yet run.
 pub fn spot(world: &EngineWorld, land: &Land, id: EntityId, now: f32) -> Vec3 {
     let seed = id_seed(world, id);
-    let at = |p: EntityId| place_at(world, p) + scatter(seed, 7, PATCH * 0.6);
+    // Until places have room in them, everyone stands near the middle, and
+    // what's put down lies nearer still, where they can see it.
+    let reach = if world.is_agent(id) { 10.0 } else { 5.0 };
+    let at = |p: EntityId| place_at(world, p) + scatter(seed, 7, reach);
     let point = match engine::laws::journey(world, id) {
         Some((from, to, since, until)) if until > since => {
             let t = ((now - since as f32) / (until - since) as f32).clamp(0.0, 1.0);
             at(from).lerp(at(to), t)
         }
-        _ => world.place_of(id).map_or(Vec3::ZERO, |p| {
-            place_at(world, p) + scatter(seed, 7, PATCH * 0.6)
-        }),
+        _ => world.place_of(id).map_or(Vec3::ZERO, at),
     };
     on_ground(land, point)
 }
@@ -183,6 +184,64 @@ impl Kit {
         self.materials.insert(hex.to_string(), handle.clone());
         handle
     }
+
+    /// A material that gives its own light, as flames do: `glow` is how
+    /// bright, in the renderer's light values.
+    fn glowing(
+        &mut self,
+        materials: &mut Assets<StandardMaterial>,
+        name: &str,
+        glow: LinearRgba,
+    ) -> Handle<StandardMaterial> {
+        let key = format!("glow {name}");
+        if let Some(handle) = self.materials.get(&key) {
+            return handle.clone();
+        }
+        // Brighter than white, so it glows past its edges.
+        let handle = materials.add(StandardMaterial {
+            base_color: Color::LinearRgba(glow),
+            emissive: glow,
+            unlit: true,
+            ..default()
+        });
+        self.materials.insert(key, handle.clone());
+        handle
+    }
+
+    /// Smoke, see-through: `thin` from 0 (thickest) to 3 (nearly gone).
+    fn smoke(
+        &mut self,
+        materials: &mut Assets<StandardMaterial>,
+        thin: usize,
+    ) -> Handle<StandardMaterial> {
+        let key = format!("smoke {thin}");
+        if let Some(handle) = self.materials.get(&key) {
+            return handle.clone();
+        }
+        let handle = materials.add(StandardMaterial {
+            base_color: Color::srgba(0.4, 0.4, 0.42, 0.24 - thin as f32 * 0.055),
+            alpha_mode: AlphaMode::Blend,
+            perceptual_roughness: 1.0,
+            ..default()
+        });
+        self.materials.insert(key, handle.clone());
+        handle
+    }
+}
+
+/// How much is burning in or on a thing, in grams: itself, if it's
+/// burning, and everything burning inside it.
+fn burning(world: &EngineWorld, id: EntityId) -> f32 {
+    let own = if world.is_burning(id) {
+        world.mass(id).mg() as f32 / 1_000.0
+    } else {
+        0.0
+    };
+    own + world
+        .contents(id)
+        .into_iter()
+        .map(|inner| burning(world, inner))
+        .sum::<f32>()
 }
 
 /// How many pieces show a fixed source of `kg`: more for more, within reason.
@@ -199,6 +258,82 @@ pub struct Brush<'a, 'w> {
 }
 
 impl Brush<'_, '_> {
+    /// A fire at `at`: flames as tall as the burning mass makes them, a
+    /// warm light that flickers on everything around, and smoke rising and
+    /// drifting. `t` is the clock the flicker follows, `seed` keeps each
+    /// fire's flicker its own.
+    fn fire(&mut self, at: Vec3, grams: f32, t: f32, seed: u64) {
+        // About a metre of flame for a few hundred grams alight.
+        let h = (0.25 + 0.3 * (grams + 1.0).log10()).clamp(0.2, 3.0);
+        let phase = (seed % 100) as f32;
+        let cone = self.kit.mesh(self.meshes, "tree");
+        let ball = self.kit.mesh(self.meshes, "rock");
+        let outer = self
+            .kit
+            .glowing(self.materials, "outer", LinearRgba::rgb(6.0, 1.3, 0.12));
+        let inner = self
+            .kit
+            .glowing(self.materials, "inner", LinearRgba::rgb(7.0, 3.2, 0.5));
+        for i in 0..5 {
+            let k = i as f32;
+            let flicker = 0.75 + 0.25 * (t * 9.0 + k * 2.1 + phase).sin();
+            let (material, width, height, offset) = if i < 3 {
+                let a = k * 2.1 + phase;
+                (
+                    outer.clone(),
+                    0.55,
+                    1.0,
+                    Vec3::new(a.cos(), 0.0, a.sin()) * h * 0.18,
+                )
+            } else {
+                (inner.clone(), 0.35, 0.7, Vec3::ZERO)
+            };
+            self.commands.spawn((
+                Mesh3d(cone.clone()),
+                MeshMaterial3d(material),
+                Transform::from_translation(at + offset + Vec3::Y * h * height * flicker * 0.5)
+                    .with_rotation(Quat::from_rotation_y(t * 0.7 + k))
+                    .with_scale(Vec3::new(h * width, h * height * flicker, h * width)),
+                bevy::light::NotShadowCaster,
+                Mover,
+            ));
+        }
+        let flicker = 0.85 + 0.1 * (t * 13.0 + phase).sin() + 0.05 * (t * 31.0).sin();
+        self.commands.spawn((
+            PointLight {
+                color: Color::srgb(1.0, 0.6, 0.28),
+                intensity: 400_000.0 * h * h * flicker,
+                range: 40.0 * h.sqrt(),
+                shadow_maps_enabled: true,
+                ..default()
+            },
+            Transform::from_translation(at + Vec3::Y * h * 0.8),
+            Mover,
+        ));
+        for i in 0..14 {
+            // Each puff rises, grows, drifts downwind, and thins, then
+            // starts again.
+            let rise = (t * 0.12 + i as f32 / 14.0 + phase * 0.01).fract();
+            let sway = (i as f32 * 2.4 + phase).sin() * 0.6 * rise;
+            let thin = ((rise * 4.0) as usize).min(3);
+            let material = self.kit.smoke(self.materials, thin);
+            self.commands.spawn((
+                Mesh3d(ball.clone()),
+                MeshMaterial3d(material),
+                Transform::from_translation(
+                    at + Vec3::new(
+                        rise * rise * 3.0 + sway,
+                        h + rise * 9.0 * h.sqrt(),
+                        rise + sway * 0.5,
+                    ),
+                )
+                .with_scale(Vec3::splat(h * (0.4 + rise * 2.2))),
+                bevy::light::NotShadowCaster,
+                Mover,
+            ));
+        }
+    }
+
     /// Draws one piece of a thing, at `at` on the ground, as its look says,
     /// marked with `marker`.
     fn piece(
@@ -352,6 +487,7 @@ pub fn draw_scenery(
 #[allow(clippy::too_many_arguments)]
 pub fn draw_movers(
     commands: Commands,
+    time: Res<Time>,
     sim: Res<Sim>,
     style: Res<Style>,
     land: Res<Land>,
@@ -372,8 +508,25 @@ pub fn draw_movers(
     let world = sim.world();
     let now = sim.now();
     let scene = engine::view::scene(world, sim.me());
+    let t = time.elapsed_secs();
     for &id in &scene.in_sight {
-        if !(world.is_agent(id) || world.is_portable(id)) {
+        let moves = world.is_agent(id) || world.is_portable(id);
+        let grams = burning(world, id);
+        if grams > 0.0 {
+            // Fixed things burn where they stand, at their first piece.
+            let seed = id_seed(world, id);
+            let at = if moves {
+                spot(world, &land, id, now)
+            } else {
+                let place = world.place_of(id).unwrap_or(id);
+                on_ground(
+                    &land,
+                    place_at(world, place) + scatter(seed, 0, PATCH * 0.85),
+                )
+            };
+            brush.fire(at + Vec3::Y * 0.2, grams, t, seed);
+        }
+        if !moves {
             continue;
         }
         let mut look = style.look(world, id);

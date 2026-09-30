@@ -60,6 +60,8 @@ pub fn setup(mut commands: Commands, options: Res<Options>, sim: Res<Sim>, land:
     state.enabled = flying;
     commands.spawn((
         Camera3d::default(),
+        // Flames glow past their edges.
+        bevy::post_process::bloom::Bloom::NATURAL,
         Transform::from_translation(from).looking_at(look, Vec3::Y),
         DistanceFog {
             color: Color::srgb(0.62, 0.74, 0.88),

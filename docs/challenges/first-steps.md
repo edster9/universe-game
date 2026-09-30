@@ -13,7 +13,7 @@ The world is `data/companion.toml`; the islander lives by players' rules.
 | 3 | A fire | **The first challenge:** from the beach, walk to the forest, gather dry grass, twigs, and sticks, and rub up a fire, using the laws built in the stranded challenge. Burning things are drawn burning: flames, light on their surroundings, smoke | `stranded-2-fire` played as the islander in the client, with a screenshot of the fire; the islander's view at night lit by it |
 | 4 | The backpack and the body | A key opens and closes a simple backpack: what the islander carries, as labels with their masses, updated as they pick things up, drop them, eat them, or burn them. Another opens the body: everything the engine measures about the islander, compact until expanded: fluid and thirst, food and stored energy, stamina (under players' rules), tiredness and time awake, body temperature, wounds and bleeding, and what they're wearing. All measured, never written: the same numbers `datasheet me` shows | Screenshots of the backpack before and after gathering, and of the body before and after a hard day's work |
 | 5 | Voice | Hold a key and speak; the words appear in the console and run as if typed. Speech to text runs on the player's own machine (the leading choice: Whisper, open source, on the GPU), so it's private, free, and works offline. It only ever produces text: the same commands, checked by the same laws | The fire made again, spoken rather than typed; recorded commands transcribed correctly in a test |
-| 6 | Being near things | **Space within places**, an engine law: positions in metres inside each place, a reach (people's is 2.5 m), and walking with WASD. You have to walk up to the grass to cut it; commands that need a thing within reach say so ("the grass is too far away"). Walking off along a path takes you to the next place. Pressing a walking key during a commanded walk cuts it short and hands the islander to the keys. In free flight, WASD flies the camera, not the islander (the owner, 2026-09-30) | Scripts with positions: too far, walk closer, done; the fire made by walking up to each thing |
+| 6 | Being near things | **Space within places**, an engine law: positions in metres inside each place, a reach (people's is 2.5 m), and walking with WASD. You have to walk up to the grass to cut it; commands that need a thing within reach say so ("the grass is too far away"). Walking off along a path takes you to the next place. Pressing a walking key during a commanded walk cuts it short and hands the islander to the keys. In free flight, WASD flies the camera, not the islander (the owner, 2026-09-30); to settle then: the owner's idea of the arrow keys for the camera and WASD for the islander, so both work at once | Scripts with positions: too far, walk closer, done; the fire made by walking up to each thing |
 
 ## Why this order
 
@@ -67,3 +67,43 @@ Then the companion's stories in the client (asking, trading, temperament) come a
 - Hovering and the mouse were not tried by hand (screenshots can't move a mouse). The owner's first try is the real test.
 - WASD doesn't move the islander yet; they move only by commands such as `go forest`. In free flight WASD flies the camera, as the owner wants. Walking by keys, and taking over a commanded walk with them, come in stage 6.
 - Commanding others (`as`, `become`) still works in the console, as a developer's tool.
+
+## Stage 3, results (2026-09-30)
+
+**Passed.** The islander makes a fire on the companion's island, and the client draws it burning.
+
+**The challenge** is `data/scripts/first-steps-3-fire.txt`, played by players' rules:
+- From the beach, walk to the forest for sticks, grass, and twigs, and to the hillside for five stones.
+- Make a fire ring, and bring it back to the beach.
+- Wait for sunset, then rub up a fire and feed it one size at a time.
+- Ten minutes later, the wood is burning and the beach is "night, lit by fire".
+
+No new laws: everything comes from the stranded challenge. The script runs with every other script on every test run, and passes in the client (35 commands, 6 screenshots).
+
+**What the attempts found.** The laws decided, as they should:
+- Lit in the morning, the fire burned out long before dark.
+- A 2 kg lump of driftwood laid on a young fire of sticks smothered it: the cold log drew off the heat, and everything went out at 413 K.
+
+So the script lights the fire after sunset, from sticks. Keeping a fire going all night (feeding it in sizes up to logs) is a later challenge.
+
+**How it's drawn.** Anything burning where the islander stands, itself or inside something such as the fire ring, is drawn as a fire:
+- **Flames** glow past their edges and flicker. They're taller for more burning mass: about 0.6 m when the tuft first catches, about 0.9 m once the sticks are burning.
+- **A warm light** flickers and casts shadows: the shells on the sand throw long shadows away from the fire. Its brightness and reach grow with the flames.
+- **Smoke** rises in thinning puffs and drifts downwind.
+
+The camera gained bloom, which is what makes the flames glow.
+
+**Proof.** Screenshots from the islander's camera, checked by eye:
+- the tuft just caught (a small flame, a small circle of light);
+- the fire burning at night (a bigger flame, the beach lit around it, the islander and the sleeping stranger at its edge).
+
+These are visual only: no automatic test looks at pixels.
+
+**Found along the way:**
+- People and dropped things were scattered up to 54 m around the middle of a place, so the fire ring lay far from the islander and out of view. People now stand within 10 m of the middle, and dropped things lie within 5 m, until places have real space (stage 6).
+- That change first didn't take effect: `cargo fmt` had rewrapped the line my edit targeted, so the edit silently missed it (a known pitfall). A debug print of where the client drew things showed it.
+
+**Simplified:**
+- Flames are cones, and smoke is see-through balls, until the assets conversation.
+- Hot things that aren't burning, such as embers and ash at 1,000 K, don't glow.
+- The fire's light is the client's own, sized from the burning mass. It isn't the engine's energy, and doesn't need to be: the engine already decides what's lit ("night, lit by fire") and what you can do by it.

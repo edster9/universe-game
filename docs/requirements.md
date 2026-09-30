@@ -522,6 +522,8 @@ Added 2026-09-30, after stages 1 and 2.
 
 **Decided, 2026-09-30:** as the owner describes. This replaces "while I'm flying freely, my regular WASD controls still move the player" from the first milestones: in free flight, WASD flies the camera. Walking by keys comes with stage 6, being near things; a key pressed during a commanded walk cuts it short where the islander is, and they walk on by hand from there.
 
+Added the same day: there's a clash between WASD moving the camera and moving the person. It's only in debugging for now, but it might happen in some utility of the game. **We can split them: the arrow keys as one thing and WASD as another, so you can pan around the world and move the islander directly.** To address in stage 6, when the islander starts moving.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

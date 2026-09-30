@@ -1,0 +1,53 @@
+# First steps, stage 3: a fire, as the islander on the companion's island,
+# by players' rules. From the beach, walk to the forest for fuel in sizes,
+# to the hillside for stones, back to the beach, and rub up a fire in a
+# ring, the way the stranded challenge proved. Played in the client, it's
+# drawn burning. See docs/challenges/first-steps.md.
+world companion.toml
+as survivor
+luck average
+rules player
+
+go forest
+gather sticks
+gather sticks
+repeat 3
+  gather grass
+end
+repeat 3
+  gather twigs
+end
+go hillside
+repeat 5
+  gather stones
+end
+assemble fire ring
+go forest
+go beach
+drop fire ring
+
+# Light it after sunset, to see the beach by it in the dark.
+wait until 18:05
+
+put grass in ring
+# Rub until the tuft catches: rubbing stops by itself when it does.
+rub wood against wood into ring
+wait 10
+look
+expect said burning
+put grass in ring
+put grass in ring
+wait 10
+repeat 3
+  put smallest wood in ring
+end
+wait 30
+put wood in ring
+put wood in ring
+wait 10 min
+look
+expect said lump of wood and ash
+expect said burning
+expect said night, lit by fire
+expect alive
+expect conserved

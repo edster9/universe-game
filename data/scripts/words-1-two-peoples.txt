@@ -1,0 +1,55 @@
+# A stranger's words, stage 1: seeing and saying in your own words. The
+# islander makes a spear; the stranger, whose people have never seen flint
+# or a spear, sees what anyone would see, and can't ask for it by a name they
+# don't know. Told its name, they know it, and know the next one they see.
+# See docs/challenges/strangers-words.md.
+world strangers-words.toml
+as stranger
+luck average
+
+# The stranger's own things, in their own words, and a creature they've
+# never seen, by how it looks.
+inventory
+expect said iron barb
+look
+expect said a large bristly beast
+expect said lump of glassy grey stone
+expect not said flint
+
+# The islander makes a spear on the hillside and puts it down.
+become islander
+include skills/make-a-spear.txt
+expect said spear of flint and wood
+drop spear
+look
+expect said flint nodules
+
+# To the stranger it's a barb of a strange stone on a pole.
+become stranger
+look
+expect said barb of glassy grey stone joined to long straight pole of wood
+expect not said spear
+try take the spear
+expect said you don't see the spear here
+take the pole
+expect said you take the barb of glassy grey stone joined to long straight pole of wood
+drop the pole
+
+# The islander tells them what it is, and what the creature is.
+become islander
+tell the stranger that the spear is a spear
+expect said you tell the stranger it's a spear
+become stranger
+look
+expect said spear of glassy grey stone and wood
+take the spear
+expect said you take the spear of glassy grey stone and wood
+drop the spear
+
+# A second spear, which the stranger has never been shown: they know it.
+become islander
+include skills/make-a-spear.txt
+drop the spear
+become stranger
+look
+expect said spear of glassy grey stone and wood (700 g), spear of glassy grey stone and wood (700 g)

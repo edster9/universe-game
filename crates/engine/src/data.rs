@@ -10,6 +10,7 @@ use crate::matter::{self, Composition, Material, MaterialId};
 use crate::units::{
     self, Credits, Energy, Mass, Temperature, parse_number, parse_percent, parse_quantity, property,
 };
+use crate::words::{Lexicon, Meaning, Recipe};
 use crate::world::{self, Chamber, Design, Form, Requirement, Role, Settings, World};
 
 #[derive(Deserialize)]
@@ -35,6 +36,21 @@ struct WorldFile {
     items: Vec<ItemDef>,
     #[serde(default, rename = "kind")]
     kinds: Vec<KindDef>,
+    #[serde(default, rename = "culture")]
+    cultures: Vec<CultureDef>,
+}
+
+/// What a people knows to begin with: the materials, shapes, designs, and
+/// kinds they have words for, and the word each is called, if not its label.
+/// See docs/ideas/vocabulary.md.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CultureDef {
+    id: String,
+    knows: Vec<String>,
+    /// Their own word for something they know, by its id.
+    #[serde(default)]
+    words: BTreeMap<String, String>,
 }
 
 #[derive(Deserialize)]
@@ -55,6 +71,8 @@ struct KindDef {
     /// The weapon members are born with, by how it does harm: tusks, claws,
     /// teeth. See docs/ideas/harm.md.
     weapon: Option<WeaponDef>,
+    /// How members look to someone who doesn't know the kind.
+    looks: Option<String>,
 }
 
 /// How a natural weapon does harm. Only an edge so far; blunt force comes
@@ -168,6 +186,8 @@ struct MaterialDef {
     softens_in: Vec<String>,
     /// What it spoils into, and how much of it spoils each day.
     decays: Option<DecaysDef>,
+    /// How it looks to someone with no word for it.
+    looks: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -200,6 +220,8 @@ struct ShapeDef {
     holds: Option<String>,
     /// For the casting role: the shape it gives liquid that sets inside.
     casts: Option<String>,
+    /// How it looks to someone with no word for it.
+    form: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -275,6 +297,8 @@ struct AgentDef {
     /// Starts knowing no way out of anywhere, and must find them.
     #[serde(default)]
     lost: bool,
+    /// The people it belongs to, whose words it starts with.
+    culture: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -458,13 +482,14 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
             || !library.items.is_empty()
         {
             return fail(format!(
-                "{name} is a library, so it holds only materials, shapes, and designs"
+                "{name} is a library, so it holds only materials, shapes, designs, kinds, and cultures"
             ));
         }
         file.materials.splice(0..0, library.materials);
         file.shapes.splice(0..0, library.shapes);
         file.designs.splice(0..0, library.designs);
         file.kinds.splice(0..0, library.kinds);
+        file.cultures.splice(0..0, library.cultures);
     }
     let mut world = World {
         settings: load_settings(&file.world)?,
@@ -578,6 +603,15 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
     }
 
     load_kinds(&mut world, &file.kinds)?;
+    let mut cultures = BTreeMap::new();
+    for def in &file.cultures {
+        if cultures
+            .insert(def.id.clone(), load_culture(&world, def)?)
+            .is_some()
+        {
+            return fail(format!("the culture {:?} is defined twice", def.id));
+        }
+    }
     for def in &file.agents {
         let count = def.count.unwrap_or(1);
         if count == 0 {
@@ -590,6 +624,15 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
                 def.id.clone()
             };
             load_agent(&mut world, def, &id, &file.kinds)?;
+            if let Some(culture) = &def.culture {
+                let lexicon = cultures.get(culture).ok_or_else(|| {
+                    LoadError(format!(
+                        "{id} belongs to {culture:?}, which isn't a culture"
+                    ))
+                })?;
+                let agent = world.find_by_key(&id).expect("just loaded");
+                world.lexicons.insert(agent, lexicon.clone());
+            }
         }
     }
 
@@ -871,6 +914,7 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
         let material = Material {
             key: def.id.clone(),
             label: def.label.clone(),
+            looks: def.looks.clone(),
             melting_point,
             boiling_point,
             specific_heat: parse_quantity(
@@ -1225,6 +1269,7 @@ fn load_kinds(world: &mut World, defs: &[KindDef]) -> Result<(), LoadError> {
         let kind = world::Kind {
             label: def.label.clone(),
             parent: def.parent.clone(),
+            looks: def.looks.clone(),
             instinct,
             weapon: def
                 .weapon
@@ -1550,7 +1595,69 @@ fn load_shape(def: &ShapeDef) -> Result<world::ShapeDef, LoadError> {
         push,
         capacity,
         casts: def.casts.clone(),
+        form: def.form.clone(),
     })
+}
+
+/// A people's starting words: each thing they know, by its label or their
+/// own word for it, and a way to make each design they know.
+fn load_culture(world: &World, def: &CultureDef) -> Result<Lexicon, LoadError> {
+    let mut lexicon = Lexicon::default();
+    for id in def.knows.iter().chain(def.words.keys()) {
+        if !def.knows.contains(id) {
+            return fail(format!(
+                "the culture {} has a word for {id:?}, which it doesn't know",
+                def.id
+            ));
+        }
+    }
+    for id in &def.knows {
+        let own = def.words.get(id);
+        // One id can name a material and a kind both, as a creature and
+        // what it's made of can share a name; knowing it means knowing each.
+        let mut known = false;
+        if let Some(material) = world.material_by_key(id) {
+            let word = own.unwrap_or(&world.materials[&material].label);
+            lexicon
+                .words
+                .push((word.clone(), Meaning::Material(material)));
+            known = true;
+        }
+        if let Some(shape) = world.shapes.get(id) {
+            let word = own.unwrap_or(&shape.label);
+            lexicon
+                .words
+                .push((word.clone(), Meaning::Shape(id.clone())));
+            known = true;
+        }
+        if let Some(design) = world.designs.get(id) {
+            let word = own.unwrap_or(&design.label).clone();
+            let look = world.look_of_design(id).expect("a design");
+            lexicon.words.push((word.clone(), Meaning::Like(look)));
+            lexicon.recipes.push((
+                word,
+                Recipe {
+                    design: Some(id.clone()),
+                    slots: design.slots.clone(),
+                },
+            ));
+            known = true;
+        }
+        if let Some(kind) = world.kinds.get(id) {
+            let word = own.unwrap_or(&kind.label);
+            lexicon
+                .words
+                .push((word.clone(), Meaning::Kind(id.clone())));
+            known = true;
+        }
+        if !known {
+            return fail(format!(
+                "the culture {} knows {id:?}, which isn't a material, shape, design, or kind",
+                def.id
+            ));
+        }
+    }
+    Ok(lexicon)
 }
 
 fn load_designs(world: &mut World, defs: &[DesignDef]) -> Result<(), LoadError> {

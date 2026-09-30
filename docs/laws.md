@@ -72,6 +72,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Buoyancy: something floats in a liquid if it weighs less than the liquid its volume displaces, and carries the difference | in | stranded 7 |
 | Whatever pulls an assembly together (a rope) must hold the weight of the rest of its parts | in | stranded 7 |
 | An assembly is built from the biggest fitting parts within reach, in hand or on the ground; if it's too heavy to carry, it stays where it was built | in | stranded 7 |
+| Someone with words of their own makes only what they know a way to make, by their word for it; with several ways, the first that has its parts | in | words 2 |
 | A pushing shape delivers a share of its user's effort into a liquid; bare hands deliver less | in | stranded 8 |
 | Propulsion against drag gives speed: drag takes ½ × density × bluntness × area × speed³ of power | in | stranded 8 |
 
@@ -83,6 +84,13 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Arriving somewhere makes it and the way you came certain, confirms or corrects every claim about what's there, and corrects what you remembered there that has gone | in | memory |
 | A way you were told of can be followed: if it's there, it becomes certain; if not, you spend a search's time and correct your memory | in | memory |
 | Reading a map adds its claims to memory as possible | in | memory |
+| Names live in minds: a person from a people with a culture sees and names things in their own words. Someone from a world with no cultures calls everything by its name from data | in | words 1 |
+| A people's culture is their starting words: the materials, shapes, designs, and kinds they know, each by its label or their own word, and a way to make each design they know | in | words 1 |
+| A thing with no word is described from what anyone can see: materials by how they look, shapes by their form, creatures by how they look or the nearest broader kind known, and things put together by their parts | in | words 1 |
+| Things are recognised by their look (the jobs their parts do, their parts, their size), never by how they were made. Same parts at half to double the size: the word, with its materials. The same jobs at that size from different parts: "something like" it. An example learned from a design has no size, and stands only for the same parts | in | words 2 |
+| A name finds what's called exactly that; then, for someone with words, what the name says it is, then a plain piece of the material named; then anything whose name mentions it. If what it finds look different, they're asked which | in | words 2 |
+| Being told a word ("tell … that … is a …") teaches it, with that thing as its example: a kind for a creature, a material for a plain piece, and otherwise its look. What you're told can be wrong | in | words 1 |
+| Parts can be joined without a design. Something that looks like nothing you have a word for is new, and naming it ("call it a …") keeps the word and the way you made it | in | words 2 |
 
 ## Life
 

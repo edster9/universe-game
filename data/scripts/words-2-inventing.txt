@@ -1,0 +1,71 @@
+# A stranger's words, stage 2: inventing and naming. The stranger joins their
+# iron barb to a stick: nothing they know looks like it, so they name it. Its
+# name brings the way to make another. What others make is seen in the words
+# each already has, near or exact, and the same word for two things that
+# look different makes the engine ask which. See
+# docs/challenges/strangers-words.md.
+world strangers-words.toml
+as stranger
+luck average
+
+# Something new, named, with the way it was made.
+go forest
+gather sticks
+join barb and wood
+expect said you've made something new: iron barb joined to lump of wood
+expect said what do you call it?
+call it a stabber
+expect said "make a stabber" will make another
+inventory
+expect said stabber of iron and wood
+try make a stabber
+expect said you need to be carrying a barb
+go hillside
+drop the stabber
+
+# To the islander, it's a chip of dark metal on a lump of wood.
+become islander
+go forest
+go hillside
+look
+expect said flake of dark metal joined to lump of wood
+
+# The islander's spear, before anyone names it: like the stranger's stabber.
+become islander
+include skills/make-a-spear.txt
+drop the spear
+become stranger
+look
+expect said something like a stabber, made of glassy grey stone and wood
+
+# Told it's a spear, the stranger has a closer word for it.
+become islander
+tell the stranger that the spear is a spear
+become stranger
+look
+expect said spear of glassy grey stone and wood
+expect said stabber of iron and wood
+
+# The islander takes the barb from the stabber and makes a spear with it.
+become islander
+disassemble the flake of dark metal joined to lump of wood
+take the flake
+expect said you take the flake of dark metal
+go forest
+gather sticks
+go hillside
+work wood into shaft with stone
+assemble spear
+expect said you put together the spear of dark metal and wood
+take the spear of flint and wood
+
+# Two spears in hand, that look different: which?
+try drop the spear
+expect said which spear: the spear of flint and wood, or the spear of dark metal and wood?
+drop the metal one
+expect said you drop the spear of dark metal and wood
+
+# To the stranger, the metal-headed spear is a spear, but of iron.
+become stranger
+look
+expect said spear of iron and wood

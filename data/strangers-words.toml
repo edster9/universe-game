@@ -1,0 +1,140 @@
+# The "a stranger's words" challenge: two people from two peoples, with two
+# sets of words, on one island. See docs/challenges/strangers-words.md.
+#
+# The islander's people know the island: its stone and flint, its creatures,
+# and how to make a spear. The stranger washed up from a people who work
+# metal and sail: they know iron, rope, and the sea, and call a sharp chip a
+# barb, but have never seen flint, a shaft, or a spear. What each sees, and
+# what each can say, goes through their own words.
+
+uses = ["island-things.toml"]
+
+[world]
+reference_temperature = "293 K"
+open_air_heat_loss = "5 W/K"
+max_touch_temperature = "330 K"
+seed = 1
+air_clearing = "0.1%"
+calm_step = "1 min"
+convection = "10 W/(m2*K)"
+emissivity = "90%"
+touch_transfer = "100 W/(m2*K)"
+wear_rate = "10 mg/s"
+friction_share = "50%"
+rubbing_time = "10 min"
+flame_share = "50%"
+hand_hardness = "1"
+explore_time = "30 min"
+explore_chance = "60%"
+wound_rate = "20 g/s"
+hit_chance = "60%"
+day = "24 h"
+starts_at = "8 h"
+sunrise = "6 h"
+sunset = "18 h"
+
+[[culture]]
+id = "islanders"
+knows = [
+    "water", "seawater", "wood", "grass", "stone", "flint", "rock", "clay", "fibre",
+    "flesh", "meat", "cooked-meat", "fat", "hide", "bone", "fish", "shellfish", "shell",
+    "roots", "litter", "ash",
+    "flake", "shaft", "rope", "pot",
+    "spear", "raft", "lean-to", "fire-ring",
+    "animal", "boar", "tree", "shrub", "human",
+]
+
+[[culture]]
+id = "far-folk"
+knows = [
+    "water", "seawater", "wood", "stone", "rock", "iron", "fibre",
+    "flesh", "meat", "cooked-meat", "fat", "hide", "bone", "fish", "shell",
+    "flake", "rope", "pot", "paddle",
+    "animal", "tree", "human",
+]
+words = { flake = "barb" }
+
+[[place]]
+id = "beach"
+label = "the beach"
+exits = ["forest"]
+distances = { forest = "300 m" }
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "forest"
+label = "the forest"
+exits = ["beach", "hillside"]
+distances = { hillside = "500 m" }
+height = "30 m"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "hillside"
+label = "the hillside"
+exits = ["forest"]
+height = "150 m"
+temperature = "300 K"
+night = "292 K"
+
+[[agent]]
+id = "islander"
+label = "the islander"
+at = "beach"
+kind = "human"
+culture = "islanders"
+temperature = "310 K"
+
+[[agent]]
+id = "stranger"
+label = "the stranger"
+at = "hillside"
+kind = "human"
+culture = "far-folk"
+temperature = "310 K"
+
+# A boar, which the stranger has never seen.
+[[agent]]
+id = "boar"
+label = "a boar"
+at = "hillside"
+kind = "boar"
+temperature = "311 K"
+range = ["forest", "hillside"]
+
+# What the stranger brought ashore: a barb of iron.
+[[item]]
+id = "barb"
+at = "stranger"
+mass = "400 g"
+material = "iron"
+shape = "flake"
+
+[[item]]
+id = "sticks"
+label = "fallen sticks"
+at = "forest"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { size = "200 g", find_time = "10 min" }
+
+[[item]]
+id = "stones"
+label = "loose stones"
+at = "hillside"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 min" }
+
+[[item]]
+id = "flint"
+label = "flint nodules"
+at = "hillside"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { size = "500 g", find_time = "10 min" }

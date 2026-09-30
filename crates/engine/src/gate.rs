@@ -164,10 +164,10 @@ pub enum Change {
     },
     /// Change how closely a shaped part matches its shape, in µm.
     Refine { entity: EntityId, tolerance: u64 },
-    /// Put `parts` together to `design`, as a new thing at `at`, with the
-    /// datasheet measured for it.
+    /// Put `parts` together to `design`, or to none, as something new, as a
+    /// new thing at `at`, with the datasheet measured for it.
     Assemble {
-        design: String,
+        design: Option<String>,
         parts: Vec<EntityId>,
         at: EntityId,
         datasheet: Datasheet,
@@ -177,6 +177,21 @@ pub enum Change {
     Disassemble { assembly: EntityId },
     /// Light or put out a chamber.
     Light { chamber: EntityId, lit: bool },
+    /// Someone learns a word, or another meaning for one they know. See
+    /// docs/ideas/vocabulary.md.
+    Word {
+        agent: EntityId,
+        word: String,
+        meaning: crate::words::Meaning,
+    },
+    /// Someone learns a way to make what a word names.
+    Recipe {
+        agent: EntityId,
+        word: String,
+        recipe: crate::words::Recipe,
+    },
+    /// Someone has made something, which "it" now means to them.
+    Made { agent: EntityId, thing: EntityId },
 }
 
 /// Something that can hold heat.
@@ -706,6 +721,45 @@ impl World {
                 Ok(())
             }
 
+            Change::Word {
+                agent,
+                word,
+                meaning,
+            } => {
+                let lexicon = self
+                    .lexicons
+                    .get_mut(agent)
+                    .ok_or(Fault::UnknownEntity(*agent))?;
+                let entry = (word.clone(), meaning.clone());
+                if !lexicon.words.contains(&entry) {
+                    lexicon.words.push(entry);
+                }
+                Ok(())
+            }
+            Change::Recipe {
+                agent,
+                word,
+                recipe,
+            } => {
+                let lexicon = self
+                    .lexicons
+                    .get_mut(agent)
+                    .ok_or(Fault::UnknownEntity(*agent))?;
+                let entry = (word.clone(), recipe.clone());
+                if !lexicon.recipes.contains(&entry) {
+                    lexicon.recipes.push(entry);
+                }
+                Ok(())
+            }
+            &Change::Made { agent, thing } => {
+                if !self.exists(thing) {
+                    return Err(Fault::UnknownEntity(thing));
+                }
+                if let Some(lexicon) = self.lexicons.get_mut(&agent) {
+                    lexicon.last_made = Some(thing);
+                }
+                Ok(())
+            }
             &Change::Learn { agent, from, to } => {
                 if !self.exits(from).contains(&to) {
                     return Err(Fault::NotAPlace(to));
@@ -843,9 +897,12 @@ impl World {
                 at,
                 datasheet,
             } => {
-                if !self.designs.contains_key(design) {
+                if let Some(design) = design
+                    && !self.designs.contains_key(design)
+                {
                     return Err(Fault::UnknownDesign(design.clone()));
                 }
+                let def = design.as_ref().map(|d| self.designs[d].clone());
                 self.must_exist(*at)?;
                 let mut seen = std::collections::BTreeSet::new();
                 for &part in parts {
@@ -870,11 +927,11 @@ impl World {
                     },
                 );
                 self.portable.insert(new);
-                if self.designs[design].holds {
+                if def.as_ref().is_some_and(|d| d.holds) {
                     self.containers.insert(new);
                 }
                 // A design that encloses heat makes a chamber.
-                if let Some(chamber) = self.designs[design].chamber.clone() {
+                if let Some(chamber) = def.and_then(|d| d.chamber) {
                     self.chambers.insert(new, chamber);
                 }
                 self.locations.insert(new, *at);

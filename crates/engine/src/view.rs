@@ -68,11 +68,11 @@ pub fn look(world: &World, actor: EntityId) -> Option<Look> {
     };
     for id in world.contents(here).into_iter().filter(|&e| e != actor) {
         if world.is_agent(id) {
-            look.people.push(world.label(id));
+            look.people.push(world.label_for(actor, id));
         } else if world.is_all(id, State::Gas) {
-            look.air.push(thing(world, id));
+            look.air.push(thing(world, actor, id));
         } else {
-            look.things.push(thing(world, id));
+            look.things.push(thing(world, actor, id));
         }
     }
     Some(look)
@@ -83,7 +83,7 @@ pub fn inventory(world: &World, actor: EntityId) -> Inventory {
     let things: Vec<Thing> = world
         .contents(actor)
         .into_iter()
-        .map(|e| thing(world, e))
+        .map(|e| thing(world, actor, e))
         .collect();
     Inventory {
         things,
@@ -92,7 +92,7 @@ pub fn inventory(world: &World, actor: EntityId) -> Inventory {
     }
 }
 
-fn thing(world: &World, id: EntityId) -> Thing {
+fn thing(world: &World, viewer: EntityId, id: EntityId) -> Thing {
     let ambient = world
         .place_of(id)
         .map_or(world.settings().reference_temperature, |p| world.ambient(p));
@@ -113,13 +113,13 @@ fn thing(world: &World, id: EntityId) -> Thing {
         world
             .held(id)
             .into_iter()
-            .map(|e| thing(world, e))
+            .map(|e| thing(world, viewer, e))
             .collect()
     } else {
         Vec::new()
     };
     Thing {
-        label: world.label(id),
+        label: world.label_for(viewer, id),
         mass: world.mass(id),
         temperature,
         notes,

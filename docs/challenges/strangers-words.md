@@ -43,4 +43,37 @@ Size is judged by weight. Places' and people's names stay as they are, governed 
 
 ## Results
 
-Not started.
+**Both stages passed, 2026-09-29.** World: `data/strangers-words.toml`, with two cultures, `islanders` and `far-folk`. Plain descriptions of materials, shapes, and kinds (`looks` and `form`) are in `data/island-things.toml`. Proofs: `data/scripts/words-1-two-peoples.txt`, `data/scripts/words-2-inventing.txt`, and `crates/engine/tests/words.rs`.
+
+### Stage 1: seeing and saying in your own words
+
+- The stranger carries an "iron barb" (their word for the shape the islander calls a flake). They see the boar as "a large bristly beast", and the flint as "glassy grey stone".
+- The islander makes a spear and sees "spear of flint and wood". The stranger sees "barb of glassy grey stone joined to long straight pole of wood". "Take the spear" is refused ("you don't see the spear here"); "take the pole" works.
+- `tell the stranger that the spear is a spear`: the stranger now sees "spear of glassy grey stone and wood", and takes it by that name. **A second spear they were never shown is a spear to them too.**
+- A world with no cultures names everything exactly as before; every earlier script passes unchanged.
+
+### Stage 2: inventing and naming
+
+- The stranger joins their barb to a stick: *"You've made something new: iron barb joined to lump of wood. What do you call it?"* They call it a stabber, which keeps the way they made it: "make a stabber" works, and needs another barb.
+- To the islander, the stabber is a "flake of dark metal joined to lump of wood".
+- **Before anyone names it, the stranger sees the islander's spear as "something like a stabber"**: it does the same job at about the same size, from different parts. That's the owner's "I can see that they have something that resembles a spear". Told it's a spear, the closer word wins.
+- The islander takes the barb out of the stabber and makes a spear with it. With two spears in hand, "drop the spear" asks: *"Which spear: the spear of flint and wood, or the spear of dark metal and wood?"*, and "drop the metal one" works.
+- To the stranger, the metal-headed spear is a "spear of iron and wood": the same parts as the spear they learned, in another material.
+
+### What the attempt found
+
+- **A loose likeness mustn't beat a word you have.** Once told "spear", the stranger saw their own lone barb as "something like a spear": both cut, at about the same weight. Now a word for a thing's own shape comes before a likeness.
+- **Names need an order of closeness.** "Gather flint" asked whether it meant the flint nodules or the spear of flint lying beside them, and "work wood" asked about the lump of wood or the spear of flint and wood. Now a name finds, in turn: what's called exactly that; what the name says a thing is ("flint nodules" before "spear of flint and wood"); a plain piece of the material named; and only then anything that mentions it. Asking "which?" happens only among the closest.
+- **The same id can name a material and a kind** (the island's fish), so a culture that knows it learns both.
+
+### Checks have teeth
+
+Each sabotage made the proof scripts fail: everyone seeing the world's own names; everything looking like everything; and never asking which.
+
+### Simplified
+
+- **Size is judged by weight**, and a thing's form only by its parts and their jobs. Anything that cuts, at a similar weight, is "something like" a cutting thing you know.
+- **Tools a source needs are still matched by the world's design**, not by look: fish in the shallows need a "spear", and an invented stabber won't do, even though it would work.
+- Places and people keep their names. Things named in data, such as a source like "flint nodules", show that name to anyone who knows what they're made of; otherwise they're described.
+- Things made in play can still be named by number ("#12"), which is how a client will point at something. Data ids can't be used by people with words of their own.
+- Words are English. Told words can be lies, but nothing tests lying yet. "It" means only what you made last. A single thing can't yet have its own name ("Old Faithful").

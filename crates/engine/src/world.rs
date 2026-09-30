@@ -270,7 +270,7 @@ pub struct Growth {
 
 /// What a shaped part does, which decides what gets measured about it.
 /// These are laws, so they're named for what they do, not what they're called.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Role {
     /// Cuts. Measured: edge width and hardness.
     Cutting,
@@ -345,6 +345,8 @@ pub struct Kind {
     /// The width of the edge members are born with, such as tusks or claws,
     /// in µm.
     pub weapon: Option<u64>,
+    /// How members look to someone who doesn't know the kind.
+    pub looks: Option<String>,
 }
 
 /// The rules an instinct follows, beyond looking after its own body.
@@ -403,6 +405,8 @@ pub struct ShapeDef {
     pub capacity: Option<Mass>,
     /// For a casting shape: the shape liquid takes when it sets inside.
     pub casts: Option<String>,
+    /// How the shape looks to someone with no word for it.
+    pub form: Option<String>,
 }
 
 /// What fills one slot of a design.
@@ -441,7 +445,9 @@ pub struct Form {
 /// assembled.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Assembly {
-    pub design: String,
+    /// The design it was built to, or none if it was put together without
+    /// one, as something new.
+    pub design: Option<String>,
     /// The parts it's made of. Anything else inside is being held.
     pub parts: Vec<EntityId>,
     pub datasheet: Datasheet,
@@ -538,6 +544,9 @@ pub struct World {
     pub(crate) chambers: BTreeMap<EntityId, Chamber>,
     pub(crate) forms: BTreeMap<EntityId, Form>,
     pub(crate) assemblies: BTreeMap<EntityId, Assembly>,
+    /// Each person's own words, if they have them. Someone without is from a
+    /// world with no cultures, and calls everything by its name from data.
+    pub(crate) lexicons: BTreeMap<EntityId, crate::words::Lexicon>,
     pub(crate) wallets: BTreeMap<EntityId, Credits>,
     pub(crate) log: Vec<LogEntry>,
 }
@@ -703,10 +712,10 @@ impl World {
             return label.clone();
         }
         if let Some(assembly) = self.assemblies.get(&id) {
-            return self
-                .designs
-                .get(&assembly.design)
-                .map_or_else(|| assembly.design.clone(), |d| d.label.clone());
+            return match assembly.design.as_ref().and_then(|d| self.designs.get(d)) {
+                Some(design) => design.label.clone(),
+                None => self.joined(assembly.parts.iter().map(|&p| self.label(p)).collect()),
+            };
         }
         let Some(composition) = self.matter.get(&id) else {
             return String::new();
@@ -744,6 +753,16 @@ impl World {
             )
         } else {
             format!("lump of {names}")
+        }
+    }
+
+    /// How something put together without a design is described: its parts,
+    /// biggest first, "a joined to b and c".
+    pub(crate) fn joined(&self, labels: Vec<String>) -> String {
+        match labels.split_first() {
+            None => String::new(),
+            Some((first, [])) => first.clone(),
+            Some((first, rest)) => format!("{first} joined to {}", list_and(rest)),
         }
     }
 
@@ -830,6 +849,14 @@ impl World {
     /// A shaped part's tolerance in µm.
     pub fn tolerance(&self, id: EntityId) -> Option<u64> {
         self.tolerance.get(&id).copied()
+    }
+
+    /// The design something was built to, if it was built to one.
+    pub fn design_of(&self, id: EntityId) -> Option<&Design> {
+        self.assemblies
+            .get(&id)
+            .and_then(|a| a.design.as_ref())
+            .and_then(|d| self.designs.get(d))
     }
 
     pub fn assembly(&self, id: EntityId) -> Option<&Assembly> {
@@ -1308,5 +1335,14 @@ impl World {
             return Err("surroundings belong to something that isn't a place".into());
         }
         Ok(())
+    }
+}
+
+/// "a", "a and b", or "a, b and c".
+pub(crate) fn list_and(items: &[String]) -> String {
+    match items {
+        [] => String::new(),
+        [one] => one.clone(),
+        [rest @ .., last] => format!("{} and {last}", rest.join(", ")),
     }
 }

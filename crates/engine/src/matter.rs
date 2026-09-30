@@ -51,6 +51,8 @@ pub struct Material {
     /// What it spoils into, and the share that spoils each day, in parts per
     /// ten thousand, as food rots. Spoiling keeps the energy in it.
     pub decays: Option<(MaterialId, u64)>,
+    /// How it looks to someone with no word for it.
+    pub looks: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -239,7 +239,7 @@ pub fn measure(world: &World, id: EntityId) -> Datasheet {
     };
     if let Some(share) = world
         .assembly(id)
-        .and_then(|a| world.designs()[&a.design].shelter)
+        .and_then(|_| world.design_of(id).and_then(|d| d.shelter))
     {
         sheet.set(
             Property::Shelters,

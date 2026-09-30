@@ -188,7 +188,7 @@ Recognise by resemblance of look (what it does, its form, its size, what it seem
 
 One consequence for [recognition.md](recognition.md): with visuals, the swindle of "a stick sold as a gun" shifts. Your eyes will see a stick. Deception moves to what the eye can't check: a coin's metal, a blade's hardness, a gun that looks right but doesn't fire.
 
-**Not built yet.** It becomes the next stage when the stages resume, before living with the island stages 5 and 6: each mind gets words; views and commands go through them; things get a measured look; and hide shoes, which aren't in the islander's starting culture, are the first thing invented and named.
+**Built 2026-09-29** as the challenge [a stranger's words](../challenges/strangers-words.md): each mind has its own words; views, commands, and replies go through them; things have a measured look; words are learned by being told; parts can be joined without a design, and something new asks for a name. What the attempt found, and what's simplified, is in the challenge's results. Hide shoes, in living with the island stage 5, will be the first thing the islander invents and names.
 
 ## The same word for different things
 

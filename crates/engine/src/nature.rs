@@ -725,7 +725,7 @@ fn sheltered(world: &World, body: EntityId) -> Option<u64> {
     if world.place_of(shelter) != world.place_of(body) {
         return None;
     }
-    world.designs[&world.assembly(shelter)?.design].shelter
+    world.design_of(shelter)?.shelter
 }
 
 /// A body awake too long falls asleep where it is, until rested.

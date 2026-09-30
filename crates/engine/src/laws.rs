@@ -14,6 +14,7 @@ use crate::intent::Intent;
 use crate::matter::{self, Composition, MaterialId, State};
 use crate::nature;
 use crate::units::{Credits, Mass};
+use crate::words::Recipe;
 use crate::world::{Claim, EntityId, Requirement, World};
 
 /// How long it takes to take in what a map shows, in seconds.
@@ -67,6 +68,15 @@ pub enum Refusal {
         container: String,
     },
     AlreadyCarrying(String),
+    /// A name fits several things that look different.
+    Which {
+        name: String,
+        options: Vec<String>,
+    },
+    /// Nothing has just been made for "it" to mean.
+    NothingMade,
+    /// Only someone with words of their own can learn one.
+    NoWordsToLearn(String),
     NotCarrying(String),
     CannotCarry(String),
     NotAContainer(String),
@@ -173,6 +183,15 @@ impl fmt::Display for Refusal {
             }
             Refusal::NotInside { item, container } => write!(f, "there's no {item} in {container}"),
             Refusal::AlreadyCarrying(name) => write!(f, "you're already carrying {name}"),
+            Refusal::Which { name, options } => {
+                let options: Vec<String> = options.iter().map(|o| format!("the {o}")).collect();
+                let (last, rest) = options.split_last().expect("at least two");
+                write!(f, "which {name}: {}, or {last}?", rest.join(", "))
+            }
+            Refusal::NothingMade => write!(f, "you haven't made anything to name"),
+            Refusal::NoWordsToLearn(name) => {
+                write!(f, "{name} already knows every word in this world")
+            }
             Refusal::NotCarrying(name) => write!(f, "you aren't carrying {name}"),
             Refusal::CannotCarry(name) => write!(f, "you can't carry {name}"),
             Refusal::NotAContainer(name) => write!(f, "you can't put things in {name}"),
@@ -200,11 +219,14 @@ impl fmt::Display for Refusal {
             Refusal::NoFuel(name) => write!(f, "there's nothing in {name} that burns"),
             Refusal::NotLiquid(name) => write!(f, "{name} isn't liquid"),
             Refusal::WouldMelt(name) => write!(f, "{name} would melt"),
-            Refusal::UnknownShape(name) => write!(f, "there's no shape called {name}"),
+            Refusal::UnknownShape(name) => write!(f, "you don't know a shape called {name}"),
             Refusal::NotSolid(name) => write!(f, "{name} isn't solid"),
             Refusal::TooHot(name) => write!(f, "{name} is too hot to touch"),
             Refusal::CannotWork(name) => write!(f, "{name} can't be shaped"),
             Refusal::UnknownDesign(name) => write!(f, "you don't know a design called {name}"),
+            Refusal::MissingPart { slot, needs } if slot.is_empty() => {
+                write!(f, "you need to be carrying a {needs}")
+            }
             Refusal::MissingPart { slot, needs } => {
                 write!(f, "you need to be carrying a {needs} for the {slot}")
             }
@@ -428,7 +450,7 @@ fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
             let Some(reach) = Reach::of(world, actor).ok() else {
                 return 0;
             };
-            let Some(found) = find(world, reach.around.iter().copied(), source) else {
+            let Some(found) = find(world, actor, reach.around.iter().copied(), source) else {
                 return 0;
             };
             let Some(pieces) = world.pieces(found) else {
@@ -474,11 +496,12 @@ pub fn find_reachable(world: &World, actor: EntityId, name: &str) -> Option<Enti
     if normalize(name) == "here" {
         return Some(reach.here);
     }
-    if is_called(world, actor, name) || normalize(name) == "me" {
+    if is_called(world, actor, actor, name) || normalize(name) == "me" {
         return Some(actor);
     }
     let nearby = reach.around.iter().chain(&reach.inside).copied();
-    find(world, reach.carried.iter().copied(), name).or_else(|| find(world, nearby, name))
+    find(world, actor, reach.carried.iter().copied(), name)
+        .or_else(|| find(world, actor, nearby, name))
 }
 
 /// What a person can reach from where they stand.
@@ -528,9 +551,24 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
     if world.is_asleep(actor) {
         return Err(Refusal::Asleep);
     }
+    // A name that fits several things that look different: ask which, from
+    // what's in hand, then what's around, then what's inside things.
+    for name in intent.things_named() {
+        for set in [&reach.carried, &reach.around, &reach.inside] {
+            let fits = set
+                .iter()
+                .any(|&id| is_called(world, actor, id, name) || mentions(world, actor, id, name));
+            if fits {
+                if let Some(refusal) = which(world, actor, set.iter().copied(), name) {
+                    return Err(refusal);
+                }
+                break;
+            }
+        }
+    }
     let carried = || reach.carried.iter().copied();
     let carrying = |name: &String| {
-        find(world, carried(), name).ok_or_else(|| Refusal::NotCarrying(name.clone()))
+        find(world, actor, carried(), name).ok_or_else(|| Refusal::NotCarrying(name.clone()))
     };
 
     match intent {
@@ -561,17 +599,17 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Butcher { body, tool } => {
-            let carcass = find(world, reach.around.iter().copied(), body)
+            let carcass = find(world, actor, reach.around.iter().copied(), body)
                 .ok_or_else(|| Refusal::NotHere(body.clone()))?;
             let dead = world.life(carcass).is_some_and(|l| l.died_of.is_some());
             if !dead {
-                return Err(Refusal::NotDead(named(world, carcass)));
+                return Err(Refusal::NotDead(named(world, actor, carcass)));
             }
             let tool = carrying(tool)?;
             if !has_edge(world, tool) {
-                return Err(Refusal::NoEdge(Some(named(world, tool))));
+                return Err(Refusal::NoEdge(Some(named(world, actor, tool))));
             }
-            harder_than(world, tool, carcass)?;
+            harder_than(world, actor, tool, carcass)?;
             let composition = world.composition(carcass).expect("a body is matter");
             let fluid = world.life(carcass).expect("checked").fluid;
             // What stays behind is the hardest part: the frame. Everything
@@ -585,7 +623,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 .iter()
                 .max_by_key(|(mass, m)| (world.materials()[m].hardness, *mass))
             else {
-                return Err(Refusal::NotDead(named(world, carcass)));
+                return Err(Refusal::NotDead(named(world, actor, carcass)));
             };
             // The rest comes away in cuts no heavier than the world's cut; the
             // body's fluid stays with the frame.
@@ -625,13 +663,13 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 }
             }
             if changes.is_empty() {
-                return Err(Refusal::NotDead(named(world, carcass)));
+                return Err(Refusal::NotDead(named(world, actor, carcass)));
             }
             Ok(changes)
         }
 
         Intent::Attack { target, with } => {
-            let victim = find(world, reach.around.iter().copied(), target)
+            let victim = find(world, actor, reach.around.iter().copied(), target)
                 .filter(|&v| world.is_living(v))
                 .ok_or_else(|| Refusal::NotHere(target.clone()))?;
             // An edge: a tool's, or one the body is born with.
@@ -639,7 +677,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 Some(tool) => {
                     let tool = carrying(tool)?;
                     if !has_edge(world, tool) {
-                        return Err(Refusal::NoEdge(Some(named(world, tool))));
+                        return Err(Refusal::NoEdge(Some(named(world, actor, tool))));
                     }
                     edge_width(world, tool)
                 }
@@ -658,15 +696,15 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Read { item } => {
-            let found = find(world, reach.around_or_carried(), item)
+            let found = find(world, actor, reach.around_or_carried(), item)
                 .ok_or_else(|| Refusal::NotHere(item.clone()))?;
             let claims = world
                 .map(found)
-                .ok_or_else(|| Refusal::NothingToRead(named(world, found)))?;
+                .ok_or_else(|| Refusal::NothingToRead(named(world, actor, found)))?;
             if world.memory(actor).is_none() {
-                return Err(Refusal::NothingToRead(named(world, found)));
+                return Err(Refusal::NothingToRead(named(world, actor, found)));
             }
-            let source = named(world, found);
+            let source = named(world, actor, found);
             Ok(claims
                 .iter()
                 .map(|claim| Change::Hear {
@@ -678,36 +716,37 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Take { item } => {
-            if let Some(found) = find(world, reach.around.iter().copied(), item) {
+            if let Some(found) = find(world, actor, reach.around.iter().copied(), item) {
                 return lift(world, actor, found);
             }
-            if let Some(found) = find(world, reach.inside.iter().copied(), item) {
+            if let Some(found) = find(world, actor, reach.inside.iter().copied(), item) {
                 let container = world.location(found).expect("inside something");
                 return Err(Refusal::InContainer {
-                    item: named(world, found),
-                    container: named(world, container),
+                    item: named(world, actor, found),
+                    container: named(world, actor, container),
                 });
             }
-            if find(world, carried(), item).is_some() {
+            if find(world, actor, carried(), item).is_some() {
                 return Err(Refusal::AlreadyCarrying(item.clone()));
             }
-            if is_called(world, actor, item) {
+            if is_called(world, actor, actor, item) {
                 return Err(Refusal::NotYourself);
             }
             Err(Refusal::NotHere(item.clone()))
         }
 
         Intent::TakeFrom { item, from } => {
-            let container = find(world, reach.around_or_carried(), from)
+            let container = find(world, actor, reach.around_or_carried(), from)
                 .ok_or_else(|| Refusal::NotHere(from.clone()))?;
             if !world.is_container(container) {
-                return Err(Refusal::NotAContainer(named(world, container)));
+                return Err(Refusal::NotAContainer(named(world, actor, container)));
             }
-            let found =
-                find(world, world.held(container), item).ok_or_else(|| Refusal::NotInside {
+            let found = find(world, actor, world.held(container), item).ok_or_else(|| {
+                Refusal::NotInside {
                     item: item.clone(),
-                    container: named(world, container),
-                })?;
+                    container: named(world, actor, container),
+                }
+            })?;
             lift(world, actor, found)
         }
 
@@ -721,10 +760,10 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Put { item, into } => {
             let found = carrying(item)?;
-            let container = find(world, reach.around_or_carried(), into)
+            let container = find(world, actor, reach.around_or_carried(), into)
                 .ok_or_else(|| Refusal::NotHere(into.clone()))?;
             if !world.is_container(container) {
-                return Err(Refusal::NotAContainer(named(world, container)));
+                return Err(Refusal::NotAContainer(named(world, actor, container)));
             }
             if world.is_within(container, found) {
                 return Err(Refusal::IntoItself);
@@ -739,7 +778,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             let found = carrying(item)?;
             let recipient = person_here(world, actor, &reach.around, to)?;
             can_carry(world, recipient, world.mass(found))
-                .map_err(|_| Refusal::TheyCantCarry(named(world, recipient)))?;
+                .map_err(|_| Refusal::TheyCantCarry(named(world, actor, recipient)))?;
             Ok(vec![Change::Move {
                 entity: found,
                 to: recipient,
@@ -769,17 +808,17 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Dig { source, tool } => {
             must_know(world, actor, Process::Dig)?;
-            let from = find(world, reach.around.iter().copied(), source)
+            let from = find(world, actor, reach.around.iter().copied(), source)
                 .ok_or_else(|| Refusal::NotHere(source.clone()))?;
             let composition = world
                 .composition(from)
                 .filter(|_| !world.is_portable(from))
-                .ok_or_else(|| Refusal::NotDiggable(named(world, from)))?;
+                .ok_or_else(|| Refusal::NotDiggable(named(world, actor, from)))?;
             let tool = carrying(tool)?;
-            harder_than(world, tool, from)?;
+            harder_than(world, actor, tool, from)?;
             let amount = world.settings().dig_amount;
             if world.mass(from) <= amount {
-                return Err(Refusal::Exhausted(named(world, from)));
+                return Err(Refusal::Exhausted(named(world, actor, from)));
             }
             can_carry(world, actor, amount)?;
             let take =
@@ -803,36 +842,36 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 let held: u64 = world.held(c).iter().map(|&e| world.mass(e).mg()).sum();
                 capacity.is_some_and(|cap| held < cap.mg())
             };
-            let vessel = find(world, within().filter(|&c| has_room(c)), container)
-                .or_else(|| find(world, within(), container))
+            let vessel = find(world, actor, within().filter(|&c| has_room(c)), container)
+                .or_else(|| find(world, actor, within(), container))
                 .ok_or_else(|| Refusal::NotHere(container.clone()))?;
             let capacity = world
                 .shape(vessel)
                 .and_then(|s| world.shapes().get(s))
                 .and_then(|def| def.capacity)
                 .filter(|_| world.is_container(vessel))
-                .ok_or_else(|| Refusal::CannotFill(named(world, vessel)))?;
+                .ok_or_else(|| Refusal::CannotFill(named(world, actor, vessel)))?;
             let candidates = reach.around.iter().chain(&reach.inside).copied();
-            let from = find(world, candidates.filter(|&e| e != vessel), source)
+            let from = find(world, actor, candidates.filter(|&e| e != vessel), source)
                 .ok_or_else(|| Refusal::NotHere(source.clone()))?;
             if !world.is_all(from, State::Liquid) {
-                return Err(Refusal::NotLiquid(named(world, from)));
+                return Err(Refusal::NotLiquid(named(world, actor, from)));
             }
-            softens(world, vessel, from)?;
+            softens(world, actor, vessel, from)?;
             let held: u64 = world.held(vessel).iter().map(|&e| world.mass(e).mg()).sum();
             let amount = capacity
                 .mg()
                 .saturating_sub(held)
                 .min(world.mass(from).mg().saturating_sub(1));
             if amount == 0 {
-                return Err(Refusal::Full(named(world, vessel)));
+                return Err(Refusal::Full(named(world, actor, vessel)));
             }
             if reach.carried.contains(&vessel) {
                 can_carry(world, actor, Mass::from_mg(amount))?;
             }
             let composition = world.composition(from).expect("a liquid is matter");
             let take = matter::proportional(composition, Mass::from_mg(amount))
-                .ok_or_else(|| Refusal::NotLiquid(named(world, from)))?;
+                .ok_or_else(|| Refusal::NotLiquid(named(world, actor, from)))?;
             Ok(vec![Change::Split {
                 from,
                 take,
@@ -842,16 +881,16 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Light { chamber } => {
             must_know(world, actor, Process::Light)?;
-            let found = find(world, reach.around.iter().copied(), chamber)
+            let found = find(world, actor, reach.around.iter().copied(), chamber)
                 .ok_or_else(|| Refusal::NotHere(chamber.clone()))?;
             let state = world
                 .chamber(found)
-                .ok_or_else(|| Refusal::NotAChamber(named(world, found)))?;
+                .ok_or_else(|| Refusal::NotAChamber(named(world, actor, found)))?;
             if state.lit {
-                return Err(Refusal::AlreadyLit(named(world, found)));
+                return Err(Refusal::AlreadyLit(named(world, actor, found)));
             }
             if !holds_fuel(world, found) {
-                return Err(Refusal::NoFuel(named(world, found)));
+                return Err(Refusal::NoFuel(named(world, actor, found)));
             }
             // Fire comes from fire: something burning must be within reach.
             let flame = reach
@@ -863,7 +902,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     e != found && (world.is_burning(e) || world.chamber(e).is_some_and(|c| c.lit))
                 });
             if !flame {
-                return Err(Refusal::NoFlame(named(world, found)));
+                return Err(Refusal::NoFlame(named(world, actor, found)));
             }
             Ok(vec![Change::Light {
                 chamber: found,
@@ -874,10 +913,10 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         Intent::Pour { liquid, into } => {
             must_know(world, actor, Process::Pour)?;
             let candidates = reach.around.iter().chain(&reach.inside).copied();
-            let found =
-                find(world, candidates, liquid).ok_or_else(|| Refusal::NotHere(liquid.clone()))?;
+            let found = find(world, actor, candidates, liquid)
+                .ok_or_else(|| Refusal::NotHere(liquid.clone()))?;
             if !world.is_all(found, State::Liquid) {
-                return Err(Refusal::NotLiquid(named(world, found)));
+                return Err(Refusal::NotLiquid(named(world, actor, found)));
             }
             // Into something on the ground, or something sitting in another
             // container, like a form sitting inside a chamber.
@@ -888,11 +927,11 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 .copied()
                 .filter(|&t| t != found);
             let target =
-                find(world, targets, into).ok_or_else(|| Refusal::NotHere(into.clone()))?;
+                find(world, actor, targets, into).ok_or_else(|| Refusal::NotHere(into.clone()))?;
             if !world.is_container(target) {
-                return Err(Refusal::NotAContainer(named(world, target)));
+                return Err(Refusal::NotAContainer(named(world, actor, target)));
             }
-            softens(world, target, found)?;
+            softens(world, actor, target, found)?;
             // A container can't hold anything hotter than it can stand.
             let limit = world
                 .composition(target)
@@ -901,7 +940,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if let (Some(limit), Some(heat)) = (limit, world.temperature(found))
                 && heat >= limit
             {
-                return Err(Refusal::WouldMelt(named(world, target)));
+                return Err(Refusal::WouldMelt(named(world, actor, target)));
             }
             Ok(vec![Change::Move {
                 entity: found,
@@ -912,22 +951,28 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         Intent::Work { item, shape, tool } => {
             must_know(world, actor, Process::Work)?;
             let wanted = normalize(shape);
-            let shape_key = world
-                .shapes()
-                .iter()
-                .find(|(key, def)| normalize(key) == wanted || normalize(&def.label) == wanted)
-                .map(|(key, _)| key.clone())
-                .ok_or_else(|| Refusal::UnknownShape(shape.clone()))?;
+            // A shape you have a word for, or any the world has, for someone
+            // from a world with no cultures.
+            let shape_key = if world.has_words(actor) {
+                world.shape_by_word(actor, &wanted)
+            } else {
+                world
+                    .shapes()
+                    .iter()
+                    .find(|(key, def)| normalize(key) == wanted || normalize(&def.label) == wanted)
+                    .map(|(key, _)| key.clone())
+            }
+            .ok_or_else(|| Refusal::UnknownShape(shape.clone()))?;
             // What's in hand first, then what's around.
             let nearby = reach.around.iter().chain(&reach.inside).copied();
-            let found = find(world, reach.carried.iter().copied(), item)
-                .or_else(|| find(world, nearby, item))
+            let found = find(world, actor, reach.carried.iter().copied(), item)
+                .or_else(|| find(world, actor, nearby, item))
                 .ok_or_else(|| Refusal::NotHere(item.clone()))?;
             if world.composition(found).is_none() || world.is_container(found) {
-                return Err(Refusal::CannotWork(named(world, found)));
+                return Err(Refusal::CannotWork(named(world, actor, found)));
             }
             if !world.is_all(found, State::Solid) {
-                return Err(Refusal::NotSolid(named(world, found)));
+                return Err(Refusal::NotSolid(named(world, actor, found)));
             }
             // A part is at most as precise as the tool that made it. Bare
             // hands shape only what's soft enough, roughly.
@@ -937,13 +982,13 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     if tool == found {
                         return Err(Refusal::NotYourself);
                     }
-                    harder_than(world, tool, found)?;
+                    harder_than(world, actor, tool, found)?;
                     world
                         .tolerance(tool)
                         .unwrap_or(world.settings().rough_tolerance)
                 }
                 None => {
-                    by_hand(world, found)?;
+                    by_hand(world, actor, found)?;
                     world.settings().rough_tolerance
                 }
             };
@@ -962,18 +1007,18 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             must_know(world, actor, Process::Work)?;
             let first = carrying(item)?;
             // Rubbing a thing against another of the same name means two pieces.
-            let second = find(world, carried().filter(|&p| p != first), against)
-                .or_else(|| find(world, carried(), against))
+            let second = find(world, actor, carried().filter(|&p| p != first), against)
+                .or_else(|| find(world, actor, carried(), against))
                 .ok_or_else(|| Refusal::NotCarrying(against.clone()))?;
             if first == second {
                 return Err(Refusal::NotYourself);
             }
             for piece in [first, second] {
                 if world.composition(piece).is_none() {
-                    return Err(Refusal::NotAPart(named(world, piece)));
+                    return Err(Refusal::NotAPart(named(world, actor, piece)));
                 }
                 if !world.is_all(piece, State::Solid) {
-                    return Err(Refusal::NotSolid(named(world, piece)));
+                    return Err(Refusal::NotSolid(named(world, actor, piece)));
                 }
             }
             let settings = world.settings();
@@ -1005,7 +1050,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     }
                 }
                 if changes.is_empty() {
-                    return Err(Refusal::AsFineAsItGets(named(world, parts[0].0)));
+                    return Err(Refusal::AsFineAsItGets(named(world, actor, parts[0].0)));
                 }
             }
 
@@ -1015,10 +1060,10 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if world.is_living(actor) {
                 let target = match into {
                     Some(name) => {
-                        let found = find(world, reach.around.iter().copied(), name)
+                        let found = find(world, actor, reach.around.iter().copied(), name)
                             .ok_or_else(|| Refusal::NotHere(name.clone()))?;
                         if !world.is_container(found) {
-                            return Err(Refusal::NotAContainer(named(world, found)));
+                            return Err(Refusal::NotAContainer(named(world, actor, found)));
                         }
                         found
                     }
@@ -1065,7 +1110,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 }
             }
             if changes.is_empty() {
-                return Err(Refusal::NotAPart(named(world, first)));
+                return Err(Refusal::NotAPart(named(world, actor, first)));
             }
             Ok(changes)
         }
@@ -1073,113 +1118,116 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         Intent::Assemble { design } => {
             must_know(world, actor, Process::Assemble)?;
             let wanted = normalize(design);
-            let (key, def) = world
-                .designs()
-                .iter()
-                .find(|(key, def)| normalize(key) == wanted || normalize(&def.label) == wanted)
-                .ok_or_else(|| Refusal::UnknownDesign(design.clone()))?;
-            // Fill each slot with the biggest part within reach that fits it,
-            // taking what's in hand first when two are alike.
-            let mut reachable: Vec<EntityId> = reach
+            // Someone with words of their own makes what they know a way to
+            // make; anyone else, anything the world has a design for.
+            let recipes: Vec<Recipe> = if world.has_words(actor) {
+                world
+                    .recipes_for(actor, &wanted)
+                    .into_iter()
+                    .cloned()
+                    .collect()
+            } else {
+                world
+                    .designs()
+                    .iter()
+                    .filter(|(key, def)| {
+                        normalize(key) == wanted || normalize(&def.label) == wanted
+                    })
+                    .map(|(key, def)| Recipe {
+                        design: Some(key.clone()),
+                        slots: def.slots.clone(),
+                    })
+                    .take(1)
+                    .collect()
+            };
+            let mut first_refusal = None;
+            for recipe in recipes {
+                match fill_slots(world, actor, &reach, &recipe.slots) {
+                    Ok(parts) => {
+                        return put_together(world, actor, &reach, recipe.design, &parts);
+                    }
+                    Err(refusal) => {
+                        first_refusal.get_or_insert(refusal);
+                    }
+                }
+            }
+            Err(first_refusal.unwrap_or_else(|| Refusal::UnknownDesign(design.clone())))
+        }
+
+        Intent::Join { items } => {
+            must_know(world, actor, Process::Assemble)?;
+            let within: Vec<EntityId> = reach
                 .carried
                 .iter()
                 .chain(&reach.around)
                 .copied()
-                .filter(|&p| world.is_portable(p) && !world.is_agent(p))
+                .filter(|&p| world.is_portable(p) && !world.is_agent(p) && !world.is_container(p))
                 .collect();
-            reachable.sort_by_key(|&p| std::cmp::Reverse(world.mass(p)));
-            let mut used: Vec<EntityId> = Vec::new();
-            let mut parts = Vec::new();
-            for (slot, requirement) in &def.slots {
-                let fits = |part: EntityId| match requirement {
-                    Requirement::Shape(shape) => {
-                        world.shape(part) == Some(shape.as_str())
-                            && world.is_all(part, State::Solid)
-                    }
-                    Requirement::Design(inner) => {
-                        world.assembly(part).is_some_and(|a| &a.design == inner)
-                    }
-                    // A plain lump of the material, not something already shaped.
-                    Requirement::Material(material) => {
-                        world.composition(part).and_then(matter::dominant) == Some(*material)
-                            && world.is_all(part, State::Solid)
-                            && world.shape(part).is_none()
-                            && !world.is_container(part)
-                    }
-                };
-                let part = reachable
+            let mut parts: Vec<(String, EntityId)> = Vec::new();
+            for item in items {
+                let unused = within
                     .iter()
                     .copied()
-                    .find(|&p| !used.contains(&p) && fits(p))
-                    .ok_or_else(|| Refusal::MissingPart {
-                        slot: slot.clone(),
-                        needs: requirement_label(world, requirement),
-                    })?;
-                used.push(part);
-                parts.push((
-                    slot.clone(),
-                    world.label(part),
-                    datasheet::measure(world, part),
-                ));
+                    .filter(|p| !parts.iter().any(|(_, used)| used == p));
+                let found = find(world, actor, unused, item)
+                    .ok_or_else(|| Refusal::NotHere(item.clone()))?;
+                parts.push((String::new(), found));
             }
-            // Whatever pulls the parts together must hold the rest of them.
-            let (pulling, rest): (Vec<_>, Vec<_>) = parts
-                .iter()
-                .map(|(_, _, sheet)| sheet)
-                .partition(|sheet| sheet.get(Property::HoldsUpTo).is_some());
-            if let Some(first) = pulling.first() {
-                let mass_of = |sheet: &&Datasheet| match sheet.get(Property::Mass) {
-                    Some(Value::Mass(m)) => m.mg(),
-                    _ => 0,
-                };
-                let holds: u64 = pulling
-                    .iter()
-                    .map(|sheet| match sheet.get(Property::HoldsUpTo) {
-                        Some(Value::Mass(m)) => m.mg(),
-                        _ => 0,
-                    })
-                    .sum();
-                let load: u64 = rest.iter().map(mass_of).sum();
-                if holds < load {
-                    let part = parts
-                        .iter()
-                        .find(|(_, _, sheet)| std::ptr::eq(sheet, *first))
-                        .map_or_else(String::new, |(_, label, _)| label.clone());
-                    return Err(Refusal::TooWeak {
-                        part,
-                        holds: Mass::from_mg(holds),
-                        load: Mass::from_mg(load),
-                    });
-                }
+            put_together(world, actor, &reach, None, &parts)
+        }
+
+        Intent::Call { item, word } => {
+            let found = if normalize(item) == "it" {
+                world
+                    .lexicon(actor)
+                    .and_then(|l| l.last_made)
+                    .filter(|&made| reach.carried.contains(&made) || reach.around.contains(&made))
+                    .ok_or(Refusal::NothingMade)?
+            } else {
+                find(world, actor, reach.around_or_carried(), item)
+                    .ok_or_else(|| Refusal::NotHere(item.clone()))?
+            };
+            if !world.has_words(actor) {
+                return Err(Refusal::NoWordsToLearn("you".into()));
             }
-            // Measure it once, now, from the parts' datasheets.
-            let sheet = datasheet::measure_assembly(world.settings(), &parts);
-            // Keep it in hand if it can be carried; otherwise it stays here.
-            let in_hand: u64 = used
-                .iter()
-                .filter(|p| reach.carried.contains(p))
-                .map(|&p| world.mass(p).mg())
-                .sum();
-            let after = world.carried_mass(actor).mg() - in_hand
-                + used.iter().map(|&p| world.mass(p).mg()).sum::<u64>();
-            let fits_in_hand = world
-                .life(actor)
-                .and_then(|l| l.carry_limit)
-                .is_none_or(|limit| after <= limit.mg());
-            Ok(vec![Change::Assemble {
-                design: key.clone(),
-                parts: used,
-                at: if fits_in_hand { actor } else { reach.here },
-                datasheet: sheet,
+            let word = normalize(word);
+            let mut changes = vec![Change::Word {
+                agent: actor,
+                word: word.clone(),
+                meaning: world.meaning_of(found),
+            }];
+            // Naming what you made yourself keeps the way you made it.
+            let made = world.lexicon(actor).and_then(|l| l.last_made) == Some(found);
+            if let Some(recipe) = world.recipe_from(found).filter(|_| made) {
+                changes.push(Change::Recipe {
+                    agent: actor,
+                    word,
+                    recipe,
+                });
+            }
+            Ok(changes)
+        }
+
+        Intent::Tell { person, item, word } => {
+            let listener = person_here(world, actor, &reach.around, person)?;
+            let found = find(world, actor, reach.around_or_carried(), item)
+                .ok_or_else(|| Refusal::NotHere(item.clone()))?;
+            if !world.has_words(listener) {
+                return Err(Refusal::NoWordsToLearn(named(world, actor, listener)));
+            }
+            Ok(vec![Change::Word {
+                agent: listener,
+                word: normalize(word),
+                meaning: world.meaning_of(found),
             }])
         }
 
         Intent::Disassemble { item } => {
             must_know(world, actor, Process::Assemble)?;
-            let found = find(world, reach.around_or_carried(), item)
+            let found = find(world, actor, reach.around_or_carried(), item)
                 .ok_or_else(|| Refusal::NotHere(item.clone()))?;
             if world.assembly(found).is_none() {
-                return Err(Refusal::NotAnAssembly(named(world, found)));
+                return Err(Refusal::NotAnAssembly(named(world, actor, found)));
             }
             Ok(vec![Change::Disassemble { assembly: found }])
         }
@@ -1188,15 +1236,15 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             let found = carrying(item)?;
             let life = world
                 .life(actor)
-                .ok_or_else(|| Refusal::CannotEat(named(world, found)))?;
+                .ok_or_else(|| Refusal::CannotEat(named(world, actor, found)))?;
             let composition = world
                 .composition(found)
                 .filter(|_| world.assembly(found).is_none() && !world.is_container(found))
-                .ok_or_else(|| Refusal::CannotEat(named(world, found)))?;
+                .ok_or_else(|| Refusal::CannotEat(named(world, actor, found)))?;
             // What the body can digest goes in, with the fluid in it; the rest
             // is left in the hand.
             if !composition.keys().any(|m| life.digests.contains(m)) {
-                return Err(Refusal::CannotEat(named(world, found)));
+                return Err(Refusal::CannotEat(named(world, actor, found)));
             }
             let digestible: Composition = composition
                 .iter()
@@ -1204,7 +1252,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 .map(|(&m, &mass)| (m, mass))
                 .collect();
             if world.in_use(found) {
-                return Err(Refusal::CannotEat(named(world, found)));
+                return Err(Refusal::CannotEat(named(world, actor, found)));
             }
             if digestible.len() == composition.len() {
                 Ok(vec![Change::Merge {
@@ -1235,18 +1283,18 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 .chain(&reach.carried)
                 .chain(&in_carried)
                 .copied();
-            let found =
-                find(world, candidates, source).ok_or_else(|| Refusal::NotHere(source.clone()))?;
+            let found = find(world, actor, candidates, source)
+                .ok_or_else(|| Refusal::NotHere(source.clone()))?;
             let life = world
                 .life(actor)
-                .ok_or_else(|| Refusal::NotDrinkable(named(world, found)))?;
+                .ok_or_else(|| Refusal::NotDrinkable(named(world, actor, found)))?;
             // Only something that is nothing but the body's fluid, and liquid.
             let pure = world
                 .composition(found)
                 .is_some_and(|c| c.len() == 1 && c.contains_key(&life.fluid))
                 && world.is_all(found, State::Liquid);
             if !pure {
-                return Err(Refusal::NotDrinkable(named(world, found)));
+                return Err(Refusal::NotDrinkable(named(world, actor, found)));
             }
             let have = world
                 .composition(actor)
@@ -1273,13 +1321,13 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             let composition = world
                 .composition(found)
                 .filter(|_| world.assembly(found).is_none() && !world.is_container(found))
-                .ok_or_else(|| Refusal::CannotWork(named(world, found)))?;
+                .ok_or_else(|| Refusal::CannotWork(named(world, actor, found)))?;
             if !world.is_all(found, State::Solid) {
-                return Err(Refusal::NotSolid(named(world, found)));
+                return Err(Refusal::NotSolid(named(world, actor, found)));
             }
             // Something already made isn't raw material any more.
             if world.shape(found).is_some() {
-                return Err(Refusal::WouldSpoil(named(world, found)));
+                return Err(Refusal::WouldSpoil(named(world, actor, found)));
             }
             // Bare hands pull apart only what's soft enough.
             let reference = world.settings().reference_temperature;
@@ -1292,13 +1340,13 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if hardest > world.settings().hand_hardness {
                 return Err(Refusal::TooHard {
                     tool: "your hands".into(),
-                    target: named(world, found),
+                    target: named(world, actor, found),
                 });
             }
             let half = Mass::from_mg(world.mass(found).mg() / 2);
             let take = matter::proportional(composition, half)
                 .filter(|t| !t.is_empty())
-                .ok_or_else(|| Refusal::CannotWork(named(world, found)))?;
+                .ok_or_else(|| Refusal::CannotWork(named(world, actor, found)))?;
             Ok(vec![Change::Split {
                 from: found,
                 take,
@@ -1348,19 +1396,18 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             // A shelter must be here, on the ground, and built to shelter.
             let shelter = match shelter {
                 Some(name) => {
-                    let found =
-                        find(world, reach.around.iter().copied(), name).ok_or_else(|| {
-                            if find(world, carried(), name).is_some() {
+                    let found = find(world, actor, reach.around.iter().copied(), name).ok_or_else(
+                        || {
+                            if find(world, actor, carried(), name).is_some() {
                                 Refusal::PutItDown(name.clone())
                             } else {
                                 Refusal::NotHere(name.clone())
                             }
-                        })?;
-                    let shelters = world
-                        .assembly(found)
-                        .is_some_and(|a| world.designs()[&a.design].shelter.is_some());
+                        },
+                    )?;
+                    let shelters = world.design_of(found).is_some_and(|d| d.shelter.is_some());
                     if !shelters {
-                        return Err(Refusal::NotAShelter(named(world, found)));
+                        return Err(Refusal::NotAShelter(named(world, actor, found)));
                     }
                     Some(found)
                 }
@@ -1386,7 +1433,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Gather { source } => {
             must_know(world, actor, Process::Gather)?;
-            let found = find(world, reach.around.iter().copied(), source)
+            let found = find(world, actor, reach.around.iter().copied(), source)
                 .ok_or_else(|| Refusal::NotHere(source.clone()))?;
             // Searching needs light: daylight, or something burning here.
             if world.is_dark(reach.here) {
@@ -1394,25 +1441,25 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }
             let (Some(pieces), Some(composition)) = (world.pieces(found), world.composition(found))
             else {
-                return Err(Refusal::NotGatherable(named(world, found)));
+                return Err(Refusal::NotGatherable(named(world, actor, found)));
             };
             if world.mass(found) <= pieces.size {
-                return Err(Refusal::Exhausted(named(world, found)));
+                return Err(Refusal::Exhausted(named(world, actor, found)));
             }
             can_carry(world, actor, pieces.size)?;
             // Some sources can't be gathered with bare hands.
             if let Some(needs) = &pieces.needs {
                 if let Some(tool) = needed_tool(world, &reach.carried, Some(needs)) {
-                    harder_than(world, tool, found)?;
+                    harder_than(world, actor, tool, found)?;
                 } else {
-                    let tool = world
-                        .shapes()
-                        .get(needs)
-                        .map(|s| s.label.clone())
-                        .or_else(|| world.designs().get(needs).map(|d| d.label.clone()))
-                        .unwrap_or_else(|| needs.clone());
+                    let requirement = if world.shapes().contains_key(needs) {
+                        Requirement::Shape(needs.clone())
+                    } else {
+                        Requirement::Design(needs.clone())
+                    };
+                    let tool = world.requirement_for(actor, &requirement);
                     return Err(Refusal::NeedsTool {
-                        source: named(world, found),
+                        source: named(world, actor, found),
                         tool,
                     });
                 }
@@ -1433,36 +1480,145 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
     }
 }
 
-fn requirement_label(world: &World, requirement: &Requirement) -> String {
-    match requirement {
-        Requirement::Shape(shape) => world
-            .shapes()
-            .get(shape)
-            .map_or(shape.clone(), |s| s.label.clone()),
-        Requirement::Design(design) => world
-            .designs()
-            .get(design)
-            .map_or(design.clone(), |d| d.label.clone()),
-        Requirement::Material(material) => {
-            format!("piece of {}", world.materials()[material].label)
+/// Finds a part within reach for each slot: the biggest that fits, taking
+/// what's in hand first when two are alike.
+fn fill_slots(
+    world: &World,
+    actor: EntityId,
+    reach: &Reach,
+    slots: &[(String, Requirement)],
+) -> Result<Vec<(String, EntityId)>, Refusal> {
+    let mut reachable: Vec<EntityId> = reach
+        .carried
+        .iter()
+        .chain(&reach.around)
+        .copied()
+        .filter(|&p| world.is_portable(p) && !world.is_agent(p))
+        .collect();
+    reachable.sort_by_key(|&p| std::cmp::Reverse(world.mass(p)));
+    let mut parts: Vec<(String, EntityId)> = Vec::new();
+    for (slot, requirement) in slots {
+        let fits = |part: EntityId| match requirement {
+            Requirement::Shape(shape) => {
+                world.shape(part) == Some(shape.as_str()) && world.is_all(part, State::Solid)
+            }
+            Requirement::Design(inner) => world
+                .assembly(part)
+                .is_some_and(|a| a.design.as_ref() == Some(inner)),
+            // A plain lump of the material, not something already shaped.
+            Requirement::Material(material) => {
+                world.composition(part).and_then(matter::dominant) == Some(*material)
+                    && world.is_all(part, State::Solid)
+                    && world.shape(part).is_none()
+                    && !world.is_container(part)
+            }
+        };
+        let part = reachable
+            .iter()
+            .copied()
+            .find(|&p| !parts.iter().any(|(_, used)| *used == p) && fits(p))
+            .ok_or_else(|| Refusal::MissingPart {
+                slot: slot.clone(),
+                needs: world.requirement_for(actor, requirement),
+            })?;
+        parts.push((slot.clone(), part));
+    }
+    Ok(parts)
+}
+
+/// Puts parts together, to a design or to none, as something new. Whatever
+/// pulls them together must hold the rest; the whole is measured once, now,
+/// from its parts' datasheets, and kept in hand if it can be carried.
+fn put_together(
+    world: &World,
+    actor: EntityId,
+    reach: &Reach,
+    design: Option<String>,
+    chosen: &[(String, EntityId)],
+) -> Result<Vec<Change>, Refusal> {
+    let parts: Vec<(String, String, Datasheet)> = chosen
+        .iter()
+        .map(|(slot, part)| {
+            (
+                slot.clone(),
+                world.label(*part),
+                datasheet::measure(world, *part),
+            )
+        })
+        .collect();
+    let (pulling, rest): (Vec<_>, Vec<_>) = parts
+        .iter()
+        .map(|(_, _, sheet)| sheet)
+        .partition(|sheet| sheet.get(Property::HoldsUpTo).is_some());
+    if let Some(first) = pulling.first() {
+        let mass_of = |sheet: &&Datasheet| match sheet.get(Property::Mass) {
+            Some(Value::Mass(m)) => m.mg(),
+            _ => 0,
+        };
+        let holds: u64 = pulling
+            .iter()
+            .map(|sheet| match sheet.get(Property::HoldsUpTo) {
+                Some(Value::Mass(m)) => m.mg(),
+                _ => 0,
+            })
+            .sum();
+        let load: u64 = rest.iter().map(mass_of).sum();
+        if holds < load {
+            let part = chosen
+                .iter()
+                .zip(&parts)
+                .find(|(_, (_, _, sheet))| std::ptr::eq(sheet, *first))
+                .map_or_else(String::new, |((_, id), _)| world.label_for(actor, *id));
+            return Err(Refusal::TooWeak {
+                part,
+                holds: Mass::from_mg(holds),
+                load: Mass::from_mg(load),
+            });
         }
     }
+    let sheet = datasheet::measure_assembly(world.settings(), &parts);
+    let used: Vec<EntityId> = chosen.iter().map(|(_, p)| *p).collect();
+    let in_hand: u64 = used
+        .iter()
+        .filter(|p| reach.carried.contains(p))
+        .map(|&p| world.mass(p).mg())
+        .sum();
+    let after = world.carried_mass(actor).mg() - in_hand
+        + used.iter().map(|&p| world.mass(p).mg()).sum::<u64>();
+    let fits_in_hand = world
+        .life(actor)
+        .and_then(|l| l.carry_limit)
+        .is_none_or(|limit| after <= limit.mg());
+    let made = world.next_id();
+    let mut changes = vec![Change::Assemble {
+        design,
+        parts: used,
+        at: if fits_in_hand { actor } else { reach.here },
+        datasheet: sheet,
+    }];
+    if world.has_words(actor) {
+        changes.push(Change::Made {
+            agent: actor,
+            thing: made,
+        });
+    }
+    Ok(changes)
 }
 
 /// Lifting something: it has to be portable, solid, and cool enough to hold.
 fn lift(world: &World, actor: EntityId, found: EntityId) -> Result<Vec<Change>, Refusal> {
     if !world.is_portable(found) {
-        return Err(Refusal::CannotCarry(named(world, found)));
+        return Err(Refusal::CannotCarry(named(world, actor, found)));
     }
     if world.composition(found).is_some() && !world.is_all(found, State::Solid) {
-        return Err(Refusal::NotSolid(named(world, found)));
+        return Err(Refusal::NotSolid(named(world, actor, found)));
     }
     can_carry(world, actor, world.mass(found))?;
     if world
         .temperature(found)
         .is_some_and(|t| t > world.settings().max_touch_temperature)
     {
-        return Err(Refusal::TooHot(named(world, found)));
+        return Err(Refusal::TooHot(named(world, actor, found)));
     }
     Ok(vec![Change::Move {
         entity: found,
@@ -1472,7 +1628,12 @@ fn lift(world: &World, actor: EntityId, found: EntityId) -> Result<Vec<Change>, 
 
 /// A tool works something only if the tool's main material, at its current
 /// temperature, is harder than every part of the target at the target's.
-fn harder_than(world: &World, tool: EntityId, target: EntityId) -> Result<(), Refusal> {
+fn harder_than(
+    world: &World,
+    actor: EntityId,
+    tool: EntityId,
+    target: EntityId,
+) -> Result<(), Refusal> {
     let reference = world.settings().reference_temperature;
     let hardness = |id: EntityId, material| {
         world.materials()[&material]
@@ -1491,7 +1652,7 @@ fn harder_than(world: &World, tool: EntityId, target: EntityId) -> Result<(), Re
         .and_then(matter::dominant)
         .map(|m| hardness(tool, m))
         .or(edge_hardness)
-        .ok_or_else(|| Refusal::NotATool(named(world, tool)))?;
+        .ok_or_else(|| Refusal::NotATool(named(world, actor, tool)))?;
     let target_hardness = world
         .composition(target)
         .map(|c| c.keys().map(|&m| hardness(target, m)).max().unwrap_or(0))
@@ -1500,8 +1661,8 @@ fn harder_than(world: &World, tool: EntityId, target: EntityId) -> Result<(), Re
         Ok(())
     } else {
         Err(Refusal::TooHard {
-            tool: named(world, tool),
-            target: named(world, target),
+            tool: named(world, actor, tool),
+            target: named(world, actor, target),
         })
     }
 }
@@ -1548,7 +1709,7 @@ fn arriving(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> Vec
             let held = world
                 .contents(to)
                 .into_iter()
-                .any(|e| is_called(world, e, name) || mentions(world, e, name));
+                .any(|e| is_called(world, actor, e, name) || mentions(world, actor, e, name));
             changes.push(Change::Settle {
                 agent: actor,
                 claim: claim.clone(),
@@ -1593,7 +1754,8 @@ fn false_way(
             Claim::Way(from, to)
                 if *from == here
                     && !world.exits(here).contains(to)
-                    && (is_called(world, *to, place) || mentions(world, *to, place)) =>
+                    && (is_called(world, actor, *to, place)
+                        || mentions(world, actor, *to, place)) =>
             {
                 Some((*to, source.clone()))
             }
@@ -1624,7 +1786,7 @@ fn way(
         })
         .unwrap_or_default();
     let candidates = world.known_exits(actor, reach.here).into_iter().chain(told);
-    let to = find(world, candidates, place).ok_or_else(|| {
+    let to = find(world, actor, candidates, place).ok_or_else(|| {
         if world.finds_ways(actor) {
             Refusal::DontKnowWay(place.to_string())
         } else {
@@ -1642,10 +1804,10 @@ fn way(
         }
         (Some(liquid), Some(vessel)) => (liquid, vessel),
     };
-    let vessel = find(world, reach.around_or_carried(), vessel)
+    let vessel = find(world, actor, reach.around_or_carried(), vessel)
         .ok_or_else(|| Refusal::NotHere(vessel.to_string()))?;
     if !world.is_portable(vessel) || world.is_agent(vessel) {
-        return Err(Refusal::NotAVessel(named(world, vessel)));
+        return Err(Refusal::NotAVessel(named(world, actor, vessel)));
     }
     let mut load = world.mass(actor).mg() + world.carried_mass(actor).mg();
     if reach.carried.contains(&vessel) {
@@ -1654,12 +1816,12 @@ fn way(
     match datasheet::carries_afloat(world, vessel, liquid) {
         Some(Some(spare)) if spare.mg() >= load => Ok((to, Some((vessel, liquid)))),
         Some(Some(spare)) => Err(Refusal::WouldSink {
-            vessel: named(world, vessel),
+            vessel: named(world, actor, vessel),
             carries: spare,
             load: Mass::from_mg(load),
         }),
         _ => Err(Refusal::Sinks {
-            vessel: named(world, vessel),
+            vessel: named(world, actor, vessel),
             liquid: world.label(liquid),
         }),
     }
@@ -1799,7 +1961,7 @@ pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId
 }
 
 /// Bare hands can work only what's soft enough everywhere.
-fn by_hand(world: &World, target: EntityId) -> Result<(), Refusal> {
+fn by_hand(world: &World, actor: EntityId, target: EntityId) -> Result<(), Refusal> {
     let reference = world.settings().reference_temperature;
     let temperature = world.temperature(target).unwrap_or(reference);
     let hardest = world
@@ -1814,7 +1976,7 @@ fn by_hand(world: &World, target: EntityId) -> Result<(), Refusal> {
     if hardest > world.settings().hand_hardness {
         return Err(Refusal::TooHard {
             tool: "your hands".into(),
-            target: named(world, target),
+            target: named(world, actor, target),
         });
     }
     Ok(())
@@ -1822,7 +1984,12 @@ fn by_hand(world: &World, target: EntityId) -> Result<(), Refusal> {
 
 /// Refuses if a container is made of something the liquid would soften, as
 /// some earths turn back to mud when wet.
-fn softens(world: &World, container: EntityId, liquid: EntityId) -> Result<(), Refusal> {
+fn softens(
+    world: &World,
+    actor: EntityId,
+    container: EntityId,
+    liquid: EntityId,
+) -> Result<(), Refusal> {
     let Some(main) = world.composition(container).and_then(matter::dominant) else {
         return Ok(());
     };
@@ -1832,8 +1999,8 @@ fn softens(world: &World, container: EntityId, liquid: EntityId) -> Result<(), R
         .is_some_and(|c| c.keys().any(|m| softens_in.contains(m)));
     if soaks {
         return Err(Refusal::WouldSoften {
-            container: named(world, container),
-            liquid: named(world, liquid),
+            container: named(world, actor, container),
+            liquid: named(world, actor, liquid),
         });
     }
     Ok(())
@@ -1855,7 +2022,10 @@ fn can_carry(world: &World, who: EntityId, extra: Mass) -> Result<(), Refusal> {
 fn needed_tool(world: &World, carried: &[EntityId], needs: Option<&str>) -> Option<EntityId> {
     let needs = needs?;
     carried.iter().copied().find(|&p| {
-        world.shape(p) == Some(needs) || world.assembly(p).is_some_and(|a| a.design == needs)
+        world.shape(p) == Some(needs)
+            || world
+                .assembly(p)
+                .is_some_and(|a| a.design.as_deref() == Some(needs))
     })
 }
 
@@ -1921,23 +2091,25 @@ fn person_here(
 ) -> Result<EntityId, Refusal> {
     if let Some(found) = find(
         world,
+        actor,
         around.iter().copied().filter(|&e| world.is_agent(e)),
         name,
     ) {
         return Ok(found);
     }
-    if is_called(world, actor, name) {
+    if is_called(world, actor, actor, name) {
         return Err(Refusal::NotYourself);
     }
     Err(Refusal::NoOneHere(name.to_string()))
 }
 
 /// The first candidate called exactly `name`, or failing that, the first
-/// whose description contains `name` ("lump" finds "lump of anything"). Candidates
-/// with the same label are interchangeable, so taking the first keeps the
-/// choice deterministic.
+/// whose description contains `name` ("lump" finds "lump of anything"), as
+/// `viewer` calls things. Candidates with the same label are interchangeable,
+/// so taking the first keeps the choice deterministic.
 fn find(
     world: &World,
+    viewer: EntityId,
     candidates: impl IntoIterator<Item = EntityId>,
     name: &str,
 ) -> Option<EntityId> {
@@ -1946,10 +2118,9 @@ fn find(
     let lower = normalize(name);
     for (word, smallest) in [("smallest ", true), ("largest ", false)] {
         if let Some(rest) = lower.strip_prefix(word) {
-            let matching = candidates
-                .iter()
-                .copied()
-                .filter(|&id| is_called(world, id, rest) || mentions(world, id, rest));
+            let matching = candidates.iter().copied().filter(|&id| {
+                is_called(world, viewer, id, rest) || mentions(world, viewer, id, rest)
+            });
             return if smallest {
                 matching.min_by_key(|&id| (world.mass(id), id))
             } else {
@@ -1957,27 +2128,100 @@ fn find(
             };
         }
     }
-    candidates
-        .iter()
-        .copied()
-        .find(|&id| is_called(world, id, name))
-        .or_else(|| {
-            candidates
-                .iter()
-                .copied()
-                .find(|&id| mentions(world, id, name))
-        })
+    closest(world, viewer, &candidates, name).1.first().copied()
 }
 
-/// Matches an entity's data ID or its label, ignoring case and a leading
-/// "the", "a", or "an".
-fn is_called(world: &World, id: EntityId, name: &str) -> bool {
+/// The candidates `name` fits best, and whether they fit it exactly. Anyone
+/// means first what's called exactly that, and last anything whose name
+/// mentions it. Someone with words of their own means, between those, what
+/// the name says a thing is ("x" before "y of x"), then a plain piece of the
+/// material the name is for, before something made partly of it.
+fn closest(
+    world: &World,
+    viewer: EntityId,
+    candidates: &[EntityId],
+    name: &str,
+) -> (bool, Vec<EntityId>) {
+    let matching = |test: &dyn Fn(EntityId) -> bool| -> Vec<EntityId> {
+        candidates.iter().copied().filter(|&id| test(id)).collect()
+    };
+    let exact = matching(&|id| is_called(world, viewer, id, name));
+    if !exact.is_empty() {
+        return (true, exact);
+    }
+    if world.has_words(viewer) {
+        let first = matching(&|id| begins(world, viewer, id, name));
+        if !first.is_empty() {
+            return (false, first);
+        }
+        let wanted = normalize(name);
+        let plain = matching(&|id| {
+            world.assembly(id).is_none()
+                && world
+                    .composition(id)
+                    .and_then(matter::dominant)
+                    .and_then(|m| world.material_word_for(viewer, m))
+                    .is_some_and(|word| word == wanted)
+        });
+        if !plain.is_empty() {
+            return (false, plain);
+        }
+    }
+    (false, matching(&|id| mentions(world, viewer, id, name)))
+}
+
+/// True if `viewer`'s label for the entity starts with the words of `name`.
+fn begins(world: &World, viewer: EntityId, id: EntityId, name: &str) -> bool {
     let wanted = normalize(name);
-    normalize(world.key(id)) == wanted || normalize(&world.label(id)) == wanted
+    let label = normalize(&world.label_for(viewer, id));
+    !wanted.is_empty() && (label == wanted || label.starts_with(&format!("{wanted} ")))
 }
 
-/// True if the words of `name` appear, in order, in the entity's label.
-fn mentions(world: &World, id: EntityId, name: &str) -> bool {
+/// When a name fits several things `viewer` can see that look different,
+/// and none exactly, which they might mean, as they'd describe each. Only
+/// for someone with words of their own; others take the first that fits.
+fn which(
+    world: &World,
+    viewer: EntityId,
+    candidates: impl IntoIterator<Item = EntityId>,
+    name: &str,
+) -> Option<Refusal> {
+    let lower = normalize(name);
+    if !world.has_words(viewer) || lower.starts_with("smallest ") || lower.starts_with("largest ") {
+        return None;
+    }
+    let candidates: Vec<EntityId> = candidates.into_iter().collect();
+    let (exact, fits) = closest(world, viewer, &candidates, name);
+    if exact {
+        return None;
+    }
+    let mut labels: Vec<String> = Vec::new();
+    for id in fits {
+        let label = world.label_for(viewer, id);
+        if !labels.contains(&label) {
+            labels.push(label);
+        }
+    }
+    (labels.len() > 1).then_some(Refusal::Which {
+        name: lower,
+        options: labels,
+    })
+}
+
+/// Matches an entity's label, as `viewer` calls it, ignoring case and a
+/// leading "the", "a", or "an", or its ID. Someone with words of their own
+/// can use only the IDs of things made in play ("#12"), which a client uses
+/// to point at something; data IDs are names they may not know.
+fn is_called(world: &World, viewer: EntityId, id: EntityId, name: &str) -> bool {
+    let wanted = normalize(name);
+    let key = world.key(id);
+    let by_key = (!world.has_words(viewer) || key.starts_with('#')) && normalize(key) == wanted;
+    by_key || normalize(&world.label_for(viewer, id)) == wanted
+}
+
+/// True if the words of `name` appear, in order, in the entity's label, as
+/// `viewer` calls it.
+fn mentions(world: &World, viewer: EntityId, id: EntityId, name: &str) -> bool {
     let wanted: Vec<String> = normalize(name)
         .split_whitespace()
         .map(String::from)
@@ -1985,29 +2229,39 @@ fn mentions(world: &World, id: EntityId, name: &str) -> bool {
     if wanted.is_empty() {
         return false;
     }
-    let label = normalize(&world.label(id));
-    let words: Vec<&str> = label.split_whitespace().collect();
+    let label = normalize(&world.label_for(viewer, id));
+    let words: Vec<&str> = label
+        .split(|c: char| c.is_whitespace() || c == ',')
+        .filter(|w| !w.is_empty())
+        .collect();
     words
         .windows(wanted.len())
         .any(|w| w.iter().zip(&wanted).all(|(a, b)| a == b))
 }
 
+/// A name as typed, lower case, without a leading article, and without a
+/// trailing "one" as in "the heavy one".
 fn normalize(name: &str) -> String {
-    let lower = name.trim().to_lowercase();
+    let mut lower = name.trim().to_lowercase();
     for article in ["the ", "a ", "an "] {
         if let Some(rest) = lower.strip_prefix(article) {
-            return rest.trim().to_string();
+            lower = rest.trim().to_string();
+            break;
         }
     }
-    lower
+    match lower.strip_suffix(" one") {
+        Some(rest) if !rest.trim().is_empty() => rest.trim().to_string(),
+        _ => lower,
+    }
 }
 
 /// How to refer to something in a sentence: people and names that already
 /// start with "the" as they are, other things with "the" in front.
-pub fn named(world: &World, id: EntityId) -> String {
-    let label = world.label(id);
+pub fn named(world: &World, viewer: EntityId, id: EntityId) -> String {
+    let label = world.label_for(viewer, id);
     let proper = world.is_agent(id)
         || label.starts_with("the ")
+        || label.starts_with("something ")
         || label.chars().next().is_some_and(char::is_uppercase);
     if proper {
         label

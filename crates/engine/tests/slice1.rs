@@ -167,8 +167,26 @@ fn the_engine_names_no_materials_shapes_or_items() {
         include_str!("../../../data/slice2.toml"),
         include_str!("../../../data/stranded.toml"),
         include_str!("../../../data/island-things.toml"),
+        include_str!("../../../data/strangers-words.toml"),
     ] {
         let data: toml::Table = toml::from_str(text).unwrap();
+        // A people's own words are names too.
+        for culture in data
+            .get("culture")
+            .and_then(|v| v.as_array())
+            .into_iter()
+            .flatten()
+        {
+            for word in culture
+                .get("words")
+                .and_then(|w| w.as_table())
+                .into_iter()
+                .flat_map(|t| t.values())
+                .filter_map(|v| v.as_str())
+            {
+                words.insert(normal(word));
+            }
+        }
         for section in ["material", "shape", "item", "design", "kind"] {
             let Some(entries) = data.get(section).and_then(|v| v.as_array()) else {
                 continue;

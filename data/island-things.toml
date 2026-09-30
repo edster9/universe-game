@@ -6,6 +6,7 @@
 [[material]]
 id = "water"
 label = "water"
+looks = "clear water"
 melting_point = "273 K"
 boiling_point = "373 K"
 specific_heat = "4186 J/(kg*K)"
@@ -15,6 +16,7 @@ density = "1000 kg/m3"
 [[material]]
 id = "seawater"
 label = "sea water"
+looks = "salty water"
 melting_point = "271 K"
 boiling_point = "375 K"
 specific_heat = "3990 J/(kg*K)"
@@ -24,6 +26,7 @@ density = "1025 kg/m3"
 [[material]]
 id = "flesh"
 label = "flesh"
+looks = "raw flesh"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "3500 J/(kg*K)"
@@ -33,6 +36,7 @@ density = "1060 kg/m3"
 [[material]]
 id = "fat"
 label = "fat"
+looks = "soft white fat"
 melting_point = "320 K"
 boiling_point = "3500 K"
 specific_heat = "2300 J/(kg*K)"
@@ -44,6 +48,7 @@ density = "900 kg/m3"
 [[material]]
 id = "shellfish"
 label = "shellfish"
+looks = "soft pale flesh"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "3500 J/(kg*K)"
@@ -55,6 +60,7 @@ density = "1050 kg/m3"
 [[material]]
 id = "shell"
 label = "shell"
+looks = "hard pale shell"
 melting_point = "1100 K"
 boiling_point = "3000 K"
 specific_heat = "800 J/(kg*K)"
@@ -64,6 +70,7 @@ density = "2700 kg/m3"
 [[material]]
 id = "wood"
 label = "wood"
+looks = "wood"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "1700 J/(kg*K)"
@@ -77,6 +84,7 @@ density = "600 kg/m3"
 [[material]]
 id = "grass"
 label = "dry grass"
+looks = "dry grass"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "1500 J/(kg*K)"
@@ -90,6 +98,7 @@ density = "100 kg/m3"
 [[material]]
 id = "ash"
 label = "ash"
+looks = "grey ash"
 melting_point = "2300 K"
 boiling_point = "3500 K"
 specific_heat = "800 J/(kg*K)"
@@ -99,6 +108,7 @@ density = "600 kg/m3"
 [[material]]
 id = "stone"
 label = "stone"
+looks = "stone"
 melting_point = "1983 K"
 boiling_point = "2503 K"
 specific_heat = "730 J/(kg*K)"
@@ -108,6 +118,7 @@ density = "2600 kg/m3"
 [[material]]
 id = "flint"
 label = "flint"
+looks = "glassy grey stone"
 melting_point = "1983 K"
 boiling_point = "2503 K"
 specific_heat = "730 J/(kg*K)"
@@ -117,6 +128,7 @@ density = "2600 kg/m3"
 [[material]]
 id = "fish"
 label = "fish"
+looks = "pale flesh"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "3500 J/(kg*K)"
@@ -128,6 +140,7 @@ density = "1050 kg/m3"
 [[material]]
 id = "clay"
 label = "clay"
+looks = "sticky grey earth"
 melting_point = "1500 K"
 boiling_point = "3500 K"
 specific_heat = "900 J/(kg*K)"
@@ -139,6 +152,7 @@ softens_in = ["water", "seawater"]
 [[material]]
 id = "fired-clay"
 label = "fired clay"
+looks = "hard red earthenware"
 melting_point = "2400 K"
 boiling_point = "3500 K"
 specific_heat = "900 J/(kg*K)"
@@ -148,6 +162,7 @@ density = "1800 kg/m3"
 [[material]]
 id = "rock"
 label = "rock"
+looks = "rough rock"
 melting_point = "2200 K"
 boiling_point = "3200 K"
 specific_heat = "800 J/(kg*K)"
@@ -157,6 +172,7 @@ density = "2700 kg/m3"
 [[material]]
 id = "iron"
 label = "iron"
+looks = "dark metal"
 melting_point = "1811 K"
 boiling_point = "3134 K"
 specific_heat = "449 J/(kg*K)"
@@ -166,6 +182,7 @@ density = "7874 kg/m3"
 [[material]]
 id = "fibre"
 label = "plant fibre"
+looks = "stringy plant stuff"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "1300 J/(kg*K)"
@@ -180,6 +197,7 @@ tensile_strength = "50 MPa"
 [[material]]
 id = "meat"
 label = "raw meat"
+looks = "raw flesh"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "3500 J/(kg*K)"
@@ -193,6 +211,7 @@ decays = { into = "rot", rate = "50%" }
 [[material]]
 id = "cooked-meat"
 label = "cooked meat"
+looks = "cooked flesh"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "3500 J/(kg*K)"
@@ -205,6 +224,7 @@ decays = { into = "rot", rate = "15%" }
 [[material]]
 id = "hide"
 label = "hide"
+looks = "hairy skin"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "2000 J/(kg*K)"
@@ -217,6 +237,7 @@ decays = { into = "rot", rate = "20%" }
 [[material]]
 id = "rot"
 label = "rotting flesh"
+looks = "rotting flesh"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "3500 J/(kg*K)"
@@ -228,6 +249,7 @@ density = "1060 kg/m3"
 [[material]]
 id = "bone"
 label = "bone"
+looks = "bone"
 melting_point = "1900 K"
 boiling_point = "3500 K"
 specific_heat = "1300 J/(kg*K)"
@@ -237,6 +259,7 @@ density = "1900 kg/m3"
 [[material]]
 id = "roots"
 label = "roots and nuts"
+looks = "roots and nuts"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "3000 J/(kg*K)"
@@ -248,6 +271,7 @@ density = "900 kg/m3"
 [[material]]
 id = "litter"
 label = "leaf litter"
+looks = "dead leaves"
 melting_point = "3000 K"
 boiling_point = "3500 K"
 specific_heat = "1500 J/(kg*K)"
@@ -257,6 +281,7 @@ density = "300 kg/m3"
 [[material]]
 id = "co2"
 label = "carbon dioxide"
+looks = "stale air"
 melting_point = "195 K"
 boiling_point = "216 K"
 specific_heat = "840 J/(kg*K)"
@@ -265,48 +290,56 @@ hardness = "0"
 [[shape]]
 id = "flake"
 label = "flake"
+form = "thin sharp chip"
 role = "cutting"
 length = "5 cm"
 
 [[shape]]
 id = "shaft"
 label = "shaft"
+form = "long straight pole"
 role = "holding"
 length = "1.5 m"
 
 [[shape]]
 id = "axe-head"
 label = "axe head"
+form = "heavy wedge"
 role = "cutting"
 length = "15 cm"
 
 [[shape]]
 id = "axe-mould"
 label = "axe-head mould"
+form = "hollowed block"
 role = "casting"
 casts = "axe-head"
 
 [[shape]]
 id = "haft"
 label = "haft"
+form = "short stout handle"
 role = "holding"
 length = "70 cm"
 
 [[shape]]
 id = "rope"
 label = "rope"
+form = "twisted cord"
 role = "pulling"
 length = "5 m"
 
 [[shape]]
 id = "pot"
 label = "pot"
+form = "round-bellied vessel"
 role = "containing"
 holds = "2 kg"
 
 [[shape]]
 id = "paddle"
 label = "paddle"
+form = "flat-bladed pole"
 role = "pushing"
 length = "1.5 m"
 push = "30%"
@@ -378,6 +411,7 @@ life = { resting_power = "80 W", working_power = "300 W", heat_loss = "8 W/K", s
 [[kind]]
 id = "boar"
 label = "boar"
+looks = "a large bristly beast"
 parent = "mammal"
 mass = "80 kg"
 composition = { water = "40%", meat = "35%", fat = "15%", bone = "6%", hide = "4%" }
@@ -388,11 +422,13 @@ weapon = { edge = "5 mm" }
 [[kind]]
 id = "fish"
 label = "fish"
+looks = "fish"
 parent = "animal"
 
 [[kind]]
 id = "shellfish"
 label = "shellfish"
+looks = "shellfish"
 parent = "animal"
 
 [[kind]]
@@ -403,10 +439,12 @@ parent = "living-thing"
 [[kind]]
 id = "tree"
 label = "tree"
+looks = "tall trees"
 parent = "plant"
 
 [[kind]]
 id = "shrub"
 label = "shrub"
+looks = "bushes"
 parent = "plant"
 

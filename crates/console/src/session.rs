@@ -26,8 +26,12 @@ Commands:
   work <thing> into <shape> with <tool>
                                     shape something with a tool
   rub <thing> against <thing>       rub two parts together to make both finer (10 minutes)
-  assemble <design>                 put carried parts together to a design
+  assemble <design>                 put carried parts together to a design (or \"make\")
   disassemble <thing>               take something apart into its parts
+  join <thing> and <thing>          put things together without a design
+  call <thing> a <word>             name something in your own words (\"call it a …\")
+  tell <person> that <thing> is a <word>
+                                    teach someone your word for something
   wait [seconds]                    let time pass
 Testing tools:
   totals                            the world's total mass, energy, and credits (these never change)
@@ -226,12 +230,12 @@ impl Session {
             text = match wounded {
                 Some(rate) => format!(
                     "{text}\n{} goes for you, and wounds you: you're bleeding {} a second.",
-                    sentence_case(&w.label(*actor)),
+                    sentence_case(&w.label_for(self.player, *actor)),
                     Mass::from_mg(rate)
                 ),
                 None => format!(
                     "{text}\n{} goes for you, and misses.",
-                    sentence_case(&w.label(*actor))
+                    sentence_case(&w.label_for(self.player, *actor))
                 ),
             };
         }
@@ -250,7 +254,8 @@ impl Session {
         for change in changes {
             match change {
                 Change::Sight { gone, .. } if !gone.is_empty() => {
-                    let labels: Vec<String> = gone.iter().map(|&g| w.label(g)).collect();
+                    let labels: Vec<String> =
+                        gone.iter().map(|&g| w.label_for(self.player, g)).collect();
                     news.push(format!(
                         "Gone since you were last here: {}.",
                         labels.join(", ")
@@ -287,13 +292,23 @@ impl Session {
         let Some(memory) = w.memory(self.player) else {
             return "You don't remember anything.".into();
         };
-        let places: Vec<String> = memory.places.iter().map(|&p| w.label(p)).collect();
+        let places: Vec<String> = memory
+            .places
+            .iter()
+            .map(|&p| w.label_for(self.player, p))
+            .collect();
         let mut lines = vec![format!("Places you know: {}.", list_or(&places, "none"))];
         if memory.finds_ways {
             let ways: Vec<String> = memory
                 .ways
                 .iter()
-                .map(|&(a, b)| format!("{} to {}", w.label(a), w.label(b)))
+                .map(|&(a, b)| {
+                    format!(
+                        "{} to {}",
+                        w.label_for(self.player, a),
+                        w.label_for(self.player, b)
+                    )
+                })
                 .collect();
             lines.push(format!("Ways you know: {}.", list_or(&ways, "none")));
         }
@@ -384,7 +399,7 @@ impl Session {
 
     fn describe(&self, intent: &Intent, changes: &[Change]) -> String {
         let w = &self.world;
-        let name = |id: EntityId| laws::named(w, id);
+        let name = |id: EntityId| laws::named(w, self.player, id);
         match (intent, changes.first()) {
             (
                 Intent::Go {
@@ -400,10 +415,10 @@ impl Session {
                         _ => None,
                     })
                     .unwrap_or_else(|| vessel.clone());
-                format!("You cross to {} on {vessel}.", w.label(to))
+                format!("You cross to {} on {vessel}.", w.label_for(self.player, to))
             }
             (Intent::Go { .. }, Some(&Change::Move { to, .. })) => {
-                format!("You go to {}.", w.label(to))
+                format!("You go to {}.", w.label_for(self.player, to))
             }
             (
                 Intent::Go { .. },
@@ -414,7 +429,7 @@ impl Session {
                 }),
             ) => format!(
                 "You look for the way to {} that {source} showed, but there's none. You correct your memory.",
-                w.label(*to)
+                w.label_for(self.player, *to)
             ),
             (Intent::Attack { with, .. }, Some(&Change::Wound { agent, rate })) => {
                 let with = with
@@ -434,7 +449,7 @@ impl Session {
                     .filter_map(|c| match c {
                         Change::Split { take, .. } => Some(format!(
                             "{} ({})",
-                            w.describe_composition(take),
+                            w.describe_composition_for(self.player, take),
                             Mass::from_mg(
                                 u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)
                             )
@@ -480,12 +495,12 @@ impl Session {
                 "You fill {} with {} of {}.",
                 name(*at),
                 Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
-                w.describe_composition(take)
+                w.describe_composition_for(self.player, take)
             ),
             (Intent::Dig { .. }, Some(Change::Split { take, .. })) => format!(
                 "You dig out {} of {}.",
                 Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
-                w.describe_composition(take)
+                w.describe_composition_for(self.player, take)
             ),
             (Intent::Light { .. }, Some(&Change::Light { chamber, .. })) => {
                 format!("You light {}.", name(chamber))
@@ -532,7 +547,7 @@ impl Session {
                     text = format!(
                         "{text} {} of {} wears off, at {}{state}.",
                         w.mass(dust),
-                        w.label(dust),
+                        w.label_for(self.player, dust),
                         w.temperature(dust).unwrap_or_default()
                     );
                 }
@@ -554,6 +569,37 @@ impl Session {
                     "You put together {made}.{left} Type \"datasheet {}\" to see how it measures up.",
                     made.trim_start_matches("the ")
                 )
+            }
+            (Intent::Join { .. }, Some(Change::Assemble { at, .. })) => {
+                let made = w.contents(*at).into_iter().max();
+                let left = if *at == self.player {
+                    ""
+                } else {
+                    " It's too heavy to carry, so it stays here."
+                };
+                match made {
+                    Some(made)
+                        if w.has_words(self.player) && w.recognise(self.player, made).is_none() =>
+                    {
+                        format!(
+                            "You've made something new: {}.{left} What do you call it? (\"call it a …\")",
+                            w.label_for(self.player, made)
+                        )
+                    }
+                    Some(made) => format!("You put together {}.{left}", name(made)),
+                    None => "You put them together.".into(),
+                }
+            }
+            (Intent::Call { word, .. }, _) => {
+                let recipe = if changes.iter().any(|c| matches!(c, Change::Recipe { .. })) {
+                    format!(" You remember how you made it: \"make a {word}\" will make another.")
+                } else {
+                    String::new()
+                };
+                format!("You call it a {word}.{recipe}")
+            }
+            (Intent::Tell { word, .. }, Some(&Change::Word { agent, .. })) => {
+                format!("You tell {} it's a {word}.", name(agent))
             }
             (Intent::Disassemble { .. }, Some(&Change::Disassemble { .. })) => {
                 "You take it apart.".into()
@@ -584,7 +630,7 @@ impl Session {
                 }
             }
             (Intent::Explore, Some(&Change::Learn { to, .. })) => {
-                format!("You find a way to {}.", w.label(to))
+                format!("You find a way to {}.", w.label_for(self.player, to))
             }
             (Intent::Explore, _) => "You search around, but find no new way out.".into(),
             (Intent::Sleep { .. }, first) => {
@@ -604,7 +650,7 @@ impl Session {
             (Intent::Drink { .. }, Some(Change::Shift { take, .. })) => format!(
                 "You drink {} of {}.",
                 Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
-                w.describe_composition(take)
+                w.describe_composition_for(self.player, take)
             ),
             (Intent::Gather { .. }, Some(Change::Exert { .. }) | None) => {
                 "You search but find nothing.".into()
@@ -616,7 +662,7 @@ impl Session {
             (Intent::Gather { .. }, Some(Change::Split { take, .. })) => format!(
                 "You find {} of {}.",
                 Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
-                w.describe_composition(take)
+                w.describe_composition_for(self.player, take)
             ),
             _ => "Done.".into(),
         }
@@ -719,8 +765,18 @@ impl Session {
                 w.label(entity),
                 units::show(u128::from(tolerance), units::show::LENGTH, 3)
             ),
-            Change::Assemble { design, parts, .. } => {
-                format!("{} parts assembled into a {design}", parts.len())
+            Change::Assemble { design, parts, .. } => match design {
+                Some(design) => format!("{} parts assembled into a {design}", parts.len()),
+                None => format!("{} parts joined into something new", parts.len()),
+            },
+            Change::Word { agent, word, .. } => {
+                format!("{} learns the word {word:?}", w.label(*agent))
+            }
+            Change::Recipe { agent, word, .. } => {
+                format!("{} learns a way to make a {word}", w.label(*agent))
+            }
+            &Change::Made { agent, thing } => {
+                format!("{} made {}", w.label(agent), w.key(thing))
             }
             &Change::Disassemble { assembly } => format!("{} taken apart", w.key(assembly)),
             Change::Shift { from, to, take } => format!(

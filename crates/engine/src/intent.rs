@@ -115,6 +115,61 @@ pub enum Intent {
         body: String,
         tool: String,
     },
+    /// Put things together without a design, to make something new.
+    Join {
+        items: Vec<String>,
+    },
+    /// Name something in your own words. "it" is what you made last.
+    Call {
+        item: String,
+        word: String,
+    },
+    /// Tell someone here what you call something, so they learn the word.
+    Tell {
+        person: String,
+        item: String,
+        word: String,
+    },
+}
+
+impl Intent {
+    /// The names of things the intent acts on, which a person with words of
+    /// their own may find fit more than one thing.
+    pub fn things_named(&self) -> Vec<&str> {
+        match self {
+            Intent::Take { item }
+            | Intent::Drop { item }
+            | Intent::Disassemble { item }
+            | Intent::Eat { item }
+            | Intent::Read { item }
+            | Intent::Divide { item }
+            | Intent::Rub { item, .. }
+            | Intent::Call { item, .. }
+            | Intent::Tell { item, .. }
+            | Intent::Give { item, .. } => vec![item.as_str()],
+            Intent::TakeFrom { item, from } => vec![item.as_str(), from.as_str()],
+            Intent::Put { item, into } => vec![item.as_str(), into.as_str()],
+            Intent::Dig { source, tool } => vec![source.as_str(), tool.as_str()],
+            Intent::Fill { container, source } => vec![container.as_str(), source.as_str()],
+            Intent::Light { chamber } => vec![chamber.as_str()],
+            Intent::Pour { liquid, into } => vec![liquid.as_str(), into.as_str()],
+            Intent::Work { item, tool, .. } => {
+                let mut names = vec![item.as_str()];
+                names.extend(tool.as_deref());
+                names
+            }
+            Intent::Attack { with, .. } => with.as_deref().into_iter().collect(),
+            Intent::Butcher { body, tool } => vec![body.as_str(), tool.as_str()],
+            Intent::Drink { source } | Intent::Gather { source } => vec![source.as_str()],
+            Intent::Sleep { shelter, .. } => shelter.as_deref().into_iter().collect(),
+            Intent::Join { items } => items.iter().map(String::as_str).collect(),
+            Intent::Go { .. }
+            | Intent::Pay { .. }
+            | Intent::Assemble { .. }
+            | Intent::Explore
+            | Intent::Survey => Vec::new(),
+        }
+    }
 }
 
 impl fmt::Display for Intent {
@@ -188,6 +243,11 @@ impl fmt::Display for Intent {
             Intent::Gather { source } => write!(f, "gather from {source}"),
             Intent::Divide { item } => write!(f, "divide {item}"),
             Intent::Butcher { body, tool } => write!(f, "butcher {body} with {tool}"),
+            Intent::Join { items } => write!(f, "join {}", items.join(" and ")),
+            Intent::Call { item, word } => write!(f, "call {item} {word}"),
+            Intent::Tell { person, item, word } => {
+                write!(f, "tell {person} that {item} is {word}")
+            }
         }
     }
 }
@@ -202,6 +262,18 @@ impl fmt::Display for ParseError {
 }
 
 impl std::error::Error for ParseError {}
+
+/// Splits "<thing> a <word>" at the last article, or "it <word>".
+fn split_word(rest: &str) -> Option<(String, String)> {
+    let split = [" a ", " an "]
+        .iter()
+        .filter_map(|a| rest.rsplit_once(a))
+        .max_by_key(|(item, _)| item.len())
+        .or_else(|| rest.split_once(' ').filter(|(item, _)| *item == "it"));
+    split
+        .map(|(item, word)| (item.trim().to_string(), word.trim().to_string()))
+        .filter(|(item, word)| !item.is_empty() && !word.is_empty())
+}
 
 pub fn parse(line: &str) -> Result<Command, ParseError> {
     let words: Vec<&str> = line.split_whitespace().collect();
@@ -329,9 +401,39 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                 seconds,
             }
         }
-        "assemble" | "build" => Intent::Assemble {
+        "assemble" | "build" | "make" => Intent::Assemble {
             design: one("<design>")?,
         },
+        "join" => {
+            let items: Vec<String> = rest
+                .split(" and ")
+                .flat_map(|part| part.split(" to "))
+                .map(|part| part.trim().to_string())
+                .filter(|part| !part.is_empty())
+                .collect();
+            if items.len() < 2 {
+                return Err(usage("<thing> and <thing> [and <thing> …]"));
+            }
+            Intent::Join { items }
+        }
+        "call" | "name" => {
+            let (item, word) = split_word(&rest).ok_or_else(|| usage("<thing> a <word>"))?;
+            Intent::Call { item, word }
+        }
+        "tell" => {
+            let (person, claim) = rest
+                .split_once(" that ")
+                .map(|(p, c)| (p.trim().to_string(), c.trim().to_string()))
+                .filter(|(p, c)| !p.is_empty() && !c.is_empty())
+                .ok_or_else(|| usage("<person> that <thing> is a <word>"))?;
+            let (item, word) = ["is a", "is an", "is"]
+                .iter()
+                .find_map(|w| claim.rsplit_once(&format!(" {w} ")))
+                .map(|(i, w)| (i.trim().to_string(), w.trim().to_string()))
+                .filter(|(i, w)| !i.is_empty() && !w.is_empty())
+                .ok_or_else(|| usage("<person> that <thing> is a <word>"))?;
+            Intent::Tell { person, item, word }
+        }
         "explore" | "search" => Intent::Explore,
         "attack" | "strike" | "stab" => match two(&["with"], "<someone> with <something>") {
             Ok((target, tool)) => Intent::Attack {

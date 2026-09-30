@@ -305,6 +305,17 @@ Added 2026-09-29, **for a conversation after the where-am-I? and living-with-the
 - This could have a major impact on the evolution of the engine, so have it earlier rather than later.
 - **Updated 2026-09-29:** this is a very, very critical conversation, and it must happen **before continuing living with the island stages 5 and 6**. The owner will explain it in greater detail; once explained in full, its real importance will be clear. Order: time passing first (with the interface), then vocabulary.
 
+### The owner's explanation
+
+Added 2026-09-29.
+
+- This is tailored to a premise of the game's design: training the engine all the way from the Stone Age to the Space Age. The core engine doesn't know objects; it only understands concepts. It knows what fire is, what a container is, perhaps what a furnace situation is, and other laws of physics. But an engine starting from scratch doesn't know what a sword is. It does understand what an edge is, and that edges can cause damage to living things.
+- **Here's the problem: what does the engine know to begin with**, beyond the forces of the universe and its concepts? It has to have a starting point for a player to invent their first weapon, so they can go and hunt. They might build a spear.
+- The system used for commands will eventually need to understand "pick up the sword". But at first it doesn't know what a sword is; it has to be invented. **So how does the label "sword" get into the system? Where does the vocabulary of a sword begin?** Does the player build something and call it a sword, and then the word "sword" is added?
+- If so, what happens when two players in the same world both invent a sword? Each might call it a different word. When they meet and show each other their items, **what labels show up between them?**
+- **This is an important fork in the road for the design.** Do we preload everything and let players work their way to discovering things? Or does a different system let things be built and named through a consensus of players, just through normal conversations? Even if every player were American and spoke English, players around the world will label things differently. How do they communicate? Does the game have a hierarchical preset list, or do things get invented as they go along?
+- This will dictate a lot about the design of the game. However far we train the system, even to the Space Age, new things will have to be invented. **How do they get named?**
+
 See [ideas/vocabulary.md](ideas/vocabulary.md).
 
 ## The first attempt

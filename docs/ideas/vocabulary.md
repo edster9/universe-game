@@ -1,6 +1,10 @@
 # How new vocabulary emerges
 
-Recorded 2026-09-29 **for a conversation the owner has asked for**, after the [where am I?](../challenges/where-am-i.md) and [living with the island](../challenges/living-with-the-island.md) challenges and before any unplanned scenarios. The requirement is "How new vocabulary emerges" in [requirements.md](../requirements.md). Nothing here is decided; it's a starting point.
+Recorded 2026-09-29 **for a conversation the owner has asked for**, after the [where am I?](../challenges/where-am-i.md) and [living with the island](../challenges/living-with-the-island.md) challenges and before any unplanned scenarios. The requirement is "How new vocabulary emerges" in [requirements.md](../requirements.md), with the owner's full explanation under "The owner's explanation". Nothing here is decided yet.
+
+## The owner's question
+
+The engine knows concepts (fire, an edge, a container), never objects. A sword has to be invented. So where does the word "sword" come from? If a player builds one and names it, what happens when two players each invent one and name it differently, then meet and show each other? Should the game preload a vocabulary and let players discover it, or let things be invented and named as play goes on, by consensus? And how do players with different languages communicate? However far the engine is trained, new things will be invented, so this decides a lot.
 
 ## What's happened so far
 
@@ -21,3 +25,83 @@ The standing rules already keep the third kind out of the engine: a pot is data,
 - Where does a *player's* vocabulary come from? It ties to [recognition](recognition.md) (you can only name what you know) and to the [skill learning paradigm](skill-learning-paradigm.md) (a skill is a named procedure).
 - How does the vocabulary stay small as the engine climbs toward chips and rockets? What's the test that a new word is earning its place?
 - Does vocabulary differ between universes, or peoples within one?
+
+## A take
+
+Claude's take, 2026-09-29. **Not decided.**
+
+### Names belong to minds, not to the world
+
+The world holds things, and the patterns they were made to (designs). It holds no names at all. Every name is a word in someone's head, pointing at a pattern. So there's never a single answer to "what is this called?", only "what does *this person* call it?"
+
+That's how the real world works too. An iron blade with a grip is the same object in Tokyo and in Texas; only the word differs. It's also the last step of "no oracles": today every thing carries a label from the data file, and everyone sees it. That label is the one oracle people still have.
+
+### What's known at the start: four layers
+
+| Layer | What it holds | Where it lives | How it grows |
+| --- | --- | --- | --- |
+| **Laws** | Forces, and the roles parts can play: cut, pierce, contain, float, push, bind, burn | Engine code | Training stages add laws |
+| **Nature** | Materials and living kinds that exist without anyone making them | World data | Chosen per universe |
+| **A people's starting culture** | The words they know, and the designs they already know how to make | Data, per people | Chosen by whoever sets up the universe |
+| **Invention** | New designs and new words | Made in play | By players and NPCs |
+
+Training from the Stone Age to the Space Age grows the first layer only. The engine never learns "sword"; it learns "edge", "hardness", "lever", "circuit". Words never enter the engine. Data files keep handles like `flint` so we builders can refer to things, but players never see them: a people's starting words point at those handles.
+
+**Preload or invent? Both, in layers.** Laws always; nature per universe; a starting culture per people; everything beyond is invented. A stone-age islander starts knowing stone, stick, cord, sharp, and fire. A spaceport engineer starts knowing circuits and hulls, and perhaps not how to make fire from sticks.
+
+### How the first spear gets its name
+
+1. The islander's starting culture has stone, stick, cord, and sharp, but not spear.
+2. The player says: knap the flint until it's sharp; bind the sharp stone to the end of the long stick.
+3. The engine checks each step against the laws and makes the thing. It looks for a known design with the same arrangement. There's none anywhere in the world, so it records a new design under a plain number, and measures it like any assembly.
+4. The engine says: *"You've made something new: a long stick with a sharp stone bound to one end. What do you call it?"* The player says "a spear".
+5. Now "spear" is in the islander's words, pointing at that design, and the steps just taken become the skill "make a spear". "Make a spear" and "pick up the spear" now work, for this islander.
+
+### Two inventors, two words
+
+The world sees one design, discovered twice. Anna calls it a spear; Ben calls it a stabber. When they meet:
+
+- **Each sees it in their own words.** Ben's screen says "Anna holds a stabber".
+- **Words are learned by being told.** When Anna says "this is my spear", Ben learns that Anna calls it a spear. It goes into his words as something he was told, like a told way on a map, and like one it could be a lie.
+- **Nobody's word is the right one.** If Ben starts saying "spear" when he trades with Anna's village, the word spreads. Agreement comes from talk, as it does in real languages: no vote, no authority, no global list.
+- **If Ben had never seen one**, he'd see a description of what anyone can observe: "a long stick with a sharp stone bound to one end". Once told, it's a spear to him.
+
+### When are two things the same thing?
+
+The match mustn't be exact, or every hand-made spear would be a new invention. The proposal: a word points at an **arrangement**, meaning which kinds of parts, playing which roles, joined how.
+
+- **Material doesn't change the word.** A bronze sword is still a sword. The material is something you may also see, if you know it.
+- **Size matters loosely.** A thing matches if it's within about half to double the size of the one you learned the word from. So a knife and a sword can be different words for the same arrangement.
+
+That's roughly how human categories work: a word means "things like this one", not a strict definition.
+
+**General words** fall out of the laws. "Weapon" can mean anything with a harming role, and "container" anything that holds. A people's hierarchy of words (weapon, blade, sword) is theirs; the engine keeps only its own hierarchy of kinds, which the laws need (what flees what), under handles, not names.
+
+### Real-world languages
+
+This follows for free. A Spanish-speaking player's character has Spanish words. When an English speaker and a Spanish speaker meet, their characters are foreigners to each other: they can show things, point, and learn each other's words. Translating live chat between real languages is a separate question, parked.
+
+### What it would change in what's built
+
+- **Things lose their built-in names.** Each mind gets its own words (a lexicon). The labels in today's data become the islander's starting words, so the existing worlds keep working.
+- **What you see and what you can say go through your own words.** The view and the command parser resolve names through the actor's words. Anything you have no word for is described from what anyone can see: the plan in [recognition.md](recognition.md). So vocabulary and recognition turn out to be one piece.
+- **Invention.** When something made matches no known design, the engine records a new one and asks the maker what to call it.
+- **Teaching words.** Saying "this is a spear", or "call this a spear", teaches the listener, as a told claim.
+- **Our hand-written designs** (raft, lean-to, pot) become a people's starting culture, or are left out so a world can start from scratch.
+
+Not now: inventing new *shapes* from simple forms (rod, sheet, bowl, point); for now invention means new arrangements of shapes a people can already make, which covers most early inventions (a spear, a shoe, a barrier). Also not now: translating between real languages, and dialects.
+
+### What other games and research show
+
+From the survey in [research/naming-and-vocabulary.md](../research/naming-and-vocabulary.md):
+
+- **Games keep two labels.** Most games that let players name things keep a type the engine knows beside a name a player gave (EVE's ship name and ship type; Minecraft's renamed items, shown in italics). Minecraft stores its own names as language-neutral keys that each player's language file turns into words. That's the closest match to "laws know concepts, and words are a display layer".
+- **No game merges two independent names for the same kind of thing.** When a name has to be shared, the first namer wins (No Man's Sky), or the owner names the one object (EVE). Keeping names in minds would be new ground.
+- **Real languages.** Final Fantasy XIV shows a fixed dictionary of concepts to each player in their own language. That works for a preloaded vocabulary, not for invented words.
+- **Learning words in the world.** Heaven's Vault and Chants of Sennaar have players learn another people's words from context, with guesses that firm up or get corrected. That's the same shape as possible and certain claims in [memory](memory.md).
+- **Agreement does emerge without an authority.** In the "naming game" (Steels, Baronchelli), agents converge on one word through many small exchanges: success drops rival words, and failure spreads the new one. With people (Centola and Baronchelli 2015), a shared name took over when partners were mixed, but not when people only ever met fixed neighbours: then local dialects formed. A committed minority of about a quarter can flip an established word. **For a small universe where players meet many others, words should converge by themselves, and isolated colonies should drift into dialects, which would be a feature.**
+- **People hold categories as typical examples** and recognise things by resemblance (Rosch). That supports matching by arrangement and rough size, and naming by showing.
+
+### Recommendation
+
+Names live in minds; the world holds only patterns. Knowledge comes in layers: laws, nature, a starting culture, and invention. Build it as the next stage, before living with the island stages 5 and 6. Those stages then become its first test: **hide shoes are not in the islander's starting culture, so the islander has to invent them and name them.**

@@ -47,3 +47,17 @@ Later: players who stay away for years, and what of theirs keeps working while t
 
 Open, for the technology plan: simulating many absent people costs server time; quiet places may need to run more coarsely than busy ones, without breaking the laws.
 
+## Dying, and starting again
+
+A first take, 2026-09-29, from the owner's direction ("Dying, and starting again" in [requirements.md](../requirements.md)). Not yet decided in detail.
+
+How others are commonly known to do it (not surveyed with sources, unlike the offline survey): World of Warcraft makes you a ghost who runs back to your body, losing almost nothing. EVE Online destroys your ship and what's fitted to it, leaves part of it for others to loot, and wakes you in a clone at your home station with your skills and hangars intact, with insurance paying back part of the ship. Rust, DayZ, and ARK take everything you carried and wake you on a beach or at your bed, with your base standing (DayZ also resets your character). Albion Online and Ultima Online leave your body to be looted but keep your skills. Permadeath games take everything.
+
+The proposed balance, the owner's with one refinement:
+
+1. **Knowledge comes back with you**: skills, practice, recognition, and your memory of places. That's what took real time to earn.
+2. **What was on your body stays with the body**, where you fell, for others to take or for you to recover if you get back first.
+3. **What you left somewhere safe stays yours**: a home, a docked ship, stores, a bank account. You lose what you risked by carrying it, not everything, which gives banks, storage, and insurance a real purpose.
+4. **The new body comes from somewhere**, since nothing comes from nowhere: a clone bay or a medical bay in the space age, made of real matter and paid for, perhaps by insurance; waking on the beach again in a stone-age tutorial.
+5. **Each universe chooses how harsh it is**, from forgiving, through this default, to permadeath.
+

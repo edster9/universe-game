@@ -281,6 +281,15 @@ Added 2026-09-29, **for a discussion soon: before the vocabulary conversation an
 - A player who walks away for many years and comes back is a problem to solve eventually. These are solvable one at a time, given a starting basis.
 - **The general rule: your body stays, and things can happen to it.** How you protect yourself, and how you set your NPC rules, are among the first things to tackle; enhance as we go.
 
+## Dying, and starting again
+
+Added 2026-09-29, before the vocabulary conversation. For the time-away notes.
+
+- Every game probably solves this differently. Dying is a reality, but it wipes everything out. Some games revert you to your last save point, which doesn't make sense in a real-time network game.
+- You spend three months acquiring wealth and a spaceship, and when you die you start with nothing and go through it all again. That could get annoying in very hostile universes.
+- I don't see a lot of good solutions for dying and losing everything in a realistic universe game.
+- One balance: when you're resurrected, at least all your skills and everything you knew come with you, but not your money and possessions.
+
 See [ideas/time-away.md](ideas/time-away.md).
 
 ## How new vocabulary emerges

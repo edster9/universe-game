@@ -379,6 +379,50 @@ Added 2026-09-29, in answer to Claude's questions on the skill learning paradigm
 
 See "The climb" in [ideas/production.md](ideas/production.md) and "Decided" in [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md).
 
+## Are we ready for the village?
+
+Added 2026-09-30, answering Claude's village proposal ([ideas/village.md](ideas/village.md)). **Analyse before building.**
+
+- Are we actually ready for this step yet? How many basic primitives and laws exist to attempt it? We have a person who can walk around, hunt, and survive. We don't have many building materials, building designs, or roads, and we don't have the NPC systems figured out yet, especially how trade can happen.
+- **Start with a smaller community first before we go big**, or build a roadmap that takes us to the full village one step at a time.
+- **My biggest concern:** when we make the real transition, taking our rules processor and turning it into a real-time system. When we build a 3D representation and move around and do things, how does that translate to a real-time system, and how does it interact with our prompts?
+- **How much processing time do we devote to the NPCs?** I'd think they need a much simpler brain. If an NPC's mind works at exactly the same level as a real player's, it might be a burden on processing, or it might not: tell me.
+- Before we jump into the village, analyse all this and make a solid plan, especially how we transition into visualisation, and whether the two worlds will coexist as we make the transition.
+
+## Scoped NPC minds
+
+Added 2026-09-30, a theoretical conversation on Claude's road ahead ([ideas/the-road-ahead.md](ideas/the-road-ahead.md)).
+
+- We need the ability to **set a scope on NPC minds**. A basic, confined shopkeeper has limited things it can do: its job is to sell weaponry and the like in a shop, and nothing else.
+- If the shop is attacked, the NPC might defend itself. **But if the shop is destroyed, what does the NPC still standing there do?** Do they take on a mind of their own and start doing other things, or not? That depends on the level of mind assigned to that person.
+- So we have **different levels of NPC mind**: what they intend to do, and their survival skills.
+- We might have **very intelligent NPCs that act completely autonomously, as another player would**. They need more processing time, because they could literally do the same things a regular player could; they become indistinguishable from players. A basic shopkeeper has different mind limitations.
+
+See [ideas/npc-minds.md](ideas/npc-minds.md).
+
+## The cone of influence
+
+Added 2026-09-30, the same conversation, on Claude's "bigger steps" for places nobody watches.
+
+- Think of the analogy: if a tree falls in the forest and nobody is around to hear it, does it make a difference? **It's all about the cone of influence.**
+- If a boar is walking around in the forest and nobody is within its sphere of influence, it doesn't really matter exactly where it is. **It's almost as if history is written when it is discovered.**
+- As a player walks around, the game doesn't have to worry about the exact placement of things outside the cone of influence. Only when they come into a measurement do they matter: **the measurement reveals the location.** It's almost the world of quantum mechanics.
+- This lets the universe avoid spending CPU cycles on things that are irrelevant.
+- Think about both concepts, scoped minds and the cone of influence, as ways to solve a lot of the scale problems.
+
+See [ideas/cone-of-influence.md](ideas/cone-of-influence.md).
+
+### Deciding it: a balance we'll discover
+
+Added 2026-09-30, answering Claude's takes on scoped minds and the cone of influence.
+
+- The cone of influence is a big decision point. If the world were static and everything about it known by the engine, the engine would know the world itself. It's really the cone of influence of where people are.
+- **Some NPCs will make critical choices on their own**: an NPC might decide to blow up a planet, and that would happen in the system.
+- It all comes down to the processing power, and how this scales. **A very delicate balance has to be reached**, and I don't have good answers for it. We'll discover it as the village grows, becomes several villages, and real players are in different parts of the world.
+- For example, the village's smoke: if a player climbs and sees a village in the distance, the server doesn't need much detailed information about that village, unless a real player is in it; then that information would exist.
+- **What a server remembers depends on what real players, or real NPCs, are affecting in the world.** So the scale problem goes up and down as things happen. We'll learn it as we expand the game.
+- I don't have very good answers to the questions: **go with Claude's best recommendations.** If the server backend can scale, everything is fine. It comes down to how many players can comfortably live in the world, with the server keeping up with the world's changes.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

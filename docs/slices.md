@@ -113,6 +113,9 @@ Decided 2026-09-28: before building the town, train the engine on the [stranded]
 
 ## Slice 3: A town with a budget
 
+**Reached in steps (decided 2026-09-30):** room to grow first, then a companion, a camp, a hamlet, and the village. See [ideas/the-road-ahead.md](ideas/the-road-ahead.md), with the village's design in [ideas/village.md](ideas/village.md).
+
+
 Agents with needs, wallets, and jobs. A mine, a smith, a shop, a guard, and a tax. The world runs in ticks. The shop buys from the smith, the smith buys ore from the mine, the guard is paid from taxes, and taxes come from trade.
 
 The player can work, trade, and steal.

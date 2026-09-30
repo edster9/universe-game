@@ -33,6 +33,10 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/game-interface.md](ideas/game-interface.md) | Decided and built: time at real speed, players' rules (vitality and stamina), real time in the engine, what a player sees, and the order ahead |
 | [ideas/time-away.md](ideas/time-away.md) | Decided: what happens to a player's person while they're away, and dying and starting again |
 | [ideas/vocabulary.md](ideas/vocabulary.md) | Decided and built: names live in minds, and things are recognised by how they look |
+| [ideas/the-road-ahead.md](ideas/the-road-ahead.md) | Decided: are we ready for the village? What exists, what it costs to run, simple minds for NPCs, from text to real time to 3D, and the steps there |
+| [ideas/npc-minds.md](ideas/npc-minds.md) | Decided: scoped minds, a ladder from instinct to free, and a temperament for how each survives |
+| [ideas/cone-of-influence.md](ideas/cone-of-influence.md) | Decided: the world is exact only where a player could know; elsewhere coarse, asleep, or undecided until discovered |
+| [ideas/village.md](ideas/village.md) | Proposal: the village (slice 3), with villagers run by instinct and standing orders, trade, ownership in minds, coins, and a first browser page |
 | [ideas/rendering.md](ideas/rendering.md) | For a later conversation: how the game is drawn |
 | [ideas/space-travel.md](ideas/space-travel.md) | For a later conversation: space, gravity, and faster than light |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |
@@ -48,6 +52,7 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/game-concept.md](ideas/game-concept.md) | The space game that eventually runs on the engine |
 | [research/offline-players.md](research/offline-players.md) | What other games do with a player's character while they're offline, with sources |
 | [research/naming-and-vocabulary.md](research/naming-and-vocabulary.md) | How games and research handle naming invented things, with sources |
+| [research/npcs-and-real-time.md](research/npcs-and-real-time.md) | What NPC minds cost, simulating what nobody watches, and how tick-based servers feed smooth real-time 3D, with sources |
 | [research/prior-art.md](research/prior-art.md) | What other games have tried |
 | [open-questions.md](open-questions.md) | Decisions not yet made |
 

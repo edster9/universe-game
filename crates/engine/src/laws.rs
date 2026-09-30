@@ -506,6 +506,46 @@ pub fn complete_due(world: &mut World) -> Result<(), Fault> {
     Ok(())
 }
 
+/// What a thing is worth to someone with a mind: the highest of their
+/// values whose word fits it, as they call things, times its mass. Nothing
+/// they have no value for is worth anything to them.
+pub(crate) fn worth(world: &World, who: EntityId, thing: EntityId) -> u128 {
+    let Some(mind) = world.mind(who) else {
+        return 0;
+    };
+    let per_kg = mind
+        .values
+        .iter()
+        .filter(|(word, _)| is_called(world, who, thing, word) || mentions(world, who, thing, word))
+        .map(|&(_, per_kg)| per_kg)
+        .max()
+        .unwrap_or(0);
+    u128::from(per_kg) * u128::from(world.mass(thing).mg())
+}
+
+fn sentence_case(text: &str) -> String {
+    let mut chars = text.chars();
+    chars
+        .next()
+        .map(|c| c.to_uppercase().collect::<String>() + chars.as_str())
+        .unwrap_or_default()
+}
+
+/// Someone who has seen `actor` take what's theirs wants nothing more to do
+/// with them.
+fn grudge(world: &World, actor: EntityId, listener: EntityId) -> Result<(), Refusal> {
+    if world
+        .memory(listener)
+        .is_some_and(|m| m.robbed_by.contains_key(&actor))
+    {
+        return Err(Refusal::TheySay {
+            who: named(world, actor, listener),
+            why: "You took what's mine".into(),
+        });
+    }
+    Ok(())
+}
+
 /// A refusal, as the one refused would say it: "you don't see it" becomes
 /// "I don't see it".
 fn in_first_person(text: &str) -> String {
@@ -1006,7 +1046,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Take { item } => {
             if let Some(found) = find(world, actor, reach.around.iter().copied(), item) {
-                return lift(world, actor, found);
+                return lift(world, actor, found).map(|c| seen_taking(world, actor, found, c));
             }
             if let Some(found) = find(world, actor, reach.inside.iter().copied(), item) {
                 let container = world.location(found).expect("inside something");
@@ -1039,7 +1079,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     container: named(world, actor, container),
                 }
             })?;
-            lift(world, actor, found)
+            lift(world, actor, found).map(|c| seen_taking(world, actor, found, c))
         }
 
         Intent::Drop { item } => {
@@ -1517,6 +1557,47 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }])
         }
 
+        Intent::Offer { item, person, want } => {
+            let mine = carrying(item)?;
+            let listener = person_here(world, actor, &reach.around, person)?;
+            let name = || named(world, actor, listener);
+            world
+                .mind(listener)
+                .ok_or_else(|| Refusal::OwnMind(name()))?;
+            if world.is_asleep(listener) {
+                return Err(Refusal::TheyreAsleep(name()));
+            }
+            grudge(world, actor, listener)?;
+            // What they'd give, in their own words, from what they carry.
+            let says = |why: String| Refusal::TheySay { who: name(), why };
+            let theirs = find(world, listener, world.contents(listener), want)
+                .ok_or_else(|| says(format!("I haven't got {}", want.trim())))?;
+            let (get, give) = (worth(world, listener, mine), worth(world, listener, theirs));
+            let (mine_named, theirs_named) =
+                (named(world, listener, mine), named(world, listener, theirs));
+            if get == 0 {
+                return Err(says(format!("I've no use for {mine_named}")));
+            }
+            if get < give {
+                return Err(says(sentence_case(&format!(
+                    "{theirs_named} is worth more to me than {mine_named}"
+                ))));
+            }
+            can_carry(world, listener, world.mass(mine))
+                .map_err(|_| Refusal::TheyCantCarry(name()))?;
+            // Both at once, or neither.
+            Ok(vec![
+                Change::Move {
+                    entity: mine,
+                    to: listener,
+                },
+                Change::Move {
+                    entity: theirs,
+                    to: actor,
+                },
+            ])
+        }
+
         Intent::Ask { person, request } => {
             let listener = person_here(world, actor, &reach.around, person)?;
             let name = || named(world, actor, listener);
@@ -1526,6 +1607,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if world.is_asleep(listener) {
                 return Err(Refusal::TheyreAsleep(name()));
             }
+            grudge(world, actor, listener)?;
             // A confined mind does its own work and nothing else.
             if mind.scope == crate::mind::Scope::Confined
                 && !mind.orders.iter().any(|o| o.command == **request)
@@ -1992,6 +2074,29 @@ fn put_together(
 }
 
 /// Lifting something: it has to be portable, solid, and cool enough to hold.
+/// Taking something someone here believes is theirs, while they're awake to
+/// see it: they notice, and remember who. Unseen, nothing happens.
+fn seen_taking(
+    world: &World,
+    actor: EntityId,
+    thing: EntityId,
+    mut changes: Vec<Change>,
+) -> Vec<Change> {
+    let Some(here) = world.place_of(actor) else {
+        return changes;
+    };
+    for owner in world.contents(here) {
+        let theirs = world.memory(owner).is_some_and(|m| m.owns.contains(&thing));
+        if owner != actor && theirs && world.is_living(owner) && !world.is_asleep(owner) {
+            changes.push(Change::Notice {
+                agent: owner,
+                news: crate::world::News::Took { by: actor, thing },
+            });
+        }
+    }
+    changes
+}
+
 fn lift(world: &World, actor: EntityId, found: EntityId) -> Result<Vec<Change>, Refusal> {
     if !world.is_portable(found) {
         return Err(Refusal::CannotCarry(named(world, actor, found)));

@@ -187,6 +187,9 @@ culture = "far-folk"
 temperature = "310 K"
 mind = "resident"
 temperament = "defend"
+# What things are worth to them, a kilo, in their words. Iron barbs are
+# precious, fish they can't catch, the flesh they live on, and wood.
+values = { barb = 20, fish = 4, "pale flesh" = 2, wood = 1 }
 remembers = ["beach", "stream", "forest", "hillside"]
 orders = [
     "hungry, carrying pale flesh: eat pale flesh",

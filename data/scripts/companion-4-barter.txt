@@ -1,0 +1,45 @@
+# A companion, stage 4: barter, and whose things are whose. The stranger
+# values things in their own words (an iron barb above all, then fish, the
+# pale flesh they live on, and wood), and trades only when what they'd get
+# is worth as much to them as what they'd give. A lump of driftwood won't
+# buy their barb; the islander's flint spear will. Ownership lives in
+# minds: the shells the stranger drops on the beach are still theirs.
+# Taken while they're off at the stream, nothing happens; taken while they
+# watch, they remember, and want nothing more to do with the islander. See
+# docs/challenges/a-companion.md.
+world companion.toml
+as survivor
+luck average
+rules player
+
+gather driftwood
+try offer wood to the stranger for barb
+expect said the stranger says, "the iron barb is worth more to me than the lump of wood."
+try offer wood to the stranger for fish
+expect said the stranger says, "i haven't got fish."
+include skills/make-a-spear.txt
+go forest
+go beach
+offer spear to the stranger for barb
+expect said the stranger takes the spear of wood and flint and gives you the flake of dark metal
+inventory
+expect said flake of dark metal (400 g)
+
+# The stranger is off at the stream: a shell taken, unseen.
+wait until 13:00
+look
+expect not said the stranger
+take shell
+expect not said sees you
+wait until 15:00
+ask the stranger to gather driftwood
+expect said the stranger agrees
+
+# Taken while they watch.
+take shell
+expect said the stranger sees you take it: it's theirs
+try ask the stranger to gather driftwood
+expect said the stranger says, "you took what's mine."
+try offer flake to the stranger for spear
+expect said the stranger says, "you took what's mine."
+expect conserved

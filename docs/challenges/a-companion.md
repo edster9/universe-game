@@ -78,3 +78,21 @@ A mind knows only what its person perceives and remembers: no oracles. It only e
 - A request made while they're busy waits: they finish what they're doing first.
 
 **Simplified:** requests are one action each, with no "go there and then do this"; the asker isn't told how a request came out, and sees it only by looking; someone who has set off can still be asked, though they can't be struck; nothing yet stops a resident stranger from agreeing to anything at all, however costly to them: what they'd want in return is stage 4.
+
+## Stage 4 result, 2026-09-30: passed
+
+**Barter.** `offer <something> to <someone> for <something>`. A mind has **values** in data, a worth per kilo for each of their own words (the stranger: `barb = 20, fish = 4, "pale flesh" = 2, wood = 1`); what a thing is worth to them is the highest value whose word fits it, as they call things, times its mass, and nothing they have no word-value for is worth anything to them. They weigh the offer in their own words: what they'd give must be something they carry, and what they'd get must be worth at least as much to them. Then **both things change hands in one step through the gate**, or neither does.
+
+**Ownership lives in minds.** What comes into someone's hands is theirs, in their mind; it stays theirs when they put it down, and stops being theirs when they hand it to someone. Two minds can each believe the same shell is theirs. **Taking** something that someone here, awake, believes is theirs is seen: they remember who, and want nothing more to do with them ("You took what's mine") for requests or trades. Taken while they're away or asleep, nothing happens.
+
+- **The story** (`data/scripts/companion-4-barter.txt`): driftwood won't buy the stranger's iron barb (*"The iron barb is worth more to me than the lump of wood."*); the islander's flint spear will, and the islander walks off with what they call a "flake of dark metal". At 13:00, with the stranger at the stream, the islander takes one of their shells from the beach: nothing. At 15:00 the stranger agrees to gather driftwood. Then the islander takes another shell in front of them: *"The stranger sees you take it: it's theirs."*, and after that, *The stranger says, "You took what's mine."*
+- **Proofs** (`crates/engine/tests/companion.rs`): no use, worth less, and worth as much, with who owns what in each mind afterwards; a shell taken while the stranger sleeps leaves both believing it's theirs and no grudge, and one taken while they watch is remembered; a boar decides for themselves.
+- **Sabotage checks:** trading whatever the worth, a giver who never lets go of a thing in their mind, sleepers who see thefts, and no grudge each fail a proof.
+
+**What the attempt found:**
+
+- **Values read from data come in alphabetical order**, so "the first value whose word fits" would have depended on spelling. It's "the highest that fits" instead: a spear with a barb on it is worth what a barb is.
+- The islander has to offer "the flake", not "the barb": what they call it, not what the stranger does.
+- Shells the stranger dropped as rubbish are still theirs, in their mind. Nothing yet lets someone give a thing up for good.
+
+**Simplified:** one thing for one thing; no counter-offers or haggling; values never change, however much of something they have; the grudge lasts forever and does nothing but refuse; players can't yet trade with each other (someone without a mind "decides for themselves").

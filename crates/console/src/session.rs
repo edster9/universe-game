@@ -357,14 +357,24 @@ impl Session {
     fn with_collapse(&mut self, text: String, was_asleep: bool) -> String {
         let mut text = text;
         for news in self.world.take_news(self.player) {
-            let News::Attacked { by, wound } = news;
-            let who = sentence_case(&self.world.label_for(self.player, by));
-            text = match wound {
-                Some(rate) => format!(
-                    "{text}\n{who} goes for you, and wounds you: you're bleeding {} a second.",
+            let who = |by| sentence_case(&self.world.label_for(self.player, by));
+            text = match news {
+                News::Attacked {
+                    by,
+                    wound: Some(rate),
+                } => format!(
+                    "{text}\n{} goes for you, and wounds you: you're bleeding {} a second.",
+                    who(by),
                     Mass::from_mg(rate)
                 ),
-                None => format!("{text}\n{who} goes for you, and misses."),
+                News::Attacked { by, wound: None } => {
+                    format!("{text}\n{} goes for you, and misses.", who(by))
+                }
+                News::Took { by, thing } => format!(
+                    "{text}\n{} takes your {}.",
+                    who(by),
+                    self.world.label_for(self.player, thing)
+                ),
             };
         }
         if !was_asleep && self.world.is_asleep(self.player) {
@@ -633,7 +643,34 @@ impl Session {
                 }
             }
             (Intent::Take { .. } | Intent::TakeFrom { .. }, Some(&Change::Move { entity, .. })) => {
-                format!("You take {}.", name(entity))
+                // Anyone who saw it taken from them.
+                let seen: Vec<String> = changes
+                    .iter()
+                    .filter_map(|c| match c {
+                        Change::Notice {
+                            agent,
+                            news: News::Took { .. },
+                        } => Some(sentence_case(&name(*agent))),
+                        _ => None,
+                    })
+                    .collect();
+                let mut text = format!("You take {}.", name(entity));
+                for owner in seen {
+                    text.push_str(&format!(" {owner} sees you take it: it's theirs."));
+                }
+                text
+            }
+            (Intent::Offer { .. }, Some(&Change::Move { entity, to })) => {
+                let got = changes.get(1).and_then(|c| match *c {
+                    Change::Move { entity, .. } => Some(entity),
+                    _ => None,
+                });
+                format!(
+                    "{} takes {} and gives you {}.",
+                    sentence_case(&name(to)),
+                    name(entity),
+                    got.map_or("nothing".into(), name)
+                )
             }
             (Intent::Drop { .. }, Some(&Change::Move { entity, .. })) => {
                 format!("You drop {}.", name(entity))
@@ -1067,6 +1104,15 @@ impl Session {
                 agent,
                 news: News::Attacked { by, .. },
             } => format!("{} knows {} went for them", w.label(*agent), w.label(*by)),
+            Change::Notice {
+                agent,
+                news: News::Took { by, thing },
+            } => format!(
+                "{} sees {} take {}",
+                w.label(*agent),
+                w.label(*by),
+                w.label(*thing)
+            ),
             &Change::Struck { agent, at } => {
                 format!("{} remembers going for {}", w.label(agent), w.label(at))
             }

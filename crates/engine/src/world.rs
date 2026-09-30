@@ -369,6 +369,11 @@ pub struct Memory {
     pub attackers: BTreeMap<EntityId, u64>,
     /// Whom they have gone for, and when last.
     pub struck: BTreeMap<EntityId, u64>,
+    /// What they believe is theirs: what came into their hands, and stays
+    /// theirs when they put it down, until they hand it to someone.
+    pub owns: BTreeSet<EntityId>,
+    /// Who they've seen take what's theirs, and when last.
+    pub robbed_by: BTreeMap<EntityId, u64>,
 }
 
 /// A kind of creature or growing thing, from data. Kinds form a hierarchy:
@@ -462,6 +467,8 @@ pub enum News {
     /// `by` went for them, and wounded them (bleeding `wound` mg a second) or
     /// missed.
     Attacked { by: EntityId, wound: Option<u64> },
+    /// They saw `by` take `thing`, which is theirs.
+    Took { by: EntityId, thing: EntityId },
 }
 
 /// How an action someone started came out, kept for them to hear of.
@@ -1467,8 +1474,20 @@ impl World {
             .unwrap_or_default()
     }
 
-    /// Puts `id` in or on `holder`, wherever it was before.
+    /// Puts `id` in or on `holder`, wherever it was before. What comes into
+    /// someone's hands is theirs, in their mind; handed on from someone,
+    /// it's no longer theirs, in theirs.
     pub(crate) fn put(&mut self, id: EntityId, holder: EntityId) {
+        let handed = self.agents.contains(&holder);
+        if let Some(giver) = self.locations.get(&id).copied()
+            && handed
+            && let Some(memory) = self.memories.get_mut(&giver)
+        {
+            memory.owns.remove(&id);
+        }
+        if let Some(memory) = self.memories.get_mut(&holder) {
+            memory.owns.insert(id);
+        }
         self.unput(id);
         self.locations.insert(id, holder);
         self.inside.or_insert_with(holder, BTreeSet::new).insert(id);

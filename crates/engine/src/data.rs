@@ -336,6 +336,9 @@ struct AgentDef {
     /// own words.
     #[serde(default)]
     orders: Vec<String>,
+    /// What things are worth to them, a kilo, by their own word for each.
+    #[serde(default)]
+    values: BTreeMap<String, u64>,
     /// Places they know already, having been there: they remember what's
     /// fixed there, and who.
     #[serde(default)]
@@ -705,9 +708,11 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
                         temperament,
                         orders,
                         requests: Vec::new(),
+                        values: def.values.iter().map(|(w, v)| (w.clone(), *v)).collect(),
                     },
                 );
-            } else if !def.orders.is_empty() || def.temperament.is_some() {
+            } else if !def.orders.is_empty() || def.temperament.is_some() || !def.values.is_empty()
+            {
                 return fail(format!("{id} has orders or a temperament but no mind"));
             }
             if !def.remembers.is_empty() {

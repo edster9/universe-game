@@ -55,6 +55,9 @@ pub struct Mind {
     pub orders: Vec<Order>,
     /// What they've been asked to do and have taken on, first first.
     pub requests: Vec<Intent>,
+    /// What things are worth to them, a kilo, by their word for each: the
+    /// highest that fits a thing counts.
+    pub values: Vec<(String, u64)>,
 }
 
 /// "When these hold, do this."

@@ -291,3 +291,110 @@ fn a_request_is_taken_up_once_and_dropped_if_it_can_no_longer_be_done() {
     assert_eq!(requests(&w, stranger), 0);
     assert_eq!(w.contents(islander).len(), 1);
 }
+
+fn owns(w: &World, who: EntityId, thing: EntityId) -> bool {
+    w.memory(who).unwrap().owns.contains(&thing)
+}
+
+/// Offering the islander's driftwood for the stranger's barb, with the
+/// stranger valuing things as `values` says.
+fn wood_for_the_barb(values: &'static str) -> (World, Option<String>) {
+    let (mut w, _) = island(move |t| {
+        t.replace(
+            "values = { barb = 20, fish = 4, \"pale flesh\" = 2, wood = 1 }",
+            values,
+        )
+    });
+    say(&mut w, "gather driftwood");
+    let refusal = say(&mut w, "offer wood to the stranger for barb");
+    (w, refusal)
+}
+
+#[test]
+fn a_trade_is_made_only_if_what_they_get_is_worth_as_much_to_them() {
+    // Something they've no use for.
+    let (_, refusal) = wood_for_the_barb("values = { barb = 20 }");
+    assert_eq!(
+        refusal.as_deref(),
+        Some("the stranger says, \"I've no use for the lump of wood.\"")
+    );
+    // Worth less to them than what they'd give: refused, and nothing
+    // changes hands.
+    let (w, refusal) = wood_for_the_barb("values = { barb = 20, wood = 1 }");
+    assert_eq!(
+        refusal.as_deref(),
+        Some("the stranger says, \"The iron barb is worth more to me than the lump of wood.\"")
+    );
+    let (stranger, barb) = (
+        w.find_by_key("stranger").unwrap(),
+        w.find_by_key("barb").unwrap(),
+    );
+    assert_eq!(w.location(barb), Some(stranger));
+    assert!(owns(&w, stranger, barb));
+    // Worth as much: both change hands at once, and in each mind the thing
+    // that came to them is theirs, and the thing they handed over isn't.
+    let (w, refusal) = wood_for_the_barb("values = { barb = 1, wood = 1 }");
+    assert_eq!(refusal, None);
+    let islander = w.find_by_key("survivor").unwrap();
+    let wood = w
+        .contents(stranger)
+        .into_iter()
+        .find(|&t| w.label(t).contains("wood"))
+        .unwrap();
+    assert_eq!(w.location(barb), Some(islander));
+    assert!(owns(&w, islander, barb) && !owns(&w, stranger, barb));
+    assert!(owns(&w, stranger, wood) && !owns(&w, islander, wood));
+}
+
+#[test]
+fn whose_a_thing_is_lives_in_minds_and_only_a_theft_seen_is_remembered() {
+    let (mut w, stranger) = island(|t| t);
+    let islander = w.find_by_key("survivor").unwrap();
+    // The stranger's shells pile up on the beach.
+    engine::nature::run(&mut w, 2 * 3_600).unwrap();
+    let shells = |w: &World| -> Vec<EntityId> {
+        w.contents(w.find_by_key("beach").unwrap())
+            .into_iter()
+            .filter(|&t| {
+                w.label(t) == "lump of shell" || w.label_for(islander, t) == "lump of shell"
+            })
+            .collect()
+    };
+    let shell = shells(&w)[0];
+    assert!(owns(&w, stranger, shell));
+    // Asleep, they don't see it taken: each now believes it's theirs.
+    while !w.is_asleep(stranger) || w.place_of(stranger) != w.place_of(islander) {
+        engine::nature::run(&mut w, 600).unwrap();
+    }
+    say(&mut w, &format!("take {}", engine::laws::pointer(shell)));
+    assert!(owns(&w, islander, shell) && owns(&w, stranger, shell));
+    assert!(w.memory(stranger).unwrap().robbed_by.is_empty());
+    // Awake and watching, they see it, and won't be asked anything more.
+    while w.is_asleep(stranger) || w.place_of(stranger) != w.place_of(islander) {
+        engine::nature::run(&mut w, 600).unwrap();
+    }
+    let another = shells(&w)[0];
+    let taking = say(&mut w, &format!("take {}", engine::laws::pointer(another)));
+    assert_eq!(taking, None);
+    assert!(
+        w.memory(stranger)
+            .unwrap()
+            .robbed_by
+            .contains_key(&islander)
+    );
+    assert_eq!(
+        say(&mut w, "ask the stranger to gather driftwood").as_deref(),
+        Some("the stranger says, \"You took what's mine.\"")
+    );
+}
+
+#[test]
+fn only_a_mind_of_its_own_takes_offers() {
+    let (mut w, _) = island(|t| t);
+    say(&mut w, "gather driftwood");
+    say(&mut w, "go forest");
+    assert_eq!(
+        say(&mut w, "offer wood to a boar for roots").as_deref(),
+        Some("a boar decides for themselves")
+    );
+}

@@ -129,6 +129,10 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | People remember who has gone for them and whom they've gone for, and when | in | a companion 2 |
 | Someone here, awake, with a mind of their own can be asked to do something. They weigh it in their own words, against what they see and carry, and agree or say why not; a confined mind takes on only what its orders do | in | a companion 3 |
 | What someone agrees to comes first when they're next free, after danger; they take it up once, doing it or letting it go | in | a companion 3 |
+| A mind has values: a worth a kilo for each of its words. A thing is worth the highest that fits it, times its mass; nothing without a value is worth anything to them | in | a companion 4 |
+| An offer, something carried for something they carry, is taken only if what they'd get is worth at least what they'd give; both change hands at once, or neither | in | a companion 4 |
+| Whose a thing is lives in minds: what comes into someone's hands is theirs, stays theirs when put down, and stops being theirs when handed on | in | a companion 4 |
+| Taking what someone here and awake believes is theirs is seen: they remember who, and refuse them requests and trades | in | a companion 4 |
 | In each second, people with minds decide before creatures on instinct | in | a companion 2 |
 
 ## Wearing

@@ -786,10 +786,16 @@ impl World {
 
             Change::Notice { agent, news } => {
                 self.must_exist(*agent)?;
-                let crate::world::News::Attacked { by, .. } = news;
                 let now = self.tick;
                 if let Some(memory) = self.memories.get_mut(agent) {
-                    memory.attackers.insert(*by, now);
+                    match *news {
+                        crate::world::News::Attacked { by, .. } => {
+                            memory.attackers.insert(by, now);
+                        }
+                        crate::world::News::Took { by, .. } => {
+                            memory.robbed_by.insert(by, now);
+                        }
+                    }
                 }
                 // Someone nobody plays notices at once; the rest hear of it.
                 if !self.minds.contains_key(agent) {

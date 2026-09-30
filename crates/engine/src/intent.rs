@@ -124,6 +124,12 @@ pub enum Intent {
         item: String,
         word: String,
     },
+    /// Offer something you carry to someone here, for something they carry.
+    Offer {
+        item: String,
+        person: String,
+        want: String,
+    },
     /// Ask someone here, who has a mind of their own, to do something.
     Ask {
         person: String,
@@ -162,7 +168,8 @@ impl Intent {
             | Intent::Tell { item, .. }
             | Intent::Wear { item, .. }
             | Intent::TakeOff { item }
-            | Intent::Give { item, .. } => vec![item.as_str()],
+            | Intent::Give { item, .. }
+            | Intent::Offer { item, .. } => vec![item.as_str()],
             Intent::TakeFrom { item, from } => vec![item.as_str(), from.as_str()],
             Intent::Put { item, into } => vec![item.as_str(), into.as_str()],
             Intent::Dig { source, tool } => vec![source.as_str(), tool.as_str()],
@@ -266,6 +273,9 @@ impl fmt::Display for Intent {
                 write!(f, "tell {person} that {item} is {word}")
             }
             Intent::Ask { person, request } => write!(f, "ask {person} to {request}"),
+            Intent::Offer { item, person, want } => {
+                write!(f, "offer {item} to {person} for {want}")
+            }
             Intent::Wear {
                 item,
                 on: crate::world::Covering::Feet,
@@ -494,6 +504,20 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                 .filter(|(i, w)| !i.is_empty() && !w.is_empty())
                 .ok_or_else(|| usage("<person> that <thing> is a <word>"))?;
             Intent::Tell { person, item, word }
+        }
+        "offer" | "trade" => {
+            let form = "<something> to <someone> for <something>";
+            let (item, rest) = rest.split_once(" to ").ok_or_else(|| usage(form))?;
+            let (person, want) = rest.rsplit_once(" for ").ok_or_else(|| usage(form))?;
+            let (item, person, want) = (item.trim(), person.trim(), want.trim());
+            if item.is_empty() || person.is_empty() || want.is_empty() {
+                return Err(usage(form));
+            }
+            Intent::Offer {
+                item: item.to_string(),
+                person: person.to_string(),
+                want: want.to_string(),
+            }
         }
         "ask" => {
             let (person, request) = rest

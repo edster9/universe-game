@@ -49,6 +49,7 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [challenges/where-am-i.md](challenges/where-am-i.md) | The second training challenge: explore the island and climb its mountain to see where you are |
 | [challenges/living-with-the-island.md](challenges/living-with-the-island.md) | The third training challenge: wildlife, hunting and cooking, shelter, shoes and clothing |
 | [challenges/strangers-words.md](challenges/strangers-words.md) | The vocabulary stage: two peoples, two sets of words, inventing and naming |
+| [challenges/first-steps.md](challenges/first-steps.md) | Proposal: first steps as the islander in the native client: the actor's camera, a console, a fire, a backpack, voice, and being near things |
 | [laws.md](laws.md) | Every law in the engine, stated generally, and what uses it |
 | [technology.md](technology.md) | Rust, the browser, whole-number units, and how player code runs |
 | [ideas/in-game-computer.md](ideas/in-game-computer.md) | Computers as parts, programs as knowledge |

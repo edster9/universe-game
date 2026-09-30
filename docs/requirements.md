@@ -477,6 +477,41 @@ Added 2026-09-30, after the WSL benchmark.
 
 See [ideas/assets.md](ideas/assets.md) and [ideas/the-client.md](ideas/the-client.md).
 
+### Back on track: commands and the world together
+
+Added 2026-09-30, after flying around the first scene.
+
+- A good start: I see the island and I'm flying around it. I see trees, small bushes, maybe a couple of pieces of trees, but I don't see any actors walking around anywhere, and I don't know how to find them. There are no labels on anything.
+- We don't need to concentrate too much on that right now: the basics are up and running.
+- **Now we need to get back on track** and see where we go from here: the progression to start incorporating, at a very basic level, the commands and the world together. Come up with a plan of next steps.
+
+See "The client joins the road" in [ideas/the-road-ahead.md](ideas/the-road-ahead.md).
+
+### Played from the actor's perspective
+
+Added 2026-09-30, before answering Claude's plan.
+
+- Do we need to tell other things what to do? Maybe it's good for testing, but **the game will naturally be played from the perspective of the actor.**
+- There are two main ways for the camera to work: first person, or **third person, looking at the person from above and behind: the classic online-game perspective, Tomb Raider and the like.** First-person shooters aren't the style here. **We want to see the actor walking around.**
+- **Whatever we can see from that perspective is what we can see; what we can't see, we can't.** That's how the view of the world grows. There could be **a side map that expands as we explore.** Whatever I can see by zooming, or rotating with the mouse, is what I'm seeing. That way the engine doesn't have to make things dark or black because I can't see them: that's just how it is.
+- I walk around with the actor. When I come near something, I can type a command: for example, "start a fire". If I have the skill, it will most likely tell me there's nothing nearby to start a fire with, and I have to go and find things. If I come across grass, I can say "cut the grass", "take it". **You have to be near things for them to happen, and we have to show them visually.**
+- **As we pick things up, they go in our backpack, and we can show the items in it.**
+- Clicking on a boar and telling it what to do is a nice feature, but **it's not how the game would be played**; maybe for our development purposes.
+- Give a take on laying out the initial stage, and how we grow from there.
+
+### The first milestones: camera, console, fire, backpack, voice
+
+Added 2026-09-30, agreeing to all of Claude's proposals for the actor's view.
+
+- **The camera** starts above and behind the person. I can rotate that perspective with the mouse and it stays at that angle while I keep walking, so I could watch the character sideways while they walk, or go back behind them, like any other game. I can change the up and down, and zoom.
+- **A key breaks out into free flying: a debugging feature**, and I can snap back to the player when I want. While I'm flying freely, my regular WASD controls still move the player.
+- **Another hotkey brings up a graphical console where we can type.** Maybe it's always present, with a little translucency so it looks nice. The same console could carry debugging messages to read: dual purpose, with an area to type in and an area where output comes in. Its size can be made bigger or smaller, but it has to be transparent enough to see the game behind it. Placement: wherever most games put it.
+- **Aim for challenges again**, very small ones, as before. **A first goal: the actor walks around and makes a fire.**
+- **Work towards a basic backpack** to put our items in. No need to show items graphically yet: labels inside a backpack we can open and close in a very simple way.
+- **Sooner or later, voice input.** Typing is very annoying; we need a reliable voice-to-text engine, and plenty exist. Integrate it sooner rather than later.
+- **A statistics window about our body:** click on it and expand all our vitals (nutrition, hunger, tiredness, health, bleeding, everything about the person), in a window we can open and close.
+- These are our first milestones. **Put together a plan in the order Claude thinks best.** Once we pass these initial challenges, we can expand: other players, towns, and everything else.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

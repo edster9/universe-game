@@ -1,6 +1,6 @@
 # The road ahead: ready for the village?
 
-Claude's take, 2026-09-30. **Decided the same day**: see the end. The owner asked, before any village work, whether we're ready: how many primitives and laws exist, whether a smaller community should come first, how the rules engine becomes a real-time 3D game that still takes prompts, how much processing NPC minds need, and whether the text world and the 3D world can coexist ("Are we ready for the village?" in [requirements.md](../requirements.md)). The village design itself is in [village.md](village.md); this is the road to it. Research behind it: [research/npcs-and-real-time.md](../research/npcs-and-real-time.md).
+Claude's take, 2026-09-30. **Decided the same day**; see the "Decided" sections, and the newest proposal at the end. The owner asked, before any village work, whether we're ready: how many primitives and laws exist, whether a smaller community should come first, how the rules engine becomes a real-time 3D game that still takes prompts, how much processing NPC minds need, and whether the text world and the 3D world can coexist ("Are we ready for the village?" in [requirements.md](../requirements.md)). The village design itself is in [village.md](village.md); this is the road to it. Research behind it: [research/npcs-and-real-time.md](../research/npcs-and-real-time.md).
 
 ## Short answers
 
@@ -152,3 +152,38 @@ Not yet done from step 1: local time by the cone of influence, and creatures act
 ## Decided, 2026-09-30: step 1 closes here
 
 The owner, on Claude's recommendation: **local time by the cone of influence waits for the hamlet** (step 4), when the benchmark will show a busy village with many places; the calm world runs about 53,000 times faster than real time and a busy one about 1,500 times, enough for the companion and the camp. **Creatures acting at the end of what they do moves to step 2**, where the companion's mind uses the same path.
+
+## The client joins the road
+
+Claude's proposal, 2026-09-30. **Not decided.** The owner, having flown around the first scene ([the-client.md](the-client.md)): the basics are up; the actors can't be found; get back on track with a plan for bringing the commands and the world together ("Back on track: commands and the world together" in [requirements.md](../requirements.md)).
+
+**Where we are:** step 1 (room to grow) is done; the companion challenge has passed stages 1 to 4 (a mind, temperament, asking, barter and ownership); its stage 5 was a way to watch and play, which is now the native client. So the plan finishes the companion challenge in the client, then goes back to the climb with the client alongside.
+
+### A. Play the companion's island as the islander (finishes step 2)
+
+**Now a challenge of its own, with the owner's milestones in order: [challenges/first-steps.md](../challenges/first-steps.md).**
+
+Revised the same day, after the owner's "Played from the actor's perspective" ([requirements.md](../requirements.md)): the game is played as one actor, seen from behind and above (third person), and what the camera shows is what you see. Telling other creatures what to do is for development only.
+
+1. **The actor's camera.** The camera follows the islander from behind and above; the mouse rotates it around them, the wheel zooms. No artificial darkness: what's out of shot isn't seen. The free-flying overview stays, on a key, as a developer's tool.
+2. **The command line and the backpack.** Type what the console takes (`gather grass`, `take the stick`, `start a fire`…); the client uses the console's own session, so every reply and refusal is the one the scripts prove, shown in a short log. The backpack panel lists what the islander carries, and updates as they pick things up and drop them. The world keeps running while actions take their time.
+3. **Walking, drawn.** `go forest` walks the islander along the path, the camera following; people and creatures move along their paths too. Names appear over people, creatures, and things when you point at them, in the islander's own words.
+4. **The map that grows.** A side map drawn from the islander's memory, which the engine already keeps: places seen, ways walked, what was seen where. It fills in as they explore, and what they were told but haven't seen shows as uncertain.
+5. **The client draws only what the engine says the islander perceives.** The land and sea are scenery; people, creatures, and things come from the islander's perception (their place, and landmarks from afar), so a hacked client couldn't reveal more. Within that, the camera decides what's on screen, as the owner describes.
+
+**Developer's tools, behind a switch:** the free camera, taking over another person (the scripts' `as`), and clicking a creature to command it. In the game, others are asked, not commanded (stage 3's `ask`), and their minds decide.
+
+**Proof of the stage:** the four companion stories played as the islander in the client, with screenshots at the moments the scripts check; the scripts still pass unchanged.
+
+### A2. Being near things: space within places
+
+The owner's "you have to be near things for them to happen": today "near" means "in the same place", a patch the size of a beach. The next engine step after A is **space within places**: positions in metres inside a place, a reach (people already have one, 2.5 m), and walking inside a place with the keys, so you walk up to the grass before you can cut it. It's a law change, proved by scripts like any other, and it's what 3D movement needs.
+
+### B. Back to the climb: step 3, the camp
+
+Four to six people, a hut you walk into (a place inside a place), several hands on one job, a shared store, planting or tending, as planned. Each stage now gets a scene as well as its scripts. By then the client needs a hut, people, and tools that look like something, which is when the **assets conversation** ([assets.md](assets.md)) matters: best held before the camp.
+
+### Later, not yet
+
+- The **rendering conversation** (views, style, the player's camera) when the camp's needs are known.
+- A **server and networking**: the client runs the engine in-process until a second player needs to join.

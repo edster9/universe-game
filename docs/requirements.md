@@ -267,6 +267,18 @@ Added 2026-09-29. The stages' natural path keeps going until a village with many
 
 - **Added 2026-09-29:** settle vitality and what a player sees, and put those to bed, before continuing the island scenarios.
 
+## Vitality, and moving to real time and 3D
+
+Added 2026-09-29, settling vitality and what a player sees.
+
+- The owner agreed with vitality as a named energy flow with stamina for hard work, and with healing needing food or medicine.
+- **Rendering is its own discussion.** Something like a Grand Theft Auto engine is very good for walking around the earth, driving a car, and flying an airplane. But we might need different modes: flying a spacecraft is more of a cockpit view, but you might also have a third-person view of your spaceship. The choice of 3D rendering and how it works is something we have to discuss.
+- **Space and gravity are very important too.** At some point we have to go a little science-fiction: using traditional rules we can't get from the Earth to the Moon in a short time (about six days with Newtonian physics), never mind other planets. So hyperdrive, light speed, and perhaps wormholes would have to be invented, with rules we apply. We have to expand the universe using science and theoretical laws to make things work eventually. These are different discussions.
+- **The real question now: at what point do we move from developing with test scripts to something visual?** A game running in 3D is no longer turn-based; it's real time. Do we first evolve our testing system to have time passing regardless of our player taking action, so tests can be rewritten correctly and even involve several things happening at once, such as an NPC doing things? Or do we jump into building an actual 3D visualisation?
+- I really like the back and forth we're having now: there's not much need for me to launch a browser and look at things. When we get there, hopefully we can use Playwright to take screenshots as needed, and Claude will build itself a channel to the game engine to move the player around automatically, so we can do practice runs in a more practical way as we work together.
+
+See [ideas/game-interface.md](ideas/game-interface.md), [ideas/rendering.md](ideas/rendering.md), and [ideas/space-travel.md](ideas/space-travel.md).
+
 ## Time passing while a player is away
 
 Added 2026-09-29, **for a discussion soon: before the vocabulary conversation and the other planned discussions.** Not to be solved yet.

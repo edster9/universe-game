@@ -74,7 +74,7 @@ Decided with the owner (their words are in "Sacrifices, and universes that are c
 - **Rules are switches a universe's administrator sets**, per kind of mind. The norm: players don't need sleep or food; NPCs do, so a village sleeps at night and can be fed and traded with. The rules stay in the engine, for realistic universes and tutorials. Short-term fatigue, tiring from hard work and recovering with rest, is a separate law to add, whatever the sleep setting.
 - **Sleep belongs to the species**, in its kind's data, not to the planet. On its home planet it usually lines up with night; a colonist elsewhere sleeps by their body. Instinct should sleep by its own rhythm, not "at night".
 
-Still open: where a player's energy comes from when they don't need food. The proposal is **vitality**, a named inflow the universe grants to players, accounted like sunlight.
+Where a player's energy comes from when they don't need food was then open; it was decided the same day as **vitality** (below).
 
 ## Claude's take on vitality, 2026-09-29
 
@@ -118,3 +118,38 @@ Small: a second named inflow in the gate beside sunlight, a stamina reserve on b
 1. **Now:** the text console, for tests and development. Unchanged.
 2. **When the village needs it:** a simple browser page on the same views: the scene as text, the map from memory, what you carry, skill buttons, and the command line. Cheap, and enough for NPCs and two players.
 3. **3D, when the world gets real space.** Today the world is places joined by distances. 3D, flight, and orbit all need positions within space. That's the one big engine change ahead. Recommendation: make it when the climb first needs it, at the latest at flight, or earlier if the owner wants to see things walk around sooner. Forms in data can start earlier, since text descriptions and recognition use them too.
+
+## Decided, 2026-09-29: vitality
+
+The owner agreed with the take on vitality above.
+
+- **Vitality is a named inflow**, like sunlight, that the universe grants to players' bodies at a set power, per kind of mind. It pays resting upkeep and ordinary warmth; the hunger, thirst, and sleep laws are switched off for players.
+- **Stamina** is a small reserve that hard work draws down faster than vitality refills it. That's the short-term fatigue law.
+- **Harsh places still kill.** Vitality doesn't cover blizzards, vacuum, or no air: gear matters.
+- **Healing needs food or medicine**, because lost blood is matter and vitality is only energy.
+- **When:** built at the village, when players and NPCs first live by different rules.
+
+## Claude's take on moving to real time, 2026-09-29
+
+**Not decided.** The owner asked: before anything visual, do we first evolve the testing system so time passes whether or not the player acts, with several things happening at once in a test, such as an NPC doing things? Or do we jump into 3D? Rendering and faster-than-light travel have their own placeholders: [rendering.md](rendering.md) and [space-travel.md](space-travel.md).
+
+### Recommendation: real time in the engine first, in text; 3D later
+
+**Real time is an engine question, not a drawing question.** A 3D client only shows what the engine sends. If the engine is turn-based, no renderer can fix it; if the engine is real time, every client, text, browser, or 3D, just shows it. So the engine and its tests go first.
+
+What changes:
+
+- **Everyone is busy until their action ends**, and the clock runs whether anyone acts or not. Results arrive when actions finish; a walker is on the path, where they can be met. Boars already work this way; persons join them.
+- **Tests stay instant.** The clock is virtual: a test moves it itself, as fast as the computer allows, so a day still computes in seconds. Only a live server ties the clock to the wall. Replays stay exact, because what happens depends only on who asked for what, at which game second.
+- **Every existing script keeps working.** By default a script's next command waits until the person's current action ends, which is how scripts read today.
+- **Scripts gain new powers:** several actors in one script (`as <person>`); starting something without waiting for it; `at <time>`; `wait until` something happens; and expectations about what others did meanwhile. A test can then say: I start felling a tree; the boar charges at 10:05; expect the felling interrupted and a wound.
+
+### A channel for Claude
+
+Alongside, the console gets a **live mode that speaks a simple machine format**: the same view data the browser will later get. Through it Claude can drive a person, read what they perceive, and play practice runs with the owner, with no screen needed. When a browser page exists, Playwright takes screenshots of it. One channel serves the console, the tests, Claude, and every future client.
+
+### When
+
+**After the vocabulary stage and living with the island stages 5 and 6, and before the village.** The village is where many people act at once, and where two players first share a world: it needs real time. Nothing on the island needs it urgently, and because old scripts keep working, waiting costs nothing.
+
+The order then: the vocabulary stage; living stages 5 and 6; **real time and the channel**; the village, with vitality and a first simple browser page; the rendering conversation; and 3D once the world has real space.

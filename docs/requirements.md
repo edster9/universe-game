@@ -273,6 +273,14 @@ Added 2026-09-29, **for a discussion soon: before the vocabulary conversation an
 - If you leave the game, how does your person survive until you come back, from the perspective of others?
 - This has surely come up in many other games that attempted something similar.
 
+- **Decided 2026-09-29, after looking at what other games do.** Borrow something from each and come up with our own.
+- Combat logging is a big problem. If you're in the middle of a space battle, or fighting boars, and log off, you'll die. That's the price you pay. To survive while logged off, you have to create a safe condition for yourself.
+- You can set rules so that when you log off, your person instantly becomes an NPC, under conditions you choose. It tries to keep a low profile and stay alive as best it can, as aggressively or cautiously as the NPC profile you set.
+- You might get notifications, by push or email, on how your person is doing, or that they've died.
+- For example, you might have enough money to rent a room at a hotel, assuming the village isn't raided. At some point your money runs out and you're evicted. With a spaceship, you might park somewhere quiet inside a nebula and stay there indefinitely until you resurface.
+- A player who walks away for many years and comes back is a problem to solve eventually. These are solvable one at a time, given a starting basis.
+- **The general rule: your body stays, and things can happen to it.** How you protect yourself, and how you set your NPC rules, are among the first things to tackle; enhance as we go.
+
 See [ideas/time-away.md](ideas/time-away.md).
 
 ## How new vocabulary emerges

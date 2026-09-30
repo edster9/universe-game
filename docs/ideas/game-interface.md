@@ -153,3 +153,14 @@ Alongside, the console gets a **live mode that speaks a simple machine format**:
 **After the vocabulary stage and living with the island stages 5 and 6, and before the village.** The village is where many people act at once, and where two players first share a world: it needs real time. Nothing on the island needs it urgently, and because old scripts keep working, waiting costs nothing.
 
 The order then: the vocabulary stage; living stages 5 and 6; **real time and the channel**; the village, with vitality and a first simple browser page; the rendering conversation; and 3D once the world has real space.
+
+## Decided, 2026-09-29: real time, and the order ahead
+
+The owner agreed with the take on moving to real time, and with its order: "a very good order to continue on".
+
+1. The vocabulary stage ([vocabulary.md](vocabulary.md)).
+2. Living with the island stages 5 (hide and shoes) and 6 (barrier).
+3. **Real time and the channel:** everyone busy until their action ends; a virtual clock so tests stay instant; old scripts unchanged; scripts with several actors, `at`, and `wait until`; a live machine channel through which Claude drives a person.
+4. The village (slice 3), with vitality and a first simple browser page, screenshotted with Playwright.
+5. The rendering conversation ([rendering.md](rendering.md)).
+6. 3D, once the world has real space. Space travel beyond orbit has its own conversation ([space-travel.md](space-travel.md)).

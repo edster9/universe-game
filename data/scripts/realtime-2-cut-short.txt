@@ -1,0 +1,31 @@
+# Real time: a wound cuts short whatever someone was doing. At night by the
+# stream, the islander spears a sleeping boar and sets off for the beach at
+# once. The boar wakes, hurt, and turns on them before they've gone: the walk
+# is cut short, and they're still by the stream. See
+# docs/ideas/game-interface.md.
+world living.toml
+as survivor
+luck average
+
+include skills/make-a-spear.txt
+go forest
+go stream
+repeat 6
+  try drink water
+end
+go beach
+wait 14 h
+go stream
+attack boar with spear
+expect said you strike a boar with the spear, and wound it
+start go beach
+expect said you'll be done at
+wait 1 min
+expect said a boar goes for you, and wounds you
+expect said you were cut short, and didn't finish
+look
+expect said the stream
+go beach
+expect said you go to the beach
+expect alive
+expect conserved

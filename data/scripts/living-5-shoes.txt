@@ -12,12 +12,13 @@ luck average
 
 include skills/hunt-a-boar.txt
 expect said hide
+take hide
+go stream
 repeat 12
   try drink water
 end
 
 # Dry the hide by a fire in the ring.
-take hide
 drop fire ring
 put grass in ring
 rub wood against wood into ring
@@ -66,7 +67,7 @@ expect said you wear the shoes of leather
 wear largest leather
 expect said you put on the lump of leather
 inventory
-expect said 1.587507 kg, worn
+expect said 1.57743 kg, worn
 expect said on your feet
 
 # Up the stony paths to the ridge and back: the shoes, not the feet, take
@@ -97,6 +98,7 @@ go stream
 repeat 12
   try drink water
 end
+sleep
 go forest
 go hillside
 go slopes

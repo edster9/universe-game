@@ -15,7 +15,7 @@ use crate::matter::{self, Composition, MaterialId, State};
 use crate::nature;
 use crate::units::{Credits, Mass};
 use crate::words::Recipe;
-use crate::world::{Claim, Covering, EntityId, Requirement, World, Worn};
+use crate::world::{Claim, Covering, EntityId, Outcome, Requirement, World, Worn};
 
 /// How long it takes to take in what a map shows, in seconds.
 const READING_TIME: u64 = 300;
@@ -75,6 +75,12 @@ pub enum Refusal {
     },
     /// Nothing has just been made for "it" to mean.
     NothingMade,
+    /// Busy with something else until this tick.
+    Busy(u64),
+    /// Couldn't be carried out when it was due: why.
+    Later(String),
+    /// Cut short, by a wound.
+    Interrupted,
     /// Too stiff to wear.
     TooStiff(String),
     /// What's in it is held higher than the actor can get.
@@ -197,6 +203,9 @@ impl fmt::Display for Refusal {
                 write!(f, "which {name}: {}, or {last}?", rest.join(", "))
             }
             Refusal::NothingMade => write!(f, "you haven't made anything to name"),
+            Refusal::Busy(until) => write!(f, "you're busy until {until} s"),
+            Refusal::Later(why) => write!(f, "{why}"),
+            Refusal::Interrupted => write!(f, "you were cut short"),
             Refusal::TooStiff(name) => write!(f, "{name} is too stiff to wear"),
             Refusal::OutOfReach(name) => write!(f, "{name} holds things higher than you can get"),
             Refusal::FeetCovered(name) => write!(f, "you're already wearing {name} on your feet"),
@@ -377,28 +386,144 @@ pub fn act(world: &mut World, actor: EntityId, intent: Intent) -> Result<Vec<Cha
     Ok(changes)
 }
 
-/// Like `act`, then lets the world run for as long as the action takes.
+/// What starting an action did.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Started {
+    /// It was carried out at once, or, for sleep and things kept up over
+    /// time, has begun changing the world: these changes, and how long it
+    /// lasts.
+    Now { changes: Vec<Change>, seconds: u64 },
+    /// It takes time and will be carried out when it's due, at this tick.
+    Due(u64),
+}
+
+/// Actions that take time and are carried out when they end: until then,
+/// the person is busy, and the world goes on. Sleep and rubbing change the
+/// world as they go, so they begin at once.
+fn carried_out_at_the_end(intent: &Intent) -> bool {
+    matches!(
+        intent,
+        Intent::Go { .. }
+            | Intent::Gather { .. }
+            | Intent::Explore
+            | Intent::Read { .. }
+            | Intent::Attack { .. }
+            | Intent::Butcher { .. }
+            | Intent::Survey
+    )
+}
+
+/// Starts an action without waiting for it. It's checked against the laws
+/// now; one that takes time is carried out when it's due, and checked again
+/// then, since the world may have changed. Someone busy can't start another.
+pub fn start(world: &mut World, actor: EntityId, intent: Intent) -> Result<Started, ActError> {
+    if let Some(pending) = world.pending(actor) {
+        return Err(ActError::Refused(Refusal::Busy(pending.until)));
+    }
+    let plan = plan(world, actor, &intent).map_err(ActError::Refused)?;
+    if plan.seconds > 0 && carried_out_at_the_end(&intent) {
+        let until = world.tick() + plan.seconds;
+        // Working begins now; the rest waits until it's due.
+        let mut changes: Vec<Change> = plan
+            .changes
+            .into_iter()
+            .filter(|c| matches!(c, Change::Exert { .. }))
+            .collect();
+        changes.push(Change::Begin {
+            agent: actor,
+            intent: intent.clone(),
+            until,
+        });
+        world
+            .apply(Cause::Action { actor, intent }, changes)
+            .map_err(ActError::Fault)?;
+        return Ok(Started::Due(until));
+    }
+    world
+        .apply(Cause::Action { actor, intent }, plan.changes.clone())
+        .map_err(ActError::Fault)?;
+    Ok(Started::Now {
+        changes: plan.changes,
+        seconds: plan.seconds,
+    })
+}
+
+/// Carries out every action that's due, checking each against the laws as
+/// the world is now. One that no longer can be ends having failed.
+pub fn complete_due(world: &mut World) -> Result<(), Fault> {
+    let due: Vec<(EntityId, Intent)> = world
+        .all_pending()
+        .filter(|(_, p)| p.until <= world.tick())
+        .map(|(id, p)| (id, p.intent.clone()))
+        .collect();
+    for (actor, intent) in due {
+        // Something earlier in this round may have ended it already.
+        if world.pending(actor).is_none() {
+            continue;
+        }
+        match changes_for(world, actor, &intent) {
+            Ok(changes) => {
+                // Over first, so what it does (a cut underfoot, say) doesn't
+                // interrupt it.
+                let mut all = vec![Change::End {
+                    agent: actor,
+                    outcome: Outcome::Done(changes.clone()),
+                }];
+                all.extend(changes);
+                world.apply(Cause::Action { actor, intent }, all)?;
+            }
+            Err(refusal) => world.apply(
+                Cause::Nature { tick: world.tick() },
+                vec![Change::End {
+                    agent: actor,
+                    outcome: Outcome::Failed(sentence_of(&refusal)),
+                }],
+            )?,
+        }
+    }
+    Ok(())
+}
+
+fn sentence_of(refusal: &Refusal) -> String {
+    refusal.to_string()
+}
+
+/// Starts an action and lets the world run until it's over: how a script,
+/// or someone acting alone, does one thing after another. Returns what it
+/// changed; an action that couldn't be carried out when it was due is
+/// refused then, after its time has passed.
 pub fn perform(
     world: &mut World,
     actor: EntityId,
     intent: Intent,
 ) -> Result<Vec<Change>, ActError> {
-    let plan = plan(world, actor, &intent).map_err(ActError::Refused)?;
-    world
-        .apply(Cause::Action { actor, intent }, plan.changes.clone())
-        .map_err(ActError::Fault)?;
-    // Something kept up over time lasts until it's over, which may be early.
-    let started = plan
-        .changes
-        .iter()
-        .any(|c| matches!(c, Change::StartActivity { .. }));
-    if started {
-        nature::run_while(world, plan.seconds, |w| w.activity(actor).is_some())
-    } else {
-        nature::run(world, plan.seconds)
+    match start(world, actor, intent)? {
+        Started::Now { changes, seconds } => {
+            // Something kept up over time lasts until it's over, which may be
+            // early.
+            let activity = changes
+                .iter()
+                .any(|c| matches!(c, Change::StartActivity { .. }));
+            if activity {
+                nature::run_while(world, seconds, |w| w.activity(actor).is_some())
+            } else {
+                nature::run(world, seconds)
+            }
+            .map_err(ActError::Fault)?;
+            Ok(changes)
+        }
+        Started::Due(until) => {
+            let seconds = until.saturating_sub(world.tick());
+            nature::run_while(world, seconds, |w| w.pending(actor).is_some())
+                .map_err(ActError::Fault)?;
+            match world.take_outcome(actor) {
+                Some(Outcome::Done(changes)) => Ok(changes),
+                Some(Outcome::Failed(why)) => Err(ActError::Refused(Refusal::Later(why))),
+                Some(Outcome::Interrupted) => Err(ActError::Refused(Refusal::Interrupted)),
+                None => Ok(Vec::new()),
+            }
+        }
     }
-    .map_err(ActError::Fault)?;
-    Ok(plan.changes)
 }
 
 /// How many seconds an action takes. Most are quick enough to count as none.
@@ -1449,7 +1574,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Survey => {
             // Seeing far needs daylight; a fire lights only what's near it.
-            if world.is_night() {
+            if world.is_night() && world.pending(actor).is_none() {
                 return Err(Refusal::TooDarkToSee);
             }
             Ok(in_sight(world, reach.here)
@@ -1463,7 +1588,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Explore => {
-            if world.is_dark(reach.here) {
+            if world.is_dark(reach.here) && world.pending(actor).is_none() {
                 return Err(Refusal::TooDark);
             }
             // The nearest way you don't know is the first you'd find. A
@@ -1534,8 +1659,9 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             must_know(world, actor, Process::Gather)?;
             let found = find(world, actor, reach.around.iter().copied(), source)
                 .ok_or_else(|| Refusal::NotHere(source.clone()))?;
-            // Searching needs light: daylight, or something burning here.
-            if world.is_dark(reach.here) {
+            // Starting a search needs light: daylight, or something burning
+            // here. One under way when night falls is finished.
+            if world.is_dark(reach.here) && world.pending(actor).is_none() {
                 return Err(Refusal::TooDark);
             }
             let (Some(pieces), Some(composition)) = (world.pieces(found), world.composition(found))

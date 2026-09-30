@@ -184,3 +184,26 @@ The owner agreed with the take on moving to real time, and with its order: "a ve
 4. The village (slice 3), with vitality and a first simple browser page, screenshotted with Playwright.
 5. The rendering conversation ([rendering.md](rendering.md)).
 6. 3D, once the world has real space. Space travel beyond orbit has its own conversation ([space-travel.md](space-travel.md)).
+
+## Built, 2026-09-29: real time, in text
+
+Step 3 of the order above.
+
+- **An action is checked when it starts and carried out when it ends.** Walking, searching, exploring, reading a map, surveying, striking, and butchering take time: when started, they're checked against the laws, and the person is busy until they're due; then they're checked again, as the world is by then, and carried out. The walker arrives at the end of the walk; the search finds what it finds at the end. If the world has changed meanwhile, the action can fail then (the boar you meant to strike has run). Sleep and rubbing change the world as they go, so they begin at once, as before.
+- **The clock runs for everyone.** Nature carries out whatever is due at the exact second it's due, whoever started it, while the rest of the world goes on. Someone busy can't start something else ("you're busy until 08:06").
+- **A wound cuts short whatever its victim was doing**, as it already stopped creatures: the action is lost.
+- **Scripts and the console:** every existing script plays as before, each command waiting until its action is over. New: `start <command>` begins something without waiting; `as <person>` switches who's acting, telling them how anything they'd started came out; `wait until free` and `wait until 08:30`. Proofs: `realtime-1-two-at-once.txt` (the islander walks while the stranger searches; each is where they were until done) and `realtime-2-cut-short.txt` (a boar's charge cuts a walk short).
+- **The live channel:** `console --world <file> --as <person> --live` takes the same commands, one a line, and answers each with one line of JSON: the reply, the time, who's acting, whether they're busy and until when, and what they see and carry (the views a browser will draw). `--real-time` runs the world with the wall clock. Claude can drive a person through it with no screen.
+
+**What the attempts found:**
+
+- **A walk's own cut counted as a wound interrupting the walk.** An action now counts as over before its results land.
+- **Dusk ended searches already under way.** Darkness now stops you starting a search, not finishing one.
+- **The boars' day went differently**: with a person arriving at the end of a walk instead of the start, the herd fled and settled differently, and now sleeps by the stream rather than in the forest. The hunting stories now hunt there.
+- **Results come a moment later**: a wounded boar turns on you just after your strike's reply, not within it; a growing shellfish bed has grown a little by the time a search takes its piece.
+
+Simplified, and next:
+
+- **Creatures still change the world at the start of what they do** (they're busy until it ends, as before). Moving them to the same rule would change the herd's behaviour again; it belongs with the NPCs.
+- **A walker isn't on the path**: until they arrive, they're where they set out from. Being met on the way needs places to have space between them.
+- **One action at a time**, with no queue of commands yet: skills as buttons will want one.

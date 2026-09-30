@@ -441,6 +441,25 @@ pub struct Sleep {
     pub shelter: Option<EntityId>,
 }
 
+/// An action someone has started, to be carried out when its time is up.
+/// Until then they're busy with it, and the world goes on around them.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Pending {
+    pub intent: crate::intent::Intent,
+    pub until: u64,
+}
+
+/// How an action someone started came out, kept for them to hear of.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Outcome {
+    /// Carried out: what it changed.
+    Done(Vec<crate::gate::Change>),
+    /// The world had changed by the time it was due, and it couldn't be.
+    Failed(String),
+    /// Something cut it short: a wound.
+    Interrupted,
+}
+
 /// Where on a body something is worn.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Covering {
@@ -596,6 +615,11 @@ pub struct World {
     pub(crate) ranges: BTreeMap<EntityId, BTreeSet<EntityId>>,
     /// The tick until which a creature acting on instinct is busy.
     pub(crate) busy_until: BTreeMap<EntityId, u64>,
+    /// Actions people have started and not yet carried out.
+    pub(crate) pending: BTreeMap<EntityId, Pending>,
+    /// How each person's last started action came out, until they hear of
+    /// it.
+    pub(crate) outcomes: BTreeMap<EntityId, Outcome>,
     /// Places a creature keeps away from, and until when.
     pub(crate) avoiding: BTreeMap<EntityId, BTreeMap<EntityId, u64>>,
     /// Paths that cross a liquid, and the liquid they cross.
@@ -1250,7 +1274,28 @@ impl World {
 
     /// Whether a creature acting on instinct is still busy.
     pub fn is_busy(&self, id: EntityId) -> bool {
-        self.busy_until.get(&id).is_some_and(|&t| t > self.tick)
+        self.busy_until.get(&id).is_some_and(|&t| t > self.tick) || self.pending.contains_key(&id)
+    }
+
+    /// The action someone has started and not yet carried out, if any.
+    pub fn pending(&self, id: EntityId) -> Option<&Pending> {
+        self.pending.get(&id)
+    }
+
+    /// Everyone's actions in progress, and when each is due.
+    pub fn all_pending(&self) -> impl Iterator<Item = (EntityId, &Pending)> {
+        self.pending.iter().map(|(&id, p)| (id, p))
+    }
+
+    /// How someone's last started action came out, if they haven't heard
+    /// yet. Hearing of it takes it away: it's news for a person, not part of
+    /// the world, so it doesn't pass through the gate.
+    pub fn take_outcome(&mut self, id: EntityId) -> Option<Outcome> {
+        self.outcomes.remove(&id)
+    }
+
+    pub fn outcome(&self, id: EntityId) -> Option<&Outcome> {
+        self.outcomes.get(&id)
     }
 
     /// How many places someone has seen, from afar or by being there.

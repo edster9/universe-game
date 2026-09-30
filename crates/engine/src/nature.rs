@@ -93,7 +93,8 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
     // Creatures acting on instinct choose what to do next.
     crate::instinct::act(world)?;
     world.advance_clock(dt);
-    Ok(())
+    // Actions that are due are carried out.
+    crate::laws::complete_due(world)
 }
 
 /// One second while anything is burning, hot, or changing state; up to the
@@ -122,6 +123,12 @@ fn step_size(world: &World, left: u64) -> u64 {
     for life in world.life.values().filter(|l| l.died_of.is_none()) {
         if life.working_until > world.tick {
             dt = dt.min(life.working_until - world.tick);
+        }
+    }
+    // Nor past an action that's due.
+    for (_, pending) in world.all_pending() {
+        if pending.until > world.tick {
+            dt = dt.min(pending.until - world.tick);
         }
     }
     dt.max(1)

@@ -1,6 +1,6 @@
 # Living with the island, stage 4: the hunt. By day, gather what a fire needs
 # and make a honed spear. At night, spear a sleeping boar; it gores the
-# islander, runs, and dies of bleeding by the stream. Butcher it with the
+# islander, runs, and dies of bleeding in the forest. Butcher it with the
 # spear: cuts of raw meat, fat, and a hide, with its bones and body water
 # left behind. Cook two portions over a fire, raw meat turning to cooked at
 # 340 K, and eat one. Meat spoils; cooked meat keeps longer.
@@ -35,11 +35,11 @@ repeat 6
 end
 go beach
 wait 12 h
-go forest
+go stream
 attack boar with spear
 expect said it's bleeding 10 g a second
 wait 1 h
-go stream
+go forest
 look
 expect said a boar
 expect said dead
@@ -78,9 +78,11 @@ eat cooked meat
 expect said you eat the cooked meat
 # Meat spoils: raw, half a day; cooked, 15% a day. Two days on, the raw cuts
 # are mostly rotten, and the cooked portion mostly still good.
+go stream
 repeat 12
   try drink water
 end
+go forest
 wait 2 day
 look
 expect said lump of rotting flesh and raw meat

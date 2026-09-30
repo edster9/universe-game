@@ -33,7 +33,9 @@ Commands:
   call <thing> a <word>             name something in your own words (\"call it a …\")
   tell <person> that <thing> is a <word>
                                     teach someone your word for something
-  wait [seconds]                    let time pass
+  wait [seconds]                    let time pass; \"wait until free\", \"wait until 08:30\"
+  start <command>                   start something without waiting for it
+  as <person>                       act as someone else, hearing how what they started came out
   sleep [for <time>] [in <shelter>]  sleep, if your body needs it; a player can rest for a time
 Testing tools:
   totals                            the world's total mass, energy, and credits (these never change)
@@ -51,6 +53,9 @@ const MAX_WAIT: u64 = 30 * 86_400;
 pub struct Session {
     world: World,
     player: EntityId,
+    /// What each person last started without waiting, to tell them how it
+    /// came out.
+    started: std::collections::BTreeMap<EntityId, Intent>,
     announced_death: Option<String>,
     /// How long the last action took.
     spent: u64,
@@ -88,6 +93,7 @@ impl Session {
             Some(id) if world.is_agent(id) => Ok(Session {
                 world,
                 player: id,
+                started: std::collections::BTreeMap::new(),
                 announced_death: None,
                 spent: 0,
             }),
@@ -121,6 +127,8 @@ impl Session {
             )),
             "log" => Reply::say(self.log(rest)),
             "become" => Reply::say(self.become_person(rest)),
+            "as" => self.act_as(rest),
+            "start" => self.start(rest),
             "wait" | "z" => self.wait(rest),
             "datasheet" | "ds" => Reply::say(self.datasheet(rest)),
             "designs" => Reply::say(self.designs()),
@@ -173,18 +181,111 @@ impl Session {
                         };
                         Reply::say(text)
                     }
-                    Err(ActError::Refused(refusal)) => {
-                        Reply::refuse(sentence(&refusal.to_string()))
-                    }
+                    Err(ActError::Refused(refusal)) => Reply::refuse(self.refusal(&refusal)),
                     Err(fault @ ActError::Fault(_)) => Reply::refuse(format!("!! {fault}")),
                 }
             }
         }
     }
 
+    /// Starts something without waiting for it: the clock doesn't move, and
+    /// how it comes out is told when it's over.
+    fn start(&mut self, line: &str) -> Reply {
+        let intent = match intent::parse(line) {
+            Ok(Command::Act(intent)) => intent,
+            Ok(_) => return Reply::refuse("Only an action can be started."),
+            Err(error) => return Reply::refuse(sentence(&error.to_string())),
+        };
+        match laws::start(&mut self.world, self.player, intent.clone()) {
+            Ok(laws::Started::Due(until)) => {
+                self.started.insert(self.player, intent.clone());
+                Reply::say(format!(
+                    "You start to {intent}. You'll be done at {}.",
+                    self.clock(until)
+                ))
+            }
+            Ok(laws::Started::Now { changes, .. }) => Reply::say(self.describe(&intent, &changes)),
+            Err(ActError::Refused(refusal)) => Reply::refuse(self.refusal(&refusal)),
+            Err(fault @ ActError::Fault(_)) => Reply::refuse(format!("!! {fault}")),
+        }
+    }
+
+    /// Acts as someone else from now on, hearing how anything they'd
+    /// started came out.
+    fn act_as(&mut self, name: &str) -> Reply {
+        let wanted = name.trim().to_lowercase();
+        let found = self.world.entities().find(|&id| {
+            self.world.is_agent(id)
+                && (self.world.key(id).to_lowercase() == wanted
+                    || self.world.label(id).to_lowercase() == wanted)
+        });
+        match found {
+            Some(id) => {
+                self.player = id;
+                let text = format!("You are {}.", self.world.label(id));
+                Reply::say(self.with_outcome(text))
+            }
+            None => Reply::refuse(format!("There's no person called {name:?}.")),
+        }
+    }
+
+    /// Adds how the player's started action came out, if it's over and they
+    /// haven't heard.
+    fn with_outcome(&mut self, text: String) -> String {
+        let Some(outcome) = self.world.take_outcome(self.player) else {
+            return text;
+        };
+        let intent = self.started.remove(&self.player);
+        let news = match (outcome, intent) {
+            (engine::world::Outcome::Done(changes), Some(intent)) => {
+                self.describe(&intent, &changes)
+            }
+            (engine::world::Outcome::Done(_), None) => "You finish.".into(),
+            (engine::world::Outcome::Failed(why), _) => {
+                format!("You couldn't finish: {}", sentence(&why))
+            }
+            (engine::world::Outcome::Interrupted, _) => {
+                "You were cut short, and didn't finish.".into()
+            }
+        };
+        format!("{text}\n{news}")
+    }
+
+    /// Lets `seconds` of the world's time pass, as the wall clock does in a
+    /// live session.
+    pub fn advance(&mut self, seconds: u64) {
+        if nature::run(&mut self.world, seconds).is_err() {
+            // A fault is a bug in a law; the live channel carries on, and the
+            // next reply will show the state as it stands.
+        }
+    }
+
+    /// A tick as a time of day, in a world with days, or as seconds.
+    pub fn clock(&self, tick: u64) -> String {
+        let day = self.world.settings().day;
+        if day == 0 {
+            return format!("{tick} s");
+        }
+        let t = (tick + self.world.settings().starts_at) % day;
+        format!("{:02}:{:02}", t / 3_600, t / 60 % 60)
+    }
+
+    fn refusal(&self, refusal: &laws::Refusal) -> String {
+        match refusal {
+            laws::Refusal::Busy(until) => {
+                format!("You're busy until {}.", self.clock(*until))
+            }
+            other => sentence(&other.to_string()),
+        }
+    }
+
     /// Waits a number of seconds ("wait 60"), or a time with a unit ("wait 2
-    /// h", "wait 3 day").
+    /// h", "wait 3 day"); until the player's action is over ("wait until
+    /// free"); or until a time of day ("wait until 08:30").
     fn wait(&mut self, time: &str) -> Reply {
+        if let Some(until) = time.strip_prefix("until ").map(str::trim) {
+            return self.wait_until(until);
+        }
         let seconds = if time.is_empty() {
             Some(1)
         } else if let Ok(n) = time.parse::<u64>() {
@@ -196,15 +297,64 @@ impl Session {
         let log_from = self.world.log().len();
         match seconds {
             Some(n) if (1..=MAX_WAIT).contains(&n) => match nature::run(&mut self.world, n) {
-                Ok(()) if n == 1 => Reply::say("A second passes."),
-                Ok(()) => Reply::say(self.with_collapse(
-                    format!("{} passes.", units::show_duration(n)),
-                    was_asleep,
-                    log_from,
-                )),
+                Ok(()) if n == 1 => {
+                    let text = self.with_outcome("A second passes.".into());
+                    Reply::say(text)
+                }
+                Ok(()) => {
+                    let text = self.with_collapse(
+                        format!("{} passes.", units::show_duration(n)),
+                        was_asleep,
+                        log_from,
+                    );
+                    Reply::say(self.with_outcome(text))
+                }
                 Err(fault) => Reply::refuse(format!("!! engine fault: {fault}")),
             },
             _ => Reply::refuse("Try \"wait\", \"wait 60\", or \"wait 2 h\" (up to 30 days)."),
+        }
+    }
+
+    /// Lets time pass until the player is free, or until a time of day.
+    fn wait_until(&mut self, until: &str) -> Reply {
+        let now = self.world.tick();
+        let seconds = if until == "free" || until == "done" {
+            match self.world.pending(self.player) {
+                Some(pending) => pending.until.saturating_sub(now),
+                None => return Reply::say("You aren't busy."),
+            }
+        } else {
+            let day = self.world.settings().day;
+            let parsed = until.split_once(':').and_then(|(h, m)| {
+                Some(h.trim().parse::<u64>().ok()? * 3_600 + m.trim().parse::<u64>().ok()? * 60)
+            });
+            match (parsed, day) {
+                (Some(at), day) if day > 0 && at < day => {
+                    let of_day = (now + self.world.settings().starts_at) % day;
+                    (at + day - of_day) % day
+                }
+                _ => {
+                    return Reply::refuse(
+                        "Try \"wait until free\", or a time of day like \"wait until 08:30\".",
+                    );
+                }
+            }
+        };
+        if seconds == 0 {
+            return Reply::say(self.with_outcome("No time passes.".into()));
+        }
+        let was_asleep = self.world.is_asleep(self.player);
+        let log_from = self.world.log().len();
+        match nature::run(&mut self.world, seconds) {
+            Ok(()) => {
+                let text = self.with_collapse(
+                    format!("{} passes.", units::show_duration(seconds)),
+                    was_asleep,
+                    log_from,
+                );
+                Reply::say(self.with_outcome(text))
+            }
+            Err(fault) => Reply::refuse(format!("!! engine fault: {fault}")),
         }
     }
 
@@ -825,6 +975,24 @@ impl Session {
             &Change::Made { agent, thing } => {
                 format!("{} made {}", w.label(agent), w.key(thing))
             }
+            Change::Begin {
+                agent,
+                intent,
+                until,
+            } => format!("{} starts to {intent}, due at {until} s", w.label(*agent)),
+            Change::End { agent, outcome } => match outcome {
+                engine::world::Outcome::Done(changes) => {
+                    format!(
+                        "{} finishes, with {} changes",
+                        w.label(*agent),
+                        changes.len()
+                    )
+                }
+                engine::world::Outcome::Failed(why) => {
+                    format!("{} finishes, but can't: {why}", w.label(*agent))
+                }
+                engine::world::Outcome::Interrupted => format!("{} is cut short", w.label(*agent)),
+            },
             &Change::Vitality {
                 entity,
                 inflow,

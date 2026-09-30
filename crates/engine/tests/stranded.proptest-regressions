@@ -5,3 +5,4 @@
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
 cc 9bb0a29329dc3bdafdfed083be6929926e35f6959d381dea44543833caa99613 # shrinks to steps = [Random { verb: 9, a: 8125062576253495519, b: 1782, amount: 9650 }, Random { verb: 8, a: 6733919851064190244, b: 12339883214893615266, amount: 10674 }]
+cc 71b7be06e7804ec240e6efdca7641e53b8755f176ff41152c5068f74e1ff1b90 # shrinks to steps = [Random { verb: 11, a: 0, b: 67304, amount: 15670 }, Random { verb: 8, a: 1647650466965780245, b: 6857701500162801110, amount: 9869 }, Random { verb: 11, a: 13930413307225494884, b: 6655966068973368168, amount: 4076 }, Random { verb: 11, a: 5333151541145181918, b: 3576879442026481622, amount: 13666 }, Random { verb: 3, a: 10303068774164441216, b: 6891414619211409294, amount: 10097 }]

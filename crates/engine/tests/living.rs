@@ -329,10 +329,11 @@ fn only_something_soft_can_be_worn() {
     );
 }
 
-/// The living island with 2 kg of fat left lying in the forest.
-fn island_with_fat_in_the_forest() -> (World, EntityId, EntityId) {
+/// The living island with 2 kg of fat at `at`: left lying in the forest, or
+/// in the islander's hands.
+fn island_with_fat(at: &str) -> (World, EntityId, EntityId) {
     let text = format!(
-        "{LIVING}\n[[item]]\nid = \"stores\"\nat = \"forest\"\nmass = \"2 kg\"\nmaterial = \"fat\"\n"
+        "{LIVING}\n[[item]]\nid = \"stores\"\nat = \"{at}\"\nmass = \"2 kg\"\nmaterial = \"fat\"\n"
     );
     let w = load_world_with(&text, &[THINGS])
         .unwrap()
@@ -344,7 +345,7 @@ fn island_with_fat_in_the_forest() -> (World, EntityId, EntityId) {
 
 #[test]
 fn hungry_boars_eat_food_left_lying_about() {
-    let (mut w, _, fat) = island_with_fat_in_the_forest();
+    let (mut w, _, fat) = island_with_fat("forest");
     engine::nature::run(&mut w, 86_400).unwrap();
     let eaten = !w.exists(fat) || w.location(fat).is_some_and(|l| w.is_agent(l));
     assert!(eaten, "the fat is still at {:?}", w.location(fat));
@@ -352,7 +353,9 @@ fn hungry_boars_eat_food_left_lying_about() {
 
 #[test]
 fn a_raised_cache_keeps_food_out_of_a_boars_reach() {
-    let (mut w, me, fat) = island_with_fat_in_the_forest();
+    // Carried in: fat left in the forest would be eaten before the islander
+    // got there.
+    let (mut w, me, fat) = island_with_fat("survivor");
     run(&mut w, me, "go forest");
     for _ in 0..6 {
         run(&mut w, me, "gather sticks");
@@ -362,7 +365,6 @@ fn a_raised_cache_keeps_food_out_of_a_boars_reach() {
     }
     run(&mut w, me, "assemble raised cache");
     run(&mut w, me, "drop cache");
-    run(&mut w, me, "take fat");
     run(&mut w, me, "put fat in cache");
     let cache = w.location(fat).unwrap();
     assert_eq!(w.design_of(cache).and_then(|d| d.barrier), Some(2_000_000));

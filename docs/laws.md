@@ -143,6 +143,9 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 
 | Law | Status | Used by |
 | --- | --- | --- |
+| An action that takes time (walking, searching, exploring, reading, surveying, striking, butchering) is checked when it starts and carried out when it's due, checked again as the world is then; meanwhile the person is busy, and the world goes on. Sleep and rubbing begin at once | in | real time |
+| A wound cuts short what its victim was doing | in | real time |
+| Darkness stops a search from starting, not one under way | in | real time |
 | Chance events draw from the world's seed, its clock, and its history, so the same seed replays the same luck | in | stranded 1 |
 | When nothing fast is happening, nature takes bigger steps. Fixed sources are too big to change fast, however far they lag the air | in | stranded 1 |
 | The world has a time of day. The air is warmest at midday and coldest at midnight, at temperatures each place gives | in | where am I? 1 |

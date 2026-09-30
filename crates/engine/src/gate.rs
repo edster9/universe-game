@@ -204,6 +204,18 @@ pub enum Change {
         drawn: u64,
         fluid: Mass,
     },
+    /// Someone starts an action that takes time. It's carried out when it's
+    /// due, at `until`; meanwhile they're busy.
+    Begin {
+        agent: EntityId,
+        intent: Intent,
+        until: u64,
+    },
+    /// Someone's action in progress is over, and how it came out.
+    End {
+        agent: EntityId,
+        outcome: crate::world::Outcome,
+    },
     /// Someone starts wearing something they carry, or, with `None`, stops.
     Wear {
         agent: EntityId,
@@ -644,6 +656,10 @@ impl World {
                 life.wounds.push((rate, now));
                 // A wound interrupts whatever it was doing.
                 self.busy_until.remove(&agent);
+                if self.pending.remove(&agent).is_some() {
+                    self.outcomes
+                        .insert(agent, crate::world::Outcome::Interrupted);
+                }
                 let life = self.life.get_mut(&agent).expect("checked above");
                 // A wound wakes a sleeper, who has slept only until now.
                 if let Some(sleep) = life.sleep.as_mut()
@@ -816,6 +832,33 @@ impl World {
                 self.vital_energy += u128::from(inflow) + fluid_heat;
                 self.vital_matter += u128::from(fluid.mg());
                 self.give_heat(Holder::Thing(entity), Energy::from_uj(warmth))
+            }
+            Change::Begin {
+                agent,
+                intent,
+                until,
+            } => {
+                if !self.is_agent(*agent) {
+                    return Err(Fault::NotAlive(*agent));
+                }
+                if self.pending.contains_key(agent) {
+                    return Err(Fault::Invariant(format!("{agent:?} is already busy")));
+                }
+                self.pending.insert(
+                    *agent,
+                    crate::world::Pending {
+                        intent: intent.clone(),
+                        until: *until,
+                    },
+                );
+                Ok(())
+            }
+            Change::End { agent, outcome } => {
+                self.pending
+                    .remove(agent)
+                    .ok_or_else(|| Fault::Invariant(format!("{agent:?} wasn't busy")))?;
+                self.outcomes.insert(*agent, outcome.clone());
+                Ok(())
             }
             Change::Wear { agent, item, worn } => {
                 if self.location(*item) != Some(*agent) {

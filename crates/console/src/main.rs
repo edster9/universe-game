@@ -2,6 +2,10 @@
 //!
 //!     cargo run -p console [-- --world <file.toml>] [--as <person-id>]
 //!     cargo run -p console -- --script <file.txt>
+//!     cargo run -p console -- --world <file.toml> --as <person-id> --live [--real-time]
+//!
+//! `--live` answers each command with a line of JSON, for a program to drive
+//! a person; `--real-time` runs the world with the wall clock.
 //!
 //! Lines can also be piped in, which is how scripted sessions run.
 
@@ -42,13 +46,24 @@ fn main() -> ExitCode {
 
     let mut world_path = DEFAULT_WORLD.to_string();
     let mut player = "traveller".to_string();
+    let (mut live, mut real_time) = (false, false);
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
-        match (arg.as_str(), args.next()) {
-            ("--world", Some(path)) => world_path = path,
-            ("--as", Some(id)) => player = id,
+        match arg.as_str() {
+            "--live" => live = true,
+            "--real-time" => real_time = true,
+            "--world" | "--as" => match (arg.as_str(), args.next()) {
+                ("--world", Some(path)) => world_path = path,
+                (_, Some(id)) => player = id,
+                _ => {
+                    eprintln!("{arg} needs a value");
+                    return ExitCode::FAILURE;
+                }
+            },
             _ => {
-                eprintln!("usage: console [--world <file.toml>] [--as <person-id>]");
+                eprintln!(
+                    "usage: console [--world <file.toml>] [--as <person-id>] [--live [--real-time]]"
+                );
                 return ExitCode::FAILURE;
             }
         }
@@ -68,6 +83,16 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+
+    if live {
+        return match console::live::run(session, real_time) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::FAILURE
+            }
+        };
+    }
 
     // When input is piped, echo each command so the transcript reads well.
     let interactive = io::stdin().is_terminal();

@@ -25,12 +25,13 @@ repeat 6
 end
 go beach
 wait 13 h
-go forest
+go stream
 attack boar with spear
 expect said it's bleeding 10 g a second
+wait 1 min
 expect said a boar goes for you, and wounds you
 wait 1 h
-go stream
+go forest
 look
 expect said k, dead)
 datasheet boar

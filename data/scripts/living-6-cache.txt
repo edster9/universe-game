@@ -9,20 +9,21 @@ luck average
 
 include skills/hunt-a-boar.txt
 expect said you cut it up: fat
+go stream
 repeat 12
   try drink water
 end
 
-# At daylight, poles and fibre for a cache, built by the stream.
-wait 6 h
+# At daylight, poles and fibre for a cache, built in the forest where the
+# fat lies.
 go forest
+wait 6 h
 repeat 6
   gather sticks
 end
 repeat 2
   gather bushes
 end
-go stream
 assemble raised cache
 expect said you put together the raised cache of wood and plant fibre
 drop cache
@@ -31,9 +32,10 @@ put fat in cache
 take fat
 put fat in cache
 look
-expect said in the raised cache of wood and plant fibre: lump of fat (4.000001 kg), lump of fat (3.999999 kg)
+expect said in the raised cache of wood and plant fibre: lump of fat (4 kg), lump of fat (4 kg)
 expect said things here:
 expect said lump of fat
+go stream
 repeat 12
   try drink water
 end
@@ -43,7 +45,6 @@ end
 go beach
 sleep
 go forest
-go stream
 try take fat
 expect said the lump of fat is in the raised cache of wood and plant fibre
 take fat from cache

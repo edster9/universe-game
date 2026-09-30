@@ -1,0 +1,31 @@
+# Real time: the clock runs for everyone, and an action is checked when it
+# starts and carried out when it ends. Two people act at once: the islander
+# sets off for the forest while the stranger searches the hillside for
+# stone. Until each is done they're busy, and where they were. See
+# docs/ideas/game-interface.md.
+world strangers-words.toml
+as islander
+luck average
+
+start go forest
+expect said you start to go forest. you'll be done at 08:06
+try go beach
+expect said you're busy until 08:06
+as stranger
+start gather glassy grey stone
+expect said you'll be done at 08:10
+wait 2 min
+as islander
+look
+expect said the beach
+wait until free
+expect said you go to the forest
+look
+expect said the forest
+as stranger
+look
+expect not said you find
+wait until free
+expect said you find 500 g of glassy grey stone
+expect time after 10 min
+expect conserved

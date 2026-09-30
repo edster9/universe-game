@@ -327,13 +327,13 @@ fn eating_takes_in_what_the_body_digests_and_leaves_the_shells() {
     let piece = w.contents(me)[0];
     assert_eq!(w.mass(piece).mg(), 1_000_000);
     let before = material_in(&w, me, "shellfish");
+    // About 35% of a kilo is meat: the bed grows a little while it's
+    // searched, and the piece is taken as the bed is when the search ends.
+    let meat = material_in(&w, piece, "shellfish").mg();
+    assert!(meat.abs_diff(350_000) <= 10, "{meat} mg of meat");
     let eat = format!("eat {}", w.key(piece));
     act(&mut w, me, intent(&eat)).unwrap();
-    assert_eq!(
-        material_in(&w, me, "shellfish").mg() - before.mg(),
-        350_000,
-        "35% of a kilo is meat"
-    );
+    assert_eq!(material_in(&w, me, "shellfish").mg() - before.mg(), meat);
     assert_eq!(w.label(piece), "lump of shell");
     assert_eq!(
         act(&mut w, me, intent(&eat)),

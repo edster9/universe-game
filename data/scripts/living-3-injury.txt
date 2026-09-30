@@ -17,20 +17,21 @@ repeat 6
 end
 go beach
 wait 14 h
-go forest
+go stream
 look
 expect said also here: a boar
 try attack boar
 expect said you have nothing with an edge to wound with
 attack boar with spear
 expect said you strike a boar with the spear, and wound it: it's bleeding 4 g a second
+# The boar turns on the islander in the moment after.
+wait 1 min
 expect said a boar goes for you, and wounds you: you're bleeding 4 g a second
 datasheet survivor
 expect said bleeding: 4 g a second
 wait 3 h
 datasheet survivor
 expect not said bleeding
-go stream
 repeat 12
   try drink water
 end

@@ -1,0 +1,10 @@
+gpu-bench on D3D12 (NVIDIA GeForce RTX 4050 Laptop GPU) (Gl, ) (linux), 1280x720
+   0.5 M triangles a frame:   220.0 frames a second,    110.0 M triangles a second
+   1.0 M triangles a frame:   333.2 frames a second,    333.2 M triangles a second
+   2.0 M triangles a frame:   393.2 frames a second,    786.3 M triangles a second
+   4.0 M triangles a frame:   336.7 frames a second,   1346.7 M triangles a second
+   8.0 M triangles a frame:   233.2 frames a second,   1865.7 M triangles a second
+  16.0 M triangles a frame:   148.2 frames a second,   2371.2 M triangles a second
+  32.0 M triangles a frame:    86.6 frames a second,   2770.1 M triangles a second
+  64.0 M triangles a frame:    45.9 frames a second,   2938.5 M triangles a second
+best: 2938.5 M triangles a second

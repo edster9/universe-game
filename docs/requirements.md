@@ -423,6 +423,48 @@ Added 2026-09-30, answering Claude's takes on scoped minds and the cone of influ
 - **What a server remembers depends on what real players, or real NPCs, are affecting in the world.** So the scale problem goes up and down as things happen. We'll learn it as we expand the game.
 - I don't have very good answers to the questions: **go with Claude's best recommendations.** If the server backend can scale, everything is fine. It comes down to how many players can comfortably live in the world, with the server keeping up with the world's changes.
 
+## The browser stack
+
+Added 2026-09-30, before the first browser page (a companion, stage 5).
+
+- Have a quick discussion on how we build for the web. We're not jumping into 3D, but let's talk about the stack used at the browser level: what are the pros and cons of the different systems?
+
+See [ideas/web-stack.md](ideas/web-stack.md).
+
+### Performance first
+
+Added 2026-09-30, answering Claude's take on the browser stack.
+
+- There's a lot to consider, and I don't know what a good decision is. **Ultimately I care about performance when we're in a 3D world.**
+- With WebGPU, the fastest direct access to the hardware, available from JavaScript directly or from WebAssembly using Rust, I'm torn on the right approach, and want to know how others are doing it.
+- With WebAssembly we could write Rust directly for the client, which might make things easier for Claude. But Claude is writing the code, so it's up to Claude what's best.
+- **Performance is very important**, because we want eventually to reach good visuals.
+- When a new version is available, people should just refresh their browsers and get the latest version.
+- Have the conversation from the aspect of overall performance.
+- **Also consider physics engines.** There are a lot of good ones out there, and the game will eventually have rockets launched into orbit, cars driving, and space battles, so a good, reliable physics engine is important.
+- **A sound engine is important.**
+- **A very fast, robust networking engine for fast gameplay is important.** (The dictation says "robot networking"; it means robust.)
+- Put those in the equation too.
+
+### A thick client, not only the web
+
+Added 2026-09-30, after Claude's take on performance ([ideas/web-stack.md](ideas/web-stack.md)). The owner brought two reports from another AI and asked Claude to marry them to its own research, give a new report, and an honest answer on the approach.
+
+- I want to seriously explore thick apps as well as the web.
+- **In all honesty, I don't mind abandoning a web client for a thick app if the web becomes our big bottleneck. In fact, I'm becoming more of a thick client fan, for a multitude of reasons.**
+- The other AI's first report (web): for a GTA-scale game that walks a planet and fights in space, neither pure three.js nor a full Bevy-in-WebAssembly rewrite is the right first bet; it recommends a TypeScript WebGPU engine (Babylon.js or PlayCanvas) with WebAssembly modules for physics and simulation, and says pure Rust/Bevy wins later if the game goes native first. It stresses that such a game is a streaming, level-of-detail, and memory problem, not an engine-choice problem.
+- The other AI's second report (thick client): if "open a URL and play" can go, don't use Electron (it keeps the browser's limits); build a real 64-bit Windows and macOS binary (Bevy or native wgpu), with the URL as storefront and updater, not the runtime. Its wins: memory that's yours, real threads, the full GPU API rather than WebGPU's subset, streaming from disk, precision for two-scale worlds, input, audio, and frame pacing, UDP networking, and your own install model (Steam, or a small launcher with delta patches).
+
+### Sold on a thick client, and building for Windows from WSL2
+
+Added 2026-09-30, answering Claude's report ([ideas/the-client.md](ideas/the-client.md)).
+
+- **I'm definitely sold on a thick app**, for a multitude of reasons.
+- Before this project, Claude and I built a Car Wars-style simulator, and went quite far: C++ and WebGL, as a thick application, and it worked great. But we hit a problem we'll most likely hit again, whatever the language.
+- We were building natively for WSL2. A WSL2 window does have access to the GPU, but **the performance hit from a WSL2 app to the Windows GPU layer is big**. It looks fast at first, but as the game scales the triangle count isn't what you'd hope for. **Building a Windows version gave literally a 10x improvement in rendering speed.** Working in WSL2 and also working with Windows was quite a challenge.
+- We solved it by installing the **MSYS2 MinGW64 shell** on Windows: a Linux-type environment with all the toolchains, where Claude built. All the scripts stayed intact, it built natively for Windows, and the source stayed in a Linux-type format.
+- **Consider that for our first prototype**, unless Claude objects and wants to build directly on Windows. There are no good compilers on the Windows side, but we have the MinGW shell and can install whatever we want in it, Rust or anything else. The owner can give its location and access.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

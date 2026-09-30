@@ -1,5 +1,10 @@
 # Build output
 /target
+# Prototypes build on their own
+target/
+# Benchmark output written where it runs
+gpu-bench-*.txt
+!prototypes/gpu-bench/results/*.txt
 
 # Personal editor and assistant settings
 .claude/settings.local.json

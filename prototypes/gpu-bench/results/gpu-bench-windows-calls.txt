@@ -1,0 +1,10 @@
+gpu-bench on NVIDIA GeForce RTX 4050 Laptop GPU (Vulkan, NVIDIA) (windows), 1280x720
+    500 draw calls a frame:  1836.3 frames a second,     0.92 M draw calls a second
+   1000 draw calls a frame:  1868.7 frames a second,     1.87 M draw calls a second
+   2000 draw calls a frame:  1855.8 frames a second,     3.71 M draw calls a second
+   5000 draw calls a frame:  1783.6 frames a second,     8.92 M draw calls a second
+  10000 draw calls a frame:  1331.8 frames a second,    13.32 M draw calls a second
+  20000 draw calls a frame:   630.8 frames a second,    12.62 M draw calls a second
+  50000 draw calls a frame:   248.2 frames a second,    12.41 M draw calls a second
+ 100000 draw calls a frame:   125.3 frames a second,    12.53 M draw calls a second
+best: 13.32 M draw calls a second

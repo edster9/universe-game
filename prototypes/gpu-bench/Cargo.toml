@@ -1,0 +1,16 @@
+[package]
+name = "gpu-bench"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT"
+description = "How many triangles a second this machine draws: WSL against a real Windows build"
+
+[dependencies]
+wgpu = "30"
+winit = "0.30"
+pollster = "0.4"
+bytemuck = { version = "1", features = ["derive"] }
+
+[profile.release]
+opt-level = 3

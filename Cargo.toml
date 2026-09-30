@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/engine", "crates/console"]
+# Prototypes build on their own, with their own dependencies.
+exclude = ["prototypes"]
 
 [workspace.package]
 version = "0.1.0"

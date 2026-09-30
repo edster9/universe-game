@@ -1,0 +1,10 @@
+gpu-bench on NVIDIA GeForce RTX 4050 Laptop GPU (Vulkan, NVIDIA) (windows), 1280x720
+   0.5 M triangles a frame:  1393.3 frames a second,    696.7 M triangles a second
+   1.0 M triangles a frame:   979.8 frames a second,    979.8 M triangles a second
+   2.0 M triangles a frame:   838.1 frames a second,   1676.3 M triangles a second
+   4.0 M triangles a frame:   540.4 frames a second,   2161.6 M triangles a second
+   8.0 M triangles a frame:   345.2 frames a second,   2761.7 M triangles a second
+  16.0 M triangles a frame:   190.8 frames a second,   3052.5 M triangles a second
+  32.0 M triangles a frame:   101.6 frames a second,   3249.9 M triangles a second
+  64.0 M triangles a frame:    52.2 frames a second,   3338.6 M triangles a second
+best: 3338.6 M triangles a second

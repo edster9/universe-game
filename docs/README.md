@@ -37,6 +37,8 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/npc-minds.md](ideas/npc-minds.md) | Decided: scoped minds, a ladder from instinct to free, and a temperament for how each survives |
 | [ideas/cone-of-influence.md](ideas/cone-of-influence.md) | Decided: the world is exact only where a player could know; elsewhere coarse, asleep, or undecided until discovered |
 | [ideas/village.md](ideas/village.md) | Proposal: the village (slice 3), with villagers run by instinct and standing orders, trade, ownership in minds, coins, and a first browser page |
+| [ideas/the-client.md](ideas/the-client.md) | Proposal: web or native. The browser's ceilings, checked; a native Rust client (Bevy the lean), with the web for the website, launcher, and tools |
+| [ideas/web-stack.md](ideas/web-stack.md) | Proposal: the browser stack, layer by layer (protocol, engine in the browser, interface, renderer), with pros and cons |
 | [ideas/rendering.md](ideas/rendering.md) | For a later conversation: how the game is drawn |
 | [ideas/space-travel.md](ideas/space-travel.md) | For a later conversation: space, gravity, and faster than light |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |
@@ -52,6 +54,8 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/game-concept.md](ideas/game-concept.md) | The space game that eventually runs on the engine |
 | [research/offline-players.md](research/offline-players.md) | What other games do with a player's character while they're offline, with sources |
 | [research/naming-and-vocabulary.md](research/naming-and-vocabulary.md) | How games and research handle naming invented things, with sources |
+| [research/web-or-native-fact-check.md](research/web-or-native-fact-check.md) | Another AI's claims about browser and native clients, checked against primary sources |
+| [research/webgpu-performance.md](research/webgpu-performance.md) | Browser 3D performance with WebGPU, Rust/WebAssembly vs TypeScript, physics engines, sound, and fast networking, with sources |
 | [research/npcs-and-real-time.md](research/npcs-and-real-time.md) | What NPC minds cost, simulating what nobody watches, and how tick-based servers feed smooth real-time 3D, with sources |
 | [research/prior-art.md](research/prior-art.md) | What other games have tried |
 | [open-questions.md](open-questions.md) | Decisions not yet made |

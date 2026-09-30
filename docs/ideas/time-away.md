@@ -49,7 +49,7 @@ Open, for the technology plan: simulating many absent people costs server time; 
 
 ## Dying, and starting again
 
-A first take, 2026-09-29, from the owner's direction ("Dying, and starting again" in [requirements.md](../requirements.md)). Not yet decided in detail.
+**Decided 2026-09-29**, with the owner, from their direction ("Dying, and starting again" in [requirements.md](../requirements.md)) and the refinements below, which they accepted.
 
 How others are commonly known to do it (not surveyed with sources, unlike the offline survey): World of Warcraft makes you a ghost who runs back to your body, losing almost nothing. EVE Online destroys your ship and what's fitted to it, leaves part of it for others to loot, and wakes you in a clone at your home station with your skills and hangars intact, with insurance paying back part of the ship. Rust, DayZ, and ARK take everything you carried and wake you on a beach or at your bed, with your base standing (DayZ also resets your character). Albion Online and Ultima Online leave your body to be looted but keep your skills. Permadeath games take everything.
 
@@ -60,4 +60,12 @@ The proposed balance, the owner's with one refinement:
 3. **What you left somewhere safe stays yours**: a home, a docked ship, stores, a bank account. You lose what you risked by carrying it, not everything, which gives banks, storage, and insurance a real purpose.
 4. **The new body comes from somewhere**, since nothing comes from nowhere: a clone bay or a medical bay in the space age, made of real matter and paid for, perhaps by insurance; waking on the beach again in a stone-age tutorial.
 5. **Each universe chooses how harsh it is**, from forgiving, through this default, to permadeath.
+
+The owner's examples of how it plays:
+
+- **Buried valuables.** Dig a hole, bury what's precious, and remember where. Dying, you keep the memory; if nobody has found it, you go back and dig it up. (Memory, as built, is what makes this work.)
+- **A wrecked ship.** Destroyed in a fight, it can be looted. Killed by an asteroid, you wake, take your backup ship or buy another, travel to the wreck, and salvage what you can.
+- **Credits.** What you carry can be stolen, depending on what credits turn out to be (see [money.md](money.md)). What's in a bank is reachable by your new body, unless the bank itself is destroyed.
+
+The balance: **you risk losing what you have on you.**
 

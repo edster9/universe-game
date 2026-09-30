@@ -289,6 +289,11 @@ Added 2026-09-29, before the vocabulary conversation. For the time-away notes.
 - You spend three months acquiring wealth and a spaceship, and when you die you start with nothing and go through it all again. That could get annoying in very hostile universes.
 - I don't see a lot of good solutions for dying and losing everything in a realistic universe game.
 - One balance: when you're resurrected, at least all your skills and everything you knew come with you, but not your money and possessions.
+- **Decided 2026-09-29, with Claude's refinements.** In our basic example, when you die you're resurrected at a spawn point remembering everything, and your body loses everything it was carrying.
+- If I dug a hole, put valuables in it, and buried it, I remember where it is. Assuming nobody else has found it, I can go back and get them.
+- In a space game, a spaceship could be looted if it was in the middle of a fight. If I collided with an asteroid and died, then when I'm resurrected I can find my backup ship, or buy another, travel to the wreck, and see if I can salvage it.
+- Credits you carry could be stolen, depending on how we decide what credits are. Reserves in a bank account, in a futuristic space game, are reachable another way: assuming the bank itself isn't destroyed, your resurrected body has access to them.
+- These balances keep the game enjoyable: you risk losing what you have on you.
 
 See [ideas/time-away.md](ideas/time-away.md).
 

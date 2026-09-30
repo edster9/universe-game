@@ -14,7 +14,7 @@ The world keeps running when a player logs off. Their person still burns food an
 
 ## Directions other games are known for, to look at properly
 
-A proper survey belongs in `docs/research/` when the discussion starts. As a starting list of patterns:
+A sourced survey is in [research/offline-players.md](../research/offline-players.md). The starting list of patterns was:
 
 - **The body stays, asleep and vulnerable.** Some survival games leave a sleeping character in the world where they logged off, which others can find.
 - **The character leaves the world.** Many games simply remove the character until the player returns, sometimes only in safe places (inns, beds, homes).

@@ -43,6 +43,7 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [technology.md](technology.md) | Rust, the browser, whole-number units, and how player code runs |
 | [ideas/in-game-computer.md](ideas/in-game-computer.md) | Computers as parts, programs as knowledge |
 | [ideas/game-concept.md](ideas/game-concept.md) | The space game that eventually runs on the engine |
+| [research/offline-players.md](research/offline-players.md) | What other games do with a player's character while they're offline, with sources |
 | [research/prior-art.md](research/prior-art.md) | What other games have tried |
 | [open-questions.md](open-questions.md) | Decisions not yet made |
 

@@ -421,3 +421,55 @@ fn only_a_mind_of_its_own_takes_offers() {
         Some("a boar decides for themselves")
     );
 }
+
+#[test]
+fn a_person_pictures_only_what_s_where_they_stand_and_what_they_remember() {
+    let (mut w, _) = island(|t| t);
+    let islander = w.find_by_key("survivor").unwrap();
+    let (beach, forest) = (
+        w.find_by_key("beach").unwrap(),
+        w.find_by_key("forest").unwrap(),
+    );
+    let pictured = |w: &World| {
+        let scene = engine::view::scene(w, islander);
+        let mut all = scene.in_sight.clone();
+        all.extend(scene.remembered.iter().map(|&(_, t)| t));
+        (scene, all)
+    };
+    // On the beach, never having been anywhere: only the beach.
+    let (scene, all) = pictured(&w);
+    assert_eq!(scene.here, Some(beach));
+    assert!(scene.in_sight.contains(&islander));
+    assert!(scene.remembered.is_empty(), "{:?}", scene.remembered);
+    assert!(all.iter().all(|&t| w.place_of(t) == Some(beach)));
+    let forest_things: Vec<EntityId> = w
+        .contents(forest)
+        .into_iter()
+        .filter(|&t| !w.is_agent(t) && !w.is_portable(t))
+        .collect();
+    assert!(!forest_things.is_empty());
+    assert!(forest_things.iter().all(|t| !all.contains(t)));
+
+    // To the forest and back: its fixed things are remembered where they
+    // stand; the boars, which move, are not.
+    say(&mut w, "go forest");
+    let (scene, _) = pictured(&w);
+    assert_eq!(scene.here, Some(forest));
+    assert!(scene.in_sight.iter().any(|&t| w.kind_of(t) == Some("boar")));
+    say(&mut w, "go beach");
+    let (scene, all) = pictured(&w);
+    assert_eq!(scene.here, Some(beach));
+    for t in &forest_things {
+        assert!(scene.remembered.contains(&(forest, *t)), "{}", w.label(*t));
+    }
+    // What's here is seen, not remembered.
+    assert!(scene.remembered.iter().all(|&(place, _)| place != beach));
+    for &t in &all {
+        let at_hand = w.place_of(t) == Some(beach);
+        assert!(
+            at_hand || (!w.is_agent(t) && !w.is_portable(t)),
+            "{}",
+            w.label(t)
+        );
+    }
+}

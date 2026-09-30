@@ -46,68 +46,162 @@ pub struct Report {
 /// error says which line failed and why, followed by the end of the
 /// transcript.
 pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
-    let text = expand_includes(text, &data_dir.join("scripts"), 0)?;
-    let mut lines = text
-        .lines()
-        .enumerate()
-        .map(|(i, l)| (i + 1, l.split('#').next().unwrap_or("").trim()))
-        .filter(|(_, l)| !l.is_empty())
-        .peekable();
-
-    // Header: world, player, luck.
-    let (mut world_file, mut player, mut luck) = (None, "traveller".to_string(), Luck::Seeded);
-    let mut player_rules = false;
-    let mut seed = None;
-    while let Some(&(number, line)) = lines.peek() {
-        let (word, rest) = line
-            .split_once(' ')
-            .map_or((line, ""), |(w, r)| (w, r.trim()));
-        match word {
-            "world" => world_file = Some(rest.to_string()),
-            "as" => player = rest.to_string(),
-            "rules" if rest == "player" => player_rules = true,
-            "luck" => match rest {
-                "average" => luck = Luck::AVERAGE,
-                "good" => luck = Luck::GOOD,
-                "bad" => luck = Luck::BAD,
-                other => match other
-                    .strip_prefix("seed ")
-                    .and_then(|n| n.trim().parse().ok())
-                {
-                    Some(n) => seed = Some(n),
-                    None => {
-                        return Err(format!(
-                            "line {number}: luck is average, good, bad, or seed <n>"
-                        ));
-                    }
-                },
-            },
-            _ => break,
+    let mut playing = Playing::load(text, data_dir)?;
+    while let Some(step) = playing.step() {
+        if let Err(e) = step {
+            let transcript = &playing.transcript;
+            let tail = transcript.len().saturating_sub(12);
+            return Err(format!(
+                "{e}\n--- last lines of the transcript ---\n{}",
+                transcript[tail..].join("\n")
+            ));
         }
-        lines.next();
     }
-    let world_file = world_file.ok_or("a script must start with \"world <file>\"")?;
-    let mut world = crate::load_world_file(&data_dir.join(&world_file))?;
-    world = match seed {
-        Some(seed) => world.with_seed(seed),
-        None => world.with_luck(luck),
-    };
-    if player_rules {
-        world = world.with_player_rules(&player)?;
-    }
-    let start = (world.own_mass(), world.own_energy(), world.total_credits());
-    let mut session = Session::new(world, &player)?;
+    Ok(Report {
+        transcript: playing.transcript,
+    })
+}
 
-    let body = parse_block(&mut lines, None)?;
-    let mut transcript = Vec::new();
-    run_block(&body, &mut session, &mut transcript, start).map_err(|e| {
-        let tail = transcript.len().saturating_sub(12);
-        format!(
-            "{e}\n--- last lines of the transcript ---\n{}",
-            transcript[tail..].join("\n")
-        )
-    })?;
-    Ok(Report { transcript })
+/// A script played a line at a time, as a game client plays one, to show
+/// each step as it happens.
+pub struct Playing {
+    session: Session,
+    /// Every line to play, with repeats written out, and its line number.
+    lines: Vec<(usize, String)>,
+    next: usize,
+    transcript: Vec<String>,
+    start: Totals,
+}
+
+/// One line played.
+pub enum Step {
+    /// A command, and the reply to it.
+    Command {
+        line: usize,
+        command: String,
+        reply: String,
+        refused: bool,
+    },
+    /// An expectation, met.
+    Expected { line: usize, expectation: String },
+}
+
+impl Playing {
+    /// Reads a script's header and loads its world, ready to play.
+    pub fn load(text: &str, data_dir: &Path) -> Result<Playing, String> {
+        let text = expand_includes(text, &data_dir.join("scripts"), 0)?;
+        let mut lines = text
+            .lines()
+            .enumerate()
+            .map(|(i, l)| (i + 1, l.split('#').next().unwrap_or("").trim()))
+            .filter(|(_, l)| !l.is_empty())
+            .peekable();
+
+        // Header: world, player, luck.
+        let (mut world_file, mut player, mut luck) = (None, "traveller".to_string(), Luck::Seeded);
+        let mut player_rules = false;
+        let mut seed = None;
+        while let Some(&(number, line)) = lines.peek() {
+            let (word, rest) = line
+                .split_once(' ')
+                .map_or((line, ""), |(w, r)| (w, r.trim()));
+            match word {
+                "world" => world_file = Some(rest.to_string()),
+                "as" => player = rest.to_string(),
+                "rules" if rest == "player" => player_rules = true,
+                "luck" => match rest {
+                    "average" => luck = Luck::AVERAGE,
+                    "good" => luck = Luck::GOOD,
+                    "bad" => luck = Luck::BAD,
+                    other => match other
+                        .strip_prefix("seed ")
+                        .and_then(|n| n.trim().parse().ok())
+                    {
+                        Some(n) => seed = Some(n),
+                        None => {
+                            return Err(format!(
+                                "line {number}: luck is average, good, bad, or seed <n>"
+                            ));
+                        }
+                    },
+                },
+                _ => break,
+            }
+            lines.next();
+        }
+        let world_file = world_file.ok_or("a script must start with \"world <file>\"")?;
+        let mut world = crate::load_world_file(&data_dir.join(&world_file))?;
+        world = match seed {
+            Some(seed) => world.with_seed(seed),
+            None => world.with_luck(luck),
+        };
+        if player_rules {
+            world = world.with_player_rules(&player)?;
+        }
+        let start = (world.own_mass(), world.own_energy(), world.total_credits());
+        let session = Session::new(world, &player)?;
+
+        let body = parse_block(&mut lines, None)?;
+        let mut flat = Vec::new();
+        write_out(&body, &mut flat);
+        Ok(Playing {
+            session,
+            lines: flat,
+            next: 0,
+            transcript: Vec::new(),
+            start,
+        })
+    }
+
+    /// Plays the next line: `None` when the script is over, an error if the
+    /// line failed.
+    pub fn step(&mut self) -> Option<Result<Step, String>> {
+        let (number, line) = self.lines.get(self.next)?.clone();
+        self.next += 1;
+        if let Some(expectation) = line.strip_prefix("expect ") {
+            let expectation = expectation.trim();
+            return Some(
+                check(
+                    number,
+                    expectation,
+                    &self.session,
+                    &self.transcript,
+                    self.start,
+                )
+                .map(|()| Step::Expected {
+                    line: number,
+                    expectation: expectation.to_string(),
+                }),
+            );
+        }
+        let (optional, command) = match line.strip_prefix("try ") {
+            Some(command) => (true, command.trim()),
+            None => (false, line.as_str()),
+        };
+        let reply = self.session.handle(command);
+        self.transcript.push(format!("> {command}\n{}", reply.text));
+        if reply.refused && !optional {
+            return Some(Err(format!(
+                "line {number}: \"{command}\" was refused: {}",
+                reply.text
+            )));
+        }
+        Some(Ok(Step::Command {
+            line: number,
+            command: command.to_string(),
+            reply: reply.text,
+            refused: reply.refused,
+        }))
+    }
+
+    pub fn session(&self) -> &Session {
+        &self.session
+    }
+
+    /// Every command so far, and its reply.
+    pub fn transcript(&self) -> &[String] {
+        &self.transcript
+    }
 }
 
 /// Replaces each `include <file>` line with that file's lines, so a recipe
@@ -166,48 +260,18 @@ fn parse_block<'a>(
 
 type Totals = (u128, u128, u128);
 
-fn run_block(
-    nodes: &[Node],
-    session: &mut Session,
-    transcript: &mut Vec<String>,
-    start: Totals,
-) -> Result<(), String> {
+/// Writes out a block's lines in the order they're played, repeats and all.
+fn write_out(nodes: &[Node], out: &mut Vec<(usize, String)>) {
     for node in nodes {
         match node {
-            Node::Repeat { count, body, .. } => {
+            Node::Repeat { count, body } => {
                 for _ in 0..*count {
-                    run_block(body, session, transcript, start)?;
+                    write_out(body, out);
                 }
             }
-            Node::Line { number, text } => run_line(*number, text, session, transcript, start)?,
+            Node::Line { number, text } => out.push((*number, text.clone())),
         }
     }
-    Ok(())
-}
-
-fn run_line(
-    number: usize,
-    line: &str,
-    session: &mut Session,
-    transcript: &mut Vec<String>,
-    start: Totals,
-) -> Result<(), String> {
-    if let Some(expectation) = line.strip_prefix("expect ") {
-        return check(number, expectation.trim(), session, transcript, start);
-    }
-    let (optional, command) = match line.strip_prefix("try ") {
-        Some(command) => (true, command.trim()),
-        None => (false, line),
-    };
-    let reply = session.handle(command);
-    transcript.push(format!("> {command}\n{}", reply.text));
-    if reply.refused && !optional {
-        return Err(format!(
-            "line {number}: \"{command}\" was refused: {}",
-            reply.text
-        ));
-    }
-    Ok(())
 }
 
 fn check(

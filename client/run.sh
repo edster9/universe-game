@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds the client as a Windows program, from WSL, copies it to the C: drive,
 # and starts it there: a real Windows process on the GPU. Any arguments go to
-# the client, e.g. `client/run.sh --shot shot.png --after 5`.
+# the client, e.g. `client/run.sh --shot shot.png --after 5`, or
+# `client/run.sh --script companion-3-asking.txt` to play a script.
 set -euo pipefail
 cd "$(dirname "$0")"
 ZIGBUILD_BIN=$(dirname "$(ls ~/.version-fox/temp/*/rust/cargo/bin/cargo-zigbuild 2>/dev/null | head -1)" 2>/dev/null || true)
@@ -10,5 +11,8 @@ cargo zigbuild --release --target x86_64-pc-windows-gnu
 TARGET=/mnt/c/Users/edste/universe-game/client
 mkdir -p "$TARGET"
 cp target/x86_64-pc-windows-gnu/release/client.exe "$TARGET/"
+# The worlds and scripts, beside the program.
+rm -rf "$TARGET/data"
+cp -r ../data "$TARGET/data"
 cd "$TARGET"
 exec ./client.exe "$@"

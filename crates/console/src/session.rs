@@ -59,6 +59,11 @@ pub struct Session {
     announced_death: Option<String>,
     /// How long the last action took.
     spent: u64,
+    /// With the clock running on its own: actions start, and how they came
+    /// out is told when they're over (`catch_up`).
+    real_time: bool,
+    /// Whether the player was asleep when last told the news.
+    was_asleep: bool,
 }
 
 pub struct Reply {
@@ -96,6 +101,8 @@ impl Session {
                 started: std::collections::BTreeMap::new(),
                 announced_death: None,
                 spent: 0,
+                real_time: false,
+                was_asleep: false,
             }),
             _ => Err(format!(
                 "there's no person with the id {player:?} in this world"
@@ -105,6 +112,34 @@ impl Session {
 
     pub fn world(&self) -> &World {
         &self.world
+    }
+
+    /// Runs with the clock going on its own, as a game client does: a
+    /// command that takes time starts, as if with `start`, rather than
+    /// moving the clock on until it's done.
+    pub fn with_real_time(mut self) -> Self {
+        self.real_time = true;
+        self
+    }
+
+    /// What the player hasn't heard yet: how what they started came out,
+    /// who went for them, falling asleep, and their own death. Empty if
+    /// nothing. For a client, after the clock moves.
+    pub fn catch_up(&mut self) -> String {
+        let text = if self.world.pending(self.player).is_none() {
+            self.with_outcome(String::new())
+        } else {
+            String::new()
+        };
+        let was_asleep = self.was_asleep;
+        let mut text = self.with_collapse(text, was_asleep);
+        self.was_asleep = self.world.is_asleep(self.player);
+        let died = self.world.life(self.player).and_then(|l| l.died_of.clone());
+        if let Some(cause) = died.filter(|_| self.announced_death.is_none()) {
+            text = format!("{text}\nYou have died of {cause}.");
+            self.announced_death = Some(cause);
+        }
+        text.trim().to_string()
     }
 
     pub fn handle(&mut self, line: &str) -> Reply {
@@ -154,6 +189,7 @@ impl Session {
             Err(error) => Reply::refuse(sentence(&error.to_string())),
             Ok(Command::Look) => Reply::say(self.look()),
             Ok(Command::Inventory) => Reply::say(self.inventory()),
+            Ok(Command::Act(_)) if self.real_time => self.start(line),
             Ok(Command::Act(intent)) => {
                 let started = self.world.tick();
                 let was_asleep = self.world.is_asleep(self.player);

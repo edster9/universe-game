@@ -134,3 +134,42 @@ fn thing(world: &World, viewer: EntityId, id: EntityId) -> Thing {
         contents,
     }
 }
+
+/// What a person can picture of the world around them: everything where
+/// they stand, and the fixed things they remember at other places, from when
+/// they last saw them. A client draws only these (no oracles): creatures and
+/// loose things elsewhere stay unseen until the person goes and looks.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Scene {
+    /// The place they stand in, if any.
+    pub here: Option<EntityId>,
+    /// Everything at that place, the person too.
+    pub in_sight: Vec<EntityId>,
+    /// Fixed things remembered at other places: where, and what.
+    pub remembered: Vec<(EntityId, EntityId)>,
+}
+
+/// What `viewer` can picture now.
+pub fn scene(world: &World, viewer: EntityId) -> Scene {
+    let here = world.place_of(viewer);
+    let in_sight = here.map(|p| world.contents(p)).unwrap_or_default();
+    let remembered = world
+        .memory(viewer)
+        .map(|memory| {
+            memory
+                .sightings
+                .iter()
+                .filter(|&(&place, _)| Some(place) != here)
+                .flat_map(|(&place, (_, things))| things.iter().map(move |&t| (place, t)))
+                // What's gone is no longer there to draw; what moves is
+                // wherever it went since.
+                .filter(|&(_, t)| world.exists(t) && !world.is_agent(t) && !world.is_portable(t))
+                .collect()
+        })
+        .unwrap_or_default();
+    Scene {
+        here,
+        in_sight,
+        remembered,
+    }
+}

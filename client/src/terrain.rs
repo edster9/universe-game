@@ -92,6 +92,12 @@ impl Land {
         }
     }
 
+    /// The middle of all the places, on the level.
+    pub fn middle(&self) -> Vec2 {
+        let n = self.places.len().max(1) as f32;
+        self.places.iter().map(|&(at, _, _)| at).sum::<Vec2>() / n
+    }
+
     /// Ground height at a point, in metres above the sea.
     pub fn height(&self, p: Vec2) -> f32 {
         // Heights blend between places, nearest counting most.

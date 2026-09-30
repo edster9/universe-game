@@ -8,6 +8,7 @@ description = "The game's native client: the world drawn from the engine's views
 
 [dependencies]
 engine = { path = "../crates/engine" }
+console = { path = "../crates/console" }
 bevy = { version = "0.19", default-features = false, features = ["3d", "ui", "free_camera", "png"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.9"

@@ -145,6 +145,8 @@ The owner: go ahead with Bevy and a basic scene render, built as a native Window
 
 **Simplified, and next:** an overview of the whole world, not yet one character's view (the engine sends only what a character perceives, and the player's view will follow that); no labels; figures are plain capsules; the program is 108 MB until it's stripped. The rendering conversation and the assets conversation come next.
 
+**Since then (first steps, stages 1 and 2):** the overview became the islander's own view, the clock runs at real speed by default, and commands are typed into a console. See [first-steps.md](../challenges/first-steps.md).
+
 ## Questions for the owner
 
 1. ~~A native client~~ (decided).

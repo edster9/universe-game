@@ -91,6 +91,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Things are recognised by their look (the jobs their parts do, their parts, their size), never by how they were made. Same parts at half to double the size: the word, with its materials. The same jobs at that size from different parts: "something like" it. An example learned from a design has no size, and stands only for the same parts | in | words 2 |
 | A name finds what's called exactly that; then, for someone with words, what the name says it is, then a plain piece of the material named; then anything whose name mentions it. If what it finds look different, they're asked which | in | words 2 |
 | Anyone can point at what they perceive (`#12`), whatever anyone calls it | in | a companion 2 |
+| What a person pictures (`view::scene`): everything where they stand, and the fixed things they remember at other places, as last seen. Creatures and loose things elsewhere stay unseen until they go and look. A client draws only this | in | first steps 1 |
 | Being told a word ("tell … that … is a …") teaches it, with that thing as its example: a kind for a creature, a material for a plain piece, and otherwise its look. What you're told can be wrong | in | words 1 |
 | Parts can be joined without a design. Something that looks like nothing you have a word for is new, and naming it ("call it a …") keeps the word and the way you made it | in | words 2 |
 

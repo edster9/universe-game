@@ -1285,11 +1285,9 @@ impl World {
             return Err(Fault::WouldEmpty(from));
         }
         let heat = self.heat(from).ok_or(Fault::NotMatter(from))?;
-        let taken = if capacity_before == 0 {
-            0
-        } else {
-            u128::from(heat.uj()) * matter::heat_capacity(&self.materials, &piece) / capacity_before
-        };
+        let taken = (u128::from(heat.uj()) * matter::heat_capacity(&self.materials, &piece))
+            .checked_div(capacity_before)
+            .unwrap_or(0);
         let taken = Energy::from_uj(u64::try_from(taken).expect("part of the heat fits"));
         self.matter.insert(from, rest);
         self.heat

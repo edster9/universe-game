@@ -1,5 +1,7 @@
 # Pins the Rust version for everyone who builds this project. rustup reads
 # this file and installs the right toolchain automatically.
 [toolchain]
-channel = "1.90.0"
+channel = "1.98.1"
 components = ["clippy", "rustfmt"]
+# The game client is built as a Windows program from WSL (client/run.sh).
+targets = ["x86_64-pc-windows-gnu"]

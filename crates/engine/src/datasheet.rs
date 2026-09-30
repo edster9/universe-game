@@ -717,10 +717,10 @@ pub fn measure_assembly(settings: &Settings, parts: &[(String, String, Datasheet
         Property::Power,
         Value::Power(u64::try_from(power).unwrap_or(u64::MAX)),
     );
-    if power > 0 {
+    if let Some(runtime) = u128::from(stored).checked_div(power) {
         sheet.set(
             Property::Runtime,
-            Value::Duration(u64::try_from(u128::from(stored) / power).unwrap_or(u64::MAX)),
+            Value::Duration(u64::try_from(runtime).unwrap_or(u64::MAX)),
         );
     }
 

@@ -286,11 +286,9 @@ fn lose_heat(world: &World, dt: u64) -> Vec<Change> {
                 / 10_000
         } else if let Some((chamber_id, chamber)) = chamber {
             let total = chamber_capacity[&chamber_id];
-            let rate = if total == 0 {
-                0
-            } else {
-                u128::from(chamber.heat_loss) * capacity / total
-            };
+            let rate = (u128::from(chamber.heat_loss) * capacity)
+                .checked_div(total)
+                .unwrap_or(0);
             rate * difference * u128::from(dt) / 1_000
         } else if let (Some(convection), Some(area)) =
             (world.settings.convection, surface(world, id))
@@ -517,11 +515,9 @@ fn conduct(world: &World, dt: u64) -> Vec<Change> {
         let flow = u128::from(world.settings.touch_transfer) * area * difference * u128::from(dt)
             / 1_000_000_000_000;
         let (ch, cc) = (world.heat_capacity(hot), world.heat_capacity(cold));
-        let even = if ch + cc == 0 {
-            0
-        } else {
-            difference * ch / 1_000 * cc / (ch + cc)
-        };
+        let even = (difference * ch / 1_000 * cc)
+            .checked_div(ch + cc)
+            .unwrap_or(0);
         let flow = flow.min(even);
         if flow > 0 {
             flows.push((hot, cold, flow));
@@ -555,7 +551,7 @@ fn conduct(world: &World, dt: u64) -> Vec<Change> {
         .into_iter()
         .filter_map(|(hot, cold, flow)| {
             let (spare, total) = allowed[&hot];
-            let flow = if total == 0 { 0 } else { flow * spare / total };
+            let flow = (flow * spare).checked_div(total).unwrap_or(0);
             (flow > 0).then(|| Change::Heat {
                 from: Holder::Thing(hot),
                 to: Holder::Thing(cold),

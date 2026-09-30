@@ -1,6 +1,0 @@
-# The client pins its own, newer Rust: Bevy needs 1.95 or later, while the
-# engine stays on the project's pinned version (the root rust-toolchain.toml).
-[toolchain]
-channel = "1.98.1"
-components = ["clippy", "rustfmt"]
-targets = ["x86_64-pc-windows-gnu"]

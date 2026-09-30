@@ -352,6 +352,13 @@ Added 2026-09-29. The owner agreed with Claude's second take (recognising by res
 
 See [ideas/vocabulary.md](ideas/vocabulary.md).
 
+### The same word for different things
+
+Added 2026-09-29, before the vocabulary stage (the dictation says "sphere"; it means spear).
+
+- If I invent something and the system asks me to name it, I say it's a spear. If I then make a better spear from a stick, some rope, and a metal edge, the system asks me to name it. What if I say "spear" again? They're both technically spears, but a different variety. First, will this be allowed? I think it should be.
+- But then how does the system work when I say "use my spear to do this"? Which one? I have two items that are now of type spear. In a user interface I'd look at my inventory and pick the other spear. But in the engine's command-line system, everything translates to words. So how does it work behind the scenes? As long as we have this kind of handling and processing, we have support for something like this.
+
 ## Why we climb from the Stone Age
 
 Added 2026-09-29, in answer to Claude's questions on the skill learning paradigm. **This is the purpose of the training.**

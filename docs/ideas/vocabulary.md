@@ -189,3 +189,18 @@ Recognise by resemblance of look (what it does, its form, its size, what it seem
 One consequence for [recognition.md](recognition.md): with visuals, the swindle of "a stick sold as a gun" shifts. Your eyes will see a stick. Deception moves to what the eye can't check: a coin's metal, a blade's hardness, a gun that looks right but doesn't fire.
 
 **Not built yet.** It becomes the next stage when the stages resume, before living with the island stages 5 and 6: each mind gets words; views and commands go through them; things get a measured look; and hide shoes, which aren't in the islander's starting culture, are the first thing invented and named.
+
+## The same word for different things
+
+Added 2026-09-29, from the owner's question ("The same word for different things" in [requirements.md](../requirements.md)).
+
+**Allowed.** A word holds several examples, so naming a second, better spear "spear" just adds it as another example, and adds its recipe as a second way to "make a spear". That's words widening by use. Usually the engine wouldn't even ask: a stick-and-rope spear with a metal edge still does the same job, in the same form, at about the same size, so it's recognised straight away as "a spear, but with a metal head". The player can still give it its own word (`call it a harpoon`), and then the closer word wins when they look at it.
+
+**Behind the scenes, every thing has its own identity.** Words are only for people. When a word fits more than one thing:
+
+1. **Things in hand come before things around**, as now.
+2. **If the candidates are alike** (two flakes that look the same), the engine just picks one: it doesn't matter which.
+3. **If they differ in ways you can see**, the engine asks, naming the difference in your words: *"Which spear: the wooden one, or the one with a metal head?"* You answer with the difference: `the metal one`, `the heavier one`, or `the spear with the metal head`. The describing words come from the look (material, parts, size), so they're the same words used to describe things you have no name for.
+4. **A recipe or skill that says "take a spear" means any spear:** the first one that fits, since the recipe only needs what a spear does.
+5. **A client can point directly.** Clicking an item in the inventory sends that item's identity, not a word. It's still something your character perceives, so it's no oracle. The command line and scripts use words; buttons and clicks use identities; both reach the same thing.
+6. **A single thing can have its own name** (`name this spear Old Faithful`), like a ship's name beside its type: a proper name for one object, which always picks it out.

@@ -1,0 +1,28 @@
+# Players' rules: stamina. Vitality brings 200 W; hard work takes 300 W, and
+# the difference comes out of a player's stamina, 3 MJ when full: about a
+# working day. A day and more of hauling driftwood uses it up, and the player
+# works at half pace until they've rested. See docs/ideas/game-interface.md.
+world stranded.toml
+as survivor
+luck average
+rules player
+
+# Hauling, and setting it down, as the driftwood thins.
+repeat 36
+  try gather driftwood
+  try drop wood
+end
+datasheet me
+expect said stamina: 0
+# Out of stamina, even walking goes at half pace: 8 min 20 s to the forest,
+# not 4 min 10 s.
+go forest
+expect said that took 8 min 20 s
+go beach
+wait 8 h
+datasheet me
+expect not said stamina: 0
+go forest
+expect said that took 4 min 10 s
+expect alive
+expect conserved

@@ -205,6 +205,12 @@ pub mod property {
         &[("GPa", 1_000_000_000), ("MPa", 1_000_000), ("kPa", 1_000)];
     /// Power, stored in µW (so µJ per second).
     pub const POWER: &[(&str, u64)] = &[("kW", 1_000_000_000), ("W", 1_000_000), ("mW", 1_000)];
+    /// In µJ.
+    pub const ENERGY: &[(&str, u64)] = &[
+        ("MJ", 1_000_000_000_000),
+        ("kJ", 1_000_000_000),
+        ("J", 1_000_000),
+    ];
     /// Heat passed per square metre of surface per kelvin of difference,
     /// stored in mW per m² per K.
     pub const HEAT_TRANSFER: &[(&str, u64)] = &[("W/(m2*K)", 1_000), ("mW/(m2*K)", 1)];

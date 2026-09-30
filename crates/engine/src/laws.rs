@@ -407,8 +407,16 @@ pub fn duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
         Intent::Sleep { seconds, .. } => sleeping_time(world, actor, *seconds),
         Intent::Rub { .. } => usual_duration(world, actor, intent),
         _ => {
-            // A tired body works more slowly.
+            // A tired body works more slowly; so does one out of stamina.
             let usual = usual_duration(world, actor, intent);
+            if let Some(vitality) = world.life(actor).and_then(|l| l.vitality.as_ref()) {
+                return if vitality.stamina == 0 {
+                    u64::try_from(u128::from(usual) * 10_000 / u128::from(vitality.exhausted_pace))
+                        .unwrap_or(u64::MAX)
+                } else {
+                    usual
+                };
+            }
             match world.life(actor).and_then(|l| l.sleep.as_ref()) {
                 Some(sleep) if world.is_tired(actor) => {
                     u64::try_from(u128::from(usual) * 10_000 / u128::from(sleep.tired_pace.max(1)))
@@ -1476,6 +1484,12 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 _ => Ok(Vec::new()),
             }
         }
+
+        // A player needs no sleep, but may rest a while: time passes, and
+        // stamina comes back.
+        Intent::Sleep {
+            seconds: Some(_), ..
+        } if world.life(actor).is_some_and(|l| l.vitality.is_some()) => Ok(Vec::new()),
 
         Intent::Sleep { seconds, shelter } => {
             // A shelter must be here, on the ground, and built to shelter.

@@ -1,0 +1,17 @@
+# Players' rules: a player lives on vitality, a named inflow of energy and
+# body fluid, and needs no food, drink, or sleep. Stranded on the beach with
+# nothing but the sea, where a realistic body dies of thirst in about three
+# days (stranded-1-no-water.txt), a player is alive after ten. See
+# docs/ideas/game-interface.md.
+world stranded.toml
+as survivor
+luck average
+rules player
+
+try sleep
+expect said you don't need sleep
+wait 10 day
+expect alive
+datasheet me
+expect said stamina: 3 mj of 3 mj, from 200 w of vitality
+expect conserved

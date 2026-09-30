@@ -1,0 +1,23 @@
+# Players' rules: the crossing, as a player. The same raft, built the same
+# way (build-a-raft.txt, whose night's sleep is a player's rest), with no
+# need to eat or drink; but two days of felling and hauling use up a
+# player's stamina, and paddling tired takes twice as long. Rest first, and
+# the crossing takes the hour it takes anyone.
+world stranded.toml
+as survivor
+luck average
+rules player
+
+include skills/build-a-raft.txt
+gather driftwood
+work wood into paddle with axe
+datasheet me
+expect said stamina: 0
+sleep for 10 h
+expect said you rest until
+datasheet me
+expect not said stamina: 0
+go islet on raft
+expect said you cross to the next island on the raft. (that took 1 h.)
+expect alive
+expect conserved

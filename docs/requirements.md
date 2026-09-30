@@ -279,6 +279,14 @@ Added 2026-09-29, settling vitality and what a player sees.
 
 See [ideas/game-interface.md](ideas/game-interface.md), [ideas/rendering.md](ideas/rendering.md), and [ideas/space-travel.md](ideas/space-travel.md).
 
+## Players' rules, and healing by vitality
+
+Added 2026-09-29, before real time. All our tests are based on the main player needing food and rest. Those are rules we can enable for certain actors: NPCs will have them, but the main player won't. It's worth making tests that don't need sleeping and eating (Claude proposed a short stage: rule switches, vitality, stamina, and player-mode proofs; agreed).
+
+- **But not "a wound needs food to heal."** Vitality is the replacement for the food that's coming in. So it's the same law: if you have a wound, it heals on its own, from the flow of vitality. Eating extra food doesn't help healing; that's not how our game works.
+- If you're wounded and the wound is superficial, it heals on its own. Otherwise it keeps bleeding you dry until you see a doctor.
+- **Medical aid comes later**: a blood transfusion, a certain medicine, or an operation makes healing go faster. Bandages and the like can stop bleeding. But eating food shouldn't be what you need to heal: your supply of vitality is what's coming in.
+
 ## Time passing while a player is away
 
 Added 2026-09-29, **for a discussion soon: before the vocabulary conversation and the other planned discussions.** Not to be solved yet.

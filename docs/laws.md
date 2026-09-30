@@ -130,6 +130,15 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | --- | --- | --- |
 | A design can hold what's in it at a height, and every body has a reach, how high it can climb or jump. Nothing can take from or put into what it can't reach | in | living 6 |
 
+## Players' rules
+
+| Law | Status | Used by |
+| --- | --- | --- |
+| A person can live by players' rules: on vitality, a named inflow of energy and body fluid the gate accounts for, like sunlight, needing no food, drink, or sleep | in | players |
+| Vitality meets what the body uses; the rest tops up stamina. Hard work or cold beyond vitality draws stamina down; out of it, a player works and walks at half pace. A player's body never burns its own stores | in | players |
+| Vitality restores lost fluid, blood included, up to a rate: a player's wounds heal on their own; a severe one still bleeds them dry | in | players |
+| A player may rest for a set time, as sleep, and stamina comes back | in | players |
+
 ## Chance and time
 
 | Law | Status | Used by |

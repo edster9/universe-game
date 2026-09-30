@@ -18,7 +18,8 @@
 //! expect dead of thirst      the player died of thirst
 //! expect said sea            the last reply mentions "sea"
 //! expect not said burning    the last reply doesn't mention "burning"
-//! expect conserved           mass, energy (apart from sunlight), and credits are as they started
+//! rules player               the player lives by players' rules: on vitality, needing no food, drink, or sleep
+//! expect conserved           mass, energy (apart from sunlight and vitality), and credits are as they started
 //! expect not said burning    the last reply doesn't mention "burning"
 //! expect time after 2 day    at least this much time has passed
 //! expect time before 3 day   less than this much time has passed
@@ -55,6 +56,7 @@ pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
 
     // Header: world, player, luck.
     let (mut world_file, mut player, mut luck) = (None, "traveller".to_string(), Luck::Seeded);
+    let mut player_rules = false;
     let mut seed = None;
     while let Some(&(number, line)) = lines.peek() {
         let (word, rest) = line
@@ -63,6 +65,7 @@ pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
         match word {
             "world" => world_file = Some(rest.to_string()),
             "as" => player = rest.to_string(),
+            "rules" if rest == "player" => player_rules = true,
             "luck" => match rest {
                 "average" => luck = Luck::AVERAGE,
                 "good" => luck = Luck::GOOD,
@@ -89,11 +92,10 @@ pub fn run(text: &str, data_dir: &Path) -> Result<Report, String> {
         Some(seed) => world.with_seed(seed),
         None => world.with_luck(luck),
     };
-    let start = (
-        world.total_mass(),
-        world.total_energy() - world.sunlight(),
-        world.total_credits(),
-    );
+    if player_rules {
+        world = world.with_player_rules(&player)?;
+    }
+    let start = (world.own_mass(), world.own_energy(), world.total_credits());
     let mut session = Session::new(world, &player)?;
 
     let body = parse_block(&mut lines, None)?;
@@ -225,11 +227,7 @@ fn check(
     };
 
     if expectation == "conserved" {
-        let now = (
-            world.total_mass(),
-            world.total_energy() - world.sunlight(),
-            world.total_credits(),
-        );
+        let now = (world.own_mass(), world.own_energy(), world.total_credits());
         return if now == start {
             Ok(())
         } else {

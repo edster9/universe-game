@@ -111,6 +111,13 @@ pub struct Settings {
     /// How much of a covering it takes to cover a whole body. Less keeps in
     /// less of its warmth, in proportion.
     pub covers: Mass,
+    /// What players' bodies are granted: vitality's power in µW, the fluid it
+    /// restores in mg per day, the most stamina in µJ, and the pace with none
+    /// left, in parts per ten thousand.
+    pub vitality: u64,
+    pub vitality_restores: u64,
+    pub stamina: u64,
+    pub exhausted_pace: u64,
 }
 
 impl Default for Settings {
@@ -154,6 +161,10 @@ impl Default for Settings {
             bare_feet_pace: 10_000,
             bare_feet_wound: 0,
             covers: Mass::from_mg(2_000_000),
+            vitality: 200_000_000,
+            vitality_restores: 3_000_000,
+            stamina: 3_000_000_000_000,
+            exhausted_pace: 5_000,
         }
     }
 }
@@ -237,6 +248,9 @@ pub struct Life {
     /// Sleep, if it needs it: how long it can stay awake for each night's
     /// sleep, and how long that sleep takes.
     pub sleep: Option<Sleep>,
+    /// If it lives on vitality, as players do, rather than on food, drink,
+    /// and sleep. See docs/ideas/game-interface.md.
+    pub vitality: Option<Vitality>,
     /// How long a wound takes to bleed half as fast as it did, as it clots,
     /// in seconds.
     pub clots: u64,
@@ -384,6 +398,25 @@ pub struct Instinct {
     /// Whether, cornered or hurt, it attacks what it fears instead of
     /// fleeing.
     pub charges: bool,
+}
+
+/// Vitality: a steady flow of energy, and of the body's fluid, that a
+/// universe grants to players' bodies, as the sun grants the world light. It
+/// enters as a named inflow the gate accounts for. What a body doesn't use
+/// tops up its stamina; hard work draws stamina down.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Vitality {
+    /// The energy it brings, in µW.
+    pub power: u64,
+    /// The most lost fluid it restores, in mg per day.
+    pub restores: u64,
+    /// Energy held in reserve for hard work, in µJ.
+    pub stamina: u64,
+    /// The most stamina holds, in µJ.
+    pub most: u64,
+    /// How fast it works with no stamina left, in parts per ten thousand of
+    /// its usual pace.
+    pub exhausted_pace: u64,
 }
 
 /// A body's need for sleep.
@@ -584,6 +617,10 @@ pub struct World {
     /// Energy that has entered the world as sunlight. The gate conserves
     /// total energy minus this.
     pub(crate) sunlight: u128,
+    /// Energy, and matter in mg, that have entered players' bodies as
+    /// vitality. The gate conserves the totals less these too.
+    pub(crate) vital_energy: u128,
+    pub(crate) vital_matter: u128,
     pub(crate) agents: BTreeSet<EntityId>,
     pub(crate) portable: BTreeSet<EntityId>,
     pub(crate) containers: BTreeSet<EntityId>,
@@ -717,6 +754,47 @@ impl World {
     /// Energy that has entered the world as sunlight so far, in µJ.
     pub fn sunlight(&self) -> u128 {
         self.sunlight
+    }
+
+    /// The world's mass, less what has entered as vitality: what the gate
+    /// conserves.
+    pub fn own_mass(&self) -> u128 {
+        self.total_mass() - self.vital_matter
+    }
+
+    /// The world's energy, less what has entered as sunlight and vitality:
+    /// what the gate conserves.
+    pub fn own_energy(&self) -> u128 {
+        self.total_energy() - self.sunlight - self.vital_energy
+    }
+
+    /// The same world with this person living by players' rules: on
+    /// vitality, with no need of food, drink, or sleep, and stamina full.
+    /// Only for setting up a run; data can also say so.
+    pub fn with_player_rules(mut self, person: &str) -> Result<World, String> {
+        let id = self
+            .find_by_key(person)
+            .filter(|&id| self.is_agent(id))
+            .ok_or_else(|| format!("there's no person with the id {person:?}"))?;
+        self.make_player(id)?;
+        Ok(self)
+    }
+
+    pub(crate) fn make_player(&mut self, id: EntityId) -> Result<(), String> {
+        let settings = self.settings.clone();
+        let life = self
+            .life
+            .get_mut(&id)
+            .ok_or_else(|| format!("{} has no living body", self.keys[&id]))?;
+        life.sleep = None;
+        life.vitality = Some(Vitality {
+            power: settings.vitality,
+            restores: settings.vitality_restores,
+            stamina: settings.stamina,
+            most: settings.stamina,
+            exhausted_pace: settings.exhausted_pace.max(1),
+        });
+        Ok(())
     }
 
     /// Matter a place's surroundings have taken in.
@@ -1260,6 +1338,9 @@ impl World {
 
     /// Whether someone has been awake longer than they comfortably can.
     pub fn is_tired(&self, id: EntityId) -> bool {
+        if let Some(vitality) = self.life.get(&id).and_then(|l| l.vitality.as_ref()) {
+            return vitality.stamina == 0;
+        }
         let Some(sleep) = self.life.get(&id).and_then(|l| l.sleep.as_ref()) else {
             return false;
         };
@@ -1330,7 +1411,13 @@ impl World {
             .chain(self.reservoir.values())
             .map(|c| matter::chemical_energy(&self.materials, c))
             .sum();
-        heat + given + chemical
+        let stamina: u128 = self
+            .life
+            .values()
+            .filter_map(|l| l.vitality.as_ref())
+            .map(|v| u128::from(v.stamina))
+            .sum();
+        heat + given + chemical + stamina
     }
 
     /// Structural rules that must always hold. The gate checks these after

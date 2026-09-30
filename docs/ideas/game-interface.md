@@ -126,8 +126,8 @@ The owner agreed with the take on vitality above.
 - **Vitality is a named inflow**, like sunlight, that the universe grants to players' bodies at a set power, per kind of mind. It pays resting upkeep and ordinary warmth; the hunger, thirst, and sleep laws are switched off for players.
 - **Stamina** is a small reserve that hard work draws down faster than vitality refills it. That's the short-term fatigue law.
 - **Harsh places still kill.** Vitality doesn't cover blizzards, vacuum, or no air: gear matters.
-- **Healing needs food or medicine**, because lost blood is matter and vitality is only energy.
-- **When:** built at the village, when players and NPCs first live by different rules.
+- ~~**Healing needs food or medicine**, because lost blood is matter and vitality is only energy.~~ **Changed 2026-09-29 by the owner:** vitality replaces what food and drink would bring, so a player's body heals from it: it restores lost body fluid (blood included) as well as energy, as a named inflow the gate accounts for, like sunlight. Superficial wounds clot and heal on their own; severe ones bleed you dry unless treated. Medical aid (bandages to stop bleeding; transfusions, medicine, operations to heal faster) comes later. Eating doesn't speed healing.
+- **When:** moved forward on 2026-09-29, as a short stage before real time ("players' rules"), with rule switches and player-mode proofs.
 
 ## Claude's take on moving to real time, 2026-09-29
 
@@ -153,6 +153,26 @@ Alongside, the console gets a **live mode that speaks a simple machine format**:
 **After the vocabulary stage and living with the island stages 5 and 6, and before the village.** The village is where many people act at once, and where two players first share a world: it needs real time. Nothing on the island needs it urgently, and because old scripts keep working, waiting costs nothing.
 
 The order then: the vocabulary stage; living stages 5 and 6; **real time and the channel**; the village, with vitality and a first simple browser page; the rendering conversation; and 3D once the world has real space.
+
+## Built, 2026-09-29: players' rules
+
+A short stage before real time, at the owner's request: do our proofs hold for players, who don't eat, drink, or sleep?
+
+- **Rule switches:** a person in data can have `rules = "player"`, and a script can say `rules player`, to live by players' rules. Everyone else lives realistically, so every existing proof is untouched.
+- **Vitality** is a second named inflow, beside sunlight: energy and body fluid, which the gate accounts for (the world's own mass and energy, less what came in as sunlight and vitality, never change). It brings 200 W and restores up to 3 kg of fluid a day, blood included: **a player's wounds heal on their own**, as the owner decided. A severe wound still bleeds them dry.
+- **Stamina** is up to 3 MJ, about a working day. What vitality brings beyond what the body uses tops it up; hard work (300 W), or keeping warm in the cold, draws it down. Out of stamina, a player works and walks at half pace until they've rested.
+- **A player's body never burns its own stores.** Otherwise its fat would keep it warm for a month in any cold. Cold beyond what vitality and stamina meet chills it, and kills it, unless it's dressed: at 270 K, a bare player dies within two days, and one in a 2 kg leather cloak lives.
+- **A player needs no sleep, but can rest** (`sleep for 8 h`): time passes, and stamina comes back.
+
+**The proofs:** 29 of the making and finding stories, fire, axe, raft, the climb to the view, memory, the hunt, words, play again as a player and end the same (`the_making_stories_end_the_same_for_a_player`). The ones left out are about needs themselves (thirst, sleep, shivering, a sheltered night), or time each step exactly. New stories: `player-1-no-needs.txt` (ten days on a beach with only the sea), `player-2-stamina.txt` (a day and more of hauling, half pace, rest), and `player-3-crossing.txt` (the raft as a player, resting before the paddle). Engine tests in `crates/engine/tests/players.rs`: a wound heals, a severe one kills, the cold kills without a cloak.
+
+**What the attempts found:**
+
+- **Stamina sized for bursts made players worse off than realistic bodies.** At 1 MJ, a player slowed to half pace after about two hours of ordinary work, while a realistic body worked all day. Stamina is now about a working day; tiring in short bursts belongs with running and fighting, when they have their own effort.
+- **A player's own fat made them immune to cold**, so players no longer burn their stores.
+- **The recipes rest through the night by "sleeping"**, which a player couldn't; resting for a set time fixed that without changing any recipe.
+
+Simplified: effort is still one level ("working"); vitality and stamina are the same for every player; eating does nothing for a player.
 
 ## Decided, 2026-09-29: real time, and the order ahead
 

@@ -616,6 +616,26 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
             life.resting_power + u64::try_from(shiver.min(most)).expect("at most working power")
         };
         let mut needed = u128::from(power) * u128::from(dt);
+        // A player's body lives on vitality: what it needs comes from the
+        // inflow, and what it doesn't use tops up its stamina. Working, or
+        // keeping warm, harder than vitality brings draws on stamina, and
+        // past that goes short: it never burns its own stores, so cold beyond
+        // what vitality and stamina can meet chills it.
+        let mut vital = None;
+        if let Some(vitality) = &life.vitality {
+            let supply = u128::from(vitality.power) * u128::from(dt);
+            let room = u128::from(vitality.most - vitality.stamina);
+            let (inflow, stored, drawn) = if supply >= needed {
+                let stored = (supply - needed).min(room);
+                (needed + stored, stored, 0)
+            } else {
+                let drawn = (needed - supply).min(u128::from(vitality.stamina));
+                (supply, 0, drawn)
+            };
+            needed = 0;
+            let each = |e: u128| u64::try_from(e).expect("a step's energy");
+            vital = Some((each(inflow), each(stored), each(drawn)));
+        }
         let mut stores: Vec<_> = composition
             .iter()
             .filter(|(m, _)| life.digests.contains(m) && world.materials[m].burns())
@@ -642,7 +662,9 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
         // Storing a surplus: food beyond half a day's needs at rest becomes
         // the reserve again, at up to the body's resting power, until the reserve
         // is back where it began.
-        if let (Some(efficiency), Some((reserve, start))) = (life.stores, life.reserve) {
+        if let (Some(efficiency), Some((reserve, start)), None) =
+            (life.stores, life.reserve, &life.vitality)
+        {
             let have = composition.get(&reserve).map_or(0, |m| m.mg());
             let mut foods: Vec<_> = composition
                 .iter()
@@ -690,7 +712,13 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
         } else {
             life.fluid_loss
         };
-        let mut lost = (u128::from(rate) * u128::from(dt) / u128::from(SECONDS_PER_DAY)) as u64;
+        // Vitality stands in for drink: a player's body loses nothing through
+        // breath and skin, only what it sweats or bleeds.
+        let mut lost = if life.vitality.is_some() {
+            0
+        } else {
+            (u128::from(rate) * u128::from(dt) / u128::from(SECONDS_PER_DAY)) as u64
+        };
         let capacity = world.heat_capacity(id);
         let temperature = world.temperature(id).unwrap_or_default();
         let mut carried = 0u128;
@@ -716,6 +744,22 @@ fn live(world: &World, dt: u64) -> Vec<Change> {
                 to: Holder::Surroundings(place),
                 amount: Energy::from_uj(u64::try_from(carried).expect("part of the body's heat")),
             });
+        }
+        // Vitality flows in, and brings back lost fluid, blood included, at
+        // up to its rate: a player's wounds heal on their own.
+        if let (Some((inflow, stored, drawn)), Some(vitality)) = (vital, &life.vitality) {
+            let short = life.fluid_normal.mg().saturating_sub(have);
+            let most = u128::from(vitality.restores) * u128::from(dt) / u128::from(SECONDS_PER_DAY);
+            let fluid = short.min(u64::try_from(most).unwrap_or(u64::MAX));
+            if inflow > 0 || drawn > 0 || fluid > 0 {
+                changes.push(Change::Vitality {
+                    entity: id,
+                    inflow,
+                    stored,
+                    drawn,
+                    fluid: Mass::from_mg(fluid),
+                });
+            }
         }
     }
     changes
@@ -775,7 +819,7 @@ fn limits_of_life(world: &World, _dt: u64) -> Vec<Change> {
             Some("bleeding")
         } else if fluid < life.fluid_minimum {
             Some("thirst")
-        } else if !has_stores {
+        } else if !has_stores && life.vitality.is_none() {
             Some("hunger")
         } else if temperature < life.coldest {
             Some("cold")

@@ -34,6 +34,7 @@ Commands:
   tell <person> that <thing> is a <word>
                                     teach someone your word for something
   wait [seconds]                    let time pass
+  sleep [for <time>] [in <shelter>]  sleep, if your body needs it; a player can rest for a time
 Testing tools:
   totals                            the world's total mass, energy, and credits (these never change)
   datasheet <thing|here|me>         everything the engine measures about something
@@ -672,6 +673,13 @@ impl Session {
                 format!("You find a way to {}.", w.label_for(self.player, to))
             }
             (Intent::Explore, _) => "You search around, but find no new way out.".into(),
+            (Intent::Sleep { .. }, None) => {
+                let time = w
+                    .time_of_day()
+                    .map(|t| format!(" until {:02}:{:02}", t / 3_600, t / 60 % 60))
+                    .unwrap_or_default();
+                format!("You rest{time}.")
+            }
             (Intent::Sleep { .. }, first) => {
                 let time = w
                     .time_of_day()
@@ -817,6 +825,18 @@ impl Session {
             &Change::Made { agent, thing } => {
                 format!("{} made {}", w.label(agent), w.key(thing))
             }
+            &Change::Vitality {
+                entity,
+                inflow,
+                drawn,
+                fluid,
+                ..
+            } => format!(
+                "{} takes in {} of vitality, draws {} of stamina, and gets back {fluid}",
+                w.label(entity),
+                Energy::from_uj(inflow),
+                Energy::from_uj(drawn)
+            ),
             Change::Wear { agent, item, worn } => match worn {
                 Some(_) => format!("{} wears {}", w.label(*agent), w.label(*item)),
                 None => format!("{} takes off {}", w.label(*agent), w.label(*item)),

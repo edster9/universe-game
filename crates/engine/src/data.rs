@@ -163,6 +163,13 @@ struct SettingsDef {
     bare_feet_wound: Option<String>,
     /// How much of a covering covers a whole body.
     covers: Option<String>,
+    /// What players' bodies are granted: vitality's power ("150 W"), the
+    /// fluid it restores ("3 kg/day"), the most stamina ("1 MJ"), and the
+    /// pace with no stamina left ("50%").
+    vitality: Option<String>,
+    vitality_restores: Option<String>,
+    stamina: Option<String>,
+    exhausted_pace: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -316,6 +323,9 @@ struct AgentDef {
     lost: bool,
     /// The people it belongs to, whose words it starts with.
     culture: Option<String>,
+    /// "player" to live by players' rules: on vitality, with no need of
+    /// food, drink, or sleep.
+    rules: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -646,6 +656,18 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
                 def.id.clone()
             };
             load_agent(&mut world, def, &id, &file.kinds)?;
+            match def.rules.as_deref() {
+                None => {}
+                Some("player") => {
+                    let agent = world.find_by_key(&id).expect("just loaded");
+                    world.make_player(agent).map_err(LoadError)?;
+                }
+                Some(other) => {
+                    return fail(format!(
+                        "{id} has the rules {other:?}; the only rules so far are \"player\""
+                    ));
+                }
+            }
             if let Some(culture) = &def.culture {
                 let lexicon = cultures.get(culture).ok_or_else(|| {
                     LoadError(format!(
@@ -883,6 +905,19 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     }
     if let Some(c) = &def.covers {
         settings.covers = parse_mass("world", c)?;
+    }
+    if let Some(v) = &def.vitality {
+        settings.vitality = parse_quantity(v, property::POWER, "a power like \"150 W\"")?;
+    }
+    if let Some(r) = &def.vitality_restores {
+        settings.vitality_restores =
+            parse_quantity(r, property::MASS_RATE, "a rate like \"3 kg/day\"")?;
+    }
+    if let Some(e) = &def.stamina {
+        settings.stamina = parse_quantity(e, property::ENERGY, "an energy like \"1 MJ\"")?;
+    }
+    if let Some(p) = &def.exhausted_pace {
+        settings.exhausted_pace = parse_percent(p)?.max(1);
     }
     if let Some(t) = &def.survey_time {
         settings.survey_time = time(t)?.max(1);
@@ -1539,6 +1574,7 @@ fn load_life(
             }
         },
         stores: def.stores.as_deref().map(parse_percent).transpose()?,
+        vitality: None,
         clots: def
             .clots
             .as_deref()

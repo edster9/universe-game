@@ -192,6 +192,18 @@ pub enum Change {
     },
     /// Someone has made something, which "it" now means to them.
     Made { agent: EntityId, thing: EntityId },
+    /// A player's body takes in vitality, a named inflow: `inflow` µJ of
+    /// energy, of which `stored` tops up its stamina and the rest warms it;
+    /// `drawn` µJ of stamina also warms it, for hard work; and `fluid` of its
+    /// body's fluid, lost to sweat or bleeding, comes back at its
+    /// temperature.
+    Vitality {
+        entity: EntityId,
+        inflow: u64,
+        stored: u64,
+        drawn: u64,
+        fluid: Mass,
+    },
     /// Someone starts wearing something they carry, or, with `None`, stops.
     Wear {
         agent: EntityId,
@@ -296,9 +308,10 @@ impl World {
     /// Applies `changes`, all together or not at all. On success they're
     /// logged. On any fault, the world is left exactly as it was.
     pub fn apply(&mut self, cause: Cause, changes: Vec<Change>) -> Result<(), Fault> {
-        let (mass, credits) = (self.total_mass(), self.total_credits());
-        // Energy is conserved except for what enters as sunlight.
-        let energy = self.total_energy() - self.sunlight;
+        let (mass, credits) = (self.own_mass(), self.total_credits());
+        // Energy is conserved except for what enters as sunlight or vitality,
+        // and mass except for what enters as vitality.
+        let energy = self.own_energy();
 
         // Keep a copy to restore if anything goes wrong. The log is set
         // aside so it isn't copied every time. When worlds grow large, this
@@ -322,9 +335,9 @@ impl World {
                 }
             })
             .and_then(|()| {
-                if self.total_mass() != mass {
+                if self.own_mass() != mass {
                     Err(Fault::NotConserved("mass"))
-                } else if self.total_energy() - self.sunlight != energy {
+                } else if self.own_energy() != energy {
                     Err(Fault::NotConserved("energy"))
                 } else if self.total_credits() != credits {
                     Err(Fault::NotConserved("credits"))
@@ -767,6 +780,42 @@ impl World {
                     lexicon.recipes.push(entry);
                 }
                 Ok(())
+            }
+            &Change::Vitality {
+                entity,
+                inflow,
+                stored,
+                drawn,
+                fluid,
+            } => {
+                let temperature = self.temperature(entity).ok_or(Fault::NotMatter(entity))?;
+                let life = self.life.get_mut(&entity).ok_or(Fault::NotAlive(entity))?;
+                let fluid_material = life.fluid;
+                let vitality = life.vitality.as_mut().ok_or(Fault::NotAlive(entity))?;
+                if stored > inflow || drawn > vitality.stamina {
+                    return Err(Fault::NotEnoughHeat(entity));
+                }
+                vitality.stamina = vitality.stamina - drawn + stored;
+                if vitality.stamina > vitality.most {
+                    return Err(Fault::Overflow(entity));
+                }
+                // Fluid comes in at the body's temperature, its warmth part
+                // of the inflow.
+                let capacity = u128::from(fluid.mg())
+                    * u128::from(self.materials[&fluid_material].specific_heat);
+                let fluid_heat = matter::energy_at(temperature, capacity);
+                if fluid.mg() > 0 {
+                    let body = self
+                        .matter
+                        .get_mut(&entity)
+                        .ok_or(Fault::NotMatter(entity))?;
+                    add_material(body, fluid_material, fluid).ok_or(Fault::Overflow(entity))?;
+                }
+                let warmth = u128::from(inflow - stored) + u128::from(drawn) + fluid_heat;
+                let warmth = u64::try_from(warmth).map_err(|_| Fault::Overflow(entity))?;
+                self.vital_energy += u128::from(inflow) + fluid_heat;
+                self.vital_matter += u128::from(fluid.mg());
+                self.give_heat(Holder::Thing(entity), Energy::from_uj(warmth))
             }
             Change::Wear { agent, item, worn } => {
                 if self.location(*item) != Some(*agent) {

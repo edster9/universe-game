@@ -72,6 +72,7 @@ pub enum Property {
     Kind,
     Knows,
     Bleeding,
+    Stamina,
 }
 
 impl Property {
@@ -130,6 +131,7 @@ impl Property {
             Property::Kind => "kind",
             Property::Knows => "knows",
             Property::Bleeding => "bleeding",
+            Property::Stamina => "stamina",
         }
     }
 }
@@ -379,6 +381,17 @@ fn measure_thing(world: &World, id: EntityId) -> Datasheet {
             Property::PlacesSeen,
             Value::Text(world.places_seen(id).to_string()),
         );
+        if let Some(vitality) = &life.vitality {
+            sheet.set(
+                Property::Stamina,
+                Value::Text(format!(
+                    "{} of {}, from {} of vitality",
+                    Energy::from_uj(vitality.stamina),
+                    Energy::from_uj(vitality.most),
+                    crate::units::show(u128::from(vitality.power), crate::units::show::POWER, 3)
+                )),
+            );
+        }
         let bleeding = world.bleeding(id);
         if bleeding > 0 {
             sheet.set(

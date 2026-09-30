@@ -30,3 +30,54 @@ Some mechanisms that may already give much of this for free:
 - Does learning cost anything: time, energy, money, a teacher's wages?
 - Do skills fade without use?
 - How does this work across many universes and generations: a people who never learned iron, or a universe that lost it?
+
+## A take
+
+Claude's take, 2026-09-29, after the decisions on time and on vocabulary. **Not decided.**
+
+### Most of the protection is already decided
+
+The two worries, teaching a rocket from your own head and pasting a script from the internet, are mostly answered by rules we've already agreed:
+
+- **You can only say what you have words for** ([vocabulary](vocabulary.md)). "Machine a turbopump from aluminium" means nothing to a character with no word for either. And you can't invent those words early: you name a thing when you've made it or been shown it, so to have a word for aluminium, aluminium has to be in front of you.
+- **Every step runs under the laws, at real speed** ([time](game-interface.md)). A taught step isn't downloaded; the character does it, with real materials, taking real time, and it can fail. A rocket can't be taught faster than it can be built.
+- **Everything beneath must physically exist.** To make aluminium you need its ore, heat, and power; for those, tools; for the tools, fire and metal. The world's production chain is the ladder.
+
+### Recommendation: the ladder is the production chain, not a skill tree
+
+No list of skills with prerequisites, written in data. **The hierarchy emerges from what things need.** Casting needs a fire and a mould, a mould needs fired clay, fired clay needs a kiln or a fire. You crawl before you walk because the things you'd need to run don't exist yet. Nothing forbids trying something out of order; it just won't have what it needs.
+
+So the player's own head **should** count, and that's a feature. A player who knows chemistry climbs faster than one who doesn't, the way *Dr. Stone*'s hero rebuilds civilisation from memory. What their knowledge can't skip is the materials, the time, and the practice.
+
+### A skill is two halves
+
+- **The recipe (know-what):** the steps, written in the character's own words. Because words match by look, a recipe written as "take a tuft, rub a stick on a board" works with any tuft and any stick that look right to the character, in any place. That's how a recorded sequence becomes a general skill: the vocabulary decision gives it for free.
+- **Practice (know-how):** how quickly and how reliably the character does it, and how good the result is. It grows only by doing. A first attempt is slow and fails more often; a practised hand is fast and sure. How much practice changes, per kind of process, is numbers in data.
+
+### Where skills come from
+
+| Source | Gives the recipe | Gives practice |
+| --- | --- | --- |
+| **Your starting culture** | Yes | Some: what your people do every day |
+| **Working it out** (you, the player, directing each step) | Yes, when it succeeds | From that attempt |
+| **Being taught** by someone who has it, in words and by showing | Yes, if you know (or are shown) the things it names | A little, if you do it alongside them |
+| **Reading** a book or manual | Yes, if you know most of its words | None |
+
+Reading and teaching are gated by vocabulary too: a smelting manual is useless to someone with no words for ore, bellows, or bloom. That's "you can't understand chip-fab without knowing metalwork", without writing it down anywhere.
+
+### What about a pasted script?
+
+It's the same as the player typing each command, which is allowed. Each command still has to make sense in the character's words, still runs at real speed with real materials, and runs at a novice's practice. If it works, the character has earned the recipe by doing it. The thing to watch isn't knowledge; it's automation: a script playing for someone while they're away. That's already covered by [standing orders](time-away.md), which an absent character follows.
+
+### Saving a skill
+
+- **Inventing something saves its recipe.** "What do you call it?" also names the recipe that made it: "make a spear".
+- **Anything else can be kept on request:** "remember how I did that as *making fire*". The engine keeps the commands that led to the success, in the character's words.
+- A person can hold several recipes for the same thing (fire by rubbing, fire by striking flint), and can pick one by name.
+
+### Questions for the owner
+
+1. Is the ladder the production chain itself, with no skill tree in data?
+2. Should practice make first attempts slower and less reliable, with the numbers in data per kind of process?
+3. Should practice fade without use? (Suggestion: practice fades slowly; the recipe doesn't.)
+4. Is a pasted script acceptable as long as it plays by the same rules as typing?

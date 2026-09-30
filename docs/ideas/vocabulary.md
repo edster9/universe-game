@@ -1,5 +1,7 @@
 # How new vocabulary emerges
 
+> **Decided 2026-09-29:** names live in minds, and things are recognised by resemblance. See "Decided" at the end.
+
 Recorded 2026-09-29 **for a conversation the owner has asked for**, after the [where am I?](../challenges/where-am-i.md) and [living with the island](../challenges/living-with-the-island.md) challenges and before any unplanned scenarios. The requirement is "How new vocabulary emerges" in [requirements.md](../requirements.md), with the owner's full explanation under "The owner's explanation". Nothing here is decided yet.
 
 ## The owner's question
@@ -172,3 +174,18 @@ Seen far off, a ship shows only its size and that it flies: "a ship". Up close y
 ### Recommendation
 
 Recognise by resemblance of look (what it does, its form, its size, what it seems made of), never by how it was made. The universe keeps only the truth about each thing; every mind keeps its own words and examples. That answers the three questions from the first take: names live in minds; you see things in your own words, learning others' only when told; and making something new asks you what to call it.
+
+## Decided
+
+**2026-09-29.** The owner agreed with the second take, "Recognising by resemblance", and added that visuals carry much of the load.
+
+- **Names live in minds.** The world holds things and the truth about them, and no names and no catalogue of inventions. Each mind holds its own words, each a name plus a few example looks, and its own recipes (skills).
+- **Knowledge comes in layers:** laws (engine code), nature (per universe), a people's starting culture (words and recipes, in data), and invention (made in play). Training toward the Space Age grows the laws, never words.
+- **Things are recognised by their look,** meaning what they do, their form, their size, and what they seem made of, never by how they were made. You see things in your own words: a close match by its name, a near one as "like a spear, but…", an unknown one as a plain description. Words widen as you use them, and the closer word wins.
+- **Making something that resembles nothing you have a word for asks what to call it.** Other people's words are learned only by being told, and what you're told can be wrong.
+- **Visuals do much of the work.** In the 3D game, the engine draws every thing from what it's really made of, its parts, shapes, and materials. You *see* the other player's stick with a metal blade tied on, even when your character has no word for it, and your own mind can fill in what it is. A word is a label on top of what you see, not a replacement for it. So the engine's descriptions matter most in text, and for things too far away or too subtle to see (what a metal is, how good an edge is).
+- **Details settle in practice.** How close counts as "a spear", and how much of a thing's look shows at a distance, will be tuned when two players' builds first meet in a real game. Some of it will solve itself as the game evolves.
+
+One consequence for [recognition.md](recognition.md): with visuals, the swindle of "a stick sold as a gun" shifts. Your eyes will see a stick. Deception moves to what the eye can't check: a coin's metal, a blade's hardness, a gun that looks right but doesn't fire.
+
+**Not built yet.** It becomes the next stage when the stages resume, before living with the island stages 5 and 6: each mind gets words; views and commands go through them; things get a measured look; and hide shoes, which aren't in the islander's starting culture, are the first thing invented and named.

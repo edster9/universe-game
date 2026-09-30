@@ -327,6 +327,15 @@ Added 2026-09-29, in answer to Claude's first take (the owner's dictation says "
 - The same happens with ships. No two ships flying in space are the same. If I see another one, I'll say it's a ship, but it could be built completely differently from mine.
 - **So how does the engine start classifying things,** so that when I see other things, what I'm seeing can be explained to me based on my own knowledge? This is quite a challenge, but if we can solve it, it would make things easier. To be discussed further.
 
+### Decided: recognising by resemblance, and visuals
+
+Added 2026-09-29. The owner agreed with Claude's second take (recognising by resemblance), with a refinement:
+
+- This will be much better once we have a practical game example: things built by two players who meet, and what each sees. It will all be 3D anyway.
+- When you build something, the engine shows a resemblance of what it looks like. This is where visuals come in: build a spear, and the engine shows you something resembling a spear, because it knows the basics of what to do. See another player's stick with a metal blade tied on, and that's what you see.
+- The engine can tell you "this looks like a spear", but the visuals also give your own mind a clue to what you're looking at. That's very important: sometimes the engine can't tell you what something is, but when you see it, you might fill it in yourself.
+- Practically, when we build the 3D, real-time game, some of these problems will probably solve themselves through the natural evolution of the game.
+
 See [ideas/vocabulary.md](ideas/vocabulary.md).
 
 ## The first attempt

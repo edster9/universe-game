@@ -2,7 +2,7 @@
 
 Design notes for a small, networked space game that runs on a world engine of its own. Nothing is simulated from nowhere, things are made of things, and nothing gets built without someone who knows how.
 
-Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust. Slices 0, 1, and 2 are built; see [slices.md](slices.md).
+Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust. Slices 0, 1, and 2 are built (see [slices.md](slices.md)), and four training challenges have passed (below). The project's own [README](../README.md) says how to run it.
 
 ## The idea in eight lines
 
@@ -26,24 +26,28 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/knowledge.md](ideas/knowledge.md) | Intelligence as the third input to making anything, and where knowledge lives |
 | [ideas/skills-and-interface.md](ideas/skills-and-interface.md) | Talking to the game, and successes saved as skills |
 | [ideas/recognition.md](ideas/recognition.md) | Knowing what things are: perception and trade depend on what you've learned |
-| [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md) | For a later conversation: what a player can teach their character, and what stops a pasted rocket |
+| [ideas/skill-learning-paradigm.md](ideas/skill-learning-paradigm.md) | Decided: the ladder is the production chain; a skill is a recipe in the character's words, plus practice |
 | [ideas/kinds.md](ideas/kinds.md) | Decided: how living things are classified, humans and future aliens included, and what drives them |
 | [ideas/memory.md](ideas/memory.md) | Decided: what a person knows, certain or only possible, and how maps and seeing for yourself correct it |
 | [ideas/harm.md](ideas/harm.md) | How things cause harm: edge (built), blunt, projectile, and blast, as ways of delivering energy rather than kinds of weapon |
-| [ideas/game-interface.md](ideas/game-interface.md) | For a discussion soon: moving from a text adventure to the game's real-time interface |
-| [ideas/time-away.md](ideas/time-away.md) | For a discussion soon: what happens to a player's person while they're away |
-| [ideas/vocabulary.md](ideas/vocabulary.md) | For a conversation after the next two challenges: how new vocabulary emerges as the engine trains |
+| [ideas/game-interface.md](ideas/game-interface.md) | Decided and built: time at real speed, players' rules (vitality and stamina), real time in the engine, what a player sees, and the order ahead |
+| [ideas/time-away.md](ideas/time-away.md) | Decided: what happens to a player's person while they're away, and dying and starting again |
+| [ideas/vocabulary.md](ideas/vocabulary.md) | Decided and built: names live in minds, and things are recognised by how they look |
+| [ideas/rendering.md](ideas/rendering.md) | For a later conversation: how the game is drawn |
+| [ideas/space-travel.md](ideas/space-travel.md) | For a later conversation: space, gravity, and faster than light |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |
 | [ideas/money.md](ideas/money.md) | What money is, before and after the space age, and how it's validated |
 | [slices.md](slices.md) | The first attempt: small text-only slices, each with a test |
 | [challenges/stranded.md](challenges/stranded.md) | The first training challenge: from a desert island to the next island on a raft |
 | [challenges/where-am-i.md](challenges/where-am-i.md) | The second training challenge: explore the island and climb its mountain to see where you are |
 | [challenges/living-with-the-island.md](challenges/living-with-the-island.md) | The third training challenge: wildlife, hunting and cooking, shelter, shoes and clothing |
+| [challenges/strangers-words.md](challenges/strangers-words.md) | The vocabulary stage: two peoples, two sets of words, inventing and naming |
 | [laws.md](laws.md) | Every law in the engine, stated generally, and what uses it |
 | [technology.md](technology.md) | Rust, the browser, whole-number units, and how player code runs |
 | [ideas/in-game-computer.md](ideas/in-game-computer.md) | Computers as parts, programs as knowledge |
 | [ideas/game-concept.md](ideas/game-concept.md) | The space game that eventually runs on the engine |
 | [research/offline-players.md](research/offline-players.md) | What other games do with a player's character while they're offline, with sources |
+| [research/naming-and-vocabulary.md](research/naming-and-vocabulary.md) | How games and research handle naming invented things, with sources |
 | [research/prior-art.md](research/prior-art.md) | What other games have tried |
 | [open-questions.md](open-questions.md) | Decisions not yet made |
 

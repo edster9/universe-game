@@ -131,6 +131,8 @@ pub enum Change {
     /// A body is wounded, and bleeds at `rate` mg a second, less as it clots.
     /// A wound wakes a sleeper.
     Wound { agent: EntityId, rate: u64 },
+    /// Someone remembers going for `at`.
+    Struck { agent: EntityId, at: EntityId },
     /// Someone notices something that happened to them, and remembers it
     /// until they hear of it.
     Notice {
@@ -751,11 +753,29 @@ impl World {
                 Ok(())
             }
 
+            &Change::Struck { agent, at } => {
+                let now = self.tick;
+                let memory = self
+                    .memories
+                    .get_mut(&agent)
+                    .ok_or(Fault::NotAlive(agent))?;
+                memory.struck.insert(at, now);
+                Ok(())
+            }
+
             Change::Notice { agent, news } => {
                 self.must_exist(*agent)?;
-                self.news
-                    .or_insert_with(*agent, Vec::new)
-                    .push(news.clone());
+                let crate::world::News::Attacked { by, .. } = news;
+                let now = self.tick;
+                if let Some(memory) = self.memories.get_mut(agent) {
+                    memory.attackers.insert(*by, now);
+                }
+                // Someone nobody plays notices at once; the rest hear of it.
+                if !self.minds.contains_key(agent) {
+                    self.news
+                        .or_insert_with(*agent, Vec::new)
+                        .push(news.clone());
+                }
                 Ok(())
             }
 
@@ -970,6 +990,7 @@ impl World {
                     *agent,
                     crate::world::Pending {
                         intent: intent.clone(),
+                        since: self.tick,
                         until: *until,
                     },
                 );

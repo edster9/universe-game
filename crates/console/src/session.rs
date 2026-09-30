@@ -586,8 +586,14 @@ impl Session {
                     .as_ref()
                     .map(|t| format!(" with the {t}"))
                     .unwrap_or_default();
+                // People are "them"; creatures, "it".
+                let (them, they) = if w.memory(agent).is_some() {
+                    ("them", "they're")
+                } else {
+                    ("it", "it's")
+                };
                 format!(
-                    "You strike {}{with}, and wound it: it's bleeding {} a second.",
+                    "You strike {}{with}, and wound {them}: {they} bleeding {} a second.",
                     name(agent),
                     Mass::from_mg(rate)
                 )
@@ -1058,6 +1064,9 @@ impl Session {
                 agent,
                 news: News::Attacked { by, .. },
             } => format!("{} knows {} went for them", w.label(*agent), w.label(*by)),
+            &Change::Struck { agent, at } => {
+                format!("{} remembers going for {}", w.label(agent), w.label(at))
+            }
             &Change::Occupy { agent, until } => {
                 format!("{} is busy until {until} s", w.label(agent))
             }

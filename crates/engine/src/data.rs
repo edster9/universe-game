@@ -329,6 +329,9 @@ struct AgentDef {
     /// For someone nobody plays: how far their mind thinks, "confined" or
     /// "resident". See docs/ideas/npc-minds.md.
     mind: Option<String>,
+    /// How their mind meets someone who goes for them: "fight", "defend"
+    /// (the usual), "flee", or "give in".
+    temperament: Option<String>,
     /// Their standing orders, first first: "conditions: command", in their
     /// own words.
     #[serde(default)]
@@ -691,12 +694,20 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
                     .map(|o| crate::mind::Order::parse(o))
                     .collect::<Result<Vec<_>, _>>()
                     .map_err(|e| LoadError(format!("{id}: {e}")))?;
+                let temperament =
+                    crate::mind::Temperament::parse(def.temperament.as_deref().unwrap_or("defend"))
+                        .map_err(|e| LoadError(format!("{id}: {e}")))?;
                 let agent = world.find_by_key(&id).expect("just loaded");
-                world
-                    .minds
-                    .insert(agent, crate::mind::Mind { scope, orders });
-            } else if !def.orders.is_empty() {
-                return fail(format!("{id} has orders but no mind to follow them"));
+                world.minds.insert(
+                    agent,
+                    crate::mind::Mind {
+                        scope,
+                        temperament,
+                        orders,
+                    },
+                );
+            } else if !def.orders.is_empty() || def.temperament.is_some() {
+                return fail(format!("{id} has orders or a temperament but no mind"));
             }
             if !def.remembers.is_empty() {
                 remembering.push((id.clone(), def.remembers.clone()));

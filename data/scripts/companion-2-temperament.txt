@@ -1,0 +1,24 @@
+# A companion, stage 2: temperament. The stranger's mind meets anyone who
+# goes for them by their temperament, and theirs is to defend themselves:
+# struck, they strike back once with the iron barb they brought ashore, and
+# go back to their day. The islander, who struck first, is wounded in turn,
+# and nothing more. (Fight, flee, and give in are proved in
+# crates/engine/tests/companion.rs.) See docs/challenges/a-companion.md.
+world companion.toml
+as survivor
+luck average
+rules player
+
+include skills/make-a-spear.txt
+go forest
+go beach
+look
+expect said also here: the stranger
+attack stranger with spear
+expect said you strike the stranger with the spear, and wound them
+wait 1 min
+expect said the stranger goes for you, and wounds you
+wait 10 min
+expect not said goes for you
+expect alive
+expect conserved

@@ -365,6 +365,10 @@ pub struct Memory {
     /// How many things they've had to correct: possibles that were wrong,
     /// and things they saw that have gone.
     pub corrected: u64,
+    /// Who has gone for them, and when last.
+    pub attackers: BTreeMap<EntityId, u64>,
+    /// Whom they have gone for, and when last.
+    pub struck: BTreeMap<EntityId, u64>,
 }
 
 /// A kind of creature or growing thing, from data. Kinds form a hierarchy:
@@ -447,6 +451,8 @@ pub struct Sleep {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Pending {
     pub intent: crate::intent::Intent,
+    /// When it began.
+    pub since: u64,
     pub until: u64,
 }
 

@@ -45,3 +45,21 @@ A mind knows only what its person perceives and remembers: no oracles. It only e
 - **A needed tool is matched by its design's name, not its look.** Fish need a spear, and only something assembled *as* a spear counts; a barb joined to a shaft by someone who doesn't know the word wouldn't, though it's the same thing. That goes against "things are recognised by their look". Noted for the stages where the stranger makes or trades tools.
 
 **Simplified:** a mind has no temperament yet (stage 2); free minds, which plan their own way, come later; a mind decides only among what its orders, its body, and its memory offer, and remembers places only as it last saw them.
+
+## Stage 2 result, 2026-09-30: passed
+
+**Temperament is a setting on every mind** (`temperament = "fight" | "defend" | "flee" | "give in"`, defend if not given). People remember who has gone for them and whom they've gone for, and when. When someone who went for them is where they are, temperament decides before any standing order: **fight** strikes at them for as long as they're there; **defend** strikes back once for each blow; **flee** walks out by a way the danger isn't on; **give in** does neither. The stranger defends, with the iron barb their people brought ashore.
+
+- **Proofs** (`crates/engine/tests/companion.rs`), with a lone boar cornered on the hillside where the stranger stands: fleeing, they get away to the forest and the boar, keeping to the hillside, stays; giving in, they're gored to death where they stand, never striking; fighting or defending, they wound it with the barb. And the difference between fight and defend: the islander strikes the stranger once and stays. Giving in, they take it; fleeing, they're gone; defending, they strike back exactly once; fighting, they keep at it.
+- **The story** (`data/scripts/companion-2-temperament.txt`): the islander makes a spear and strikes the stranger on the beach; a minute later, "the stranger goes for you, and wounds you", and nothing more.
+- **Sabotage checks:** walkers who stay within reach, defending that answers every blow within the minute, and a mind that ignores its temperament each fail a proof.
+
+**What the attempt found:**
+
+- **Minds named things by their data ids, which people with words of their own can't use.** "Strike the tusker with the barb" was refused, so the stranger fell through to their next choice and walked off. Stage 1 had worked by luck of names. Now anyone can **point**: `#12` means that very thing, whatever anyone calls it, for whoever perceives it; minds always point.
+- **Nobody could get away from a charging animal.** A walker counts as still where they started until they arrive, so a cornered boar kept goring the stranger as they tried to leave, each wound cutting the walk short. Two rules fix it: **someone who has set off, by the time a strike begins, has gone** (a strike already under way still lands); and **people decide before creatures** in each second, so someone setting off to get away is gone before a charge begun the same moment. The story where a boar's charge cuts a walk short now has the islander set off two seconds after the boar has turned on them.
+- **Defending first meant "strike while the attack was within the last minute"**, which is four blows at five seconds each. It means one blow back for each blow now.
+- **A law we didn't need:** "a wound doesn't cut short a strike" was added to let blows be exchanged, but with both sides deciding in the same second, both blows land anyway; a sabotage check showed nothing depends on it, so it's gone.
+- The console now says "wound them: they're bleeding" of people, and "it" of creatures.
+
+**Simplified:** a strike is always with the finest edge carried; fleeing takes the first way out that the danger isn't on, and doesn't look for safety beyond it; a danger stays one for an hour.

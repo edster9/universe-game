@@ -90,6 +90,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | A thing with no word is described from what anyone can see: materials by how they look, shapes by their form, creatures by how they look or the nearest broader kind known, and things put together by their parts | in | words 1 |
 | Things are recognised by their look (the jobs their parts do, their parts, their size), never by how they were made. Same parts at half to double the size: the word, with its materials. The same jobs at that size from different parts: "something like" it. An example learned from a design has no size, and stands only for the same parts | in | words 2 |
 | A name finds what's called exactly that; then, for someone with words, what the name says it is, then a plain piece of the material named; then anything whose name mentions it. If what it finds look different, they're asked which | in | words 2 |
+| Anyone can point at what they perceive (`#12`), whatever anyone calls it | in | a companion 2 |
 | Being told a word ("tell … that … is a …") teaches it, with that thing as its example: a kind for a creature, a material for a plain piece, and otherwise its look. What you're told can be wrong | in | words 1 |
 | Parts can be joined without a design. Something that looks like nothing you have a word for is new, and naming it ("call it a …") keeps the word and the way you made it | in | words 2 |
 
@@ -107,6 +108,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | You can drink something only if it's nothing but the fluid your body needs | in | stranded 1 |
 | A body dies below its minimum fluid, with nothing left to burn, or outside the temperatures it can live in. It stays where it fell, holding what it carried | in | stranded 1 |
 | A wound bleeds the body's fluid at a rate set by the edge that made it (finer is worse), half as fast for every clotting time. Below the minimum, the body dies of bleeding. A wound wakes a sleeper and interrupts what a creature was doing | in | living 3 |
+| Someone who has set off by the time a strike begins has gone, out of reach; a strike already under way lands | in | a companion 2 |
 | A blow needs an edge: a tool's, or one a kind is born with. It always lands on a sleeper, and on someone awake with some chance | in | living 3 |
 | An instinct that fears what's in front of it, cornered or hurt, charges it: once if hurt, then flees; fear beats wariness of a place | in | living 3 |
 | Living things grow toward a limit, fast while few and slowing as they fill, taking matter from a source and energy from sunlight | in | stranded 3 |
@@ -123,6 +125,9 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Underneath every scope is the body: sleep at night when tired, eat what's carried when hungry, drink what's where they stand when thirsty | in | a companion 1 |
 | Confined, with no order to follow, they wait; resident, they look after themselves, going for drink or food where they remember seeing it | in | a companion 1 |
 | Everyone acts the same way: creatures, minds, and players start an action, are busy with it, and see it carried out when it's due | in | a companion 1 |
+| A mind has a temperament. When someone who went for them is there, it decides first: fight strikes while they're there, defend strikes back once for each blow, flee leaves by a way the danger isn't on, give in does neither | in | a companion 2 |
+| People remember who has gone for them and whom they've gone for, and when | in | a companion 2 |
+| In each second, people with minds decide before creatures on instinct | in | a companion 2 |
 
 ## Wearing
 

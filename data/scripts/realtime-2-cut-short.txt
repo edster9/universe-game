@@ -1,7 +1,8 @@
 # Real time: a wound cuts short whatever someone was doing. At night by the
-# stream, the islander spears a sleeping boar and sets off for the beach at
-# once. The boar wakes, hurt, and turns on them before they've gone: the walk
-# is cut short, and they're still by the stream. See
+# stream, the islander spears a sleeping boar, and a moment later sets off for
+# the beach. The boar has woken, hurt, and is already turning on them: its
+# charge lands, the walk is cut short, and they're still by the stream. (A
+# charge begun after someone has set off misses them: they've gone.) See
 # docs/ideas/game-interface.md.
 world living.toml
 as survivor
@@ -18,6 +19,7 @@ wait 14 h
 go stream
 attack boar with spear
 expect said you strike a boar with the spear, and wound it
+wait 2
 start go beach
 expect said you'll be done at
 wait 1 min

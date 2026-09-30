@@ -90,10 +90,11 @@ fn step(world: &mut World, dt: u64) -> Result<(), Fault> {
             world.apply(Cause::Nature { tick: now }, changes)?;
         }
     }
-    // Creatures acting on instinct choose what to do next.
-    crate::instinct::act(world)?;
-    // People nobody plays do the same, by their minds.
+    // People nobody plays decide what to do next, by their minds; then
+    // creatures, by instinct. People first: someone setting off to get away
+    // is gone before a charge begun the same moment.
     crate::mind::act(world)?;
+    crate::instinct::act(world)?;
     world.advance_clock(dt);
     // Actions that are due are carried out.
     crate::laws::complete_due(world)

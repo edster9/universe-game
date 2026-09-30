@@ -884,6 +884,16 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             let victim = find(world, actor, reach.around.iter().copied(), target)
                 .filter(|&v| world.is_living(v))
                 .ok_or_else(|| Refusal::NotHere(target.clone()))?;
+            // Someone who set off by the time the strike began has gone:
+            // they're on their way, out of reach. A strike already under way
+            // lands.
+            let struck_at = world.pending(actor).map_or(world.tick(), |p| p.since);
+            let left = world
+                .pending(victim)
+                .is_some_and(|p| matches!(p.intent, Intent::Go { .. }) && p.since <= struck_at);
+            if left {
+                return Err(Refusal::NotHere(target.clone()));
+            }
             // An edge: a tool's, or one the body is born with.
             let edge = match with {
                 Some(tool) => {
@@ -907,7 +917,14 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                     rate,
                 });
             }
-            // Someone with a memory knows who went for them.
+            // Someone with a memory knows whom they went for, and who went
+            // for them.
+            if world.memory(actor).is_some() {
+                changes.push(Change::Struck {
+                    agent: actor,
+                    at: victim,
+                });
+            }
             if world.memory(victim).is_some() {
                 changes.push(Change::Notice {
                     agent: victim,
@@ -2412,6 +2429,22 @@ pub(crate) fn finds(
     find(world, viewer, candidates, name)
 }
 
+/// The finest edge among `things`, if any has one: what someone would
+/// strike with.
+pub(crate) fn best_edge(world: &World, things: &[EntityId]) -> Option<EntityId> {
+    things
+        .iter()
+        .copied()
+        .filter(|&t| has_edge(world, t))
+        .min_by_key(|&t| (edge_width(world, t), t))
+}
+
+/// How to point at a thing, rather than name it: "#12". Anyone can point at
+/// what they perceive.
+pub fn pointer(id: EntityId) -> String {
+    format!("#{}", id.0)
+}
+
 /// Whether `viewer` calls `id` by `name`.
 pub(crate) fn calls(world: &World, viewer: EntityId, id: EntityId, name: &str) -> bool {
     is_called(world, viewer, id, name)
@@ -2533,6 +2566,10 @@ fn which(
 /// can use only the IDs of things made in play ("#12"), which a client uses
 /// to point at something; data IDs are names they may not know.
 fn is_called(world: &World, viewer: EntityId, id: EntityId, name: &str) -> bool {
+    // "#12" points at the thing itself, whatever anyone calls it.
+    if name.trim() == pointer(id) {
+        return true;
+    }
     let wanted = normalize(name);
     let key = world.key(id);
     let by_key = (!world.has_words(viewer) || key.starts_with('#')) && normalize(key) == wanted;

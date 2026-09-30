@@ -186,6 +186,7 @@ kind = "human"
 culture = "far-folk"
 temperature = "310 K"
 mind = "resident"
+temperament = "defend"
 remembers = ["beach", "stream", "forest", "hillside"]
 orders = [
     "hungry, carrying pale flesh: eat pale flesh",
@@ -196,6 +197,14 @@ orders = [
     "hungry: go beach",
     "night, not at the beach: go beach",
 ]
+
+# What the stranger brought ashore: a barb of iron.
+[[item]]
+id = "barb"
+at = "stranger"
+mass = "400 g"
+material = "iron"
+shape = "flake"
 
 # A herd of six boars, keeping to the forest, the stream, the hillside, and
 # the wooded slopes.

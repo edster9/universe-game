@@ -121,3 +121,100 @@ fn orders_must_make_sense() {
     assert!(bad("sleepy: sleep").contains("isn't something a person can tell"));
     assert!(bad("thirsty: dance").contains("doesn't end with a command"));
 }
+
+/// The stranger standing on the hillside with no orders, a confined mind of
+/// the given temperament, carrying their barb.
+fn standing(temperament: &'static str, text: String) -> String {
+    let start = text.find("orders = [\n    \"hungry").unwrap();
+    let end = start + text[start..].find("]\n").unwrap() + 2;
+    let text = format!("{}orders = []\n{}", &text[..start], &text[end..]);
+    text.replace("mind = \"resident\"", "mind = \"confined\"")
+        .replace(
+            "temperament = \"defend\"",
+            &format!("temperament = \"{temperament}\""),
+        )
+        .replace(
+            "label = \"the stranger\"\nat = \"beach\"",
+            "label = \"the stranger\"\nat = \"hillside\"",
+        )
+}
+
+/// A lone boar with nowhere to run, on the hillside where the stranger
+/// stands: cornered, it turns on them.
+fn cornered(temperament: &'static str) -> impl Fn(String) -> String {
+    move |text: String| {
+        standing(temperament, text)
+            + "\n[[agent]]\nid = \"tusker\"\nlabel = \"a boar\"\nat = \"hillside\"\nkind = \"boar\"\ntemperature = \"311 K\"\nrange = [\"hillside\"]\n"
+    }
+}
+
+/// How the stranger comes out of an hour with a cornered boar: where they
+/// are, whether they're alive, and whether the boar was wounded.
+fn against_a_cornered_boar(temperament: &'static str) -> (String, bool, bool) {
+    let (mut w, stranger) = island(cornered(temperament));
+    let tusker = w.find_by_key("tusker").unwrap();
+    engine::nature::run(&mut w, 3_600).unwrap();
+    let wounded = !w.life(tusker).unwrap().wounds.is_empty();
+    (
+        w.key(w.place_of(stranger).unwrap()).to_string(),
+        w.is_living(stranger),
+        wounded,
+    )
+}
+
+#[test]
+fn against_a_cornered_boar_temperament_decides() {
+    // Fleeing, they get away, and the boar, keeping to the hillside, stays.
+    assert_eq!(
+        against_a_cornered_boar("flee"),
+        ("forest".into(), true, false)
+    );
+    // Giving in, they neither run nor strike, and it gores them to death.
+    assert_eq!(
+        against_a_cornered_boar("give in"),
+        ("hillside".into(), false, false)
+    );
+    // Fighting or defending, they strike back with the barb and wound it.
+    for temperament in ["fight", "defend"] {
+        let (place, _, wounded) = against_a_cornered_boar(temperament);
+        assert_eq!(place, "hillside");
+        assert!(wounded, "{temperament}");
+    }
+}
+
+/// The islander, carrying a blade, strikes the stranger once and stays:
+/// how many times the stranger strikes back in the next ten minutes, and
+/// where they are then.
+fn struck_once(temperament: &'static str) -> (usize, String) {
+    let (mut w, stranger) = island(move |text| {
+        standing(temperament, text).replace(
+            "label = \"the islander\"\nat = \"beach\"",
+            "label = \"the islander\"\nat = \"hillside\"",
+        ) + "\n[[item]]\nid = \"blade\"\nat = \"survivor\"\nmass = \"300 g\"\nmaterial = \"iron\"\nshape = \"flake\"\n"
+    });
+    let islander = w.find_by_key("survivor").unwrap();
+    let blade = w.find_by_key("blade").unwrap();
+    let Ok(engine::intent::Command::Act(strike)) = engine::intent::parse(&format!(
+        "attack {} with {}",
+        engine::laws::pointer(stranger),
+        engine::laws::pointer(blade)
+    )) else {
+        panic!("a strike");
+    };
+    engine::laws::perform(&mut w, islander, strike).unwrap();
+    engine::nature::run(&mut w, 600).unwrap();
+    let blows = w.life(islander).unwrap().wounds.len();
+    (blows, w.key(w.place_of(stranger).unwrap()).to_string())
+}
+
+#[test]
+fn struck_once_temperament_decides_how_they_answer() {
+    assert_eq!(struck_once("give in"), (0, "hillside".into()));
+    assert_eq!(struck_once("flee"), (0, "forest".into()));
+    // Defending, they strike back once; fighting, they keep at it while the
+    // one who struck them is there.
+    assert_eq!(struck_once("defend"), (1, "hillside".into()));
+    let (blows, place) = struck_once("fight");
+    assert!(blows > 1, "{blows}");
+    assert_eq!(place, "hillside");
+}

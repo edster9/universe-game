@@ -17,6 +17,13 @@ use crate::world::{EntityId, Life, World};
 /// How long someone with nothing to do waits before thinking again.
 const IDLE: u64 = 600;
 
+/// How long ago someone went for them and still counts as just now, for
+/// striking back.
+const JUST_NOW: u64 = 60;
+
+/// How long someone who went for them stays a danger while they're around.
+const DANGER: u64 = 3_600;
+
 /// How far a mind thinks.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Scope {
@@ -26,10 +33,25 @@ pub enum Scope {
     Resident,
 }
 
-/// A mind: its scope and its standing orders, first first.
+/// How a mind meets someone who goes for it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Temperament {
+    /// Strikes at them for as long as they're there.
+    Fight,
+    /// Strikes back when struck, and otherwise carries on.
+    Defend,
+    /// Gets away from them.
+    Flee,
+    /// Neither fights nor runs.
+    GiveIn,
+}
+
+/// A mind: its scope, its temperament, and its standing orders, first
+/// first.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mind {
     pub scope: Scope,
+    pub temperament: Temperament,
     pub orders: Vec<Order>,
 }
 
@@ -71,6 +93,20 @@ impl Scope {
             "resident" => Ok(Scope::Resident),
             other => Err(format!(
                 "the mind {other:?} isn't one there is: try \"confined\" or \"resident\""
+            )),
+        }
+    }
+}
+
+impl Temperament {
+    pub fn parse(text: &str) -> Result<Temperament, String> {
+        match text {
+            "fight" => Ok(Temperament::Fight),
+            "defend" => Ok(Temperament::Defend),
+            "flee" => Ok(Temperament::Flee),
+            "give in" => Ok(Temperament::GiveIn),
+            other => Err(format!(
+                "the temperament {other:?} isn't one there is: try \"fight\", \"defend\", \"flee\", or \"give in\""
             )),
         }
     }
@@ -230,17 +266,73 @@ fn choices(world: &World, me: EntityId) -> Vec<Intent> {
     let (Some(mind), Some(life)) = (world.mind(me), world.life(me)) else {
         return Vec::new();
     };
-    let mut choices: Vec<Intent> = mind
-        .orders
-        .iter()
-        .filter(|order| order.when.iter().all(|c| c.holds(world, me, life)))
-        .map(|order| order.command.clone())
-        .collect();
+    let mut choices = meet(world, me, mind.temperament);
+    choices.extend(
+        mind.orders
+            .iter()
+            .filter(|order| order.when.iter().all(|c| c.holds(world, me, life)))
+            .map(|order| order.command.clone()),
+    );
     choices.extend(instinct(world, me, life));
     if mind.scope == Scope::Resident {
         choices.extend(look_after(world, me, life));
     }
     choices
+}
+
+/// Meeting someone here who went for them, by temperament: strike at them,
+/// strike back, or get away. The nearest danger comes first.
+fn meet(world: &World, me: EntityId, temperament: Temperament) -> Vec<Intent> {
+    let (Some(here), Some(memory)) = (world.place_of(me), world.memory(me)) else {
+        return Vec::new();
+    };
+    let now = world.tick();
+    let danger = |within: u64| -> Option<EntityId> {
+        memory
+            .attackers
+            .iter()
+            .filter(|&(&who, &when)| {
+                now.saturating_sub(when) <= within
+                    && world.is_living(who)
+                    && world.place_of(who) == Some(here)
+            })
+            .max_by_key(|&(&who, &when)| (when, who))
+            .map(|(&who, _)| who)
+    };
+    let strike = |at: EntityId| -> Vec<Intent> {
+        let weapon = laws::best_edge(world, &world.contents(me));
+        vec![Intent::Attack {
+            target: laws::pointer(at),
+            with: weapon.map(laws::pointer),
+        }]
+    };
+    // A blow not yet answered: they went for me since I last went for them.
+    let unanswered = |who: EntityId| {
+        let went_for_me = memory.attackers.get(&who).copied().unwrap_or(0);
+        memory
+            .struck
+            .get(&who)
+            .is_none_or(|&mine| mine < went_for_me)
+    };
+    match temperament {
+        Temperament::Fight => danger(DANGER).map(strike).unwrap_or_default(),
+        Temperament::Defend => danger(JUST_NOW)
+            .filter(|&who| unanswered(who))
+            .map(strike)
+            .unwrap_or_default(),
+        Temperament::Flee => match danger(DANGER) {
+            Some(threat) => world
+                .exits(here)
+                .iter()
+                .copied()
+                .filter(|&to| world.crossing(here, to).is_none())
+                .filter(|&to| world.place_of(threat) != Some(to))
+                .map(go)
+                .collect(),
+            None => Vec::new(),
+        },
+        Temperament::GiveIn => Vec::new(),
+    }
 }
 
 /// What the body wants, whatever the mind's scope: sleep at night when
@@ -260,7 +352,7 @@ fn instinct(world: &World, me: EntityId, life: &Life) -> Vec<Intent> {
             .find(|&f| crate::instinct::digestible(world, life, f))
     {
         wants.push(Intent::Eat {
-            item: world.key(food).to_string(),
+            item: laws::pointer(food),
         });
     }
     if thirsty(world, me, life)
@@ -271,7 +363,7 @@ fn instinct(world: &World, me: EntityId, life: &Life) -> Vec<Intent> {
             .find(|&s| crate::instinct::drinkable(world, life, s))
     {
         wants.push(Intent::Drink {
-            source: world.key(source).to_string(),
+            source: laws::pointer(source),
         });
     }
     wants
@@ -312,23 +404,23 @@ fn look_after(world: &World, me: EntityId, life: &Life) -> Vec<Intent> {
     if thirsty(world, me, life)
         && let Some(to) = toward(world, me, here, drink)
     {
-        wants.push(go(world, to));
+        wants.push(go(to));
     }
     if crate::instinct::hungry(world, me, life) {
         if let Some(source) = food(here) {
             wants.push(Intent::Gather {
-                source: world.key(source).to_string(),
+                source: laws::pointer(source),
             });
         } else if let Some(to) = toward(world, me, here, |p| food(p).is_some()) {
-            wants.push(go(world, to));
+            wants.push(go(to));
         }
     }
     wants
 }
 
-fn go(world: &World, to: EntityId) -> Intent {
+fn go(to: EntityId) -> Intent {
     Intent::Go {
-        place: world.key(to).to_string(),
+        place: laws::pointer(to),
         aboard: None,
     }
 }

@@ -53,7 +53,7 @@ Training from the Stone Age to the Space Age grows the first layer only. The eng
 
 1. The islander's starting culture has stone, stick, cord, and sharp, but not spear.
 2. The player says: knap the flint until it's sharp; bind the sharp stone to the end of the long stick.
-3. The engine checks each step against the laws and makes the thing. It looks for a known design with the same arrangement. There's none anywhere in the world, so it records a new design under a plain number, and measures it like any assembly.
+3. The engine checks each step against the laws and makes the thing. It measures it like any assembly. It resembles nothing the islander has a word for, so it's new to them. (The first take had the engine record a new design under a plain number; the second take below drops that: there's no catalogue of inventions.)
 4. The engine says: *"You've made something new: a long stick with a sharp stone bound to one end. What do you call it?"* The player says "a spear".
 5. Now "spear" is in the islander's words, pointing at that design, and the steps just taken become the skill "make a spear". "Make a spear" and "pick up the spear" now work, for this islander.
 
@@ -67,6 +67,8 @@ The world sees one design, discovered twice. Anna calls it a spear; Ben calls it
 - **If Ben had never seen one**, he'd see a description of what anyone can observe: "a long stick with a sharp stone bound to one end". Once told, it's a spear to him.
 
 ### When are two things the same thing?
+
+*Superseded by "Recognising by resemblance" below: the owner's two spears show that matching on how a thing was made fails.*
 
 The match mustn't be exact, or every hand-made spear would be a new invention. The proposal: a word points at an **arrangement**, meaning which kinds of parts, playing which roles, joined how.
 
@@ -85,7 +87,7 @@ This follows for free. A Spanish-speaking player's character has Spanish words. 
 
 - **Things lose their built-in names.** Each mind gets its own words (a lexicon). The labels in today's data become the islander's starting words, so the existing worlds keep working.
 - **What you see and what you can say go through your own words.** The view and the command parser resolve names through the actor's words. Anything you have no word for is described from what anyone can see: the plan in [recognition.md](recognition.md). So vocabulary and recognition turn out to be one piece.
-- **Invention.** When something made matches no known design, the engine records a new one and asks the maker what to call it.
+- **Invention.** When something made resembles nothing the maker has a word for, the engine asks the maker what to call it.
 - **Teaching words.** Saying "this is a spear", or "call this a spear", teaches the listener, as a told claim.
 - **Our hand-written designs** (raft, lean-to, pot) become a people's starting culture, or are left out so a world can start from scratch.
 
@@ -105,3 +107,68 @@ From the survey in [research/naming-and-vocabulary.md](../research/naming-and-vo
 ### Recommendation
 
 Names live in minds; the world holds only patterns. Knowledge comes in layers: laws, nature, a starting culture, and invention. Build it as the next stage, before living with the island stages 5 and 6. Those stages then become its first test: **hide shoes are not in the islander's starting culture, so the islander has to invent them and name them.**
+
+## Second take: recognising by resemblance
+
+Claude's take, 2026-09-29, after the owner's example of two spears and of ships ("A practical example" in [requirements.md](../requirements.md)). **Not decided.** It replaces "When are two things the same thing?" above.
+
+### The universe doesn't classify; each mind does
+
+The owner is right that matching on how a thing was made can't work: a sharpened stick and a metal head bound with rope are both spears, and no two ships are alike. So the answer to "does the second inventor get the same ID?" is: **there is no shared ID to get.** The universe keeps the truth about every thing (its parts, materials, and measurements) and no catalogue of inventions at all. Classifying is something a *mind* does, when it looks at a thing and compares it with what it knows.
+
+Three separate things, each belonging to one person:
+
+| | What it is | Example |
+| --- | --- | --- |
+| **A recipe** (a skill) | How *I* made it | Sharpen a stick; or bind a metal head to a shaft with rope |
+| **A word** | A name, plus a few remembered examples of things I've called by it | "Spear": my sharpened stick, and the metal-headed one Anna showed me |
+| **A look** | What anyone can observe about a thing, measured by the engine | Long and thin, about 2 m, pierces at one end, gripped along its length, wood and metal |
+
+A thing's look is measured by the engine from its datasheet, like everything else, so it's no oracle: it's what your senses can tell you, and less at a distance. **Recognition** compares a thing's look with the examples behind your words.
+
+### What a look is made of
+
+Kept small. What matters is **what a thing does and roughly how it's shaped**, not how it was made:
+
+- **What it does:** the roles it can play, which the engine already measures (pierces, cuts, contains, floats, carries people, pushes against water, flies).
+- **Its form:** coarse proportions: long and thin, flat, round, hollow, and so on.
+- **Its size:** roughly.
+- **What it seems made of**, to the eye: wood, stone, metal, hide, fibre.
+
+The sharpened stick and the rope-bound metal spear share what they do (pierce at one end), their form (long and thin), and their size. They differ only in what they seem made of. So both look like a spear.
+
+### What you're shown depends on what you know
+
+| How close the look is to an example you know | What you see |
+| --- | --- |
+| Very close | "A spear" |
+| Close, with visible differences | "A spear, but with a metal head bound on with rope": the nearest thing you know, plus what's different |
+| Nothing you know is close | A plain description: "a long, thin wooden thing with a metal point" |
+
+That middle row is the owner's "explained based on my knowledge": what you see is described in terms of what you already know. An islander who sees a canoe for the first time might see "something like my raft, but hollow and narrow".
+
+### Words widen by use
+
+A word holds a few examples, not one. Each time you call something by a word, or someone shows you a thing and tells you its word, that example joins the word. So "ship" stretches to cover every ship you've learned to call a ship, however each was built. If you also know "freighter", the closer word wins: a big cargo ship is "a freighter"; an odd one you've never seen the like of is "a ship", or "something like a ship". General words come the same way: call enough different things "weapon", and "weapon" means anything that harms.
+
+### Distance limits what you can see
+
+Seen far off, a ship shows only its size and that it flies: "a ship". Up close you see its parts, and a word that fits better may win. That ties into the horizon and landmarks laws: at a distance you see less of a thing's look.
+
+### Your two spears, played through
+
+1. I sharpen a stick. The engine asks what I call it; I say "spear". My word "spear" holds one example, and "make a spear" is my recipe.
+2. Anna, elsewhere, binds a metal head to a shaft with rope and calls it a "stabber".
+3. We meet. My screen says "Anna holds a spear, with a metal head bound on with rope". Hers says "they hold a stabber, all of wood".
+4. I say "I see you have a spear". Anna hears a word she doesn't know, while I'm looking at her stabber, so she learns that I call it a spear. The universe never had to decide which of us was right, or whether they're the same.
+
+### What the engine would need
+
+- **A look for every thing,** measured from what it's made of: roles (already measured), form (from its size and proportions; shapes need a little more size data), size, and apparent material (one small entry per material: what it looks like to the untrained eye, as [recognition.md](recognition.md) already proposes).
+- **Words in each mind:** a name and a few example looks.
+- **One comparison law:** how close two looks are. Same roles matter most, then form, then size, then material. That's a few numbers in data, not fussiness in code.
+- **No catalogue of inventions.** A made thing needs no design ID to exist: the engine measures it from its parts, as assemblies are measured now. Recipes (skills) and words live in minds.
+
+### Recommendation
+
+Recognise by resemblance of look (what it does, its form, its size, what it seems made of), never by how it was made. The universe keeps only the truth about each thing; every mind keeps its own words and examples. That answers the three questions from the first take: names live in minds; you see things in your own words, learning others' only when told; and making something new asks you what to call it.

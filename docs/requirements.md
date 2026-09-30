@@ -316,6 +316,17 @@ Added 2026-09-29.
 - **This is an important fork in the road for the design.** Do we preload everything and let players work their way to discovering things? Or does a different system let things be built and named through a consensus of players, just through normal conversations? Even if every player were American and spoke English, players around the world will label things differently. How do they communicate? Does the game have a hierarchical preset list, or do things get invented as they go along?
 - This will dictate a lot about the design of the game. However far we train the system, even to the Space Age, new things will have to be invented. **How do they get named?**
 
+### A practical example: two spears, and ships
+
+Added 2026-09-29, in answer to Claude's first take (the owner's dictation says "sphere"; it means spear).
+
+- I build a spear from a stick that I sharpen somehow. The system asks what I want to call this thing; I call it a spear. Now I have the item, the skill, and the word in my vocabulary.
+- If I meet another person who has done the same thing, I won't know what they call it unless they tell me in conversation. But I'll be able to see that they have something that resembles a spear, and I can say "I see that you have a spear". They might not understand what a spear is in their language, but that's very normal in everyday life too.
+- **So when the system creates the ID for the second player's invention, does it know about mine and give it the same ID? Or does everything get a fresh ID? Is the universe aware of similar inventions, to classify them as things progress?**
+- A spear is very simple, but there can be very subtle variations. Someone might have a metal head with a piece of rope tied around it, which differs from a plain sharpened wooden stick. They're both spears, but the processes that built them are quite different, so a comparison of how they were made wouldn't give them the same ID. **This is a very crucial point.**
+- The same happens with ships. No two ships flying in space are the same. If I see another one, I'll say it's a ship, but it could be built completely differently from mine.
+- **So how does the engine start classifying things,** so that when I see other things, what I'm seeing can be explained to me based on my own knowledge? This is quite a challenge, but if we can solve it, it would make things easier. To be discussed further.
+
 See [ideas/vocabulary.md](ideas/vocabulary.md).
 
 ## The first attempt

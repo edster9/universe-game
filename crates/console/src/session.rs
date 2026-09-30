@@ -754,6 +754,9 @@ impl Session {
                 };
                 format!("You call it {word}.{recipe}")
             }
+            (Intent::Ask { request, .. }, Some(&Change::Request { agent, .. })) => {
+                format!("{} agrees to {request}.", sentence_case(&name(agent)))
+            }
             (Intent::Tell { word, .. }, Some(&Change::Word { agent, .. })) => {
                 format!("You tell {} it's a {word}.", name(agent))
             }
@@ -1067,6 +1070,10 @@ impl Session {
             &Change::Struck { agent, at } => {
                 format!("{} remembers going for {}", w.label(agent), w.label(at))
             }
+            Change::Request { agent, intent } => {
+                format!("{} takes on: {intent}", w.label(*agent))
+            }
+            &Change::TakeUp { agent } => format!("{} takes up a request", w.label(agent)),
             &Change::Occupy { agent, until } => {
                 format!("{} is busy until {until} s", w.label(agent))
             }
@@ -1237,7 +1244,7 @@ fn sentence_case(text: &str) -> String {
 /// Turns an engine message into a sentence: capitalised, with a full stop.
 fn sentence(text: &str) -> String {
     let text = sentence_case(text);
-    if text.ends_with(['.', '!', '?']) {
+    if text.ends_with(['.', '!', '?']) || text.ends_with(".\"") {
         text
     } else {
         format!("{text}.")

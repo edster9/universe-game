@@ -1,0 +1,38 @@
+# A companion, stage 3: asking. The islander asks the stranger to do things,
+# and the stranger weighs each request in their own words, against what they
+# see and carry. Asked to gather driftwood and hand it over, they do, once
+# they're free. Asked to take the flint, they don't know the word: to them
+# it's glassy grey stone. Told the word, they take it. See
+# docs/challenges/a-companion.md.
+world companion.toml
+as survivor
+luck average
+rules player
+
+ask the stranger to gather driftwood
+expect said the stranger agrees
+wait 20 min
+ask the stranger to give wood to the islander
+expect said the stranger agrees
+wait 20 min
+inventory
+expect said lump of wood (2 kg)
+
+try ask the stranger to drink water
+expect said the stranger says, "i can't drink the sea."
+try ask the stranger to dance
+expect said i don't know how to "dance"
+
+# Flint, fetched from the hillside and left on the beach.
+go forest
+go hillside
+gather flint
+go forest
+go beach
+drop flint
+try ask the stranger to take the flint
+expect said the stranger says, "i don't see the flint here."
+tell the stranger that the flint is flint
+ask the stranger to take the flint
+expect said the stranger agrees
+expect conserved

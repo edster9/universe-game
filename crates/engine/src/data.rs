@@ -704,6 +704,7 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
                         scope,
                         temperament,
                         orders,
+                        requests: Vec::new(),
                     },
                 );
             } else if !def.orders.is_empty() || def.temperament.is_some() {

@@ -218,3 +218,76 @@ fn struck_once_temperament_decides_how_they_answer() {
     assert!(blows > 1, "{blows}");
     assert_eq!(place, "hillside");
 }
+
+/// What happens when the islander says `line`: the refusal, or nothing if
+/// it's allowed.
+fn say(w: &mut World, line: &str) -> Option<String> {
+    let islander = w.find_by_key("survivor").unwrap();
+    let Ok(engine::intent::Command::Act(intent)) = engine::intent::parse(line) else {
+        panic!("{line:?} isn't an action");
+    };
+    engine::laws::perform(w, islander, intent)
+        .err()
+        .map(|e| e.to_string())
+}
+
+fn requests(w: &World, who: EntityId) -> usize {
+    w.mind(who).unwrap().requests.len()
+}
+
+#[test]
+fn a_confined_mind_takes_on_only_its_own_work() {
+    let (mut w, stranger) = island(|t| t.replace("mind = \"resident\"", "mind = \"confined\""));
+    assert_eq!(
+        say(&mut w, "ask the stranger to gather driftwood").as_deref(),
+        Some("the stranger won't: it isn't what they do")
+    );
+    assert_eq!(say(&mut w, "ask the stranger to gather shellfish"), None);
+    assert_eq!(requests(&w, stranger), 1);
+}
+
+#[test]
+fn only_a_mind_of_its_own_takes_requests_and_a_sleeper_doesnt_hear() {
+    let (mut w, _) = island(|t| t);
+    say(&mut w, "go forest");
+    assert_eq!(
+        say(&mut w, "ask a boar to go beach").as_deref(),
+        Some("a boar decides for themselves")
+    );
+    say(&mut w, "go beach");
+    let stranger = w.find_by_key("stranger").unwrap();
+    while !w.is_asleep(stranger) {
+        engine::nature::run(&mut w, 600).unwrap();
+    }
+    assert_eq!(
+        say(&mut w, "ask the stranger to gather driftwood").as_deref(),
+        Some("the stranger is asleep")
+    );
+}
+
+#[test]
+fn a_request_is_taken_up_once_and_dropped_if_it_can_no_longer_be_done() {
+    let (mut w, stranger) = island(|t| t);
+    let islander = w.find_by_key("survivor").unwrap();
+    // Driftwood, gathered and handed over.
+    assert_eq!(say(&mut w, "ask the stranger to gather driftwood"), None);
+    engine::nature::run(&mut w, 1_200).unwrap();
+    assert_eq!(requests(&w, stranger), 0);
+    assert_eq!(
+        say(&mut w, "ask the stranger to give wood to the islander"),
+        None
+    );
+    engine::nature::run(&mut w, 1_200).unwrap();
+    assert_eq!(w.contents(islander).len(), 1);
+    // Asked to take the wood back, after it's been taken away again: they
+    // find they can't, and let it go.
+    say(&mut w, "drop wood");
+    assert_eq!(
+        say(&mut w, "ask the stranger to take the lump of wood"),
+        None
+    );
+    say(&mut w, "take the lump of wood");
+    engine::nature::run(&mut w, 1_200).unwrap();
+    assert_eq!(requests(&w, stranger), 0);
+    assert_eq!(w.contents(islander).len(), 1);
+}

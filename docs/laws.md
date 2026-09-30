@@ -127,6 +127,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Everyone acts the same way: creatures, minds, and players start an action, are busy with it, and see it carried out when it's due | in | a companion 1 |
 | A mind has a temperament. When someone who went for them is there, it decides first: fight strikes while they're there, defend strikes back once for each blow, flee leaves by a way the danger isn't on, give in does neither | in | a companion 2 |
 | People remember who has gone for them and whom they've gone for, and when | in | a companion 2 |
+| Someone here, awake, with a mind of their own can be asked to do something. They weigh it in their own words, against what they see and carry, and agree or say why not; a confined mind takes on only what its orders do | in | a companion 3 |
+| What someone agrees to comes first when they're next free, after danger; they take it up once, doing it or letting it go | in | a companion 3 |
 | In each second, people with minds decide before creatures on instinct | in | a companion 2 |
 
 ## Wearing

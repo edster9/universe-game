@@ -53,6 +53,8 @@ pub struct Mind {
     pub scope: Scope,
     pub temperament: Temperament,
     pub orders: Vec<Order>,
+    /// What they've been asked to do and have taken on, first first.
+    pub requests: Vec<Intent>,
 }
 
 /// "When these hold, do this."
@@ -213,10 +215,11 @@ pub(crate) fn tired(world: &World, me: EntityId, life: &Life) -> bool {
         .is_some_and(|(sleep, awake)| awake >= sleep.awake / 16)
 }
 
-/// Lets everyone with a mind who's free start what they do next: the first
-/// standing order that holds and that the laws allow; otherwise what the
-/// body wants; otherwise, if their scope lets them, looking after
-/// themselves. With nothing to do, they wait a while.
+/// Lets everyone with a mind who's free start what they do next: meeting
+/// danger by their temperament; what they've been asked; the first standing
+/// order that holds and that the laws allow; otherwise what the body wants;
+/// otherwise, if their scope lets them, looking after themselves. With
+/// nothing to do, they wait a while.
 pub fn act(world: &mut World) -> Result<(), Fault> {
     let free: Vec<EntityId> = world
         .minds
@@ -226,8 +229,23 @@ pub fn act(world: &mut World) -> Result<(), Fault> {
         .collect();
     for me in free {
         let now = world.tick();
+        let mut choices = choices(world, me);
+        // Unless they're in danger, what they were asked comes before their
+        // own orders. They take it up once, doing it or finding they can't.
+        let in_danger = world
+            .mind(me)
+            .is_some_and(|m| !meet(world, me, m.temperament).is_empty());
+        if let Some(request) = world.mind(me).and_then(|m| m.requests.first().cloned())
+            && !in_danger
+        {
+            world.apply(
+                Cause::Nature { tick: now },
+                vec![Change::TakeUp { agent: me }],
+            )?;
+            choices.insert(0, request);
+        }
         let mut started = false;
-        for intent in choices(world, me) {
+        for intent in choices {
             match laws::start(world, me, intent) {
                 Ok(laws::Started::Due(_)) => {}
                 Ok(laws::Started::Now { seconds, .. }) => {

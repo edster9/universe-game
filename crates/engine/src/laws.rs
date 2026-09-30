@@ -92,6 +92,17 @@ pub enum Refusal {
     CannotWear,
     /// Only someone with words of their own can learn one.
     NoWordsToLearn(String),
+    /// Someone asked is asleep, and doesn't hear.
+    TheyreAsleep(String),
+    /// Someone without a mind of their own decides for themselves.
+    OwnMind(String),
+    /// Someone asked, whose mind is confined, doesn't do that.
+    NotTheirWork(String),
+    /// Someone asked can't do it, and says why, in their own words.
+    TheySay {
+        who: String,
+        why: String,
+    },
     NotCarrying(String),
     CannotCarry(String),
     NotAContainer(String),
@@ -212,6 +223,17 @@ impl fmt::Display for Refusal {
             Refusal::NotWearing(name) => write!(f, "you aren't wearing {name}"),
             Refusal::AlreadyWearing(name) => write!(f, "you're already wearing {name}"),
             Refusal::CannotWear => write!(f, "only a living body can wear things"),
+            Refusal::TheyreAsleep(name) => write!(f, "{name} is asleep"),
+            Refusal::OwnMind(name) => write!(f, "{name} decides for themselves"),
+            Refusal::NotTheirWork(name) => write!(f, "{name} won't: it isn't what they do"),
+            Refusal::TheySay { who, why } => {
+                let stop = if why.ends_with(['.', '?', '!']) {
+                    ""
+                } else {
+                    "."
+                };
+                write!(f, "{who} says, \"{why}{stop}\"")
+            }
             Refusal::NoWordsToLearn(name) => {
                 write!(f, "{name} already knows every word in this world")
             }
@@ -482,6 +504,31 @@ pub fn complete_due(world: &mut World) -> Result<(), Fault> {
         }
     }
     Ok(())
+}
+
+/// A refusal, as the one refused would say it: "you don't see it" becomes
+/// "I don't see it".
+fn in_first_person(text: &str) -> String {
+    let words: Vec<String> = text
+        .split(' ')
+        .map(|w| match w {
+            "you" => "I".to_string(),
+            "you're" => "I'm".to_string(),
+            "you've" => "I've".to_string(),
+            "your" => "my".to_string(),
+            "yourself" => "myself".to_string(),
+            _ => w.to_string(),
+        })
+        .collect();
+    let text = words
+        .join(" ")
+        .replace("I aren't", "I'm not")
+        .replace("I are", "I am");
+    let mut chars = text.chars();
+    chars
+        .next()
+        .map(|c| c.to_uppercase().collect::<String>() + chars.as_str())
+        .unwrap_or_default()
 }
 
 fn sentence_of(refusal: &Refusal) -> String {
@@ -1467,6 +1514,35 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 agent: listener,
                 word: normalize(word),
                 meaning: world.meaning_of(found),
+            }])
+        }
+
+        Intent::Ask { person, request } => {
+            let listener = person_here(world, actor, &reach.around, person)?;
+            let name = || named(world, actor, listener);
+            let mind = world
+                .mind(listener)
+                .ok_or_else(|| Refusal::OwnMind(name()))?;
+            if world.is_asleep(listener) {
+                return Err(Refusal::TheyreAsleep(name()));
+            }
+            // A confined mind does its own work and nothing else.
+            if mind.scope == crate::mind::Scope::Confined
+                && !mind.orders.iter().any(|o| o.command == **request)
+            {
+                return Err(Refusal::NotTheirWork(name()));
+            }
+            // They weigh it in their own words, against what they see and
+            // carry.
+            if let Err(refusal) = plan(world, listener, request) {
+                return Err(Refusal::TheySay {
+                    who: name(),
+                    why: in_first_person(&refusal.to_string()),
+                });
+            }
+            Ok(vec![Change::Request {
+                agent: listener,
+                intent: (**request).clone(),
             }])
         }
 

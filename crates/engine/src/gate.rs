@@ -131,6 +131,12 @@ pub enum Change {
     /// A body is wounded, and bleeds at `rate` mg a second, less as it clots.
     /// A wound wakes a sleeper.
     Wound { agent: EntityId, rate: u64 },
+    /// Someone with a mind of their own takes on a request, to do when
+    /// they're free.
+    Request { agent: EntityId, intent: Intent },
+    /// They take up the first request they had, doing it or finding they
+    /// can't.
+    TakeUp { agent: EntityId },
     /// Someone remembers going for `at`.
     Struck { agent: EntityId, at: EntityId },
     /// Someone notices something that happened to them, and remembers it
@@ -750,6 +756,21 @@ impl World {
             &Change::Exert { agent, until } => {
                 let life = self.life.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
                 life.working_until = until;
+                Ok(())
+            }
+
+            Change::Request { agent, intent } => {
+                let mind = self.minds.get_mut(agent).ok_or(Fault::NotAlive(*agent))?;
+                mind.requests.push(intent.clone());
+                Ok(())
+            }
+
+            &Change::TakeUp { agent } => {
+                let mind = self.minds.get_mut(&agent).ok_or(Fault::NotAlive(agent))?;
+                if mind.requests.is_empty() {
+                    return Err(Fault::Invariant(format!("{agent:?} had no request")));
+                }
+                mind.requests.remove(0);
                 Ok(())
             }
 

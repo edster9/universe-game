@@ -63,3 +63,18 @@ A mind knows only what its person perceives and remembers: no oracles. It only e
 - The console now says "wound them: they're bleeding" of people, and "it" of creatures.
 
 **Simplified:** a strike is always with the finest edge carried; fleeing takes the first way out that the danger isn't on, and doesn't look for safety beyond it; a danger stays one for an hour.
+
+## Stage 3 result, 2026-09-30: passed
+
+**Asking:** `ask <someone> to <do something>`, to someone here, awake, with a mind of their own. They weigh the request **in their own words, against what they see and carry**, and either agree or say why not, in their own voice: *The stranger says, "I don't see the flint here."* A **confined** mind takes on only what its own orders already do ("it isn't what they do"); a **resident** one takes on anything the laws allow. What they agree to comes first when they're next free, after danger only, and they take it up once: doing it, or finding they can't and letting it go.
+
+- **The story** (`data/scripts/companion-3-asking.txt`): asked to gather driftwood and hand it over, the stranger does, once they've finished the shellfish they were gathering; asked to drink from the sea, they say they can't; asked to take the flint the islander fetched, they don't know the word (to them it's glassy grey stone), and once told it, they agree.
+- **Proofs** (`crates/engine/tests/companion.rs`): a confined stranger won't gather driftwood but will gather shellfish, their own work; a boar "decides for themselves"; a sleeper doesn't hear; a request taken up is gone, and one that can no longer be done when they're free (the wood taken back first) is let go rather than blocking what comes after.
+- **Sabotage checks:** a confined mind that takes on anything, a request weighed in the asker's words instead of the listener's, and requests never acted on each fail a proof.
+
+**What the attempt found:**
+
+- **The stranger asked back.** "Take wood", with driftwood and a lump of wood both there, got *The stranger says, "Which wood: the driftwood on the sand, or the lump of wood?"*: the ambiguity law from the vocabulary stage, now in someone else's mouth.
+- A request made while they're busy waits: they finish what they're doing first.
+
+**Simplified:** requests are one action each, with no "go there and then do this"; the asker isn't told how a request came out, and sees it only by looking; someone who has set off can still be asked, though they can't be struck; nothing yet stops a resident stranger from agreeing to anything at all, however costly to them: what they'd want in return is stage 4.

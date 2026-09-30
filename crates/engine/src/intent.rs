@@ -124,6 +124,11 @@ pub enum Intent {
         item: String,
         word: String,
     },
+    /// Ask someone here, who has a mind of their own, to do something.
+    Ask {
+        person: String,
+        request: Box<Intent>,
+    },
     /// Tell someone here what you call something, so they learn the word.
     Tell {
         person: String,
@@ -175,6 +180,7 @@ impl Intent {
             Intent::Sleep { shelter, .. } => shelter.as_deref().into_iter().collect(),
             Intent::Join { items } => items.iter().map(String::as_str).collect(),
             Intent::Go { .. }
+            | Intent::Ask { .. }
             | Intent::Pay { .. }
             | Intent::Assemble { .. }
             | Intent::Explore
@@ -259,6 +265,7 @@ impl fmt::Display for Intent {
             Intent::Tell { person, item, word } => {
                 write!(f, "tell {person} that {item} is {word}")
             }
+            Intent::Ask { person, request } => write!(f, "ask {person} to {request}"),
             Intent::Wear {
                 item,
                 on: crate::world::Covering::Feet,
@@ -487,6 +494,20 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                 .filter(|(i, w)| !i.is_empty() && !w.is_empty())
                 .ok_or_else(|| usage("<person> that <thing> is a <word>"))?;
             Intent::Tell { person, item, word }
+        }
+        "ask" => {
+            let (person, request) = rest
+                .split_once(" to ")
+                .map(|(p, r)| (p.trim(), r.trim()))
+                .filter(|(p, r)| !p.is_empty() && !r.is_empty())
+                .ok_or_else(|| usage("<person> to <do something>"))?;
+            match parse(request)? {
+                Command::Act(request) => Intent::Ask {
+                    person: person.to_string(),
+                    request: Box::new(request),
+                },
+                _ => return Err(usage("<person> to <do something>")),
+            }
         }
         "explore" | "search" => Intent::Explore,
         "attack" | "strike" | "stab" => match two(&["with"], "<someone> with <something>") {

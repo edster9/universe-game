@@ -130,6 +130,15 @@ pub enum Intent {
         item: String,
         word: String,
     },
+    /// Wear something you carry, on your feet or about your body.
+    Wear {
+        item: String,
+        on: crate::world::Covering,
+    },
+    /// Stop wearing something, and just carry it.
+    TakeOff {
+        item: String,
+    },
 }
 
 impl Intent {
@@ -146,6 +155,8 @@ impl Intent {
             | Intent::Rub { item, .. }
             | Intent::Call { item, .. }
             | Intent::Tell { item, .. }
+            | Intent::Wear { item, .. }
+            | Intent::TakeOff { item }
             | Intent::Give { item, .. } => vec![item.as_str()],
             Intent::TakeFrom { item, from } => vec![item.as_str(), from.as_str()],
             Intent::Put { item, into } => vec![item.as_str(), into.as_str()],
@@ -248,6 +259,12 @@ impl fmt::Display for Intent {
             Intent::Tell { person, item, word } => {
                 write!(f, "tell {person} that {item} is {word}")
             }
+            Intent::Wear {
+                item,
+                on: crate::world::Covering::Feet,
+            } => write!(f, "wear {item} on your feet"),
+            Intent::Wear { item, .. } => write!(f, "wear {item}"),
+            Intent::TakeOff { item } => write!(f, "take off {item}"),
         }
     }
 }
@@ -263,13 +280,28 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
-/// Splits "<thing> a <word>" at the last article, or "it <word>".
+/// Splits "<thing> a <word>" at the last article, "it <word>", or, for a
+/// word that takes no article, as a material's name, "<thing> <word>" at the last
+/// space.
 fn split_word(rest: &str) -> Option<(String, String)> {
-    let split = [" a ", " an "]
+    // The word keeps its article, as said: "a stabber", "shoes".
+    let with_article = [" a ", " an "]
         .iter()
-        .filter_map(|a| rest.rsplit_once(a))
-        .max_by_key(|(item, _)| item.len())
-        .or_else(|| rest.split_once(' ').filter(|(item, _)| *item == "it"));
+        .filter_map(|a| {
+            rest.rsplit_once(a)
+                .map(|(item, word)| (item, format!("{}{word}", &a[1..])))
+        })
+        .max_by_key(|(item, _)| item.len());
+    let split = with_article
+        .or_else(|| {
+            rest.split_once(' ')
+                .filter(|(item, _)| *item == "it")
+                .map(|(item, word)| (item, word.to_string()))
+        })
+        .or_else(|| {
+            rest.rsplit_once(' ')
+                .map(|(item, word)| (item, word.to_string()))
+        });
     split
         .map(|(item, word)| (item.trim().to_string(), word.trim().to_string()))
         .filter(|(item, word)| !item.is_empty() && !word.is_empty())
@@ -313,6 +345,28 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
                 aboard: None,
             },
         },
+        "take" if rest.starts_with("off ") => Intent::TakeOff {
+            item: rest["off ".len()..].trim().to_string(),
+        },
+        "remove" => Intent::TakeOff {
+            item: one("<thing>")?,
+        },
+        "wear" | "don" => {
+            let item = one("<thing> [on your feet]")?;
+            let feet = ["on your feet", "on feet", "on my feet"]
+                .iter()
+                .find_map(|end| item.strip_suffix(end).map(|i| i.trim().to_string()));
+            match feet {
+                Some(item) if !item.is_empty() => Intent::Wear {
+                    item,
+                    on: crate::world::Covering::Feet,
+                },
+                _ => Intent::Wear {
+                    item,
+                    on: crate::world::Covering::Body,
+                },
+            }
+        }
         "take" | "get" => match two(&["from"], "<thing> from <container>") {
             Ok((item, from)) => Intent::TakeFrom { item, from },
             Err(_) => Intent::Take {

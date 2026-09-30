@@ -109,6 +109,14 @@ fn thing(world: &World, viewer: EntityId, id: EntityId) -> Thing {
     if world.is_burning(id) {
         notes.push("burning".to_string());
     }
+    match world.worn(id).map(|w| w.on) {
+        Some(crate::world::Covering::Feet) => notes.push("on your feet".to_string()),
+        Some(crate::world::Covering::Body) => notes.push("worn".to_string()),
+        None => {}
+    }
+    if world.worn_through(id) {
+        notes.push("worn through".to_string());
+    }
     let contents = if world.is_container(id) {
         world
             .held(id)

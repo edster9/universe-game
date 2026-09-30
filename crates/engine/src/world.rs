@@ -99,6 +99,18 @@ pub struct Settings {
     pub hit_chance: u64,
     /// The most a cut weighs when a body is butchered.
     pub cut: Mass,
+    /// Ground at least this rough, in mg of sole worn away per km, hurts
+    /// bare feet. Softer ground doesn't.
+    pub bare_feet_limit: u64,
+    /// How fast bare feet walk on ground that hurts them, in parts per ten
+    /// thousand of their usual pace.
+    pub bare_feet_pace: u64,
+    /// How fast bare feet bleed, in mg a second, for each km walked on
+    /// ground that hurts them.
+    pub bare_feet_wound: u64,
+    /// How much of a covering it takes to cover a whole body. Less keeps in
+    /// less of its warmth, in proportion.
+    pub covers: Mass,
 }
 
 impl Default for Settings {
@@ -138,6 +150,10 @@ impl Default for Settings {
             wound_rate: 0,
             hit_chance: 5_000,
             cut: Mass::from_mg(5_000_000),
+            bare_feet_limit: u64::MAX,
+            bare_feet_pace: 10_000,
+            bare_feet_wound: 0,
+            covers: Mass::from_mg(2_000_000),
         }
     }
 }
@@ -389,6 +405,25 @@ pub struct Sleep {
     pub shelter: Option<EntityId>,
 }
 
+/// Where on a body something is worn.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Covering {
+    /// Underfoot, between the body and the ground, where walking wears it.
+    Feet,
+    /// About the body, where it keeps in warmth.
+    Body,
+}
+
+/// Something worn: where, which part of it takes the wear, and how heavy
+/// that part was when it was put on. Half of that worn away, it's worn
+/// through.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Worn {
+    pub on: Covering,
+    pub sole: EntityId,
+    pub fresh: Mass,
+}
+
 /// A shape from data, and what it takes to measure it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ShapeDef {
@@ -499,6 +534,11 @@ pub struct World {
     pub(crate) exits: BTreeMap<EntityId, Vec<EntityId>>,
     /// How far it is between two places, in µm. Missing means no distance.
     pub(crate) distances: BTreeMap<(EntityId, EntityId), u64>,
+    /// How rough each place's ground is: the mg of a sole that a km of
+    /// walking wears away. Missing means smooth.
+    pub(crate) roughness: BTreeMap<EntityId, u64>,
+    /// What people are wearing. What's worn stays among what they carry.
+    pub(crate) worn: BTreeMap<EntityId, Worn>,
     /// Each place's height, in µm. Missing means zero.
     pub(crate) heights: BTreeMap<EntityId, u64>,
     /// Where each place is, in µm east and north of the world's origin.
@@ -849,6 +889,66 @@ impl World {
     /// A shaped part's tolerance in µm.
     pub fn tolerance(&self, id: EntityId) -> Option<u64> {
         self.tolerance.get(&id).copied()
+    }
+
+    /// How rough a place's ground is, in mg of sole worn away per km.
+    pub fn roughness(&self, place: EntityId) -> u64 {
+        self.roughness.get(&place).copied().unwrap_or(0)
+    }
+
+    /// Whether, and where, something is worn.
+    pub fn worn(&self, item: EntityId) -> Option<&Worn> {
+        self.worn.get(&item)
+    }
+
+    /// What someone wears on their feet, if anything.
+    pub fn underfoot(&self, person: EntityId) -> Option<EntityId> {
+        self.contents(person)
+            .into_iter()
+            .find(|i| self.worn.get(i).is_some_and(|w| w.on == Covering::Feet))
+    }
+
+    /// The part of something that would take the wear if it were worn: the
+    /// heaviest part of something put together, or the thing itself. Once
+    /// worn, it's the part that was heaviest when it was put on.
+    pub fn sole(&self, item: EntityId) -> EntityId {
+        if let Some(worn) = self.worn.get(&item) {
+            return worn.sole;
+        }
+        self.assemblies.get(&item).map_or(item, |a| {
+            a.parts
+                .iter()
+                .copied()
+                .max_by_key(|&p| (self.mass(p), std::cmp::Reverse(p)))
+                .unwrap_or(item)
+        })
+    }
+
+    /// Whether something worn has lost half of what takes the wear.
+    pub fn worn_through(&self, item: EntityId) -> bool {
+        self.worn
+            .get(&item)
+            .is_some_and(|w| self.mass(self.sole(item)).mg() * 2 < w.fresh.mg())
+    }
+
+    /// The share of a body's heat what it wears keeps in, in parts per ten
+    /// thousand: each covering keeps in its main material's share, in
+    /// proportion to how much of a body it covers, and what one lets out the
+    /// next can keep in.
+    pub fn clothed(&self, body: EntityId) -> u64 {
+        let mut escapes: u128 = 10_000;
+        for item in self.contents(body) {
+            if self.worn.get(&item).is_none_or(|w| w.on != Covering::Body) {
+                continue;
+            }
+            let main = self.composition(self.sole(item)).and_then(matter::dominant);
+            let share = main.map_or(0, |m| self.materials[&m].insulates);
+            let covers = u128::from(self.settings.covers.mg().max(1));
+            let cover = u128::from(self.mass(item).mg()).min(covers);
+            let kept = u128::from(share) * cover / covers;
+            escapes = escapes * (10_000 - kept.min(10_000)) / 10_000;
+        }
+        u64::try_from(10_000 - escapes).unwrap_or(0)
     }
 
     /// The design something was built to, if it was built to one.

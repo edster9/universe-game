@@ -113,6 +113,16 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Living things have kinds, in a tree given in data; a kind gives its members a body, and a mind: a person acts on commands, an instinct on its kind's rules | in | living 2 |
 | An instinct flees what its kind fears and keeps away from where it met it a while; sleeps at night; eats what it holds; drinks and forages when it needs to, where a search is worth it; and otherwise rests or wanders its range. It only proposes commands | in | living 2 |
 
+## Wearing
+
+| Law | Status | Used by |
+| --- | --- | --- |
+| Only something soft enough for bare hands to shape can be worn, on the feet or about the body; what's worn stays among what you carry | in | living 5 |
+| Ground has a roughness, per place: how much of a sole a km of walking wears away. A walk counts the rougher end | in | living 5 |
+| What's worn on the feet takes the wear: the part heaviest when it was put on loses the roughness for every km, as dust where you arrive. Half gone, it's worn through, and as good as bare feet | in | living 5 |
+| Bare feet on ground rough enough to hurt bleed for every km, and walk at a share of their pace. Creatures on instinct have feet for their ground | in | living 5 |
+| What's worn about the body keeps in its main material's share of body heat, in proportion to how much of a body it covers; with a shelter, a share of what gets past it | in | living 5 |
+
 ## Chance and time
 
 | Law | Status | Used by |

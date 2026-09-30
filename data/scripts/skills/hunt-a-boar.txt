@@ -1,0 +1,37 @@
+# Skill: hunt a boar, on the living island, from the beach. By day, gather
+# what a fire needs and make a honed spear; at night, spear a sleeping boar
+# in the forest, and find it dead by the stream. Butcher it there with the
+# spear. Ends by the stream, carrying the spear, a fire ring, and the fire's
+# makings, with the cuts on the ground.
+go forest
+repeat 4
+  gather sticks
+end
+repeat 6
+  gather grass
+end
+repeat 4
+  gather twigs
+end
+go hillside
+repeat 6
+  gather stones
+end
+gather flint
+work flint into flake with stone
+rub flake against stone for 30 min
+work largest wood into shaft with flake
+assemble spear
+assemble fire ring
+go forest
+go stream
+repeat 6
+  try drink water
+end
+go beach
+wait 12 h
+go forest
+attack boar with spear
+wait 1 h
+go stream
+butcher boar with spear

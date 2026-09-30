@@ -265,10 +265,14 @@ fn lose_heat(world: &World, dt: u64) -> Vec<Change> {
             .and_then(|l| world.chamber(l).map(|c| (l, c)));
         let difference = u128::from(hotter.mk() - colder.mk());
         let flow = if let Some(life) = world.life.get(&id) {
-            // A shelter keeps in a share of a sleeper's heat.
+            // A shelter keeps in a share of a sleeper's heat, and what they
+            // wear keeps in a share of what gets past it.
             let kept = sheltered(world, id).unwrap_or(0).min(10_000);
+            let clothed = world.clothed(id).min(10_000);
             u128::from(life.heat_loss) * difference * u128::from(dt) / 1_000
                 * u128::from(10_000 - kept)
+                / 10_000
+                * u128::from(10_000 - clothed)
                 / 10_000
         } else if let Some((chamber_id, chamber)) = chamber {
             let total = chamber_capacity[&chamber_id];

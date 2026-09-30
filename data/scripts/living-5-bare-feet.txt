@@ -1,0 +1,17 @@
+# Living with the island, stage 5: bare feet. Sand and the forest floor
+# don't hurt them, but the mountain's stony paths cut them and slow the walk
+# to half pace. See living-5-shoes.txt for the same paths in shoes.
+world living.toml
+as survivor
+luck average
+
+go forest
+expect not said cuts
+go hillside
+expect not said cuts
+go slopes
+expect said the rough ground cuts your feet: you're bleeding 100 mg a second
+expect said that took 2 h 56 min
+go ridge
+expect said the rough ground cuts your feet
+expect alive

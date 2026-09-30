@@ -138,3 +138,43 @@ Simplifications to revisit:
 - **Raw meat is safe to eat**; rotting flesh just isn't food. Sickness would come with disease.
 - **Butchering always yields the same parts**, whoever does it.
 
+### Stage 5: hide and shoes. Passed, 2026-09-29.
+
+The first stage after [a stranger's words](strangers-words.md): the islander now speaks their people's words (the `islanders` culture, shared in [island-things.toml](../../data/island-things.toml)). Their people know hide, but not leather, and have no shoes. [living-5-shoes.txt](../../data/scripts/living-5-shoes.txt) plays it:
+
+1. **Hunt a boar** (the stage 4 hunt, now the recipe [hunt-a-boar.txt](../../data/scripts/skills/hunt-a-boar.txt)) and take its hide, 3.2 kg.
+2. **Dry it by a fire** in the ring. At 330 K a hide becomes leather, which doesn't rot. The islander has no word for it: they see "lump of stiff dried skin", and name it (`call the stiff dried skin leather`).
+3. **Cut it**, by hand, into a cloak's worth (1.6 kg), a spare (0.8 kg), and two pairs' worth (0.4 kg each). Twist bush fibre into cord.
+4. **Put a piece of leather and the cord together:** *"You've made something new: lump of leather and rotting flesh joined to plant fibre rope. What do you call it?"* They call it shoes, and wear them on their feet. They put on the cloak.
+5. **Up the stony paths to the ridge and back.** The shoes take the wear, and the feet aren't cut. On the way down, *"Your shoes … wore through"*, and the last stretch cuts the feet.
+6. **Another pair, made the same way:** "make shoes" follows the recipe from the first pair.
+
+[living-5-bare-feet.txt](../../data/scripts/living-5-bare-feet.txt) walks the same paths barefoot: sand, the forest floor, and the hillside are fine; the slopes and the ridge cut the feet and halve the walking pace.
+
+The new laws:
+
+- **Ground has a roughness**, in data per place: how much of a sole a km of walking wears away. The living island's beach is smooth, the forest and stream 1 g/km, the hillside 4, the wooded slopes 10, the ridge and summit 20. A walk counts the rougher end.
+- **Wearing** (`wear shoes on your feet`, `wear cloak`, `take off …`): only something soft enough for bare hands to shape can be worn, on the feet or about the body. What's worn stays among what you carry.
+- **What's on your feet takes the wear.** The part of it that was heaviest when put on loses the ground's roughness for every km, and falls as dust where you arrive. **Half of it gone, it's worn through**, and as good as bare feet.
+- **Bare feet on ground rough enough to hurt** (8 g/km here) bleed, 20 mg/s for every km (so a 5 km climb to the slopes bleeds 100 mg/s, which clots), and walk at half pace. Creatures acting on instinct are born with feet for their ground.
+- **What you wear keeps in body heat:** its main material's share (leather and raw hide 40%), in proportion to how much of a body it covers (2 kg covers a whole one). With a shelter, it keeps in a share of what gets past the shelter. A 2 kg leather cloak saves about a fifth of what a person burns keeping warm through an evening and night: 8.7 MJ against 11.3 MJ.
+
+Tests in [living.rs](../../crates/engine/tests/living.rs) measure it exactly: 400 g of leather on the feet loses 2.3 g from the beach to the hillside and 50 g more to the slopes; bare feet bleed 100 mg/s there and take over half as long again; 200 g shoes wear through by the ridge; a stone is too stiff to wear.
+
+**What the attempts found:**
+
+- **Which part of a shoe takes the wear has to be fixed when it's put on.** At first it was whichever part was heaviest at the time; once the leather wore thinner than the cord, the cord became the sole and the shoes never wore through. Now it's decided when they're put on.
+- **A recipe mustn't take what you're wearing.** "Make shoes" first took the biggest leather within reach: the cloak on the islander's back, making shoes too big to look like shoes.
+- **Words, again.** "Drink water" asked whether the islander meant the stream's water or a boar, whose body is mostly water; living things no longer count as a piece of their material. "Work fibre" asked about the cord or the shoes; now a name can be part of a material's name ("fibre" for plant fibre). And "call it shoes" first answered "You call it a shoes": the name is now echoed as said.
+- **Long days need water.** The first try climbed to the summit and back and died of thirst; the story goes to the ridge, and drinks at the stream before climbing again.
+- **Giving the islander words changed stages 1 to 4 only in wording:** a lean-to is now "the lean-to of wood and plant fibre", and "sleep in wood" had to say which wood, the driftwood or the lump. Every time and outcome stayed the same.
+
+**Sabotage checks:** walking that wears and cuts nothing, clothing that keeps in nothing, and bare feet at full pace each fail a proof.
+
+Simplified:
+
+- **One number for the ground.** Roughness wears soles and, above a limit, cuts bare feet; mud, thorns, and heat underfoot aren't separate.
+- **A covering is a covering.** Shoes need no particular shape, and a cloak isn't cut to fit; how much of a body something covers is only its weight.
+- **Drying leather is just heat.** No scraping, and at 330 K it's instant, like cooking; hold times come with the processes decided in the time conversation.
+- **Worn-through shoes are only half used up**, and staying on your feet they neither slip nor fall off.
+

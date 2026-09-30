@@ -53,6 +53,9 @@ pub struct Material {
     pub decays: Option<(MaterialId, u64)>,
     /// How it looks to someone with no word for it.
     pub looks: Option<String>,
+    /// The share of a body's heat a whole covering of it keeps in, in parts
+    /// per ten thousand.
+    pub insulates: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

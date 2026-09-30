@@ -154,6 +154,15 @@ struct SettingsDef {
     hit_chance: Option<String>,
     /// The most a cut weighs when a body is butchered.
     cut: Option<String>,
+    /// Ground at least this rough ("5 g/km", of sole worn away) hurts bare
+    /// feet.
+    bare_feet_limit: Option<String>,
+    /// How fast bare feet walk on ground that hurts them.
+    bare_feet_pace: Option<String>,
+    /// How fast they bleed for each km of it ("20 mg/s").
+    bare_feet_wound: Option<String>,
+    /// How much of a covering covers a whole body.
+    covers: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -188,6 +197,8 @@ struct MaterialDef {
     decays: Option<DecaysDef>,
     /// How it looks to someone with no word for it.
     looks: Option<String>,
+    /// The share of a body's heat a whole covering of it keeps in.
+    insulates: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -257,6 +268,9 @@ struct PlaceDef {
     crossings: BTreeMap<String, String>,
     /// Height. Its temperatures are given as at zero height.
     height: Option<String>,
+    /// How rough its ground is: how much of a sole a km of walking wears
+    /// away, as "10 g/km". Smooth if not given.
+    rough: Option<String>,
     /// Where it is: how far east and north of the world's origin. Either
     /// may be negative.
     east: Option<String>,
@@ -543,6 +557,9 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
         }
         if let Some(h) = &def.height {
             world.heights.insert(place, parse_length(&def.id, h)?);
+        }
+        if let Some(r) = &def.rough {
+            world.roughness.insert(place, parse_per_km(&def.id, r)?);
         }
         match (&def.east, &def.north) {
             (Some(east), Some(north)) => {
@@ -849,6 +866,19 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     if let Some(c) = &def.cut {
         settings.cut = parse_mass("world", c)?;
     }
+    if let Some(l) = &def.bare_feet_limit {
+        settings.bare_feet_limit = parse_per_km("world", l)?;
+    }
+    if let Some(p) = &def.bare_feet_pace {
+        settings.bare_feet_pace = parse_percent(p)?.max(1);
+    }
+    if let Some(w) = &def.bare_feet_wound {
+        settings.bare_feet_wound =
+            parse_quantity(w, property::MASS_PER_SECOND_FLOW, "a rate like \"20 mg/s\"")?;
+    }
+    if let Some(c) = &def.covers {
+        settings.covers = parse_mass("world", c)?;
+    }
     if let Some(t) = &def.survey_time {
         settings.survey_time = time(t)?.max(1);
     }
@@ -915,6 +945,12 @@ fn load_materials(world: &mut World, defs: &[MaterialDef]) -> Result<(), LoadErr
             key: def.id.clone(),
             label: def.label.clone(),
             looks: def.looks.clone(),
+            insulates: def
+                .insulates
+                .as_deref()
+                .map(parse_percent)
+                .transpose()?
+                .unwrap_or(0),
             melting_point,
             boiling_point,
             specific_heat: parse_quantity(
@@ -1722,6 +1758,16 @@ fn material_id(world: &World, item: &str, key: &str) -> Result<MaterialId, LoadE
     world
         .material_by_key(key)
         .ok_or_else(|| LoadError(format!("{item} is made of {key:?}, which isn't a material")))
+}
+
+/// A mass for each km walked, as "10 g/km", in mg.
+fn parse_per_km(id: &str, text: &str) -> Result<u64, LoadError> {
+    let mass = text.trim().strip_suffix("/km").ok_or_else(|| {
+        LoadError(format!(
+            "{id}: {text:?} should be a mass per km, like \"10 g/km\""
+        ))
+    })?;
+    Ok(parse_mass(id, mass.trim())?.mg())
 }
 
 fn parse_mass(id: &str, text: &str) -> Result<Mass, LoadError> {

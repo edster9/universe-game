@@ -233,6 +233,22 @@ energy_density = "6 MJ/kg"
 burns_to = { co2 = "100%" }
 density = "1100 kg/m3"
 decays = { into = "rot", rate = "20%" }
+# Held warm by a fire, a hide dries hard into leather, which doesn't rot.
+becomes = { material = "leather", at = "330 K" }
+insulates = "40%"
+
+[[material]]
+id = "leather"
+label = "leather"
+looks = "stiff dried skin"
+melting_point = "3000 K"
+boiling_point = "3500 K"
+specific_heat = "1500 J/(kg*K)"
+hardness = "1"
+energy_density = "6 MJ/kg"
+burns_to = { co2 = "100%" }
+density = "900 kg/m3"
+insulates = "40%"
 
 [[material]]
 id = "rot"
@@ -376,6 +392,22 @@ id = "fire-ring"
 label = "fire ring"
 holds = true
 parts = { a = "stone", b = "stone", c = "stone", d = "stone", e = "stone" }
+
+# The islanders: the people who live on islands like this one, and what they
+# know to begin with. Their words for things are the things' labels. See
+# docs/ideas/vocabulary.md. They know hide, but not leather, and they know no
+# shoes: those they'll have to work out.
+[[culture]]
+id = "islanders"
+knows = [
+    "water", "seawater", "wood", "grass", "stone", "flint", "rock", "clay", "fibre",
+    "flesh", "meat", "cooked-meat", "fat", "hide", "bone", "fish", "shellfish", "shell",
+    "roots", "litter", "ash",
+    "flake", "shaft", "rope", "pot",
+    "spear", "raft", "lean-to", "fire-ring",
+    "animal", "boar", "tree", "shrub", "human",
+]
+
 
 # Kinds of living things: a tree of kinds, each with a parent. A kind can
 # give its members a body (mass, composition, and the figures of their life)

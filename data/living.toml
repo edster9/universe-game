@@ -12,6 +12,10 @@
 # forest, the stream, the hillside, and the slopes. Their kinds, bodies, and
 # instinct are in island-things.toml. Boars root up roots and nuts, which
 # grow back from the forest floor with sunlight.
+#
+# Stage 5, hide and shoes: the islander speaks their people's words (the
+# islanders' culture, in island-things.toml), who know hide but not leather,
+# and have no shoes. The mountain's paths are rough, and cut bare feet.
 
 uses = ["island-things.toml"]
 
@@ -44,6 +48,13 @@ day = "24 h"
 starts_at = "8 h"
 sunrise = "6 h"
 sunset = "18 h"
+# Ground rough enough to hurt bare feet: the mountain's stony paths. Sand
+# and the forest floor don't. Each place's roughness is how much of a sole a
+# km of walking there wears away.
+bare_feet_limit = "8 g/km"
+bare_feet_pace = "50%"
+bare_feet_wound = "20 mg/s"
+covers = "2 kg"
 
 [[place]]
 id = "beach"
@@ -59,6 +70,7 @@ north = "0 m"
 [[place]]
 id = "stream"
 label = "the stream"
+rough = "1 g/km"
 exits = ["beach", "forest"]
 distances = { forest = "300 m" }
 height = "20 m"
@@ -70,6 +82,7 @@ north = "-250 m"
 [[place]]
 id = "forest"
 label = "the forest"
+rough = "1 g/km"
 exits = ["beach", "stream", "hillside"]
 distances = { hillside = "500 m" }
 height = "30 m"
@@ -81,6 +94,7 @@ north = "50 m"
 [[place]]
 id = "hillside"
 label = "the hillside"
+rough = "4 g/km"
 exits = ["forest", "slopes"]
 distances = { slopes = "5 km" }
 height = "150 m"
@@ -92,6 +106,7 @@ north = "0 m"
 [[place]]
 id = "slopes"
 label = "the wooded slopes"
+rough = "10 g/km"
 exits = ["hillside", "ridge"]
 distances = { ridge = "5 km" }
 height = "600 m"
@@ -103,6 +118,7 @@ north = "1 km"
 [[place]]
 id = "ridge"
 label = "the bare ridge"
+rough = "20 g/km"
 exits = ["slopes", "summit"]
 distances = { summit = "3 km" }
 height = "1200 m"
@@ -114,6 +130,7 @@ north = "2 km"
 [[place]]
 id = "summit"
 label = "the summit"
+rough = "20 g/km"
 exits = ["ridge"]
 height = "1800 m"
 temperature = "300 K"
@@ -168,6 +185,7 @@ id = "survivor"
 label = "the islander"
 at = "beach"
 kind = "human"
+culture = "islanders"
 temperature = "310 K"
 
 # A herd of six boars, keeping to the forest, the stream, the hillside, and

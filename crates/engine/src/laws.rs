@@ -15,7 +15,7 @@ use crate::matter::{self, Composition, MaterialId, State};
 use crate::nature;
 use crate::units::{Credits, Mass};
 use crate::words::Recipe;
-use crate::world::{Claim, EntityId, Requirement, World};
+use crate::world::{Claim, Covering, EntityId, Requirement, World, Worn};
 
 /// How long it takes to take in what a map shows, in seconds.
 const READING_TIME: u64 = 300;
@@ -75,6 +75,13 @@ pub enum Refusal {
     },
     /// Nothing has just been made for "it" to mean.
     NothingMade,
+    /// Too stiff to wear.
+    TooStiff(String),
+    /// Something else is already on the feet.
+    FeetCovered(String),
+    NotWearing(String),
+    AlreadyWearing(String),
+    CannotWear,
     /// Only someone with words of their own can learn one.
     NoWordsToLearn(String),
     NotCarrying(String),
@@ -184,11 +191,15 @@ impl fmt::Display for Refusal {
             Refusal::NotInside { item, container } => write!(f, "there's no {item} in {container}"),
             Refusal::AlreadyCarrying(name) => write!(f, "you're already carrying {name}"),
             Refusal::Which { name, options } => {
-                let options: Vec<String> = options.iter().map(|o| format!("the {o}")).collect();
                 let (last, rest) = options.split_last().expect("at least two");
                 write!(f, "which {name}: {}, or {last}?", rest.join(", "))
             }
             Refusal::NothingMade => write!(f, "you haven't made anything to name"),
+            Refusal::TooStiff(name) => write!(f, "{name} is too stiff to wear"),
+            Refusal::FeetCovered(name) => write!(f, "you're already wearing {name} on your feet"),
+            Refusal::NotWearing(name) => write!(f, "you aren't wearing {name}"),
+            Refusal::AlreadyWearing(name) => write!(f, "you're already wearing {name}"),
+            Refusal::CannotWear => write!(f, "only a living body can wear things"),
             Refusal::NoWordsToLearn(name) => {
                 write!(f, "{name} already knows every word in this world")
             }
@@ -490,11 +501,19 @@ pub fn finding_chance(world: &World, source: EntityId) -> u64 {
 }
 
 /// Finds something `actor` can see or hold, for measuring. "here" is the
-/// place itself.
+/// place itself. A testing tool, so data IDs always work.
 pub fn find_reachable(world: &World, actor: EntityId, name: &str) -> Option<EntityId> {
     let reach = Reach::of(world, actor).ok()?;
     if normalize(name) == "here" {
         return Some(reach.here);
+    }
+    let by_key = std::iter::once(actor)
+        .chain(reach.carried.iter().copied())
+        .chain(reach.around.iter().copied())
+        .chain(reach.inside.iter().copied())
+        .find(|&id| normalize(world.key(id)) == normalize(name));
+    if by_key.is_some() {
+        return by_key;
     }
     if is_called(world, actor, actor, name) || normalize(name) == "me" {
         return Some(actor);
@@ -594,8 +613,65 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if let Some((vessel, _)) = crossing.filter(|(v, _)| !reach.carried.contains(v)) {
                 changes.push(Change::Move { entity: vessel, to });
             }
+            if crossing.is_none() {
+                changes.extend(treading(world, actor, reach.here, to));
+            }
             changes.extend(arriving(world, actor, reach.here, to));
             Ok(changes)
+        }
+
+        Intent::Wear { item, on } => {
+            let found = carrying(item)?;
+            if !world.is_living(actor) {
+                return Err(Refusal::CannotWear);
+            }
+            if world.worn(found).is_some() {
+                return Err(Refusal::AlreadyWearing(named(world, actor, found)));
+            }
+            // Only what bends like skin can be worn: every piece of it soft
+            // enough for bare hands to shape.
+            let reference = world.settings().reference_temperature;
+            let pieces = world
+                .assembly(found)
+                .map_or(vec![found], |a| a.parts.clone());
+            let stiff = pieces.iter().any(|&piece| {
+                let temperature = world.temperature(piece).unwrap_or(reference);
+                world.composition(piece).is_none_or(|c| {
+                    c.keys().any(|m| {
+                        world.materials()[m].hardness_at(temperature, reference)
+                            > world.settings().hand_hardness
+                    })
+                })
+            });
+            if stiff {
+                return Err(Refusal::TooStiff(named(world, actor, found)));
+            }
+            if *on == Covering::Feet
+                && let Some(other) = world.underfoot(actor)
+            {
+                return Err(Refusal::FeetCovered(named(world, actor, other)));
+            }
+            Ok(vec![Change::Wear {
+                agent: actor,
+                item: found,
+                worn: Some(Worn {
+                    on: *on,
+                    sole: world.sole(found),
+                    fresh: world.mass(world.sole(found)),
+                }),
+            }])
+        }
+
+        Intent::TakeOff { item } => {
+            let found = carrying(item)?;
+            if world.worn(found).is_none() {
+                return Err(Refusal::NotWearing(named(world, actor, found)));
+            }
+            Ok(vec![Change::Wear {
+                agent: actor,
+                item: found,
+                worn: None,
+            }])
         }
 
         Intent::Butcher { body, tool } => {
@@ -1480,6 +1556,53 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
     }
 }
 
+/// What walking from one place to another does underfoot, on ground as
+/// rough as the rougher end: what's worn on the feet wears away, a km's
+/// roughness at a time, and falls as dust where they arrive; bare feet, or
+/// worn-through soles, on ground rough enough to hurt, are cut. Creatures
+/// acting on instinct are born with feet for their ground.
+fn treading(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> Vec<Change> {
+    let rough = world.roughness(from).max(world.roughness(to));
+    if rough == 0 || !world.is_living(actor) || world.instinct(actor).is_some() {
+        return Vec::new();
+    }
+    let distance = u128::from(world.distance(from, to));
+    let per_km =
+        |rate: u64| u64::try_from(u128::from(rate) * distance / 1_000_000_000).unwrap_or(u64::MAX);
+    match world.underfoot(actor).filter(|&s| !world.worn_through(s)) {
+        Some(shoe) => {
+            let sole = world.sole(shoe);
+            let wear = per_km(rough).min(world.mass(sole).mg().saturating_sub(1));
+            world
+                .composition(sole)
+                .and_then(|c| matter::proportional(c, Mass::from_mg(wear)))
+                .filter(|take| !take.is_empty())
+                .map(|take| Change::Split {
+                    from: sole,
+                    take,
+                    at: to,
+                })
+                .into_iter()
+                .collect()
+        }
+        None if hurts_bare_feet(world, actor, from, to) => vec![Change::Wound {
+            agent: actor,
+            rate: per_km(world.settings().bare_feet_wound).max(1),
+        }],
+        None => Vec::new(),
+    }
+}
+
+/// Whether a walk is on ground rough enough to hurt, for someone with
+/// nothing sound on their feet.
+fn hurts_bare_feet(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> bool {
+    world.roughness(from).max(world.roughness(to)) >= world.settings().bare_feet_limit
+        && world.instinct(actor).is_none()
+        && world
+            .underfoot(actor)
+            .is_none_or(|shoe| world.worn_through(shoe))
+}
+
 /// Finds a part within reach for each slot: the biggest that fits, taking
 /// what's in hand first when two are alike.
 fn fill_slots(
@@ -1493,7 +1616,7 @@ fn fill_slots(
         .iter()
         .chain(&reach.around)
         .copied()
-        .filter(|&p| world.is_portable(p) && !world.is_agent(p))
+        .filter(|&p| world.is_portable(p) && !world.is_agent(p) && world.worn(p).is_none())
         .collect();
     reachable.sort_by_key(|&p| std::cmp::Reverse(world.mass(p)));
     let mut parts: Vec<(String, EntityId)> = Vec::new();
@@ -1957,6 +2080,12 @@ pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId
     } else {
         lifted * rise * 980_665 / 100_000 / 1_000_000 / lifting
     };
+    // Bare feet on ground that hurts go slowly and carefully.
+    let walking = if hurts_bare_feet(world, actor, from, to) {
+        walking * 10_000 / u128::from(world.settings().bare_feet_pace.max(1))
+    } else {
+        walking
+    };
     u64::try_from(walking + climbing).unwrap_or(u64::MAX).max(1)
 }
 
@@ -2157,11 +2286,17 @@ fn closest(
         let wanted = normalize(name);
         let plain = matching(&|id| {
             world.assembly(id).is_none()
+                && !world.is_agent(id)
+                && world.kind_of(id).is_none()
                 && world
                     .composition(id)
                     .and_then(matter::dominant)
                     .and_then(|m| world.material_word_for(viewer, m))
-                    .is_some_and(|word| word == wanted)
+                    .is_some_and(|word| {
+                        let words: Vec<&str> = word.split_whitespace().collect();
+                        let wanted: Vec<&str> = wanted.split_whitespace().collect();
+                        !wanted.is_empty() && words.windows(wanted.len()).any(|w| w == wanted)
+                    })
         });
         if !plain.is_empty() {
             return (false, plain);
@@ -2197,7 +2332,7 @@ fn which(
     }
     let mut labels: Vec<String> = Vec::new();
     for id in fits {
-        let label = world.label_for(viewer, id);
+        let label = named(world, viewer, id);
         if !labels.contains(&label) {
             labels.push(label);
         }

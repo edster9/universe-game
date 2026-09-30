@@ -24,11 +24,11 @@ go forest
 gather sticks
 go beach
 drop wood
-try sleep in wood
+try sleep in lump of wood
 expect said gives no shelter
 wait 8 h
 sleep in lean-to for 10 h
-expect said you sleep in the lean-to, and wake at 04:51
+expect said you sleep in the lean-to of wood and plant fibre, and wake at 04:51
 datasheet survivor
 expect said temperature: 310 k
 expect alive

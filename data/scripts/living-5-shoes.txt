@@ -1,0 +1,105 @@
+# Living with the island, stage 5: hide and shoes. The islander's people
+# know hide, but not leather, and have no shoes. Hunt a boar and take its
+# hide; dry it hard by a fire, where it becomes something the islander has no
+# word for, and name it. Cut it, twist cord, and put them together: something
+# new, named, and worn on the feet. The mountain's stony paths wear the
+# shoes instead of the feet, until they wear through; another pair is made
+# the same way. A cloak of leather keeps in body heat. See
+# docs/challenges/living-with-the-island.md.
+world living.toml
+as survivor
+luck average
+
+include skills/hunt-a-boar.txt
+expect said hide
+repeat 12
+  try drink water
+end
+
+# Dry the hide by a fire in the ring.
+take hide
+drop fire ring
+put grass in ring
+rub wood against wood into ring
+wait 10
+repeat 5
+  put grass in ring
+end
+wait 10
+repeat 4
+  put smallest wood in ring
+end
+wait 30
+put wood in ring
+put hide in ring
+wait 30 min
+look
+expect said lump of stiff dried skin
+wait 2 h
+take stiff dried skin from ring
+call the stiff dried skin leather
+expect said you call it leather.
+inventory
+expect said lump of leather
+repeat 12
+  try drink water
+end
+
+# Cut it: a cloak's worth, and two pairs' worth.
+divide leather
+divide smallest leather
+divide smallest leather
+
+# Twist cord from bush fibre, and put the leather and cord together.
+go forest
+wait 5 h
+gather bushes
+divide fibre
+work largest fibre into rope
+join smallest leather and rope
+expect said you've made something new: lump of leather
+expect said what do you call it?
+call it shoes
+expect said "make shoes" will make another
+wear shoes on your feet
+expect said you wear the shoes of leather
+wear largest leather
+expect said you put on the lump of leather
+inventory
+expect said 1.587507 kg, worn
+expect said on your feet
+
+# Up the stony paths to the ridge and back: the shoes, not the feet, take
+# the wear, and wear through on the way down.
+go hillside
+inventory
+go slopes
+expect not said cuts your feet
+go ridge
+expect not said cuts your feet
+go slopes
+expect said your shoes of leather, plant fibre and rotting flesh wore through
+inventory
+expect said worn through
+# Worn-through shoes are as good as bare feet.
+go hillside
+expect said the rough ground cuts your feet
+
+# Another pair, made the same way.
+work fibre into rope
+take off shoes
+drop shoes
+make shoes
+wear shoes on your feet
+expect said you wear the shoes of leather
+go forest
+go stream
+repeat 12
+  try drink water
+end
+go forest
+go hillside
+go slopes
+expect not said cuts your feet
+expect alive
+expect conserved

@@ -43,7 +43,7 @@ Size is judged by weight. Places' and people's names stay as they are, governed 
 
 ## Results
 
-**Both stages passed, 2026-09-29.** World: `data/strangers-words.toml`, with two cultures, `islanders` and `far-folk`. Plain descriptions of materials, shapes, and kinds (`looks` and `form`) are in `data/island-things.toml`. Proofs: `data/scripts/words-1-two-peoples.txt`, `data/scripts/words-2-inventing.txt`, and `crates/engine/tests/words.rs`.
+**Both stages passed, 2026-09-29.** World: `data/strangers-words.toml`, with two cultures, `islanders` (since shared in `data/island-things.toml`) and `far-folk`. Plain descriptions of materials, shapes, and kinds (`looks` and `form`) are in `data/island-things.toml`. Proofs: `data/scripts/words-1-two-peoples.txt`, `data/scripts/words-2-inventing.txt`, and `crates/engine/tests/words.rs`.
 
 ### Stage 1: seeing and saying in your own words
 

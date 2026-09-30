@@ -165,7 +165,7 @@ fn a_well_fed_body_stores_its_surplus_as_fat_again() {
     let hungry = material(&w, me, "fat");
     run(&mut w, me, "go beach");
     for _ in 0..10 {
-        run(&mut w, me, "gather shellfish-bed");
+        run(&mut w, me, "gather shellfish");
         let piece = *w.contents(me).last().unwrap();
         let eat = format!("eat {}", w.key(piece));
         run(&mut w, me, &eat);
@@ -222,4 +222,109 @@ fn boars_run_from_a_person_who_comes_among_them_and_keep_away() {
     for &b in &awake {
         assert_ne!(w.place_of(b), Some(busiest), "a boar came back");
     }
+}
+
+/// The living island with a piece of leather in the islander's hands, of
+/// `mass`.
+fn island_with_leather(mass: &str) -> (World, EntityId) {
+    let text = format!(
+        "{LIVING}\n[[item]]\nid = \"skin\"\nat = \"survivor\"\nmass = \"{mass}\"\nmaterial = \"leather\"\n"
+    );
+    let w = load_world_with(&text, &[THINGS])
+        .unwrap()
+        .with_luck(engine::world::Luck::AVERAGE);
+    let me = w.find_by_key("survivor").unwrap();
+    (w, me)
+}
+
+fn wounds(world: &World, me: EntityId) -> usize {
+    world.life(me).unwrap().wounds.len()
+}
+
+#[test]
+fn stony_ground_cuts_and_slows_bare_feet_but_wears_shoes_instead() {
+    let (mut bare, me) = island_with_leather("400 g");
+    let skin = bare.find_by_key("skin").unwrap();
+    let mut shod = bare.clone();
+    run(&mut shod, me, "wear dried skin on your feet");
+    for w in [&mut bare, &mut shod] {
+        run(w, me, "go forest");
+        run(w, me, "go hillside");
+    }
+    // Sand, the forest floor, and the hillside don't hurt bare feet.
+    assert_eq!(wounds(&bare, me), 0);
+    // Walking wears the sole by the ground's roughness: the rougher end, a
+    // km at a time. Beach to forest, 300 m at 1 g/km; forest to hillside,
+    // 500 m at 4 g/km.
+    assert_eq!(400_000 - shod.mass(skin).mg(), 300 + 2_000);
+
+    let (bare_start, shod_start) = (bare.tick(), shod.tick());
+    run(&mut bare, me, "go slopes");
+    run(&mut shod, me, "go slopes");
+    // 5 km at 10 g/km: 50 g of sole, and no wound.
+    assert_eq!(400_000 - shod.mass(skin).mg(), 2_300 + 50_000);
+    assert_eq!(wounds(&shod, me), 0);
+    // Bare feet are cut, bleeding 20 mg/s for each of the 5 km, and walk at
+    // half pace.
+    assert_eq!(bare.life(me).unwrap().wounds.last().unwrap().0, 100);
+    let (bare_time, shod_time) = (bare.tick() - bare_start, shod.tick() - shod_start);
+    assert!(
+        bare_time > shod_time * 3 / 2,
+        "bare {bare_time} s, shod {shod_time} s"
+    );
+}
+
+#[test]
+fn shoes_that_have_worn_through_are_as_good_as_bare_feet() {
+    let (mut w, me) = island_with_leather("200 g");
+    run(&mut w, me, "wear dried skin on your feet");
+    let skin = w.find_by_key("skin").unwrap();
+    for place in ["forest", "hillside", "slopes", "ridge"] {
+        run(&mut w, me, &format!("go {place}"));
+    }
+    // 2.3 g, then 50 g, then 100 g: more than half of 200 g is gone.
+    assert!(w.worn_through(skin));
+    assert_eq!(wounds(&w, me), 0);
+    run(&mut w, me, "go slopes");
+    assert_eq!(wounds(&w, me), 1);
+}
+
+#[test]
+fn a_leather_cloak_keeps_in_body_heat_on_a_cold_night() {
+    let (mut bare, me) = island_with_leather("2 kg");
+    let mut cloaked = bare.clone();
+    run(&mut cloaked, me, "wear dried skin");
+    // 2 kg covers a whole body, and leather keeps in 40% of its heat.
+    assert_eq!(cloaked.clothed(me), 4_000);
+    let until_evening = 20 * 3_600 - bare.tick();
+    let before = stored_energy(&bare, me);
+    for w in [&mut bare, &mut cloaked] {
+        engine::nature::run(w, until_evening).unwrap();
+        run(w, me, "sleep for 10 h");
+    }
+    let (bare_burned, cloaked_burned) = (
+        before - stored_energy(&bare, me),
+        before - stored_energy(&cloaked, me),
+    );
+    // About 8.7 MJ against 11.3 MJ: the cloak saves over a fifth.
+    assert!(
+        cloaked_burned < bare_burned * 85 / 100,
+        "cloaked {cloaked_burned} µJ, bare {bare_burned} µJ"
+    );
+}
+
+#[test]
+fn only_something_soft_can_be_worn() {
+    let (mut w, me) = island_with_leather("400 g");
+    run(&mut w, me, "go forest");
+    run(&mut w, me, "go hillside");
+    run(&mut w, me, "gather stones");
+    let Ok(Command::Act(intent)) = parse("wear stone on your feet") else {
+        unreachable!()
+    };
+    let refused = engine::laws::resolve(&w, me, &intent).unwrap_err();
+    assert_eq!(
+        refused.to_string(),
+        "the lump of stone is too stiff to wear"
+    );
 }

@@ -1,7 +1,7 @@
 # The "a stranger's words" challenge: two people from two peoples, with two
 # sets of words, on one island. See docs/challenges/strangers-words.md.
 #
-# The islander's people know the island: its stone and flint, its creatures,
+# The islander's people, whose culture is in island-things.toml, know the island: its stone and flint, its creatures,
 # and how to make a spear. The stranger washed up from a people who work
 # metal and sail: they know iron, rope, and the sea, and call a sharp chip a
 # barb, but have never seen flint, a shaft, or a spear. What each sees, and
@@ -32,17 +32,6 @@ day = "24 h"
 starts_at = "8 h"
 sunrise = "6 h"
 sunset = "18 h"
-
-[[culture]]
-id = "islanders"
-knows = [
-    "water", "seawater", "wood", "grass", "stone", "flint", "rock", "clay", "fibre",
-    "flesh", "meat", "cooked-meat", "fat", "hide", "bone", "fish", "shellfish", "shell",
-    "roots", "litter", "ash",
-    "flake", "shaft", "rope", "pot",
-    "spear", "raft", "lean-to", "fire-ring",
-    "animal", "boar", "tree", "shrub", "human",
-]
 
 [[culture]]
 id = "far-folk"

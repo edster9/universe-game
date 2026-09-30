@@ -28,6 +28,7 @@ Commands:
   rub <thing> against <thing>       rub two parts together to make both finer (10 minutes)
   assemble <design>                 put carried parts together to a design (or \"make\")
   disassemble <thing>               take something apart into its parts
+  wear <thing> [on your feet]       wear something soft you carry; \"take off <thing>\"
   join <thing> and <thing>          put things together without a design
   call <thing> a <word>             name something in your own words (\"call it a …\")
   tell <person> that <thing> is a <word>
@@ -418,7 +419,29 @@ impl Session {
                 format!("You cross to {} on {vessel}.", w.label_for(self.player, to))
             }
             (Intent::Go { .. }, Some(&Change::Move { to, .. })) => {
-                format!("You go to {}.", w.label_for(self.player, to))
+                let mut text = format!("You go to {}.", w.label_for(self.player, to));
+                // What the ground did to your feet, or to what's on them.
+                for change in changes {
+                    match *change {
+                        Change::Wound { agent, rate } if agent == self.player => {
+                            text = format!(
+                                "{text} The rough ground cuts your feet: you're bleeding {} a second.",
+                                Mass::from_mg(rate)
+                            );
+                        }
+                        Change::Split { from, .. } => {
+                            let shoe = w.underfoot(self.player).filter(|&s| w.sole(s) == from);
+                            if let Some(shoe) = shoe.filter(|&s| w.worn_through(s)) {
+                                text = format!(
+                                    "{text} Your {} wore through.",
+                                    name(shoe).trim_start_matches("the ")
+                                );
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                text
             }
             (
                 Intent::Go { .. },
@@ -592,14 +615,30 @@ impl Session {
             }
             (Intent::Call { word, .. }, _) => {
                 let recipe = if changes.iter().any(|c| matches!(c, Change::Recipe { .. })) {
-                    format!(" You remember how you made it: \"make a {word}\" will make another.")
+                    format!(" You remember how you made it: \"make {word}\" will make another.")
                 } else {
                     String::new()
                 };
-                format!("You call it a {word}.{recipe}")
+                format!("You call it {word}.{recipe}")
             }
             (Intent::Tell { word, .. }, Some(&Change::Word { agent, .. })) => {
                 format!("You tell {} it's a {word}.", name(agent))
+            }
+            (
+                Intent::Wear { .. },
+                Some(Change::Wear {
+                    item,
+                    worn: Some(worn),
+                    ..
+                }),
+            ) => match worn.on {
+                engine::world::Covering::Feet => {
+                    format!("You wear {} on your feet.", name(*item))
+                }
+                engine::world::Covering::Body => format!("You put on {}.", name(*item)),
+            },
+            (Intent::TakeOff { .. }, Some(Change::Wear { item, .. })) => {
+                format!("You take off {}.", name(*item))
             }
             (Intent::Disassemble { .. }, Some(&Change::Disassemble { .. })) => {
                 "You take it apart.".into()
@@ -778,6 +817,10 @@ impl Session {
             &Change::Made { agent, thing } => {
                 format!("{} made {}", w.label(agent), w.key(thing))
             }
+            Change::Wear { agent, item, worn } => match worn {
+                Some(_) => format!("{} wears {}", w.label(*agent), w.label(*item)),
+                None => format!("{} takes off {}", w.label(*agent), w.label(*item)),
+            },
             &Change::Disassemble { assembly } => format!("{} taken apart", w.key(assembly)),
             Change::Shift { from, to, take } => format!(
                 "{} of {} from {} into {}",

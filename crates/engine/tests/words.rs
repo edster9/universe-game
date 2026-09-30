@@ -10,7 +10,7 @@ use engine::words::{Closeness, Look, Part};
 use engine::world::{EntityId, Luck, World};
 
 const WORDS: &str = include_str!("../../../data/strangers-words.toml");
-const LIVING: &str = include_str!("../../../data/living.toml");
+const WHERE: &str = include_str!("../../../data/where-am-i.toml");
 const THINGS: &str = include_str!("../../../data/island-things.toml");
 
 fn island() -> (World, EntityId, EntityId) {
@@ -94,7 +94,7 @@ fn one_thing_two_names() {
 
 #[test]
 fn a_world_without_cultures_names_things_as_before() {
-    let w = load_world_with(LIVING, &[THINGS]).unwrap();
+    let w = load_world_with(WHERE, &[THINGS]).unwrap();
     let me = w.find_by_key("survivor").unwrap();
     assert!(!w.has_words(me));
     for thing in w.entities() {

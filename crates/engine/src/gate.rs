@@ -192,6 +192,12 @@ pub enum Change {
     },
     /// Someone has made something, which "it" now means to them.
     Made { agent: EntityId, thing: EntityId },
+    /// Someone starts wearing something they carry, or, with `None`, stops.
+    Wear {
+        agent: EntityId,
+        item: EntityId,
+        worn: Option<crate::world::Worn>,
+    },
 }
 
 /// Something that can hold heat.
@@ -304,6 +310,17 @@ impl World {
         let result = changes
             .iter()
             .try_for_each(|change| self.apply_one(change))
+            .map(|()| {
+                // What's no longer on someone isn't worn any more.
+                let worn: Vec<EntityId> = self.worn.keys().copied().collect();
+                for item in worn {
+                    let on_someone =
+                        self.exists(item) && self.location(item).is_some_and(|l| self.is_agent(l));
+                    if !on_someone {
+                        self.worn.remove(&item);
+                    }
+                }
+            })
             .and_then(|()| {
                 if self.total_mass() != mass {
                     Err(Fault::NotConserved("mass"))
@@ -749,6 +766,18 @@ impl World {
                 if !lexicon.recipes.contains(&entry) {
                     lexicon.recipes.push(entry);
                 }
+                Ok(())
+            }
+            Change::Wear { agent, item, worn } => {
+                if self.location(*item) != Some(*agent) {
+                    return Err(Fault::Invariant(format!(
+                        "{agent:?} can only wear what they carry"
+                    )));
+                }
+                match worn {
+                    Some(worn) => self.worn.insert(*item, worn.clone()),
+                    None => self.worn.remove(item),
+                };
                 Ok(())
             }
             &Change::Made { agent, thing } => {

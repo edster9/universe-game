@@ -51,6 +51,8 @@ fn the_body_shows_what_the_datasheet_measures_and_the_backpack_what_is_carried()
         "gather sticks",
         "go to grass",
         "gather grass",
+        "go to twigs",
+        "gather twigs",
     ] {
         assert!(!s.handle(line).refused, "{line}");
     }
@@ -58,9 +60,11 @@ fn the_body_shows_what_the_datasheet_measures_and_the_backpack_what_is_carried()
     assert_eq!(
         pack,
         [
-            "lump of wood x2: 400 g",
+            // A twig is a lump of wood too, but not alike a stick.
+            "lump of wood x2: 400 g, about 200 g each",
             "lump of dry grass: 5 g",
-            "carrying 405 g of 40 kg"
+            "lump of wood: 20 g",
+            "carrying 425 g of 40 kg"
         ]
     );
     // Gathering is hard work, and the body shows it.

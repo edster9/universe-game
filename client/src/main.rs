@@ -203,15 +203,33 @@ fn main() {
     let land = Land::of(play_world(&play));
     let speed = number("--speed").unwrap_or(1.0);
 
+    keep_crashes();
+    // DirectX 12 on Windows unless WGPU_BACKEND says otherwise: Vulkan on
+    // this laptop's NVIDIA chip has lost the device now and then.
+    let mut wgpu = bevy::render::settings::WgpuSettings::default();
+    if cfg!(windows) && std::env::var("WGPU_BACKEND").is_err() {
+        wgpu.backends = Some(bevy::render::settings::Backends::DX12);
+    }
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        primary_window: Some(Window {
-            title: "Universe game".into(),
-            resolution: (1600, 900).into(),
-            ..default()
-        }),
-        ..default()
-    }))
+    app.add_plugins(
+        DefaultPlugins
+            .set(bevy::render::RenderPlugin {
+                render_creation: bevy::render::settings::RenderCreation::Automatic(Box::new(wgpu)),
+                ..default()
+            })
+            .set(bevy::log::LogPlugin {
+                custom_layer: file_log,
+                ..default()
+            })
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Universe game".into(),
+                    resolution: (1600, 900).into(),
+                    ..default()
+                }),
+                ..default()
+            }),
+    )
     .add_plugins(FreeCameraPlugin)
     .insert_resource(ClearColor(Color::srgb(0.55, 0.72, 0.9)))
     .insert_resource(Sim {
@@ -270,6 +288,7 @@ fn main() {
                 panels::show,
                 terminal::take_shots,
                 shot,
+                frames,
             )
                 .chain(),
         )
@@ -277,6 +296,56 @@ fn main() {
     );
     use_system_font(&mut app);
     app.run();
+}
+
+/// Where the client keeps its log: beside the program.
+fn log_path() -> PathBuf {
+    std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|p| p.join("client.log")))
+        .unwrap_or_else(|| PathBuf::from("client.log"))
+}
+
+/// Everything the client logs also goes to `client.log`, so a freeze or a
+/// crash leaves its reasons behind, even when it was started by a double
+/// click with nowhere to print them.
+fn file_log(_: &mut App) -> Option<bevy::log::BoxedLayer> {
+    use bevy::log::tracing_subscriber::{self, Layer};
+    let file = std::fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(log_path())
+        .ok()?;
+    Some(
+        tracing_subscriber::fmt::layer()
+            .with_ansi(false)
+            .with_writer(std::sync::Mutex::new(file))
+            .boxed(),
+    )
+}
+
+/// Panics go to `client.log` too, after a line saying when the client
+/// started, so each run can be told apart.
+fn keep_crashes() {
+    use std::io::Write;
+    if let Ok(mut file) = std::fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(log_path())
+    {
+        let _ = writeln!(
+            file,
+            "--- the client starts: {:?}",
+            std::env::args().collect::<Vec<_>>()
+        );
+    }
+    let usual = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        if let Ok(mut file) = std::fs::OpenOptions::new().append(true).open(log_path()) {
+            let _ = writeln!(file, "PANIC: {info}");
+        }
+        usual(info);
+    }));
 }
 
 /// Windows' own Consolas, when it's there, for the text: it has every sign
@@ -534,6 +603,21 @@ fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud
     for mut text in &mut text {
         text.0 =
             format!("{clock}   {state}\n{here}{doing}\n{view}; Space pause, [ ] slower/faster");
+    }
+}
+
+/// With `--frames`, prints how many frames were drawn every two seconds,
+/// for finding where time goes.
+fn frames(time: Res<Time>, mut count: Local<(u32, f32)>) {
+    if !std::env::args().any(|a| a == "--frames") {
+        return;
+    }
+    count.0 += 1;
+    let now = time.elapsed_secs();
+    if now - count.1 >= 2.0 {
+        println!("{now:.1} s: {} frames", count.0);
+        count.0 = 0;
+        count.1 = now;
     }
 }
 

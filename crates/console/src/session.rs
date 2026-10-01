@@ -1341,31 +1341,38 @@ pub fn body(world: &World, who: EntityId, all: bool) -> Vec<String> {
 pub fn backpack(world: &World, who: EntityId) -> Vec<String> {
     let inv = view::inventory(world, who);
     let mut lines = Vec::new();
-    let mut shown: Vec<(String, u64, Mass, Vec<Thing>)> = Vec::new();
+    // Label, how many, their mass in all, the first one's mass, and what's
+    // inside.
+    let mut shown: Vec<(String, u64, Mass, Mass, Vec<Thing>)> = Vec::new();
     for thing in &inv.things {
         let label = if thing.notes.is_empty() {
             thing.label.clone()
         } else {
             format!("{} ({})", thing.label, thing.notes.join(", "))
         };
-        match shown
-            .iter_mut()
-            .find(|(l, _, _, inner)| *l == label && inner.is_empty() && thing.contents.is_empty())
-        {
-            Some((_, n, mass, _)) => {
+        // Alike means the same name and about the same size: a stick and a
+        // twig may both be a lump of wood, but they aren't alike.
+        let about = |a: Mass, b: Mass| a.mg() * 4 <= b.mg() * 5 && b.mg() * 4 <= a.mg() * 5;
+        match shown.iter_mut().find(|(l, _, _, first, inner)| {
+            *l == label
+                && about(*first, thing.mass)
+                && inner.is_empty()
+                && thing.contents.is_empty()
+        }) {
+            Some((_, n, mass, _, _)) => {
                 *n += 1;
                 *mass = Mass::from_mg(mass.mg() + thing.mass.mg());
             }
-            None => shown.push((label, 1, thing.mass, thing.contents.clone())),
+            None => shown.push((label, 1, thing.mass, thing.mass, thing.contents.clone())),
         }
     }
-    for (label, n, mass, inner) in shown {
-        let count = if n > 1 {
-            format!(" x{n}")
+    for (label, n, mass, _, inner) in shown {
+        if n > 1 {
+            let each = Mass::from_mg(mass.mg() / n);
+            lines.push(format!("{label} x{n}: {mass}, about {each} each"));
         } else {
-            String::new()
-        };
-        lines.push(format!("{label}{count}: {mass}"));
+            lines.push(format!("{label}: {mass}"));
+        }
         for thing in inner {
             lines.push(format!("  {}: {}", thing.label, thing.mass));
         }

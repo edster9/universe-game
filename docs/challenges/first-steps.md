@@ -242,3 +242,13 @@ On plain sand nothing shows movement, and there won't always be texture. G shows
 - A walk between places still can't be taken over halfway: the keys wait until arrival.
 - WASD walks in steps of 1.3 m, renewed while held, so there may be a slight hitch between steps at real speed. The owner's first try will tell.
 - Nobody but the engine has pressed WASD yet: screenshots can't. The walking keys were checked through the same commands they send (`walk to`, `stop`, `go #n`).
+
+## After the owner's first try (2026-09-30)
+
+The owner got halfway through the fire, and found three things:
+
+- **Too many steps.** The fire is very detailed and technical, and the number of steps is the problem. To discuss: skills, and how processes should go.
+- **The window froze and crashed while being resized.** CPU went up, everything froze, and it crashed. Not reproduced here: 1,200 programmatic resizes, a simulated mouse drag of the window's corner, and shrinking it to 130×40 all kept drawing at 120 frames a second. What was caught, once, without any resizing: the graphics driver "lost the device" on Vulkan, after which the client panicked on several threads and hung before dying, which matches what the owner saw. Resizing rebuilds the window's drawing surface each time, which gives a flaky driver many more chances to fail. Changes:
+  - The client now draws with **DirectX 12** on Windows (Vulkan with `WGPU_BACKEND=vulkan`). It passed every test.
+  - Everything the client logs, and any panic, now goes to **`client.log`** beside the program. If it ever freezes or crashes again, the reason is kept, even when it was started by a double click.
+- **The backpack merged sticks and twigs** into "lump of wood x5". The islander calls both a lump of wood (they're recognised by material, not size), and the backpack grouped by name alone. Now alike means the same name and about the same size (within a quarter): "lump of wood x2: 400 g, about 200 g each" and "lump of wood x3: 60 g, about 20 g each". The test covers it. Whether people should have words for sizes of wood (twig, stick, log) is a vocabulary question for the coming conversation.

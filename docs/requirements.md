@@ -578,6 +578,10 @@ Added 2026-09-30, after trying the fire.
 - **Gathering takes far too long.** I can't type "gather wood" and wait 3 minutes; that wouldn't be fun. Gathering the fire's inventory from start to finish, assuming everything is next to you, should take **under a minute**.
 - **Clicking on the objects near you**, to bypass the terminal: at the end of the day, **the terminal is for processes, not object interaction**. Ideas to follow.
 
+### Clicking on things
+
+Added 2026-09-30. It's simple: right now **the mouse hover tells you what something is**, so **if I left-click right there, a small context menu shows the things I can do with it**, like "gather", "push", "pull", whatever, **depending on what interactions are allowed at any given situation**.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

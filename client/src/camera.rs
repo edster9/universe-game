@@ -1,7 +1,8 @@
 //! The islander's camera: above and behind them, following wherever they
-//! go. The mouse turns it around them (hold the right button and drag), and
-//! the angle stays while they walk; the wheel brings it closer or further. F
-//! breaks out into free flying, a developer's tool, and F again snaps back.
+//! go. The mouse turns it around them (hold the right button and drag), as
+//! do the arrow keys, and the angle stays while they walk; the wheel brings
+//! it closer or further. F breaks out into free flying, a developer's tool,
+//! with the arrows (WASD still walks the islander), and F again snaps back.
 //! Pointing at something names it, in the islander's words.
 
 use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraState};
@@ -74,6 +75,11 @@ pub fn setup(mut commands: Commands, options: Res<Options>, sim: Res<Sim>, land:
         FreeCamera {
             walk_speed: 20.0,
             run_speed: 200.0,
+            // The arrows fly the camera; WASD still walks the islander.
+            key_forward: KeyCode::ArrowUp,
+            key_back: KeyCode::ArrowDown,
+            key_left: KeyCode::ArrowLeft,
+            key_right: KeyCode::ArrowRight,
             ..default()
         },
         state,
@@ -129,6 +135,16 @@ pub fn follow(
     if buttons.pressed(MouseButton::Right) {
         eye.yaw -= motion.delta.x * 0.005;
         eye.pitch = (eye.pitch + motion.delta.y * 0.005).clamp(-0.3, 1.45);
+    }
+    // The arrows turn the camera around the islander too.
+    if !console.typing {
+        let turn = time.delta_secs() * 1.6;
+        let axis = |plus: KeyCode, minus: KeyCode| {
+            f32::from(u8::from(keys.pressed(plus))) - f32::from(u8::from(keys.pressed(minus)))
+        };
+        eye.yaw += axis(KeyCode::ArrowLeft, KeyCode::ArrowRight) * turn;
+        eye.pitch =
+            (eye.pitch + axis(KeyCode::ArrowUp, KeyCode::ArrowDown) * turn * 0.6).clamp(-0.3, 1.45);
     }
     let lines = match scroll.unit {
         MouseScrollUnit::Line => scroll.delta.y,

@@ -46,6 +46,7 @@ mod terminal;
 mod terrain;
 mod tools;
 mod voice;
+mod walking;
 
 use crate::terminal::{Console, Said};
 use terrain::Land;
@@ -241,26 +242,36 @@ fn main() {
     .add_systems(
         Update,
         (
-            terminal::type_in,
-            controls,
-            panels::keys,
-            tools::run_typed,
-            grid::toggle,
-            voice::push_to_talk,
-            voice::run_heard,
-            run_world,
-            terminal::play_script,
-            draw::draw_scenery,
-            draw::draw_movers,
-            camera::follow,
-            camera::point,
-            grid::draw,
-            day_and_night,
-            hud,
-            terminal::show,
-            panels::show,
-            terminal::take_shots,
-            shot,
+            // What the player does: keys, typing, speaking.
+            (
+                terminal::type_in,
+                controls,
+                panels::keys,
+                tools::run_typed,
+                walking::walk_keys,
+                grid::toggle,
+                voice::push_to_talk,
+                voice::run_heard,
+            )
+                .chain(),
+            // Then the world, and drawing it.
+            (
+                run_world,
+                terminal::play_script,
+                draw::draw_scenery,
+                draw::draw_movers,
+                camera::follow,
+                camera::point,
+                grid::draw,
+                walking::draw_reach,
+                day_and_night,
+                hud,
+                terminal::show,
+                panels::show,
+                terminal::take_shots,
+                shot,
+            )
+                .chain(),
         )
             .chain(),
     );
@@ -516,9 +527,9 @@ fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud
         None => String::new(),
     };
     let view = if eye.flying {
-        "flying free: WASD, E/Q, Shift; F to go back"
+        "flying free: arrows, E/Q, Shift; F to go back; WASD still walks"
     } else {
-        "right-drag to look, wheel to zoom, F to fly, B backpack, V body, T speak, G grid"
+        "WASD walk, right-drag or arrows to look, wheel to zoom, F fly, B backpack, V body, T speak, G grid"
     };
     for mut text in &mut text {
         text.0 =

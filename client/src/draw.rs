@@ -15,9 +15,6 @@ use crate::terrain::Land;
 
 pub const STYLE: &str = include_str!("../style.toml");
 
-/// How far from a place's centre its things are scattered, in metres.
-const PATCH: f32 = 90.0;
-
 #[derive(Deserialize, Clone)]
 pub struct Look {
     form: String,
@@ -124,19 +121,26 @@ fn id_seed(world: &EngineWorld, id: EntityId) -> u64 {
 /// at its place, or on its way between two places. `now` is the world's
 /// time, with the fraction of a second not yet run.
 pub fn spot(world: &EngineWorld, land: &Land, id: EntityId, now: f32) -> Vec3 {
-    let seed = id_seed(world, id);
-    // Until places have room in them, everyone stands near the middle, and
-    // what's put down lies nearer still, where they can see it.
-    let reach = if world.is_agent(id) { 10.0 } else { 5.0 };
-    let at = |p: EntityId| place_at(world, p) + scatter(seed, 7, reach);
-    let point = match engine::laws::journey(world, id) {
-        Some((from, to, since, until)) if until > since => {
-            let t = ((now - since as f32) / (until - since) as f32).clamp(0.0, 1.0);
-            at(from).lerp(at(to), t)
-        }
-        _ => world.place_of(id).map_or(Vec3::ZERO, at),
+    let along = |from: (i64, i64), to: (i64, i64), since: u64, until: u64| {
+        let t = ((now - since as f32) / (until - since).max(1) as f32).clamp(0.0, 1.0);
+        point(from).lerp(point(to), t)
     };
-    on_ground(land, point)
+    let here = world.spot(id).unwrap_or((0, 0));
+    let at = if let Some((_, to, since, until)) = engine::laws::journey(world, id) {
+        // On a path: from where they stood to where they'll arrive.
+        along(here, world.arrival(id, to), since, until)
+    } else if let Some((from, to, since, until)) = engine::laws::stride(world, id) {
+        // Walking within the place.
+        along(from, to, since, until)
+    } else {
+        point(here)
+    };
+    on_ground(land, at)
+}
+
+/// A spot from the engine (µm east and north) in the scene's metres.
+pub fn point((east, north): (i64, i64)) -> Vec3 {
+    Vec3::new(east as f32 / 1e6, 0.0, -(north as f32 / 1e6))
 }
 
 fn colour(hex: &str) -> Color {
@@ -465,9 +469,13 @@ pub fn draw_scenery(
             n
         };
         let seed = id_seed(world, thing);
-        let at = place_at(world, place);
+        // Around its spot, over as far as it spreads.
+        let at = world
+            .spot(thing)
+            .map_or_else(|| place_at(world, place), point);
+        let spread = world.spread(thing) as f32 / 1e6;
         for i in 0..n {
-            let offset = scatter(seed, i, PATCH * 0.85);
+            let offset = scatter(seed, i, spread * 0.9);
             let turn = (seed.wrapping_add(i) % 628) as f32 / 100.0;
             brush.piece(
                 &look,
@@ -518,11 +526,9 @@ pub fn draw_movers(
             let at = if moves {
                 spot(world, &land, id, now)
             } else {
-                let place = world.place_of(id).unwrap_or(id);
-                on_ground(
-                    &land,
-                    place_at(world, place) + scatter(seed, 0, PATCH * 0.85),
-                )
+                let spread = world.spread(id) as f32 / 1e6;
+                let middle = world.spot(id).map_or(Vec3::ZERO, point);
+                on_ground(&land, middle + scatter(seed, 0, spread * 0.9))
             };
             brush.fire(at + Vec3::Y * 0.2, grams, t, seed);
         }

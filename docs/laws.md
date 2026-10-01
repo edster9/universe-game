@@ -186,6 +186,11 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Walking takes the path's length at the walker's speed, which a full load halves; it's hard work | in | stranded |
 | Places have a height. Going up, a share of the walker's working power lifts their weight and load (mass × gravity × height), adding time; going down costs nothing extra | in | where am I? 4 |
 | A body can carry only up to its limit | in | stranded |
+| Everything in a place has a spot in it; a place reaches a size from its middle (50 m unless data says). What arrives stands at the middle, a step from anyone else; what's dropped lies at your feet | in | first steps 6 |
+| A body reaches as far as its data says (people 2.5 m, boars 1 m), or, with none, everything in its place. Handling, gathering, striking, and giving need the thing within reach, past the edge of what it spreads over; otherwise they're refused, saying how far and which way. Talking, pointing, naming, and paying reach the whole place | in | first steps 6 |
+| A stock lies in a patch around its spot, as far as its spread; a fixed thing with no spot or spread covers its whole place | in | first steps 6 |
+| Walking within a place, to just within reach of something or to a spot, takes the distance at the walker's pace and load, like a path; it can be stopped partway, where the walker has got to | in | first steps 6 |
+| Minds and creatures walk up to what they act on before acting; a mind keeps a request until it's within reach to do it | in | first steps 6 |
 | Someone who has to find their way knows only the ways they've found or walked; walking a way teaches the way back. Only known ways can be seen or taken | in | where am I? 2 |
 | Exploring is a search: each takes a fixed time, needs light, and with some chance finds the nearest way out not yet known | in | where am I? 2 |
 | Some paths cross a liquid, and only something that floats and carries you, with all you hold, can take you across; it comes with you | in | stranded 8 |

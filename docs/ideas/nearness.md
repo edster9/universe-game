@@ -65,3 +65,13 @@ The owner's idea: **WASD always walks the islander, and the arrow keys move the 
 3. **WASD walks, the arrows move the camera**: agree?
 4. **Taking over a walk works within a place first**, and paths become space later: agree?
 5. Talking and seeing stay place-wide for now: agree?
+
+## Built, 2026-09-30
+
+As proposed, with these choices made along the way:
+
+- **Reach is the body's one reach.** People already had a reach of 2.5 m in data (how high they could reach, which kept boars out of a raised cache) and boars 1 m. It now also says how far they reach across the ground. A body with no reach in data reaches everything in its place, so the older worlds play as before.
+- **Arrivals stand at the middle, a step apart**: up to 40 cm off it, the same for the same person every time, so they're within reach of each other.
+- **`go to <thing>` already within reach succeeds** ("You're already there") rather than refusing, so shared recipes can always say `go to the sticks`, in worlds with patches and without.
+- **The stranger's offers and the islander's** are agreed across the whole place, like talking; the goods change hands without walking over. A simplification.
+- **The client:** WASD walks a step of 1.3 m at a time while held, as `walk to <east> <north>`; a commanded walk is taken over; walking into a place's edge towards a way out sets off along it. The arrows turn the camera (and fly it, in free flight). `/reach` shows the reach as a circle on the ground. Everything is drawn at its spot from the engine, stocks across their patches.

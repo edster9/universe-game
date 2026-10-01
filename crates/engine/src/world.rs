@@ -1586,8 +1586,16 @@ impl World {
 
     /// Whether `who` can touch `thing` from where they stand.
     pub fn within_reach(&self, who: EntityId, thing: EntityId) -> bool {
-        self.reach(who)
-            .is_none_or(|reach| self.gap(who, thing) <= reach)
+        let Some(reach) = self.reach(who) else {
+            return true;
+        };
+        let (Some(a), Some(b)) = (self.spot(who), self.spot(thing)) else {
+            return true;
+        };
+        // Squares, to save a square root: asked of everything around, often.
+        let (east, north) = (i128::from(a.0 - b.0), i128::from(a.1 - b.1));
+        let within = i128::from(reach) + i128::from(self.spread(thing));
+        east * east + north * north <= within * within
     }
 
     /// Takes `id` out of wherever it is, leaving it nowhere.

@@ -204,3 +204,41 @@ On plain sand nothing shows movement, and there won't always be texture. G shows
 - 150 m around the islander, or around the camera when flying.
 
 `--open grid` shows it at the start. The grid showed up a flaw in the land's shape: within 1 m of a place's centre, the height jumped to the place's own height instead of blending into it, which made a small pit. Fixed: the blend is smooth everywhere.
+
+## Stage 6, results (2026-09-30)
+
+**Passed.** Places have room in them. The design is [ideas/nearness.md](../ideas/nearness.md), agreed with the owner first.
+
+**In the engine:**
+- **Spots.** Everything in a place has a spot in it. Arrivals stand at the middle, a step apart, and what you drop lies at your feet.
+- **Patches.** On the companion's island, the stocks lie in patches of their own: the forest's grass 25 m north-west, its sticks 20 m east, its twigs south-east; the hillside's stones and flint; the beach's driftwood and shellfish; the stream's bog iron and clay. The sea, the trees, and the forest floor cover their whole place.
+- **Reach.** A person reaches 2.5 m and a boar 1 m: the reach their data already gave them, now across the ground as well as up. Handling, gathering, lighting, striking, and giving need the thing within reach. Otherwise: "Out of reach: the fallen sticks, 11 m east." `look` says how far and which way for what's out of reach: "fallen sticks (50 kg, 11 m east)". Talking, pointing, naming, offering, and paying reach the whole place.
+- **Walking within a place.** `go to the sticks` or `walk to 10 -10` (metres east and north of the middle) walks there, at the walker's pace and load. `stop` stops partway. The edge of a place stops you: "You can't go further that way: it's the edge of the forest."
+- **Minds and creatures walk up to what they act on.** Hungry, the stranger walks 30 m to the rocks before gathering. Asked to hand over wood, they walk over to the islander first, and keep the request until they're within reach.
+
+**In the client:**
+- **Drawing.** Everything is drawn at its spot from the engine: stocks across their patches, walkers on their way between spots.
+- **Keys.** WASD walks the islander, relative to the camera. A key pressed during a walk someone typed or spoke takes over from where the islander has got to. Walking into a place's edge towards a way out sets off along that path. The arrows turn the camera (and fly it, in free flight, so WASD keeps walking).
+- **`/reach`** draws the reach as a circle on the ground.
+
+**Proofs:**
+- The script `first-steps-6-near-things.txt`: too far, with distance and direction; `go to`; already there; dropped at your feet, then out of reach after walking away; a spot in metres; the edge; a walk stopped partway, with the grass 31 m off before and 27 m after three seconds' walk. It also passes played in the client (22 commands, 16 screenshots, with the grid on).
+- The engine test `minds_walk_up_to_what_they_act_on`: the stranger gathers from beside the rocks, never from where they stood.
+- **Every older script passes.** The island's scripts gained a `go to` before each gather from a patch, which is what this stage asks. The shared spear recipe walks too: in worlds without patches, `go to` just says you're already there.
+- **Sabotage checks**, each failing the scripts: reach ignored (the original and the faster rewrite); creatures not walking up; dropping elsewhere than at your feet; stopping without the partial walk.
+- **Trials:**
+  - the stranger alive after 30 days in 10 of 10;
+  - 60 of 60 boars alive after 30 days;
+  - the castaways as before.
+- **Scale:** a village's 121 bodies for 30 days take 54 s (47,600 times faster than real time) against 49 s before, with memory flat at 39 MB. That's about 10% for measuring reach, after replacing the square roots with squares.
+
+**Found along the way:**
+- The first scale run was 30% slower: every action measured the distance to everything in the place, with a square root each time. Comparing squared distances brought it back to about 10%.
+- A request to a mind was refused when what was asked was out of the listener's reach. A mind walks up first, so "too far" no longer counts against a request.
+- A mind took up a request, then walked up to it, and forgot it. It now keeps the request until within reach.
+
+**Simplified, and open:**
+- Seeing and talking are still place-wide. A trade's goods change hands across the place.
+- A walk between places still can't be taken over halfway: the keys wait until arrival.
+- WASD walks in steps of 1.3 m, renewed while held, so there may be a slight hitch between steps at real speed. The owner's first try will tell.
+- Nobody but the engine has pressed WASD yet: screenshots can't. The walking keys were checked through the same commands they send (`walk to`, `stop`, `go #n`).

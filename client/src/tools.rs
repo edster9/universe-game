@@ -18,11 +18,16 @@ use crate::terminal::{Console, Said};
 pub struct Settings {
     /// Back to real speed when what the actor is doing is done.
     pub snap: bool,
+    /// A circle on the ground showing how far the islander can reach.
+    pub reach: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Settings { snap: true }
+        Settings {
+            snap: true,
+            reach: false,
+        }
     }
 }
 
@@ -67,6 +72,12 @@ const SETTINGS: &[(&str, &str, Layer, &str)] = &[
         "back to real speed when what you're doing is done",
     ),
     ("grid", "G", Layer::Always, "a grid on the ground"),
+    (
+        "reach",
+        "",
+        Layer::Always,
+        "a circle showing how far you can reach",
+    ),
     ("fly", "F", Layer::Always, "the camera flies free"),
     ("backpack", "B", Layer::Always, "the backpack window"),
     ("body", "V", Layer::Always, "the body window"),
@@ -89,6 +100,7 @@ impl Changeable<'_> {
             "speed" => format!("{}", self.sim.speed),
             "pause" => on(self.sim.paused),
             "snap" => on(self.settings.snap),
+            "reach" => on(self.settings.reach),
             "grid" => on(self.grid.shown),
             "fly" => on(self.eye.flying),
             "backpack" => on(self.panels.backpack),
@@ -110,6 +122,7 @@ impl Changeable<'_> {
         let flag: &mut bool = match name {
             "pause" => &mut self.sim.paused,
             "snap" => &mut self.settings.snap,
+            "reach" => &mut self.settings.reach,
             "grid" => &mut self.grid.shown,
             "fly" => &mut self.eye.flying,
             "backpack" => &mut self.panels.backpack,

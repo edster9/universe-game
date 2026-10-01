@@ -113,12 +113,12 @@ pub fn follow(
     };
     if keys.just_pressed(KeyCode::KeyF) && !console.typing {
         eye.flying = !eye.flying;
-        if eye.flying {
-            // Fly off from where the camera is.
-            let (yaw, pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
-            free.yaw = yaw;
-            free.pitch = pitch;
-        }
+    }
+    if eye.flying && !free.enabled && !console.typing {
+        // Fly off from where the camera is, by key or by /fly.
+        let (yaw, pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
+        free.yaw = yaw;
+        free.pitch = pitch;
     }
     // No flying about while typing.
     free.enabled = eye.flying && !console.typing;

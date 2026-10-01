@@ -524,6 +524,17 @@ Added 2026-09-30, after stages 1 and 2.
 
 Added the same day: there's a clash between WASD moving the camera and moving the person. It's only in debugging for now, but it might happen in some utility of the game. **We can split them: the arrow keys as one thing and WASD as another, so you can pan around the world and move the islander directly.** To address in stage 6, when the islander starts moving.
 
+### Debugging as a lasting feature: snapping back, and a vocabulary of tools
+
+Added 2026-09-30, after trying the fire with the clock sped up.
+
+- **The clock snaps back to regular time when a command is finished:** if I say "go forest" and speed it up to x64, the moment I get to the forest it snaps back to x1. It can be a debug setting that's turned on and off.
+- I'm sure we'll have **a lot of these manual debug settings** during development.
+- **Think of debugging as a permanent feature of the game.** When we offer a world designer and things like that, these become actual features for single players and world and game designers to use. That day will come.
+- So **we should start thinking about the debug command vocabulary and its architecture soon**, so that lots of settings can be turned on and off from the terminal.
+
+Claude's proposal is in [ideas/tools.md](ideas/tools.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

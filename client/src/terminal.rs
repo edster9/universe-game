@@ -61,6 +61,8 @@ pub struct Console {
     history: Vec<String>,
     /// How far back in the history, while going through it.
     back: usize,
+    /// Tools typed or spoken, for `tools::run_typed`.
+    pub tools: Vec<String>,
 }
 
 impl Default for Console {
@@ -73,6 +75,7 @@ impl Default for Console {
             size: Size::Small,
             history: Vec::new(),
             back: 0,
+            tools: Vec::new(),
         }
     }
 }
@@ -147,6 +150,11 @@ pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
 pub fn send(console: &mut Console, sim: &mut Sim, line: &str, exit: &mut MessageWriter<AppExit>) {
     console.history.push(line.to_string());
     console.say(Said::Typed, &format!("> {line}"));
+    // Tools, for the person at the keyboard, not the actor.
+    if line.starts_with('/') {
+        console.tools.push(line.to_string());
+        return;
+    }
     match &mut sim.play {
         Play::Live(session) => {
             let reply = session.handle(line);

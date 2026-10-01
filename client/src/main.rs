@@ -44,6 +44,7 @@ mod grid;
 mod panels;
 mod terminal;
 mod terrain;
+mod tools;
 mod voice;
 
 use crate::terminal::{Console, Said};
@@ -224,6 +225,7 @@ fn main() {
     .init_resource::<draw::Kit>()
     .init_resource::<Console>()
     .init_resource::<terminal::Shots>()
+    .init_resource::<tools::Settings>()
     .insert_resource(voice::Voice::new(&model))
     .add_systems(
         Startup,
@@ -242,6 +244,7 @@ fn main() {
             terminal::type_in,
             controls,
             panels::keys,
+            tools::run_typed,
             grid::toggle,
             voice::push_to_talk,
             voice::run_heard,
@@ -422,7 +425,15 @@ fn controls(keys: Res<ButtonInput<KeyCode>>, mut sim: ResMut<Sim>, mut console: 
 
 /// Runs the engine's world on, a whole number of game seconds at a time,
 /// and tells the player what they hear of as it happens.
-fn run_world(time: Res<Time>, mut sim: ResMut<Sim>, mut console: ResMut<Console>) {
+/// With the `snap` setting, the clock goes back to real speed when what
+/// the actor was doing is done.
+fn run_world(
+    time: Res<Time>,
+    settings: Res<tools::Settings>,
+    mut sim: ResMut<Sim>,
+    mut console: ResMut<Console>,
+    mut was_busy: Local<bool>,
+) {
     if sim.paused {
         return;
     }
@@ -438,7 +449,16 @@ fn run_world(time: Res<Time>, mut sim: ResMut<Sim>, mut console: ResMut<Console>
     if !news.is_empty() {
         console.say(Said::News, &news);
     }
+    let busy = session.world().pending(session.player()).is_some();
     sim.owed = owed - whole;
+    if *was_busy && !busy && settings.snap && sim.speed > 1.0 {
+        sim.speed = 1.0;
+        console.say(
+            Said::Debug,
+            "Done: back to real speed (/snap off to stay fast).",
+        );
+    }
+    *was_busy = busy;
 }
 
 /// The sun's angle and strength from the world's time of day.

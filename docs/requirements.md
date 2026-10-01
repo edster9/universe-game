@@ -565,6 +565,10 @@ Added the same day, on the proposal: **the rest is pretty good.**
 - **Holes in the dirt: no, not directly.** But we might excavate an enormous amount of dirt for a project, and then the map might be specially altered.
 - These will become clearer when we get into world building and village building, and especially with **futuristic cities, how they get built and destroyed**. Some advanced thinking will be important.
 
+### Turning the fire into a skill
+
+Added 2026-09-30, after the fire steps were written down to try. **When do we take a list like the fire's and turn it into a skill, so it's saved?** Then you could go to a forest and, near sticks and the other things, say "start fire": the skill would check everything is in order, it has the instructions, and it would go through the sequence. A conversation to have soon.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

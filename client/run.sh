@@ -16,6 +16,8 @@ export CFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3" CXXFLAGS_x86_64_pc_window
 cargo zigbuild --release --target x86_64-pc-windows-gnu
 TARGET=/mnt/c/Users/edste/universe-game/client
 mkdir -p "$TARGET"
+# A fresh file each build, so Explorer's "created" date is the build's too.
+rm -f "$TARGET/client.exe"
 cp target/x86_64-pc-windows-gnu/release/client.exe "$TARGET/"
 # Whisper's English model, beside the program, once.
 mkdir -p "$TARGET/models"

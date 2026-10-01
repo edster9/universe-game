@@ -10,6 +10,7 @@
 //! command, Esc to stop, ` to resize the console; F to fly free (WASD, E/Q
 //! up and down, Shift faster) and F again to snap back; B the backpack, V
 //! the body (click it for everything measured); hold T and speak a command;
+//! G shows a grid on the ground, for seeing movement;
 //! Space pauses the
 //! world, [ and ] slow it down and speed it up.
 //!
@@ -24,7 +25,7 @@
 //!   when it's over (with an error if it failed).
 //! - `--hear-script <file>` plays a script by voice, from recordings of
 //!   its commands (see `client/voice-proof.sh`), and exits.
-//! - `--open backpack,body` (or `body-all`) opens those windows at the start.
+//! - `--open backpack,body,grid` (or `body-all`) opens those at the start.
 //! - `--type "<command>; <command>"` types commands at the start, as the
 //!   player would, for trying things without a keyboard.
 
@@ -39,6 +40,7 @@ use engine::world::{EntityId, World as EngineWorld};
 
 mod camera;
 mod draw;
+mod grid;
 mod panels;
 mod terminal;
 mod terrain;
@@ -231,6 +233,7 @@ fn main() {
             terminal::setup,
             panels::setup,
             voice::announce,
+            grid::setup,
         ),
     )
     .add_systems(
@@ -239,6 +242,7 @@ fn main() {
             terminal::type_in,
             controls,
             panels::keys,
+            grid::toggle,
             voice::push_to_talk,
             voice::run_heard,
             run_world,
@@ -247,6 +251,7 @@ fn main() {
             draw::draw_movers,
             camera::follow,
             camera::point,
+            grid::draw,
             day_and_night,
             hud,
             terminal::show,
@@ -493,7 +498,7 @@ fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud
     let view = if eye.flying {
         "flying free: WASD, E/Q, Shift; F to go back"
     } else {
-        "right-drag to look, wheel to zoom, F to fly, B backpack, V body, T speak"
+        "right-drag to look, wheel to zoom, F to fly, B backpack, V body, T speak, G grid"
     };
     for mut text in &mut text {
         text.0 =

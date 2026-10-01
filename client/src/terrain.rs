@@ -105,10 +105,8 @@ impl Land {
         let mut nearest = f32::MAX;
         for &(at, h, r) in &self.places {
             let d = at.distance(p);
-            if d < 1.0 {
-                return h;
-            }
-            let w = 1.0 / (d * d);
+            // Smooth even at the place itself: no step where it's reached.
+            let w = 1.0 / (d * d + 1.0);
             sum += h * w;
             weight += w;
             nearest = nearest.min(d / r);

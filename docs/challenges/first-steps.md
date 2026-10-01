@@ -195,3 +195,12 @@ Both windows are the console's own `backpack` and `body [all]` commands, which t
 - Windows' speech voice is clear and steady. Real voices, accents, and a noisy room will do worse, and the base model may need to become the small one (466 MB, slower) if so.
 - CPU only. Whisper on the GPU (Vulkan) would need the Vulkan SDK's shader compiler in the build: possible later if speed matters.
 - English only, for now.
+
+## A debugging grid (2026-09-30, the owner's request)
+
+On plain sand nothing shows movement, and there won't always be texture. G shows and hides a grid on the ground:
+- fine dark lines every 5 m, and yellow lines every 50 m;
+- fixed to the world and draped over the land, so a walker visibly crosses it;
+- 150 m around the islander, or around the camera when flying.
+
+`--open grid` shows it at the start. The grid showed up a flaw in the land's shape: within 1 m of a place's centre, the height jumped to the place's own height instead of blending into it, which made a small pit. Fixed: the blend is smooth everywhere.

@@ -264,7 +264,7 @@ at = "beach"
 mass = "100 kg"
 fixed = true
 material = "wood"
-pieces = { size = "2 kg", find_time = "15 min" }
+pieces = { size = "2 kg", find_time = "8 s" }
 
 [[item]]
 id = "grass"
@@ -275,7 +275,7 @@ at = "forest"
 mass = "20 kg"
 fixed = true
 material = "grass"
-pieces = { size = "5 g", find_time = "2 min" }
+pieces = { size = "5 g", find_time = "3 s" }
 
 [[item]]
 id = "twigs"
@@ -286,7 +286,7 @@ at = "forest"
 mass = "20 kg"
 fixed = true
 material = "wood"
-pieces = { size = "20 g", find_time = "3 min" }
+pieces = { size = "20 g", find_time = "3 s" }
 
 [[item]]
 id = "sticks"
@@ -297,7 +297,7 @@ at = "forest"
 mass = "50 kg"
 fixed = true
 material = "wood"
-pieces = { size = "200 g", find_time = "10 min" }
+pieces = { size = "200 g", find_time = "4 s" }
 
 [[item]]
 id = "stones"
@@ -308,7 +308,7 @@ at = "hillside"
 mass = "500 kg"
 fixed = true
 material = "stone"
-pieces = { size = "1 kg", find_time = "5 min" }
+pieces = { size = "1 kg", find_time = "5 s" }
 
 [[item]]
 id = "fish"
@@ -330,7 +330,7 @@ at = "hillside"
 mass = "200 kg"
 fixed = true
 material = "flint"
-pieces = { size = "500 g", find_time = "10 min" }
+pieces = { size = "500 g", find_time = "8 s" }
 
 [[item]]
 id = "bog-iron"
@@ -341,7 +341,7 @@ at = "stream"
 mass = "200 kg"
 fixed = true
 composition = { iron = "50%", rock = "50%" }
-pieces = { size = "2 kg", find_time = "10 min" }
+pieces = { size = "2 kg", find_time = "10 s" }
 
 [[item]]
 id = "clay-bank"
@@ -352,7 +352,7 @@ at = "stream"
 mass = "500 kg"
 fixed = true
 material = "clay"
-pieces = { size = "1 kg", find_time = "5 min" }
+pieces = { size = "1 kg", find_time = "5 s" }
 
 [[item]]
 id = "trees"
@@ -361,7 +361,7 @@ at = "forest"
 mass = "20 t"
 fixed = true
 material = "wood"
-pieces = { size = "20 kg", find_time = "1 h", edge = "1 mm", needs = "axe" }
+pieces = { size = "20 kg", find_time = "3 min", edge = "1 mm", needs = "axe" }
 kind = "tree"
 
 [[item]]
@@ -371,7 +371,7 @@ at = "forest"
 mass = "500 kg"
 fixed = true
 material = "fibre"
-pieces = { size = "250 g", find_time = "20 min" }
+pieces = { size = "250 g", find_time = "10 s" }
 kind = "shrub"
 
 [[item]]
@@ -381,7 +381,7 @@ at = "slopes"
 mass = "30 kg"
 fixed = true
 material = "wood"
-pieces = { size = "200 g", find_time = "10 min" }
+pieces = { size = "200 g", find_time = "4 s" }
 
 [[item]]
 id = "slope-twigs"
@@ -390,7 +390,7 @@ at = "slopes"
 mass = "10 kg"
 fixed = true
 material = "wood"
-pieces = { size = "20 g", find_time = "3 min" }
+pieces = { size = "20 g", find_time = "3 s" }
 
 [[item]]
 id = "slope-grass"
@@ -399,7 +399,7 @@ at = "slopes"
 mass = "10 kg"
 fixed = true
 material = "grass"
-pieces = { size = "5 g", find_time = "2 min" }
+pieces = { size = "5 g", find_time = "3 s" }
 
 [[item]]
 id = "ridge-stones"
@@ -408,7 +408,7 @@ at = "ridge"
 mass = "500 kg"
 fixed = true
 material = "stone"
-pieces = { size = "1 kg", find_time = "5 min" }
+pieces = { size = "1 kg", find_time = "5 s" }
 
 [[item]]
 id = "forest-floor"

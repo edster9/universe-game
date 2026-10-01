@@ -32,19 +32,23 @@ drop grass
 backpack
 expect said lump of dry grass x2: 10 g
 # Everything down, to haul with empty hands.
-drop grass
-drop grass
-drop wood
-drop wood
+drop grass x2
+drop wood 400 g
 backpack
 expect said nothing
 
-# A hard day's work: hauling driftwood up the beach and setting it down.
+# A hard day's work: hauling driftwood up the beach and setting it down,
+# a load at a time, by the shortcuts.
 go beach
 go to driftwood
-repeat 36
-  try gather driftwood
-  try drop wood
+gather driftwood x3
+expect said you find 2 kg of wood. (x3)
+expect said you carry 6 kg more than before. (that took 24 s.)
+drop all
+expect said you carry 6 kg less than before.
+repeat 210
+  try gather driftwood x20
+  try drop all
 end
 body
 expect said stamina: 0 

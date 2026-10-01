@@ -10,6 +10,8 @@ use engine::units::{self, Credits, Energy, Mass};
 use engine::view::{self, Thing};
 use engine::world::{Claim, EntityId, News, Requirement, World};
 
+mod queue;
+
 pub const HELP: &str = "\
 Commands:
   look                              describe where you are
@@ -21,7 +23,7 @@ Commands:
   walk to <east> <north>            walk to a spot, in metres from the middle of this place
   stop                              stop what you're doing; a walk stops where you've got to
   take <thing> [from <container>]   pick something up
-  drop <thing>                      put something down
+  drop <thing>                      put something down; \"drop all\" puts down everything
   put <thing> in <container>        put something inside something
   give <thing> to <person>          hand something over
   pay <person> <amount>             pay credits
@@ -40,6 +42,9 @@ Commands:
                                     teach someone your word for something
   wait [seconds]                    let time pass; \"wait until free\", \"wait until 08:30\"
   start <command>                   start something without waiting for it
+  <command> x3                      do it three times (\"gather sticks x3\")
+  <command> 500 g                   do it until you carry that much more, or less (\"gather wood 500 g\")
+  <command>; <command>              one after another (\"go to sticks; gather sticks x2\")
   as <person>                       act as someone else, hearing how what they started came out
   sleep [for <time>] [in <shelter>]  sleep, if your body needs it; a player can rest for a time
 Testing tools:
@@ -69,6 +74,8 @@ pub struct Session {
     real_time: bool,
     /// Whether the player was asleep when last told the news.
     was_asleep: bool,
+    /// What the player asked to do more than once, or one after another.
+    queue: Option<queue::Queue>,
 }
 
 pub struct Reply {
@@ -108,6 +115,7 @@ impl Session {
                 spent: 0,
                 real_time: false,
                 was_asleep: false,
+                queue: None,
             }),
             _ => Err(format!(
                 "there's no person with the id {player:?} in this world"
@@ -131,10 +139,12 @@ impl Session {
     /// who went for them, falling asleep, and their own death. Empty if
     /// nothing. For a client, after the clock moves.
     pub fn catch_up(&mut self) -> String {
-        let text = if self.world.pending(self.player).is_none() {
-            self.with_outcome(String::new())
-        } else {
+        let text = if self.world.pending(self.player).is_some() {
             String::new()
+        } else if let Some(text) = self.queue_catch_up() {
+            text
+        } else {
+            self.with_outcome(String::new())
         };
         let was_asleep = self.was_asleep;
         let mut text = self.with_collapse(text, was_asleep);
@@ -149,6 +159,9 @@ impl Session {
 
     pub fn handle(&mut self, line: &str) -> Reply {
         let line = line.trim();
+        if let Some(reply) = self.queued(line) {
+            return reply;
+        }
         let (first, rest) = line
             .split_once(' ')
             .map_or((line, ""), |(f, r)| (f, r.trim()));
@@ -260,7 +273,16 @@ impl Session {
                 // They know they stopped: no news of being cut short.
                 self.world.take_outcome(self.player);
                 self.started.remove(&self.player);
-                Reply::say("You stop.")
+                match self.stop_queue() {
+                    Some(done) if !done.is_empty() => Reply::say(format!("You stop.\n{done}")),
+                    _ => Reply::say("You stop."),
+                }
+            }
+            // Between one time and the next of something asked for more
+            // than once.
+            Err(ActError::Refused(_)) if self.queue_busy() => {
+                let done = self.stop_queue().unwrap_or_default();
+                Reply::say(format!("You stop.\n{done}").trim().to_string())
             }
             Err(ActError::Refused(refusal)) => Reply::refuse(self.refusal(&refusal)),
             Err(fault @ ActError::Fault(_)) => Reply::refuse(format!("!! {fault}")),

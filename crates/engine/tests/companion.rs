@@ -305,6 +305,7 @@ fn wood_for_the_barb(values: &'static str) -> (World, Option<String>) {
             values,
         )
     });
+    say(&mut w, "go to driftwood");
     say(&mut w, "gather driftwood");
     let refusal = say(&mut w, "offer wood to the stranger for barb");
     (w, refusal)
@@ -366,6 +367,7 @@ fn whose_a_thing_is_lives_in_minds_and_only_a_theft_seen_is_remembered() {
     while !w.is_asleep(stranger) || w.place_of(stranger) != w.place_of(islander) {
         engine::nature::run(&mut w, 600).unwrap();
     }
+    say(&mut w, &format!("go to {}", engine::laws::pointer(shell)));
     say(&mut w, &format!("take {}", engine::laws::pointer(shell)));
     assert!(owns(&w, islander, shell) && owns(&w, stranger, shell));
     assert!(w.memory(stranger).unwrap().robbed_by.is_empty());
@@ -414,6 +416,7 @@ fn a_walker_s_journey_is_known_while_they_re_on_their_way() {
 #[test]
 fn only_a_mind_of_its_own_takes_offers() {
     let (mut w, _) = island(|t| t);
+    say(&mut w, "go to driftwood");
     say(&mut w, "gather driftwood");
     say(&mut w, "go forest");
     assert_eq!(
@@ -472,4 +475,29 @@ fn a_person_pictures_only_what_s_where_they_stand_and_what_they_remember() {
             w.label(t)
         );
     }
+}
+
+#[test]
+fn minds_walk_up_to_what_they_act_on() {
+    let (mut w, stranger) = island(|t| t);
+    let bed = w.find_by_key("shellfish-bed").unwrap();
+    let start = w.spot(stranger).unwrap();
+    // The shellfish lie in a patch by the rocks, 30 m off: hungry, the
+    // stranger walks there and gathers, never from where they stood.
+    assert!(!w.within_reach(stranger, bed));
+    let mut gathered_from = Vec::new();
+    for _ in 0..6 * 60 {
+        engine::nature::run(&mut w, 60).unwrap();
+        let carrying_flesh = w
+            .contents(stranger)
+            .into_iter()
+            .any(|t| w.label_for(stranger, t).contains("pale flesh"));
+        if carrying_flesh {
+            gathered_from.push(w.spot(stranger).unwrap());
+            break;
+        }
+    }
+    let at = *gathered_from.first().expect("they gathered some");
+    assert_ne!(at, start);
+    assert!(w.within_reach(stranger, bed), "{at:?}");
 }

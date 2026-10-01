@@ -18,6 +18,8 @@ use crate::world::{EntityId, World};
 pub enum Change {
     /// Put `entity` in or on `to`: a place, a person, a container.
     Move { entity: EntityId, to: EntityId },
+    /// Move `entity` to `at` (µm east and north) within the place it's in.
+    Spot { entity: EntityId, at: (i64, i64) },
     /// Move credits from one wallet to another.
     Transfer {
         from: EntityId,
@@ -279,6 +281,8 @@ pub enum Fault {
     Overflow(EntityId),
     NotMatter(EntityId),
     NotAPlace(EntityId),
+    /// Somewhere beyond the edge of the place it's in.
+    OutsidePlace(EntityId),
     NotAChamber(EntityId),
     NotEnoughHeat(EntityId),
     NotEnoughMaterial {
@@ -302,6 +306,7 @@ impl fmt::Display for Fault {
         match self {
             Fault::UnknownEntity(id) => write!(f, "no entity {id:?}"),
             Fault::NotLocated(id) => write!(f, "{id:?} isn't anywhere, so it can't move"),
+            Fault::OutsidePlace(id) => write!(f, "{id:?} would be beyond the edge of its place"),
             Fault::IntoItself(id) => write!(f, "{id:?} can't be put inside itself"),
             Fault::NoWallet(id) => write!(f, "{id:?} has no wallet"),
             Fault::SameWallet(id) => write!(f, "{id:?} can't pay itself"),
@@ -511,6 +516,20 @@ impl World {
                     return Err(Fault::NotLocated(entity));
                 }
                 self.put(entity, to);
+                Ok(())
+            }
+
+            &Change::Spot { entity, at } => {
+                self.must_exist(entity)?;
+                let place = self
+                    .location(entity)
+                    .filter(|&p| self.is_place(p))
+                    .ok_or(Fault::NotAPlace(entity))?;
+                let middle = self.position(place).unwrap_or((0, 0));
+                if crate::world::distance(middle, at) > self.size(place) {
+                    return Err(Fault::OutsidePlace(entity));
+                }
+                self.spots.insert(entity, at);
                 Ok(())
             }
 

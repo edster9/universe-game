@@ -17,6 +17,9 @@ Commands:
   backpack                          what you carry, a line each
   body [all]                        how your body is: its vitals, or everything measured
   go <place>                        walk somewhere
+  walk to <thing>                   walk up to something in this place, within reach (\"go to\" too)
+  walk to <east> <north>            walk to a spot, in metres from the middle of this place
+  stop                              stop what you're doing; a walk stops where you've got to
   take <thing> [from <container>]   pick something up
   drop <thing>                      put something down
   put <thing> in <container>        put something inside something
@@ -166,6 +169,7 @@ impl Session {
             "become" => Reply::say(self.become_person(rest)),
             "as" => self.act_as(rest),
             "start" => self.start(rest),
+            "stop" => self.stop(),
             "wait" | "z" => self.wait(rest),
             "datasheet" | "ds" => Reply::say(self.datasheet(rest)),
             "designs" => Reply::say(self.designs()),
@@ -244,6 +248,20 @@ impl Session {
                 ))
             }
             Ok(laws::Started::Now { changes, .. }) => Reply::say(self.describe(&intent, &changes)),
+            Err(ActError::Refused(refusal)) => Reply::refuse(self.refusal(&refusal)),
+            Err(fault @ ActError::Fault(_)) => Reply::refuse(format!("!! {fault}")),
+        }
+    }
+
+    /// Stops what the player is doing.
+    fn stop(&mut self) -> Reply {
+        match laws::stop(&mut self.world, self.player) {
+            Ok(_) => {
+                // They know they stopped: no news of being cut short.
+                self.world.take_outcome(self.player);
+                self.started.remove(&self.player);
+                Reply::say("You stop.")
+            }
             Err(ActError::Refused(refusal)) => Reply::refuse(self.refusal(&refusal)),
             Err(fault @ ActError::Fault(_)) => Reply::refuse(format!("!! {fault}")),
         }
@@ -578,6 +596,20 @@ impl Session {
     fn describe(&self, intent: &Intent, changes: &[Change]) -> String {
         let w = &self.world;
         let name = |id: EntityId| laws::named(w, self.player, id);
+        // A walk within the place: "go to the grass", "walk to 12 -3".
+        let walked_to = match intent {
+            Intent::Walk { to } | Intent::Go { place: to, .. } => {
+                Some(to.strip_prefix("to ").unwrap_or(to))
+            }
+            _ => None,
+        };
+        match (walked_to, changes.first()) {
+            (Some(to), Some(&Change::Spot { entity, .. })) if entity == self.player => {
+                return format!("You walk to {to}.");
+            }
+            (Some(_), None) => return "You're already there.".into(),
+            _ => {}
+        }
         match (intent, changes.first()) {
             (
                 Intent::Go {
@@ -987,6 +1019,12 @@ impl Session {
         };
         match change {
             &Change::Move { entity, to } => format!("{} -> {}", w.label(entity), w.label(to)),
+            &Change::Spot { entity, at } => format!(
+                "{} steps to {:.1} m east, {:.1} m north",
+                w.label(entity),
+                at.0 as f64 / 1e6,
+                at.1 as f64 / 1e6
+            ),
             &Change::Transfer { from, to, amount } => {
                 format!("{amount}: {} -> {}", w.label(from), w.label(to))
             }
@@ -1382,6 +1420,10 @@ fn things(things: &[Thing]) -> String {
             let mut details = vec![t.mass.to_string()];
             details.extend(t.temperature.map(|temperature| temperature.to_string()));
             details.extend(t.notes.iter().cloned());
+            details.extend(
+                t.away
+                    .map(|(gap, way)| format!("{} {way}", laws::metres(gap))),
+            );
             format!("{} ({})", t.label, details.join(", "))
         })
         .collect::<Vec<_>>()

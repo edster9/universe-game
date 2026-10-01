@@ -18,8 +18,10 @@ expect said stamina: 3 mj of 3 mj
 expect said wearing: nothing
 
 go forest
+go to sticks
 gather sticks
 gather sticks
+go to grass
 repeat 3
   gather grass
 end
@@ -39,6 +41,7 @@ expect said nothing
 
 # A hard day's work: hauling driftwood up the beach and setting it down.
 go beach
+go to driftwood
 repeat 36
   try gather driftwood
   try drop wood

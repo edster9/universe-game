@@ -18,6 +18,8 @@ pub struct Thing {
     pub notes: Vec<String>,
     /// What's inside, if it's a container.
     pub contents: Vec<Thing>,
+    /// Out of reach where it lies: how far, in µm, and which way.
+    pub away: Option<(u64, &'static str)>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -72,7 +74,11 @@ pub fn look(world: &World, actor: EntityId) -> Option<Look> {
         } else if world.is_all(id, State::Gas) {
             look.air.push(thing(world, actor, id));
         } else {
-            look.things.push(thing(world, actor, id));
+            let mut seen = thing(world, actor, id);
+            if !world.within_reach(actor, id) {
+                seen.away = Some((world.gap(actor, id), crate::laws::way_to(world, actor, id)));
+            }
+            look.things.push(seen);
         }
     }
     Some(look)
@@ -132,6 +138,7 @@ fn thing(world: &World, viewer: EntityId, id: EntityId) -> Thing {
         temperature,
         notes,
         contents,
+        away: None,
     }
 }
 

@@ -26,6 +26,7 @@ expect said i don't know how to "dance"
 # Flint, fetched from the hillside and left on the beach.
 go forest
 go hillside
+go to flint
 gather flint
 go forest
 go beach

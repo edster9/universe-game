@@ -43,6 +43,9 @@ bare_feet_pace = "50%"
 bare_feet_wound = "20 mg/s"
 covers = "2 kg"
 
+# Places reach 50 m from their middle. Stocks with a spot lie in a patch
+# around it, which you must walk up to ("go to the dry grass"); those with
+# none (the sea, the trees, the forest floor) cover their whole place.
 [[place]]
 id = "beach"
 label = "the beach"
@@ -233,6 +236,8 @@ material = "seawater"
 # world's small bed can't feed a person alone.)
 [[item]]
 id = "shellfish-bed"
+spot = "30 m south, 10 m east"
+spread = "10 m"
 label = "shellfish on the rocks"
 at = "beach"
 mass = "400 kg"
@@ -252,6 +257,8 @@ material = "water"
 
 [[item]]
 id = "driftwood"
+spot = "15 m north, 20 m west"
+spread = "12 m"
 label = "driftwood on the sand"
 at = "beach"
 mass = "100 kg"
@@ -261,6 +268,8 @@ pieces = { size = "2 kg", find_time = "15 min" }
 
 [[item]]
 id = "grass"
+spot = "20 m north, 15 m west"
+spread = "8 m"
 label = "dry grass"
 at = "forest"
 mass = "20 kg"
@@ -270,6 +279,8 @@ pieces = { size = "5 g", find_time = "2 min" }
 
 [[item]]
 id = "twigs"
+spot = "10 m south, 15 m east"
+spread = "8 m"
 label = "dry twigs"
 at = "forest"
 mass = "20 kg"
@@ -279,6 +290,8 @@ pieces = { size = "20 g", find_time = "3 min" }
 
 [[item]]
 id = "sticks"
+spot = "20 m east, 5 m north"
+spread = "10 m"
 label = "fallen sticks"
 at = "forest"
 mass = "50 kg"
@@ -288,6 +301,8 @@ pieces = { size = "200 g", find_time = "10 min" }
 
 [[item]]
 id = "stones"
+spot = "15 m north"
+spread = "10 m"
 label = "loose stones"
 at = "hillside"
 mass = "500 kg"
@@ -308,6 +323,8 @@ kind = "fish"
 
 [[item]]
 id = "flint"
+spot = "25 m west, 10 m south"
+spread = "6 m"
 label = "flint nodules"
 at = "hillside"
 mass = "200 kg"
@@ -317,6 +334,8 @@ pieces = { size = "500 g", find_time = "10 min" }
 
 [[item]]
 id = "bog-iron"
+spot = "10 m west"
+spread = "8 m"
 label = "bog iron in the streambed"
 at = "stream"
 mass = "200 kg"
@@ -326,6 +345,8 @@ pieces = { size = "2 kg", find_time = "10 min" }
 
 [[item]]
 id = "clay-bank"
+spot = "15 m east"
+spread = "8 m"
 label = "clay in the bank"
 at = "stream"
 mass = "500 kg"

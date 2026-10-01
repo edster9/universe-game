@@ -95,6 +95,11 @@ pub enum Intent {
     },
     /// Take in the view: see what lies in the distance.
     Survey,
+    /// Walk within the place: up to something, until it's within reach, or
+    /// to a spot given as metres east and north of the place's middle.
+    Walk {
+        to: String,
+    },
     /// Sleep until rested, or for a while.
     Sleep {
         seconds: Option<u64>,
@@ -191,7 +196,22 @@ impl Intent {
             | Intent::Pay { .. }
             | Intent::Assemble { .. }
             | Intent::Explore
+            | Intent::Walk { .. }
             | Intent::Survey => Vec::new(),
+        }
+    }
+
+    /// The names of what must be within reach: what's handled, struck, or
+    /// handed to someone. Pointing at something, naming it, or talking to
+    /// someone only needs seeing them.
+    pub fn touches(&self) -> Vec<&str> {
+        match self {
+            Intent::Call { .. } | Intent::Tell { .. } | Intent::Offer { .. } => Vec::new(),
+            Intent::Give { item, to } => vec![item.as_str(), to.as_str()],
+            Intent::Attack { target, with } => std::iter::once(target.as_str())
+                .chain(with.as_deref())
+                .collect(),
+            _ => self.things_named(),
         }
     }
 }
@@ -253,6 +273,7 @@ impl fmt::Display for Intent {
                 with: Some(tool),
             } => write!(f, "attack {target} with {tool}"),
             Intent::Survey => f.write_str("survey"),
+            Intent::Walk { to } => write!(f, "walk to {to}"),
             Intent::Sleep { seconds, shelter } => {
                 f.write_str("sleep")?;
                 if let Some(shelter) = shelter {
@@ -548,6 +569,12 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
             item: one("<thing>")?,
         },
         "survey" => Intent::Survey,
+        "walk" | "approach" => {
+            let to = one("<thing>")?;
+            Intent::Walk {
+                to: to.strip_prefix("to ").unwrap_or(&to).trim().to_string(),
+            }
+        }
         "sleep" => {
             // "sleep", "sleep for 9 h", "sleep in <shelter>", or both.
             let (shelter, time) = match rest.strip_prefix("in ") {

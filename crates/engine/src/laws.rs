@@ -192,6 +192,20 @@ pub enum Refusal {
     },
     TheyCantCarry(String),
     WouldSpoil(String),
+    /// What's named is in the place but out of reach: how far, in µm, and
+    /// which way.
+    TooFar {
+        thing: EntityId,
+        name: String,
+        gap: u64,
+        way: &'static str,
+    },
+    /// Beyond the edge of the place.
+    EdgeOf(String),
+    /// Nothing under way to stop.
+    NothingToStop,
+    /// On the way between places, which can't be stopped halfway yet.
+    OnTheWay,
 }
 
 impl fmt::Display for Refusal {
@@ -219,6 +233,16 @@ impl fmt::Display for Refusal {
             Refusal::Interrupted => write!(f, "you were cut short"),
             Refusal::TooStiff(name) => write!(f, "{name} is too stiff to wear"),
             Refusal::OutOfReach(name) => write!(f, "{name} holds things higher than you can get"),
+            Refusal::TooFar { name, gap, way, .. } => {
+                write!(f, "out of reach: {name}, {} {way}", metres(*gap))
+            }
+            Refusal::EdgeOf(place) => {
+                write!(f, "you can't go further that way: it's the edge of {place}")
+            }
+            Refusal::NothingToStop => write!(f, "you aren't doing anything"),
+            Refusal::OnTheWay => {
+                write!(f, "you're on your way, and can't stop until you get there")
+            }
             Refusal::FeetCovered(name) => write!(f, "you're already wearing {name} on your feet"),
             Refusal::NotWearing(name) => write!(f, "you aren't wearing {name}"),
             Refusal::AlreadyWearing(name) => write!(f, "you're already wearing {name}"),
@@ -380,6 +404,8 @@ pub struct Plan {
 /// Works out what `intent` would do, without changing anything. An action
 /// that takes time is hard work for a living body while it lasts.
 pub fn plan(world: &World, actor: EntityId, intent: &Intent) -> Result<Plan, Refusal> {
+    let walk = as_walk(world, actor, intent);
+    let intent = walk.as_ref().unwrap_or(intent);
     let mut changes = changes_for(world, actor, intent)?;
     let seconds = duration(world, actor, intent);
     let resting = matches!(intent, Intent::Sleep { .. });
@@ -432,6 +458,7 @@ fn carried_out_at_the_end(intent: &Intent) -> bool {
             | Intent::Attack { .. }
             | Intent::Butcher { .. }
             | Intent::Survey
+            | Intent::Walk { .. }
     )
 }
 
@@ -442,6 +469,7 @@ pub fn start(world: &mut World, actor: EntityId, intent: Intent) -> Result<Start
     if let Some(pending) = world.pending(actor) {
         return Err(ActError::Refused(Refusal::Busy(pending.until)));
     }
+    let intent = as_walk(world, actor, &intent).unwrap_or(intent);
     let plan = plan(world, actor, &intent).map_err(ActError::Refused)?;
     if plan.seconds > 0 && carried_out_at_the_end(&intent) {
         let until = world.tick() + plan.seconds;
@@ -663,6 +691,13 @@ fn usual_duration(world: &World, actor: EntityId, intent: &Intent) -> u64 {
         Intent::Attack { .. } => STRIKING_TIME,
         Intent::Butcher { .. } => BUTCHERING_TIME,
         Intent::Survey => world.settings().survey_time,
+        Intent::Walk { to } => {
+            let (Ok(reach), Some(from)) = (Reach::of(world, actor), world.spot(actor)) else {
+                return 0;
+            };
+            walk_target(world, actor, &reach, to)
+                .map_or(0, |at| pace(world, actor, crate::world::distance(from, at)))
+        }
         Intent::Rub { seconds, .. } => seconds.unwrap_or(world.settings().rubbing_time),
         Intent::Go { place, aboard } => {
             let Ok(reach) = Reach::of(world, actor) else {
@@ -732,7 +767,7 @@ pub fn find_reachable(world: &World, actor: EntityId, name: &str) -> Option<Enti
     }
     let by_key = std::iter::once(actor)
         .chain(reach.carried.iter().copied())
-        .chain(reach.around.iter().copied())
+        .chain(reach.everyone())
         .chain(reach.inside.iter().copied())
         .find(|&id| normalize(world.key(id)) == normalize(name));
     if by_key.is_some() {
@@ -741,7 +776,10 @@ pub fn find_reachable(world: &World, actor: EntityId, name: &str) -> Option<Enti
     if is_called(world, actor, actor, name) || normalize(name) == "me" {
         return Some(actor);
     }
-    let nearby = reach.around.iter().chain(&reach.inside).copied();
+    let nearby = reach
+        .everyone()
+        .into_iter()
+        .chain(reach.inside.iter().copied());
     find(world, actor, reach.carried.iter().copied(), name)
         .or_else(|| find(world, actor, nearby, name))
 }
@@ -749,8 +787,12 @@ pub fn find_reachable(world: &World, actor: EntityId, name: &str) -> Option<Enti
 /// What a person can reach from where they stand.
 struct Reach {
     here: EntityId,
-    /// Things and people in the same place, not counting the actor.
+    /// Things and people within reach in the same place, not counting the
+    /// actor.
     around: Vec<EntityId>,
+    /// Things and people in the same place, but out of reach: they can be
+    /// seen, pointed at, and talked to, not touched.
+    far: Vec<EntityId>,
     /// Things inside containers that are around.
     inside: Vec<EntityId>,
     carried: Vec<EntityId>,
@@ -762,11 +804,11 @@ impl Reach {
             .location(actor)
             .filter(|&place| world.is_place(place))
             .ok_or(Refusal::Nowhere)?;
-        let around: Vec<EntityId> = world
+        let (around, far): (Vec<EntityId>, Vec<EntityId>) = world
             .contents(here)
             .into_iter()
             .filter(|&e| e != actor)
-            .collect();
+            .partition(|&e| world.within_reach(actor, e));
         let inside = around
             .iter()
             .filter(|&&e| world.is_container(e))
@@ -775,6 +817,7 @@ impl Reach {
         Ok(Reach {
             here,
             around,
+            far,
             inside,
             carried: world.contents(actor),
         })
@@ -782,6 +825,11 @@ impl Reach {
 
     fn around_or_carried(&self) -> impl Iterator<Item = EntityId> + '_ {
         self.around.iter().chain(&self.carried).copied()
+    }
+
+    /// Everyone and everything in the place, near or far.
+    fn everyone(&self) -> Vec<EntityId> {
+        self.around.iter().chain(&self.far).copied().collect()
     }
 }
 
@@ -806,6 +854,22 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 }
                 break;
             }
+        }
+    }
+    // What must be touched is found among what's at hand. Something there
+    // only out of reach is too far away: how far, and which way.
+    for name in intent.touches() {
+        let at_hand = reach
+            .carried
+            .iter()
+            .chain(&reach.around)
+            .chain(&reach.inside)
+            .copied();
+        if find(world, actor, at_hand, name).is_some() {
+            continue;
+        }
+        if let Some(far) = find(world, actor, reach.far.iter().copied(), name) {
+            return Err(too_far(world, actor, far));
         }
     }
     let carried = || reach.carried.iter().copied();
@@ -1084,10 +1148,27 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Drop { item } => {
             let found = carrying(item)?;
-            Ok(vec![Change::Move {
-                entity: found,
-                to: reach.here,
-            }])
+            // It lands at your feet.
+            let feet = world.spot(actor).ok_or(Refusal::Nowhere)?;
+            Ok(vec![
+                Change::Move {
+                    entity: found,
+                    to: reach.here,
+                },
+                Change::Spot {
+                    entity: found,
+                    at: feet,
+                },
+            ])
+        }
+
+        Intent::Walk { to } => {
+            let at = walk_target(world, actor, &reach, to)?;
+            // Already there: nothing changes.
+            if Some(at) == world.spot(actor) {
+                return Ok(Vec::new());
+            }
+            Ok(vec![Change::Spot { entity: actor, at }])
         }
 
         Intent::Put { item, into } => {
@@ -1121,7 +1202,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Pay { to, amount } => {
-            let recipient = person_here(world, actor, &reach.around, to)?;
+            let recipient = person_here(world, actor, &reach.everyone(), to)?;
             if *amount == Credits::ZERO {
                 return Err(Refusal::ZeroAmount);
             }
@@ -1516,11 +1597,17 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                 world
                     .lexicon(actor)
                     .and_then(|l| l.last_made)
-                    .filter(|&made| reach.carried.contains(&made) || reach.around.contains(&made))
+                    .filter(|&made| {
+                        reach.carried.contains(&made) || reach.everyone().contains(&made)
+                    })
                     .ok_or(Refusal::NothingMade)?
             } else {
-                find(world, actor, reach.around_or_carried(), item)
-                    .ok_or_else(|| Refusal::NotHere(item.clone()))?
+                // Naming something only needs seeing it.
+                let seen = reach
+                    .everyone()
+                    .into_iter()
+                    .chain(reach.carried.iter().copied());
+                find(world, actor, seen, item).ok_or_else(|| Refusal::NotHere(item.clone()))?
             };
             if !world.has_words(actor) {
                 return Err(Refusal::NoWordsToLearn("you".into()));
@@ -1544,9 +1631,14 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Tell { person, item, word } => {
-            let listener = person_here(world, actor, &reach.around, person)?;
-            let found = find(world, actor, reach.around_or_carried(), item)
-                .ok_or_else(|| Refusal::NotHere(item.clone()))?;
+            let listener = person_here(world, actor, &reach.everyone(), person)?;
+            // Pointing at something only needs seeing it.
+            let seen = reach
+                .everyone()
+                .into_iter()
+                .chain(reach.carried.iter().copied());
+            let found =
+                find(world, actor, seen, item).ok_or_else(|| Refusal::NotHere(item.clone()))?;
             if !world.has_words(listener) {
                 return Err(Refusal::NoWordsToLearn(named(world, actor, listener)));
             }
@@ -1559,7 +1651,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Offer { item, person, want } => {
             let mine = carrying(item)?;
-            let listener = person_here(world, actor, &reach.around, person)?;
+            let listener = person_here(world, actor, &reach.everyone(), person)?;
             let name = || named(world, actor, listener);
             world
                 .mind(listener)
@@ -1599,7 +1691,7 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
         }
 
         Intent::Ask { person, request } => {
-            let listener = person_here(world, actor, &reach.around, person)?;
+            let listener = person_here(world, actor, &reach.everyone(), person)?;
             let name = || named(world, actor, listener);
             let mind = world
                 .mind(listener)
@@ -1616,7 +1708,11 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             }
             // They weigh it in their own words, against what they see and
             // carry.
-            if let Err(refusal) = plan(world, listener, request) {
+            // Something too far for them now is fine: a mind walks up to
+            // what it acts on.
+            if let Err(refusal) = plan(world, listener, request)
+                && !matches!(refusal, Refusal::TooFar { .. })
+            {
                 return Err(Refusal::TheySay {
                     who: name(),
                     why: in_first_person(&refusal.to_string()),
@@ -2421,8 +2517,10 @@ pub fn paddling_time(
         .max(1)
 }
 
-pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> u64 {
-    let distance = u128::from(world.distance(from, to));
+/// How long walking `distance` µm on the level takes `actor`, as loaded as
+/// they are: a load of L of what they can carry, M, slows them to
+/// (2M − L) ÷ 2M of their pace.
+fn pace(world: &World, actor: EntityId, distance: u64) -> u64 {
     let Some(life) = world.life(actor).filter(|_| distance > 0) else {
         return 0;
     };
@@ -2435,8 +2533,21 @@ pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId
         None => (0, 1),
     };
     let load = load.min(limit);
-    // µm ÷ (mm/s × 1000) is seconds; a load of L of limit M slows it to (2M − L) / 2M.
-    let walking = distance * 2 * limit / (speed * 1_000 * (2 * limit - load));
+    // µm ÷ (mm/s × 1000) is seconds.
+    let seconds = u128::from(distance) * 2 * limit / (speed * 1_000 * (2 * limit - load));
+    u64::try_from(seconds).unwrap_or(u64::MAX).max(1)
+}
+
+pub fn walking_time(world: &World, actor: EntityId, from: EntityId, to: EntityId) -> u64 {
+    let distance = u128::from(world.distance(from, to));
+    let Some(life) = world.life(actor).filter(|_| distance > 0) else {
+        return 0;
+    };
+    let walking = u128::from(pace(
+        world,
+        actor,
+        u64::try_from(distance).unwrap_or(u64::MAX),
+    ));
     // Going up, a share of the walker's working power lifts them and their
     // load: m × g × h. Going down costs nothing extra.
     let rise = u128::from(world.height(to).saturating_sub(world.height(from)));
@@ -2618,6 +2729,185 @@ pub(crate) fn best_edge(world: &World, things: &[EntityId]) -> Option<EntityId> 
         .copied()
         .filter(|&t| has_edge(world, t))
         .min_by_key(|&t| (edge_width(world, t), t))
+}
+
+/// A distance in metres, as people say it: to a tenth up close, whole
+/// metres further off.
+pub fn metres(gap: u64) -> String {
+    let tenths = (gap + 50_000) / 100_000;
+    if tenths < 100 {
+        format!("{}.{} m", tenths / 10, tenths % 10)
+    } else {
+        format!("{} m", (tenths + 5) / 10)
+    }
+}
+
+/// Metres written as a decimal ("-3.5") in whole µm.
+fn micrometres(text: &str) -> Option<i64> {
+    let (negative, digits) = match text.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, text),
+    };
+    let (whole, fraction) = digits.split_once('.').unwrap_or((digits, ""));
+    if fraction.len() > 6 || !(whole.chars().chain(fraction.chars())).all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let whole: i64 = if whole.is_empty() {
+        0
+    } else {
+        whole.parse().ok()?
+    };
+    let fraction: i64 = format!("{fraction:0<6}").parse().ok()?;
+    let um = whole.checked_mul(1_000_000)?.checked_add(fraction)?;
+    Some(if negative { -um } else { um })
+}
+
+/// Which way `to` lies from `from`: north, south-east, and so on.
+pub fn way_to(world: &World, from: EntityId, to: EntityId) -> &'static str {
+    match (world.spot(from), world.spot(to)) {
+        (Some(a), Some(b)) => compass(i128::from(b.0 - a.0), i128::from(b.1 - a.1)),
+        _ => "here",
+    }
+}
+
+fn too_far(world: &World, actor: EntityId, thing: EntityId) -> Refusal {
+    Refusal::TooFar {
+        thing,
+        name: named(world, actor, thing),
+        gap: world.gap(actor, thing),
+        way: way_to(world, actor, thing),
+    }
+}
+
+/// Where a walk within the place ends: just within reach of the thing
+/// named, or at the spot given as metres east and north of the place's
+/// middle ("walk to 12 -3.5").
+fn walk_target(
+    world: &World,
+    actor: EntityId,
+    reach: &Reach,
+    to: &str,
+) -> Result<(i64, i64), Refusal> {
+    let here = reach.here;
+    let middle = world.position(here).unwrap_or((0, 0));
+    let from = world.spot(actor).ok_or(Refusal::Nowhere)?;
+    let numbers: Option<Vec<i64>> = to.split_whitespace().map(micrometres).collect();
+    let at = if let Some(&[east, north]) = numbers.as_deref() {
+        (middle.0 + east, middle.1 + north)
+    } else {
+        let thing = find(world, actor, reach.everyone(), to)
+            .ok_or_else(|| Refusal::NotHere(to.to_string()))?;
+        if world.within_reach(actor, thing) {
+            // Already there: a walk of no steps.
+            return Ok(from);
+        }
+        let target = world.spot(thing).ok_or(Refusal::Nowhere)?;
+        // Stop where it's comfortably within reach: four fifths of it, past
+        // the edge of what it spreads over.
+        let short = world.spread(thing) + world.reach(actor).unwrap_or(0) * 4 / 5;
+        let apart = crate::world::distance(from, target);
+        if apart <= short {
+            return Ok(from);
+        }
+        let along = |a: i64, b: i64| {
+            let d = i128::from(b - a) * i128::from(apart - short) / i128::from(apart);
+            a + i64::try_from(d).expect("between two spots")
+        };
+        (along(from.0, target.0), along(from.1, target.1))
+    };
+    if crate::world::distance(middle, at) > world.size(here) {
+        return Err(Refusal::EdgeOf(named(world, actor, here)));
+    }
+    Ok(at)
+}
+
+/// A walk within a place: from where, to where, and when it began and ends.
+pub type Stride = ((i64, i64), (i64, i64), u64, u64);
+
+/// Where someone walking within a place is going: where they set off from,
+/// where they're heading, and when they set off and will arrive. What a
+/// client needs to draw them on their way. `None` if they aren't.
+pub fn stride(world: &World, actor: EntityId) -> Option<Stride> {
+    let pending = world.pending(actor)?;
+    let Intent::Walk { to } = &pending.intent else {
+        return None;
+    };
+    let reach = Reach::of(world, actor).ok()?;
+    let at = walk_target(world, actor, &reach, to).ok()?;
+    Some((world.spot(actor)?, at, pending.since, pending.until))
+}
+
+/// Stops what `actor` is doing. A walk within a place stops where they've
+/// got to; anything else stops undone. A walk between places can't be
+/// stopped halfway yet.
+pub fn stop(world: &mut World, actor: EntityId) -> Result<Vec<Change>, ActError> {
+    let pending = world
+        .pending(actor)
+        .cloned()
+        .ok_or(ActError::Refused(Refusal::NothingToStop))?;
+    if matches!(pending.intent, Intent::Go { .. }) {
+        return Err(ActError::Refused(Refusal::OnTheWay));
+    }
+    let mut changes = vec![Change::End {
+        agent: actor,
+        outcome: Outcome::Interrupted,
+    }];
+    if let Some((from, to, since, until)) = stride(world, actor) {
+        let done = i128::from(world.tick().saturating_sub(since));
+        let all = i128::from(until.saturating_sub(since).max(1));
+        let along =
+            |a: i64, b: i64| a + i64::try_from(i128::from(b - a) * done / all).expect("between");
+        changes.push(Change::Spot {
+            entity: actor,
+            at: (along(from.0, to.0), along(from.1, to.1)),
+        });
+    }
+    world
+        .apply(
+            Cause::Action {
+                actor,
+                intent: pending.intent,
+            },
+            changes.clone(),
+        )
+        .map_err(ActError::Fault)?;
+    Ok(changes)
+}
+
+/// Starts an action, or, for something too far away, walks up to it first:
+/// what creatures and minds do. People are told it's too far instead.
+pub fn start_or_approach(
+    world: &mut World,
+    actor: EntityId,
+    intent: Intent,
+) -> Result<Started, ActError> {
+    match start(world, actor, intent) {
+        Err(ActError::Refused(Refusal::TooFar { thing, .. })) => {
+            start(world, actor, Intent::Walk { to: pointer(thing) })
+        }
+        other => other,
+    }
+}
+
+/// "go to the patch": a walk within the place, if no way out is called
+/// that and something here is.
+fn as_walk(world: &World, actor: EntityId, intent: &Intent) -> Option<Intent> {
+    let Intent::Go {
+        place,
+        aboard: None,
+    } = intent
+    else {
+        return None;
+    };
+    let reach = Reach::of(world, actor).ok()?;
+    if way(world, actor, &reach, place, None).is_ok()
+        || false_way(world, actor, reach.here, place).is_some()
+    {
+        return None;
+    }
+    let to = place.strip_prefix("to ").unwrap_or(place).trim();
+    find(world, actor, reach.everyone(), to)?;
+    Some(Intent::Walk { to: to.to_string() })
 }
 
 /// Where someone on their way is going: the place they set off from, the

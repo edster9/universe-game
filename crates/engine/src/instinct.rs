@@ -38,7 +38,7 @@ pub fn act(world: &mut World) -> Result<(), Fault> {
         let rest = world.instinct(creature).map_or(1_800, |i| i.rest);
         let fled_from = world.place_of(creature);
         let started = match decide(world, creature) {
-            Some((intent, fleeing)) => match laws::start(world, creature, intent) {
+            Some((intent, fleeing)) => match laws::start_or_approach(world, creature, intent) {
                 Ok(started) => Some((started, fleeing)),
                 Err(laws::ActError::Refused(_)) => None,
                 Err(laws::ActError::Fault(fault)) => return Err(fault),

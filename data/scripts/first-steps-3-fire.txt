@@ -9,15 +9,19 @@ luck average
 rules player
 
 go forest
+go to sticks
 gather sticks
 gather sticks
+go to grass
 repeat 3
   gather grass
 end
+go to twigs
 repeat 3
   gather twigs
 end
 go hillside
+go to stones
 repeat 5
   gather stones
 end

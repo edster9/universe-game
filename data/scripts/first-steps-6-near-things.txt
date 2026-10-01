@@ -1,0 +1,55 @@
+# First steps, stage 6: being near things. Each place has room in it: a
+# person reaches 2.5 m, the forest's sticks, grass, and twigs lie in patches
+# of their own, and what you drop lies at your feet. Too far is refused,
+# saying how far and which way; "go to" walks up to it. See
+# docs/ideas/nearness.md and docs/challenges/first-steps.md.
+world companion.toml
+as survivor
+luck average
+rules player
+
+go forest
+try gather sticks
+expect said out of reach: the fallen sticks, 11 m east
+look
+expect said fallen sticks (50 kg, 11 m east)
+go to sticks
+expect said you walk to sticks
+gather sticks
+expect said you find 200 g of wood
+go to sticks
+expect said you're already there
+
+# Dropped, it lies at your feet; walk away and it's out of reach.
+drop wood
+take lump
+expect said you take the lump of wood
+drop wood
+go to grass
+try take lump
+expect said out of reach: the lump of wood
+go to lump
+take lump
+expect said you take the lump of wood
+
+# A spot, in metres east and north of the place's middle; and its edge.
+walk to 10 -10
+expect said you walk to 10 -10
+try walk to 60 0
+expect said it's the edge of the forest
+
+# A walk can be stopped partway: from 31 m off, three seconds' walk
+# brings the grass 4 m nearer.
+try gather grass
+expect said out of reach: the dry grass, 31 m north-west
+start go to grass
+wait 3
+stop
+expect said you stop
+try gather grass
+expect said out of reach: the dry grass, 27 m north-west
+go to grass
+gather grass
+expect said dry grass
+expect alive
+expect conserved

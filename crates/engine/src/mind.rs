@@ -234,22 +234,30 @@ pub fn act(world: &mut World) -> Result<(), Fault> {
         let now = world.tick();
         let mut choices = choices(world, me);
         // Unless they're in danger, what they were asked comes before their
-        // own orders. They take it up once, doing it or finding they can't.
+        // own orders. They take it up once, doing it or finding they can't,
+        // once they've walked up to it if it's out of reach.
         let in_danger = world
             .mind(me)
             .is_some_and(|m| !meet(world, me, m.temperament).is_empty());
         if let Some(request) = world.mind(me).and_then(|m| m.requests.first().cloned())
             && !in_danger
         {
-            world.apply(
-                Cause::Nature { tick: now },
-                vec![Change::TakeUp { agent: me }],
-            )?;
+            // Too far yet: they walk up to it first, and still mean to do it.
+            let too_far = matches!(
+                laws::plan(world, me, &request),
+                Err(laws::Refusal::TooFar { .. })
+            );
+            if !too_far {
+                world.apply(
+                    Cause::Nature { tick: now },
+                    vec![Change::TakeUp { agent: me }],
+                )?;
+            }
             choices.insert(0, request);
         }
         let mut started = false;
         for intent in choices {
-            match laws::start(world, me, intent) {
+            match laws::start_or_approach(world, me, intent) {
                 Ok(laws::Started::Due(_)) => {}
                 Ok(laws::Started::Now { seconds, .. }) => {
                     if seconds == 0 {

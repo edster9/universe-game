@@ -12,6 +12,7 @@ as survivor
 luck average
 rules player
 
+go to driftwood
 gather driftwood
 try offer wood to the stranger for barb
 expect said the stranger says, "the iron barb is worth more to me than the lump of wood."
@@ -29,6 +30,7 @@ expect said flake of dark metal (400 g)
 wait until 13:00
 look
 expect not said the stranger
+go to shell
 take shell
 expect not said sees you
 wait until 15:00

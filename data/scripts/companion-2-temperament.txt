@@ -14,6 +14,7 @@ go forest
 go beach
 look
 expect said also here: the stranger
+go to stranger
 attack stranger with spear
 expect said you strike the stranger with the spear, and wound them
 wait 1 min

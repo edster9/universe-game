@@ -46,8 +46,10 @@ fn the_body_shows_what_the_datasheet_measures_and_the_backpack_what_is_carried()
 
     for line in [
         "go forest",
+        "go to sticks",
         "gather sticks",
         "gather sticks",
+        "go to grass",
         "gather grass",
     ] {
         assert!(!s.handle(line).refused, "{line}");

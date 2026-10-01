@@ -292,6 +292,9 @@ struct PlaceDef {
     temperature: Option<String>,
     /// The coldest it gets, at midnight, in a world with days.
     night: Option<String>,
+    /// How far it reaches from its middle, as "60 m". The world's setting
+    /// if not given.
+    size: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -343,6 +346,9 @@ struct AgentDef {
     /// fixed there, and who.
     #[serde(default)]
     remembers: Vec<String>,
+    /// Where in their place they stand, from its middle, as "20 m north, 10
+    /// m east". At the middle if not given.
+    spot: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -443,6 +449,12 @@ struct ItemDef {
     /// It's a map, and these are what it claims. A map can be wrong.
     #[serde(default)]
     map: Vec<ClaimDef>,
+    /// Where in its place it is, from the middle, as "20 m north, 10 m
+    /// east". At the middle if not given.
+    spot: Option<String>,
+    /// How far it spreads around its spot, as "15 m": a stock's patch. A
+    /// fixed thing with no spread covers its whole place.
+    spread: Option<String>,
 }
 
 /// One thing a map claims: that a place exists, that there's a way between
@@ -593,6 +605,9 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
         }
         if let Some(r) = &def.rough {
             world.roughness.insert(place, parse_per_km(&def.id, r)?);
+        }
+        if let Some(size) = &def.size {
+            world.sizes.insert(place, parse_length(&def.id, size)?);
         }
         match (&def.east, &def.north) {
             (Some(east), Some(north)) => {
@@ -1208,6 +1223,12 @@ fn load_item(world: &mut World, def: &ItemDef) -> Result<(), LoadError> {
         }
     };
     world.put(item, at);
+    if let Some(spot) = &def.spot {
+        set_spot(world, &def.id, item, spot)?;
+    }
+    if let Some(spread) = &def.spread {
+        world.spreads.insert(item, parse_length(&def.id, spread)?);
+    }
 
     match composition {
         Some(composition) => {
@@ -1497,6 +1518,9 @@ fn load_agent(
         }
     };
     world.put(agent, at);
+    if let Some(spot) = &def.spot {
+        set_spot(world, id, agent, spot)?;
+    }
     let mass = parse_mass(id, mass_text)?;
     match parse_composition(world, id, mass, None, composition)? {
         Some(composition) => {
@@ -1671,6 +1695,50 @@ fn load_life(
         working_until: 0,
         died_of: None,
     })
+}
+
+/// Places `thing` at a spot in its place, given from the middle as "20 m
+/// north, 10 m east": lengths and directions, in any order.
+fn set_spot(
+    world: &mut World,
+    id: &str,
+    thing: world::EntityId,
+    text: &str,
+) -> Result<(), LoadError> {
+    let place = world
+        .location(thing)
+        .filter(|&p| world.is_place(p))
+        .ok_or_else(|| LoadError(format!("{id} has a spot, so it must be in a place")))?;
+    let (mut east, mut north) = world.position(place).unwrap_or((0, 0));
+    for part in text.split(',') {
+        let part = part.trim();
+        let (length, direction) = part.rsplit_once(' ').ok_or_else(|| {
+            LoadError(format!(
+                "{id}: a spot is lengths and directions, like \"20 m north, 10 m east\""
+            ))
+        })?;
+        let length = i64::try_from(parse_length(id, length)?)
+            .map_err(|_| LoadError(format!("{id}: too far")))?;
+        match direction {
+            "north" => north += length,
+            "south" => north -= length,
+            "east" => east += length,
+            "west" => east -= length,
+            other => {
+                return Err(LoadError(format!(
+                    "{id}: {other:?} isn't north, south, east, or west"
+                )));
+            }
+        }
+    }
+    let middle = world.position(place).unwrap_or((0, 0));
+    if world::distance(middle, (east, north)) > world.size(place) {
+        return Err(LoadError(format!(
+            "{id}'s spot is beyond the edge of its place"
+        )));
+    }
+    world.spots.insert(thing, (east, north));
+    Ok(())
 }
 
 fn parse_length(id: &str, text: &str) -> Result<u64, LoadError> {

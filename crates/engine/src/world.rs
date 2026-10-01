@@ -119,6 +119,8 @@ pub struct Settings {
     pub vitality_restores: u64,
     pub stamina: u64,
     pub exhausted_pace: u64,
+    /// How far from its middle a place reaches, in µm, unless its data says.
+    pub place_size: u64,
 }
 
 impl Default for Settings {
@@ -166,6 +168,7 @@ impl Default for Settings {
             vitality_restores: 3_000_000,
             stamina: 3_000_000_000_000,
             exhausted_pace: 5_000,
+            place_size: 50_000_000,
         }
     }
 }
@@ -631,6 +634,15 @@ pub struct World {
     pub(crate) heights: Table<EntityId, u64>,
     /// Where each place is, in µm east and north of the world's origin.
     pub(crate) positions: Table<EntityId, (i64, i64)>,
+    /// Where each thing standing or lying in a place is, in µm east and
+    /// north of the world's origin. Kept by [`World::put`]: what comes into
+    /// a place arrives at its middle, a step from anyone else.
+    pub(crate) spots: Table<EntityId, (i64, i64)>,
+    /// How far a stock spreads around its spot, in µm. A fixed thing with no
+    /// spread covers its whole place.
+    pub(crate) spreads: Table<EntityId, u64>,
+    /// How far each place reaches from its middle, in µm, if its data says.
+    pub(crate) sizes: Table<EntityId, u64>,
     /// How landmarks look from far away. Only these can be seen from afar.
     pub(crate) from_afar: Table<EntityId, String>,
     /// What each person remembers. Creatures acting on instinct have none.
@@ -695,6 +707,13 @@ pub struct World {
     pub(crate) logged: u64,
     /// How many recent sets the log keeps; older ones are forgotten.
     pub(crate) log_window: usize,
+}
+
+/// The distance between two spots, in µm.
+pub fn distance(a: (i64, i64), b: (i64, i64)) -> u64 {
+    let (east, north) = (i128::from(a.0 - b.0), i128::from(a.1 - b.1));
+    let squared = u128::try_from(east * east + north * north).expect("a square");
+    u64::try_from(squared.isqrt()).unwrap_or(u64::MAX)
 }
 
 impl World {
@@ -1491,6 +1510,84 @@ impl World {
         self.unput(id);
         self.locations.insert(id, holder);
         self.inside.or_insert_with(holder, BTreeSet::new).insert(id);
+        if self.is_place(holder) {
+            let spot = self.arrival(id, holder);
+            self.spots.insert(id, spot);
+        } else {
+            self.spots.remove(&id);
+        }
+    }
+
+    /// Where something arriving at a place stands: at its middle, a step
+    /// (up to 40 cm) from it, the same for the same thing every time, so
+    /// arrivals are within reach of each other and of what's there.
+    pub fn arrival(&self, id: EntityId, place: EntityId) -> (i64, i64) {
+        let (east, north) = self.position(place).unwrap_or((0, 0));
+        let mut x = u64::from(id.0).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+        x ^= x >> 29;
+        let step = |bits: u64| i64::try_from(bits % 800_001).expect("small") - 400_000;
+        (east + step(x), north + step(x >> 20))
+    }
+
+    /// Where something is, in µm east and north: its own spot in a place,
+    /// or the spot of whatever holds it. A place is at its middle.
+    pub fn spot(&self, id: EntityId) -> Option<(i64, i64)> {
+        if self.is_place(id) {
+            return self.position(id);
+        }
+        let holder = self.location(id)?;
+        if self.is_place(holder) {
+            return self
+                .spots
+                .get(&id)
+                .copied()
+                .or_else(|| self.position(holder));
+        }
+        self.spot(holder)
+    }
+
+    /// How far a place reaches from its middle, in µm.
+    pub fn size(&self, place: EntityId) -> u64 {
+        self.sizes
+            .get(&place)
+            .copied()
+            .unwrap_or(self.settings.place_size)
+    }
+
+    /// How far a thing spreads around its spot, in µm: a stock's patch, or
+    /// a whole place for a fixed thing with no spread given. Nothing for
+    /// what's portable or alive.
+    pub fn spread(&self, id: EntityId) -> u64 {
+        if let Some(&spread) = self.spreads.get(&id) {
+            return spread;
+        }
+        match self.location(id) {
+            Some(place) if self.is_place(place) && !self.is_portable(id) && !self.is_agent(id) => {
+                self.size(place)
+            }
+            _ => 0,
+        }
+    }
+
+    /// How far `from` would have to go to touch `to`, in µm: the distance
+    /// between their spots, less how far `to` spreads.
+    pub fn gap(&self, from: EntityId, to: EntityId) -> u64 {
+        let (Some(a), Some(b)) = (self.spot(from), self.spot(to)) else {
+            return 0;
+        };
+        distance(a, b).saturating_sub(self.spread(to))
+    }
+
+    /// How far someone can reach, in µm. A body with no reach in data
+    /// reaches everything in its place.
+    pub fn reach(&self, who: EntityId) -> Option<u64> {
+        self.life.get(&who).and_then(|l| l.reach)
+    }
+
+    /// Whether `who` can touch `thing` from where they stand.
+    pub fn within_reach(&self, who: EntityId, thing: EntityId) -> bool {
+        self.reach(who)
+            .is_none_or(|reach| self.gap(who, thing) <= reach)
     }
 
     /// Takes `id` out of wherever it is, leaving it nowhere.
@@ -1579,6 +1676,9 @@ impl World {
             worn,
             heights,
             positions,
+            spots,
+            spreads,
+            sizes,
             from_afar,
             memories,
             maps,
@@ -1638,6 +1738,9 @@ impl World {
         f(worn);
         f(heights);
         f(positions);
+        f(spots);
+        f(spreads);
+        f(sizes);
         f(from_afar);
         f(memories);
         f(maps);
@@ -1686,6 +1789,8 @@ impl World {
         ids.extend(self.worn.originals().into_keys().copied());
         ids.extend(self.heights.originals().into_keys().copied());
         ids.extend(self.positions.originals().into_keys().copied());
+        ids.extend(self.spots.originals().into_keys().copied());
+        ids.extend(self.spreads.originals().into_keys().copied());
         ids.extend(self.from_afar.originals().into_keys().copied());
         ids.extend(self.memories.originals().into_keys().copied());
         ids.extend(self.maps.originals().into_keys().copied());
@@ -1820,6 +1925,12 @@ impl World {
             }
             if self.is_agent(id) && !self.is_place(location) {
                 return Err(format!("{} isn't standing in a place", self.key(id)));
+            }
+            if self.is_place(location) != self.spots.contains_key(&id) {
+                return Err(format!(
+                    "{} has a spot only if it's in a place, and must have one there",
+                    self.key(id)
+                ));
             }
             if !self.holds(location) {
                 return Err(format!(

@@ -2,9 +2,12 @@
 # flake with a stone, shape a stick into a shaft with it, and put them
 # together. Ends on the hillside holding the spear and the stone.
 go forest
+go to sticks
 gather sticks
 go hillside
+go to stones
 gather stones
+go to flint
 gather flint
 work flint into flake with stone
 work wood into shaft with flake

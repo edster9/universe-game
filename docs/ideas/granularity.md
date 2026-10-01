@@ -1,6 +1,6 @@
 # The one and the many: how fine-grained things are
 
-Proposed 2026-09-30, from the owner's question in [requirements.md](../requirements.md) ("Being near things, agreed; and how fine-grained things are"): what's counted one by one, what's counted in bulk, and what's limited.
+Proposed 2026-09-30 and **agreed** the same day ("the rest is pretty good"), with two parts left open, from the owner's question in [requirements.md](../requirements.md) ("Being near things, agreed; and how fine-grained things are"): what's counted one by one, what's counted in bulk, and what's limited.
 
 ## What the engine does today, without having named it
 
@@ -48,3 +48,11 @@ Everything else is part of a stock. **This is the cone of influence applied to t
 2. **The ground's shape doesn't change from digging**; a dug pit becomes one only when digging the land itself matters: agree?
 3. **Forests are a renewable stock**, with landmark trees as ones, rather than every tree being one: agree? (Every tree being one would mean tens of thousands of things per island, most of them never touched.)
 4. **Renewal** is a law: grass, trees, and fish grow back from sunlight or the sea, up to a limit, as fish and shellfish already do. And creatures breed back up to what their range can feed, a law not yet built, without which the island's boars only ever dwindle. When should breeding come: with the camp, or now?
+
+## Decided, 2026-09-30
+
+- **The rule of the one and the many is agreed**: nothing is unlimited, only renewable or vast; a thing is one if it acts, was made or changed, was taken, or is named in data; everything else is a stock.
+- **Breeding waits.** Not now.
+- **Open, for a later conversation (world and village building):**
+  - **How the map changes.** The map draws the trees, so it knows of them: a felled tree could be removed from it, and trees could grow back over time, without much detail tracked. A group clearing a whole section of forest to build a city must change the map. The forests-as-stocks rule stands for now; how a stock's area shrinks, regrows, and gets cleared on the map is the open part.
+  - **Earthworks.** No holes from ordinary digging. But excavating an enormous amount of dirt for a project would alter the map specially. This matters most for futuristic cities, how they're built and destroyed, which needs some advanced thinking.

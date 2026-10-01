@@ -558,6 +558,13 @@ One more design decision for the whole game, which affects everything else profo
 
 Claude's proposal is in [ideas/granularity.md](ideas/granularity.md).
 
+Added the same day, on the proposal: **the rest is pretty good.**
+
+- **Not breeding yet**; let's not worry about it for now.
+- **Individual trees go to the map itself.** If the map draws the trees, it must know about them, so why not remove one when it's destroyed? Then they might also grow over time. They don't have to be tracked in much detail, but a dynamic world would require something like that. **A group of people will chop down an entire section of trees to build a city, so the map has to be altered.** A conversation for later.
+- **Holes in the dirt: no, not directly.** But we might excavate an enormous amount of dirt for a project, and then the map might be specially altered.
+- These will become clearer when we get into world building and village building, and especially with **futuristic cities, how they get built and destroyed**. Some advanced thinking will be important.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

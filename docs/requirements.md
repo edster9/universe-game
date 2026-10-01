@@ -569,6 +569,15 @@ Added the same day, on the proposal: **the rest is pretty good.**
 
 Added 2026-09-30, after the fire steps were written down to try. **When do we take a list like the fire's and turn it into a skill, so it's saved?** Then you could go to a forest and, near sticks and the other things, say "start fire": the skill would check everything is in order, it has the instructions, and it would go through the sequence. A conversation to have soon.
 
+### Shortcuts, faster gathering, and clicking
+
+Added 2026-09-30, after trying the fire.
+
+- **Shortcuts in the terminal:** "gather wood x3", or by grams, "gather wood 500g": it would work out that's two lumps, giving 400 g of wood. Good shortcuts.
+- **A command to drop things**, if we don't have one already.
+- **Gathering takes far too long.** I can't type "gather wood" and wait 3 minutes; that wouldn't be fun. Gathering the fire's inventory from start to finish, assuming everything is next to you, should take **under a minute**.
+- **Clicking on the objects near you**, to bypass the terminal: at the end of the day, **the terminal is for processes, not object interaction**. Ideas to follow.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

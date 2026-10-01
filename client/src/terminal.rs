@@ -1,7 +1,7 @@
-//! The console: translucent, at the bottom left, where most online games
-//! keep their chat. An input line, and a log where replies, news, and grey
-//! debugging messages scroll. Enter to type (and to send), Esc to stop, the
-//! key left of 1 (`) to make it bigger, smaller, or hidden; up and down
+//! The console: translucent, along the bottom of the window. An input
+//! line, and a log where replies, news, and grey debugging messages scroll.
+//! Enter to type (and to send), Esc to stop, the key left of 1 (`) to make
+//! it bigger, smaller, or hidden; up and down
 //! bring back earlier commands. Commands go through the console's own
 //! session, so every reply and refusal is the one the scripts prove.
 //!
@@ -107,7 +107,8 @@ pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
                 position_type: PositionType::Absolute,
                 left: Val::Px(12.0),
                 bottom: Val::Px(12.0),
-                width: Val::Percent(46.0),
+                // The whole width of the window.
+                right: Val::Px(12.0),
                 flex_direction: FlexDirection::Column,
                 padding: UiRect::all(Val::Px(8.0)),
                 row_gap: Val::Px(4.0),
@@ -265,17 +266,12 @@ pub fn show(
             String::new()
         };
     }
-    if let Ok((mut node, mut visible)) = panel.single_mut() {
+    if let Ok((_, mut visible)) = panel.single_mut() {
         *visible = if console.size == Size::Hidden && !console.typing && !voice.listening() {
             Visibility::Hidden
         } else {
             Visibility::Inherited
         };
-        node.width = Val::Percent(if console.size == Size::Large {
-            60.0
-        } else {
-            46.0
-        });
     }
     if !console.changed {
         return;

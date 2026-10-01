@@ -12,3 +12,5 @@ gpu-bench-*.txt
 .idea/
 *.swp
 .DS_Store
+# Patched copies of libraries, made by a script (client/vendor.sh)
+vendor/

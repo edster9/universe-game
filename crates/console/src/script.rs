@@ -198,6 +198,19 @@ impl Playing {
         &self.session
     }
 
+    /// The next line to play, as written.
+    pub fn peek(&self) -> Option<&str> {
+        self.lines.get(self.next).map(|(_, line)| line.as_str())
+    }
+
+    /// Plays `line` in place of the next line, as when a command is spoken
+    /// and heard rather than read.
+    pub fn rewrite_next(&mut self, line: String) {
+        if let Some(next) = self.lines.get_mut(self.next) {
+            next.1 = line;
+        }
+    }
+
     /// Every command so far, and its reply.
     pub fn transcript(&self) -> &[String] {
         &self.transcript

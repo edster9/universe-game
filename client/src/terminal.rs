@@ -138,12 +138,12 @@ pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
         });
     console.say(
         Said::Debug,
-        "Enter to type a command, Esc to stop; \"help\" lists them. ` resizes this.",
+        "Enter to type a command, Esc to stop; \"help\" lists them. Hold T to speak one. ` resizes this.",
     );
 }
 
 /// Sends a line to the session, as the player typing it.
-fn send(console: &mut Console, sim: &mut Sim, line: &str, exit: &mut MessageWriter<AppExit>) {
+pub fn send(console: &mut Console, sim: &mut Sim, line: &str, exit: &mut MessageWriter<AppExit>) {
     console.history.push(line.to_string());
     console.say(Said::Typed, &format!("> {line}"));
     match &mut sim.play {
@@ -247,6 +247,7 @@ pub fn show(
     log: Query<Entity, With<LogLines>>,
     mut panel: Query<(&mut Node, &mut Visibility), With<Panel>>,
     mut input: Query<&mut Text, With<InputLine>>,
+    voice: Res<crate::voice::Voice>,
 ) {
     if let Ok(mut text) = input.single_mut() {
         let caret = if ((time.elapsed_secs() * 2.0) as u64).is_multiple_of(2) {
@@ -256,12 +257,16 @@ pub fn show(
         };
         text.0 = if console.typing {
             format!("> {}{caret}", console.input)
+        } else if voice.listening() {
+            format!("(listening{caret})")
+        } else if voice.busy {
+            "(hearing...)".into()
         } else {
             String::new()
         };
     }
     if let Ok((mut node, mut visible)) = panel.single_mut() {
-        *visible = if console.size == Size::Hidden && !console.typing {
+        *visible = if console.size == Size::Hidden && !console.typing && !voice.listening() {
             Visibility::Hidden
         } else {
             Visibility::Inherited

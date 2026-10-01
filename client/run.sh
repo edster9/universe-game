@@ -7,10 +7,20 @@ set -euo pipefail
 cd "$(dirname "$0")"
 ZIGBUILD_BIN=$(dirname "$(ls ~/.version-fox/temp/*/rust/cargo/bin/cargo-zigbuild 2>/dev/null | head -1)" 2>/dev/null || true)
 export PATH=~/.cargo/bin:~/.local/zig/zig-x86_64-linux-0.16.0:$PATH:${ZIGBUILD_BIN:-}:~/.cargo/bin
+# Whisper, for voice: a patched copy (see vendor.sh), bindings made with
+# libclang, and built for CPUs with AVX2 (2015 on), which makes it ten times
+# faster.
+./vendor.sh
+export LIBCLANG_PATH=${LIBCLANG_PATH:-/usr/lib/llvm-18/lib}
+export CFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3" CXXFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3"
 cargo zigbuild --release --target x86_64-pc-windows-gnu
 TARGET=/mnt/c/Users/edste/universe-game/client
 mkdir -p "$TARGET"
 cp target/x86_64-pc-windows-gnu/release/client.exe "$TARGET/"
+# Whisper's English model, beside the program, once.
+mkdir -p "$TARGET/models"
+[ -f "$TARGET/models/ggml-base.en.bin" ] || curl -sSL -o "$TARGET/models/ggml-base.en.bin" \
+    https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
 # The worlds and scripts, beside the program.
 rm -rf "$TARGET/data"
 cp -r ../data "$TARGET/data"

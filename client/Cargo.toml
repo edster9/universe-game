@@ -12,6 +12,9 @@ console = { path = "../crates/console" }
 bevy = { version = "0.19", default-features = false, features = ["3d", "ui", "free_camera", "png"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.9"
+# Voice: speech to text on the player's own machine, and the microphone.
+whisper-rs = "0.16"
+cpal = "0.18"
 
 # Dependencies build optimised even in debug builds: Bevy is slow otherwise.
 [profile.dev.package."*"]
@@ -19,3 +22,7 @@ opt-level = 3
 
 [profile.release]
 opt-level = 3
+
+# whisper.cpp, patched to build for windows-gnu: see vendor.sh.
+[patch.crates-io]
+whisper-rs-sys = { path = "vendor/whisper-rs-sys" }

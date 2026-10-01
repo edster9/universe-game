@@ -1,0 +1,20 @@
+# First steps, stage 5: times as people say them, typed or spoken. The
+# console reads "10 minutes" as "10 min" and "2 hours" as "2 h". (Spoken
+# clock times, "eighteen oh five", come out of the voice layer as 18:05.)
+# See docs/challenges/first-steps.md.
+world companion.toml
+as survivor
+luck average
+rules player
+
+wait 10 minutes
+expect said 10 min passes
+wait 2 hours
+expect said 2 h passes
+wait 30 seconds
+expect said 30 s passes
+wait 1 days
+expect said 24 h passes
+wait until 18:05
+expect time after 10 h
+expect alive

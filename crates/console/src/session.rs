@@ -330,7 +330,7 @@ impl Session {
         } else if let Ok(n) = time.parse::<u64>() {
             Some(n)
         } else {
-            units::parse_quantity(time, units::property::DURATION, "a time").ok()
+            units::parse_quantity(&short_units(time), units::property::DURATION, "a time").ok()
         };
         let was_asleep = self.world.is_asleep(self.player);
         match seconds {
@@ -1412,6 +1412,21 @@ fn sentence_case(text: &str) -> String {
         Some(first) => first.to_uppercase().chain(chars).collect(),
         None => String::new(),
     }
+}
+
+/// Times as people say them, in the units the console reads: "10
+/// minutes" is "10 min", "2 hours" is "2 h".
+fn short_units(time: &str) -> String {
+    time.split_whitespace()
+        .map(|word| match word {
+            "second" | "seconds" | "sec" | "secs" => "s",
+            "minute" | "minutes" | "mins" => "min",
+            "hour" | "hours" => "h",
+            "days" => "day",
+            other => other,
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Turns an engine message into a sentence: capitalised, with a full stop.

@@ -9,7 +9,8 @@
 //! islander, the wheel to come closer or go further; Enter to type a
 //! command, Esc to stop, ` to resize the console; F to fly free (WASD, E/Q
 //! up and down, Shift faster) and F again to snap back; B the backpack, V
-//! the body (click it for everything measured); Space pauses the
+//! the body (click it for everything measured); hold T and speak a command;
+//! Space pauses the
 //! world, [ and ] slow it down and speed it up.
 //!
 //! Options:
@@ -21,6 +22,8 @@
 //! - `--script <file> [--shots <folder>] [--step <seconds>]` plays a script
 //!   through the console, saving a screenshot at each expectation, and exits
 //!   when it's over (with an error if it failed).
+//! - `--hear-script <file>` plays a script by voice, from recordings of
+//!   its commands (see `client/voice-proof.sh`), and exits.
 //! - `--open backpack,body` (or `body-all`) opens those windows at the start.
 //! - `--type "<command>; <command>"` types commands at the start, as the
 //!   player would, for trying things without a keyboard.
@@ -39,6 +42,7 @@ mod draw;
 mod panels;
 mod terminal;
 mod terrain;
+mod voice;
 
 use crate::terminal::{Console, Said};
 use terrain::Land;
@@ -183,6 +187,14 @@ fn main() {
             Play::Live(Box::new(session.with_real_time()))
         }
     };
+    let model = data
+        .parent()
+        .unwrap_or(&data)
+        .join("models")
+        .join("ggml-base.en.bin");
+    if let Some(script) = arg("--hear-script") {
+        std::process::exit(hear_script(script, &data, &model));
+    }
     let style: draw::Style = toml::from_str(draw::STYLE).expect("the style file");
     let land = Land::of(play_world(&play));
     let speed = number("--speed").unwrap_or(1.0);
@@ -210,9 +222,16 @@ fn main() {
     .init_resource::<draw::Kit>()
     .init_resource::<Console>()
     .init_resource::<terminal::Shots>()
+    .insert_resource(voice::Voice::new(&model))
     .add_systems(
         Startup,
-        (setup, camera::setup, terminal::setup, panels::setup),
+        (
+            setup,
+            camera::setup,
+            terminal::setup,
+            panels::setup,
+            voice::announce,
+        ),
     )
     .add_systems(
         Update,
@@ -220,6 +239,8 @@ fn main() {
             terminal::type_in,
             controls,
             panels::keys,
+            voice::push_to_talk,
+            voice::run_heard,
             run_world,
             terminal::play_script,
             draw::draw_scenery,
@@ -247,6 +268,58 @@ fn use_system_font(app: &mut App) {
     };
     let mut fonts = app.world_mut().resource_mut::<Assets<Font>>();
     let _ = fonts.insert(AssetId::default(), Font::from_bytes(bytes));
+}
+
+/// Plays a script by voice: each command, spoken into
+/// `voice/<command>.wav` beside the program (by `client/voice-proof.sh`), is
+/// heard as the islander would hear it there and then, and run as heard.
+/// Expectations are checked as ever. Returns the exit code.
+fn hear_script(script: &str, data: &std::path::Path, model: &std::path::Path) -> i32 {
+    let path = [PathBuf::from(script), data.join("scripts").join(script)]
+        .into_iter()
+        .find(|p| p.is_file())
+        .unwrap_or_else(|| fail(&format!("there's no script {script}")));
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| fail(&e.to_string()));
+    let mut playing = Playing::load(&text, data).unwrap_or_else(|e| fail(&e));
+    let model = voice::load_model(model).unwrap_or_else(|e| fail(&e));
+    let recordings = data.parent().unwrap_or(data).join("voice");
+    let (mut spoken, mut wrong) = (0, 0);
+    while let Some(line) = playing.peek().map(str::to_string) {
+        if !line.starts_with("expect ") {
+            let (try_, said) = match line.strip_prefix("try ") {
+                Some(rest) => ("try ", rest.trim().to_string()),
+                None => ("", line.clone()),
+            };
+            let wav = recordings.join(format!("{}.wav", voice::file_name(&said)));
+            let audio = voice::read_wav(&wav).unwrap_or_else(|e| fail(&e));
+            let started = std::time::Instant::now();
+            let session = playing.session();
+            let prompt = voice::prompt(session.world(), session.player());
+            let heard = voice::hear(&model, &audio, &prompt).unwrap_or_else(|e| fail(&e));
+            spoken += 1;
+            let same = heard == said;
+            if !same {
+                wrong += 1;
+            }
+            println!(
+                "{} said {said:?}, heard {heard:?} in {:.2} s",
+                if same { "  " } else { "!!" },
+                started.elapsed().as_secs_f32()
+            );
+            playing.rewrite_next(format!("{try_}{heard}"));
+        }
+        match playing.step() {
+            Some(Ok(_)) => {}
+            Some(Err(why)) => {
+                println!("FAILED: {why}");
+                println!("{spoken} commands spoken, {wrong} heard differently");
+                return 1;
+            }
+            None => break,
+        }
+    }
+    println!("PASSED: {spoken} commands spoken, {wrong} heard differently");
+    0
 }
 
 fn play_world(play: &Play) -> &EngineWorld {
@@ -420,7 +493,7 @@ fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud
     let view = if eye.flying {
         "flying free: WASD, E/Q, Shift; F to go back"
     } else {
-        "right-drag to look, wheel to zoom, F to fly, B backpack, V body"
+        "right-drag to look, wheel to zoom, F to fly, B backpack, V body, T speak"
     };
     for mut text in &mut text {
         text.0 =

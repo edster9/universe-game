@@ -151,3 +151,47 @@ Both windows are the console's own `backpack` and `body [all]` commands, which t
 - The windows update every frame from the engine.
 - Clicking works only on the body window. The backpack opens and closes by its key.
 - Hunger and thirst are shown as what the engine measures (stored energy and body fluid), not as words like "hungry". Under players' rules, vitality keeps both up.
+
+## Stage 5, results (2026-09-30)
+
+**Passed.** Hold T and speak; let go, and the words appear in the console and run as if typed.
+
+**How it works.** Speech becomes text on the player's own machine: Whisper (whisper.cpp, open source), with its English base model (142 MB, downloaded once beside the program). It's private, free, and works offline.
+- The client reads the microphone itself. On release, it hears the words in the background, in about 0.7 seconds on the CPU.
+- It only ever makes text: the same commands, checked by the same laws.
+- At start, the console says whether voice is ready, and which microphone it opened ("Microphone Array (Intel® Smart Sound Technology…)" on the owner's laptop).
+- While T is held, the input line says "(listening…)", then "(hearing…)".
+
+**Building it from WSL**, which the owner asked to try before running it as a separate program. It compiled, with one fix and one speed-up:
+- **The fix.** whisper.cpp names its libraries without the "lib" prefix on every Windows build, which only Microsoft's compiler wants; Rust looks for `libggml.a`. `client/vendor.sh` makes a patched copy (one line: `if (WIN32)` becomes `if (MSVC)`) from cargo's own download, into `client/vendor/` (not in git), and `run.sh` runs it.
+- **The speed-up.** Built for a baseline x86 processor, Whisper took 6 seconds a command. Built for processors with AVX2 (x86-64-v3, roughly 2015 onwards), it takes 0.65 seconds: ten times faster, on the CPU alone, without a GPU. `run.sh` sets this.
+
+**Hearing well.**
+- **Priming.** Whisper is given the console's command words and the names of what the islander can see, carry, and go to, in their own words. Priming fixed "Rubwood" (rub wood) and "dripped wood" (driftwood), and only primes words the islander could use.
+- **Shaping.** The voice layer turns what Whisper writes into what the console reads: lower case, no full stops or commas, a first word run into the next split apart ("dropwood" becomes "drop wood"), and clock times as the console writes them ("1805", "18.05", "6:05 pm", "13:00 hours" all become "18:05" or "13:00"). Bare numbers are times only after "until": "wait 600" stays seconds.
+- **The console** now reads units as people say them, typed or spoken: "wait 10 minutes", "2 hours", "30 seconds", "1 days".
+
+**Proofs:**
+- **Played by voice.** `client/voice-proof.sh <script>` has Windows' own speech voice say each of a script's commands into a recording. The client (`--hear-script`) then hears each one as the islander would hear it there and then, primed by what they can see at that moment, runs it as heard, and checks the script's expectations. All four scripts tried pass:
+
+  | Script | Commands spoken | Heard differently |
+  | --- | --- | --- |
+  | The fire (`first-steps-3-fire`) | 35 | 1 ("wait 10 minutes", which works) |
+  | Asking (`companion-3-asking`) | 16 | 2 (the same) |
+  | Barter (`companion-4-barter`, with the spear recipe) | 23 | 0 |
+  | Backpack and body (`first-steps-4-backpack-and-body`) | 91 | 0 |
+
+  So the fire was made again, spoken rather than typed.
+- **The client's own test** `spoken_words_become_commands` covers the shaping. Sabotage checks failed it each time: without the splitting, without clock times, and with bare numbers taken as times anywhere.
+- **The script** `first-steps-5-times-as-said.txt` covers the console reading long units. With the change removed, the script fails.
+
+**What attempts found along the way:**
+- Without priming, Whisper misheard "rub wood" and "driftwood".
+- With commands-only priming, it fixed one and broke the other. Priming with what's in sight fixed both.
+- The first voice proof missed commands from shared recipes (`include`), and now follows them.
+
+**Simplified, and open:**
+- Push-to-talk with a real voice through the real microphone hasn't been tried by me: it can't be, from here. The microphone opens on the owner's laptop. The owner's first try is the real test.
+- Windows' speech voice is clear and steady. Real voices, accents, and a noisy room will do worse, and the base model may need to become the small one (466 MB, slower) if so.
+- CPU only. Whisper on the GPU (Vulkan) would need the Vulkan SDK's shader compiler in the build: possible later if speed matters.
+- English only, for now.

@@ -543,6 +543,21 @@ Added the same day, agreeing mostly with the proposal, on who can do what. **The
 
 These are the three layers of separation to be mindful of when designing the security context of the commands.
 
+### Being near things, agreed; and how fine-grained things are
+
+Added 2026-09-30. On the stage 6 proposal ([ideas/nearness.md](ideas/nearness.md)): **all those are fine.**
+
+One more design decision for the whole game, which affects everything else profoundly: **the granularity of the items we interact with.**
+
+- **Digging ore:** virtually anywhere you stand is dirt. If I dig for ore, am I affecting the terrain near me, or just extracting it? Does a hole appear that's there forever? That would mean a limited amount of ground to harvest, and ground altered constantly. Most games don't do that.
+- **Grass:** standing on grass and gathering some, I just get some grass. But does the ground lose grass, does the patch disappear?
+- **Trees:** in a forest, if I chop down a tree, do I just get some wood because a tree got chopped down? Which individual trees are still standing? Or do we separate into individual items, where an actual tree disappears from the map?
+- **Boars:** if there are 10 boars on the island and I kill one, there are nine. So collecting grass is different from collecting a boar, or wood from a tree, or fish in the sea. I don't think the engine counts the fish individually; we just happen to catch one.
+- **Houses:** a house can be destroyed, so it's limited.
+- So: **where do we cross from one to the other, and how do we count things? Are some things unlimited, so we just get them, and others limited in the world? Is every tree marked on the map individually, while grass and dirt in general are not?** I need a ruling on this to decide how we shape these things, because it affects gameplay overall.
+
+Claude's proposal is in [ideas/granularity.md](ideas/granularity.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

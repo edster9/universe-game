@@ -1,6 +1,6 @@
 # Being near things: space within places
 
-Proposed 2026-09-30 for stage 6 of [first-steps.md](../challenges/first-steps.md), from the owner's words in [requirements.md](../requirements.md) ("Played from the actor's perspective", "Moving by keys, and by commands"). A design to agree before any code.
+Proposed and **agreed 2026-09-30** ("all those are fine") for stage 6 of [first-steps.md](../challenges/first-steps.md), from the owner's words in [requirements.md](../requirements.md) ("Played from the actor's perspective", "Moving by keys, and by commands"). A design to agree before any code.
 
 ## Where we are
 
@@ -58,7 +58,7 @@ The owner's idea: **WASD always walks the islander, and the arrow keys move the 
 - A creature closes in before it strikes; the stranger walks to the shellfish to eat.
 - Sabotage: reach ignored (the too-far scripts fail); arrivals somewhere other than the middle (older scripts fail).
 
-## Questions for the owner
+## Questions for the owner (all agreed, 2026-09-30)
 
 1. **Places stay, with spots inside them**, rather than one continuous world where a place is just a named area. Agree? (A continuous world would need the engine to know the land's shape between places, which only the client invents today.)
 2. **Too far is refused, with the distance and the direction**, and `go to <thing>` walks there; or should "gather grass" walk there by itself and then gather?

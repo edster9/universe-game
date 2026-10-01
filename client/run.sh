@@ -16,9 +16,13 @@ export CFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3" CXXFLAGS_x86_64_pc_window
 cargo zigbuild --release --target x86_64-pc-windows-gnu
 TARGET=/mnt/c/Users/edste/universe-game/client
 mkdir -p "$TARGET"
-# A fresh file each build, so Explorer's "created" date is the build's too.
-rm -f "$TARGET/client.exe"
 cp target/x86_64-pc-windows-gnu/release/client.exe "$TARGET/"
+# Explorer shows when a file was created, which overwriting keeps (Windows
+# even keeps it for a file deleted and made again under the same name), so
+# set it to now: the date shown is the build's.
+powershell.exe -NoProfile -Command \
+    "(Get-Item 'C:\\Users\\edste\\universe-game\\client\\client.exe').CreationTime = Get-Date" \
+    >/dev/null 2>&1 || true
 # Whisper's English model, beside the program, once.
 mkdir -p "$TARGET/models"
 [ -f "$TARGET/models/ggml-base.en.bin" ] || curl -sSL -o "$TARGET/models/ggml-base.en.bin" \

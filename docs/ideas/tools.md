@@ -1,6 +1,6 @@
 # Tools: debugging, designing, and settings
 
-Proposed 2026-09-30, from the owner's words in [requirements.md](../requirements.md) ("Debugging as a lasting feature"). Debugging tools aren't scaffolding to be thrown away: they become the single player's options and the world designer's tools. This is a proposal: the first piece is built, and the rest waits for the owner's agreement.
+Proposed 2026-09-30, and the layers decided the same day, from the owner's words in [requirements.md](../requirements.md) ("Debugging as a lasting feature"). Debugging tools aren't scaffolding to be thrown away: they become the single player's options and the world designer's tools. This is a proposal: the first piece is built, and the rest waits for the owner's agreement.
 
 ## Two vocabularies, kept apart
 
@@ -17,24 +17,29 @@ Every setting has a name, a value (on or off, a number, or a choice), a key if i
 
 The first settings (built):
 
-| Setting | Key | What it does |
-| --- | --- | --- |
-| `speed` | `[` `]` | Game seconds a second (1 is real time) |
-| `pause` | Space | The world stops |
-| `snap` | | Back to real speed when what you're doing is done (on by default) |
-| `grid` | G | A grid on the ground |
-| `fly` | F | The camera flies free |
-| `backpack` | B | The backpack window |
-| `body` | V | The body window |
+| Setting | Key | Layer | What it does |
+| --- | --- | --- | --- |
+| `speed` | `[` `]` | single player | Game seconds a second (1 is real time) |
+| `pause` | Space | single player | The world stops |
+| `snap` | | single player | Back to real speed when what you're doing is done (on by default) |
+| `grid` | G | always | A grid on the ground |
+| `fly` | F | always | The camera flies free |
+| `backpack` | B | always | The backpack window |
+| `body` | V | always | The body window |
 
-## Who may use what (later)
+## Who may use what: three layers (decided 2026-09-30)
 
-Tools come in kinds, and a world or a server says who may use each kind:
+The owner's design ("Debugging as a lasting feature" in [requirements.md](../requirements.md)). Every tool declares its layer, and the layer, with the server's settings, says who may use it:
 
-- **Viewing**: grid, flying, speed and pause in single player, overlays. Change nothing in the world. Anyone, offline.
-- **Inspecting**: datasheets, the gate's log, totals, minds and memories. Developers and designers, since they show what the actor couldn't know.
-- **Acting as others**: `as`, `become`, commanding NPCs. Developers and designers.
-- **Editing**: placing and removing things, changing a place, setting time and weather. Designers. Edits still go through the gate, as a named source, like sunlight: "nothing from nowhere" holds, and a designed world records what its designer put in.
+1. **Always allowed** (utility): tools that change only how you see and use the game, never the world: the grid, the console's size, the windows, help, listing settings. Allowed on any server. The free-flying camera belongs here because the client draws only what the actor pictures (`view::scene`), so flying shows no more than the actor knows.
+2. **Server's choice** (multiplayer): tools that change the world or yourself without changing anyone's time: god mode, feeding yourself, extra strength, acting as others, editing the world map. Each is allowed or not by the server's administrator, as Quake servers allowed god mode or didn't. Editing the world map has no cone-of-influence problem, so a server may allow it.
+3. **Single player only**: tools that change the shared clock: speed, pause, and snapping back. In multiplayer they'd change time for everyone, so no server setting allows them. A server's own clock rate is the server's to set, not a tool.
+
+In single player, every layer is allowed: nobody else is affected.
+
+Edits still go through the gate, as a named source, like sunlight: god mode's healing and feeding yourself come from "the administrator" or "the designer", never from nowhere. Conservation holds, and the world records what was given and by whom.
+
+Inspecting tools (datasheets, the gate's log, minds and memories) show what the actor couldn't know, so in multiplayer they're the server's choice, like god mode.
 
 ## Next steps (proposed)
 

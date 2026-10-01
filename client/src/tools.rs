@@ -2,8 +2,8 @@
 //! opposed to commands, which the actor does in it. Tools start with a
 //! slash. For now they're settings: `/settings` lists them, `/set <name>
 //! <value>` (or `/<name> <value>`) changes one, and `/<name>` alone flips
-//! one that's on or off. Keys change the same settings. See
-//! docs/ideas/tools.md.
+//! one that's on or off. Keys change the same settings. Each tool has a
+//! layer, which says who may use it. See docs/ideas/tools.md.
 
 use bevy::prelude::*;
 
@@ -26,19 +26,50 @@ impl Default for Settings {
     }
 }
 
-/// Every setting: its name, its key, and what it does.
-const SETTINGS: &[(&str, &str, &str)] = &[
-    ("speed", "[ ]", "game seconds a second; 1 is real time"),
-    ("pause", "Space", "the world stops"),
+/// Who may use a tool (docs/ideas/tools.md, decided 2026-09-30). In single
+/// player, all of them; there's only single player so far.
+#[derive(Clone, Copy)]
+enum Layer {
+    /// Utility: changes how you see and use the game, never the world. Any
+    /// server.
+    Always,
+    /// Changes the world or yourself, not anyone's time: allowed or not by
+    /// the server's administrator.
+    #[allow(dead_code)]
+    ServersChoice,
+    /// Changes the shared clock: never on a server.
+    SinglePlayer,
+}
+
+impl Layer {
+    fn name(self) -> &'static str {
+        match self {
+            Layer::Always => "always",
+            Layer::ServersChoice => "server's choice",
+            Layer::SinglePlayer => "single player",
+        }
+    }
+}
+
+/// Every setting: its name, its key, its layer, and what it does.
+const SETTINGS: &[(&str, &str, Layer, &str)] = &[
+    (
+        "speed",
+        "[ ]",
+        Layer::SinglePlayer,
+        "game seconds a second; 1 is real time",
+    ),
+    ("pause", "Space", Layer::SinglePlayer, "the world stops"),
     (
         "snap",
         "",
+        Layer::SinglePlayer,
         "back to real speed when what you're doing is done",
     ),
-    ("grid", "G", "a grid on the ground"),
-    ("fly", "F", "the camera flies free"),
-    ("backpack", "B", "the backpack window"),
-    ("body", "V", "the body window"),
+    ("grid", "G", Layer::Always, "a grid on the ground"),
+    ("fly", "F", Layer::Always, "the camera flies free"),
+    ("backpack", "B", Layer::Always, "the backpack window"),
+    ("body", "V", Layer::Always, "the body window"),
 ];
 
 /// Everything a tool can change.
@@ -134,14 +165,18 @@ pub fn run(line: &str, console: &mut Console, things: &mut Changeable) {
             return;
         }
         Tool::Settings => {
-            for (name, key, help) in SETTINGS {
+            for (name, key, layer, help) in SETTINGS {
                 let key = if key.is_empty() {
                     String::new()
                 } else {
-                    format!(" (key {key})")
+                    format!(", key {key}")
                 };
                 let value = things.value(name);
-                console.say(Said::Debug, &format!("{name} = {value}{key}: {help}"));
+                let layer = layer.name();
+                console.say(
+                    Said::Debug,
+                    &format!("{name} = {value} ({layer}{key}): {help}"),
+                );
             }
             return;
         }

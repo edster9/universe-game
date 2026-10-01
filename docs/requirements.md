@@ -535,6 +535,14 @@ Added 2026-09-30, after trying the fire with the clock sped up.
 
 Claude's proposal is in [ideas/tools.md](ideas/tools.md).
 
+Added the same day, agreeing mostly with the proposal, on who can do what. **There are usually three layers:**
+
+1. **Single player:** pretty much anything applies, because no one else is affected. You can change virtually anything about the game.
+2. **Multiplayer:** there are certain things you just can't do, with respect to time, speed, and so on, because they'd have an adverse effect on everybody else. But there's no reason you can't give yourself extra strength, feed yourself from the command line, or turn on god mode; that's strictly the preference of the administrator running the server, who enables what's allowed and what isn't. When I played Quake, some servers allowed god mode for anybody, so they could absorb any damage and not die; sometimes it wasn't allowed. Changing the world map can also be allowed in multiplayer, because it doesn't have a cone-of-influence problem. But you can't speed up the game, because that speeds it up for everybody else. So be mindful of what can and can't be done.
+3. **Always allowed:** commands allowed whatever game server you're attached to, because they're utility commands anybody can use.
+
+These are the three layers of separation to be mindful of when designing the security context of the commands.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

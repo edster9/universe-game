@@ -31,7 +31,7 @@ The first settings (built):
 
 The owner's design ("Debugging as a lasting feature" in [requirements.md](../requirements.md)). Every tool declares its layer, and the layer, with the server's settings, says who may use it:
 
-1. **Always allowed** (utility): tools that change only how you see and use the game, never the world: the grid, the console's size, the windows, help, listing settings. Allowed on any server. The free-flying camera belongs here because the client draws only what the actor pictures (`view::scene`), so flying shows no more than the actor knows.
+1. **Always allowed** (utility): tools that change only how you see and use the game, never the world: the grid, the console's size, the windows, help, listing settings. Allowed on any server. The free-flying camera is here for now, because the client draws only what the actor pictures (`view::scene`), so flying shows no more than the actor knows. **Open:** the owner doubts it belongs here, since in real multiplayer it could still help someone cheat; to discuss when multiplayer comes.
 2. **Server's choice** (multiplayer): tools that change the world or yourself without changing anyone's time: god mode, feeding yourself, extra strength, acting as others, editing the world map. Each is allowed or not by the server's administrator, as Quake servers allowed god mode or didn't. Editing the world map has no cone-of-influence problem, so a server may allow it.
 3. **Single player only**: tools that change the shared clock: speed, pause, and snapping back. In multiplayer they'd change time for everyone, so no server setting allows them. A server's own clock rate is the server's to set, not a tool.
 

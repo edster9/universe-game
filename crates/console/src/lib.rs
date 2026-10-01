@@ -2,6 +2,7 @@
 //! commands and engine results into text. All the rules live in the engine.
 
 pub mod live;
+pub mod menu;
 pub mod script;
 pub mod session;
 

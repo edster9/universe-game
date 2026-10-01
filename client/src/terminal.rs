@@ -119,6 +119,8 @@ pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
             },
             BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.55)),
             Panel,
+            // A click on the console isn't a click on the world.
+            Interaction::default(),
         ))
         .with_children(|panel| {
             panel.spawn((
@@ -148,8 +150,20 @@ pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
 
 /// Sends a line to the session, as the player typing it.
 pub fn send(console: &mut Console, sim: &mut Sim, line: &str, exit: &mut MessageWriter<AppExit>) {
+    send_as(console, sim, line, line, exit);
+}
+
+/// Sends a line to the session, shown in the log as `shown`: a command
+/// chosen from a menu, pointing at things, shown in the player's words.
+pub fn send_as(
+    console: &mut Console,
+    sim: &mut Sim,
+    line: &str,
+    shown: &str,
+    exit: &mut MessageWriter<AppExit>,
+) {
     console.history.push(line.to_string());
-    console.say(Said::Typed, &format!("> {line}"));
+    console.say(Said::Typed, &format!("> {shown}"));
     // Tools, for the person at the keyboard, not the actor.
     if line.starts_with('/') {
         console.tools.push(line.to_string());

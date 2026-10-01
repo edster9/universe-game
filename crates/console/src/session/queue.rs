@@ -322,7 +322,7 @@ impl Session {
         if !then.is_empty() {
             text += &format!(", then {}", then.join(", then "));
         }
-        format!("{text}.")
+        crate::menu::in_words(&self.world, self.player, &format!("{text}."))
     }
 
     /// What the player carries, in mg.

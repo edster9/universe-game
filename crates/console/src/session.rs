@@ -627,7 +627,7 @@ impl Session {
         };
         match (walked_to, changes.first()) {
             (Some(to), Some(&Change::Spot { entity, .. })) if entity == self.player => {
-                return format!("You walk to {to}.");
+                return format!("You walk to {}.", crate::menu::in_words(w, self.player, to));
             }
             (Some(_), None) => return "You're already there.".into(),
             _ => {}

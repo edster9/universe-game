@@ -49,7 +49,7 @@ pub fn setup(mut commands: Commands, options: Res<Options>) {
         body: open("body") || open("body-all"),
         all: open("body-all"),
     });
-    commands.spawn((panel(12.0), Backpack));
+    commands.spawn((panel(12.0), Backpack, Interaction::default()));
     // Clicking the body shows everything measured.
     commands.spawn((panel(0.0), Button, Body));
 }

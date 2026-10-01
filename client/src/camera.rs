@@ -171,12 +171,34 @@ pub fn follow(
     *transform = Transform::from_translation(at).looking_at(target, Vec3::Y);
 }
 
+/// The drawn thing nearest the pointer on screen, in front, within a
+/// small reach of it.
+pub fn pointed_at(
+    cursor: Vec2,
+    camera: &Camera,
+    eye: &GlobalTransform,
+    named: &Query<(&Named, &GlobalTransform)>,
+) -> Option<engine::world::EntityId> {
+    let mut best: Option<(f32, Named)> = None;
+    for (&thing, at) in named {
+        let Ok(screen) = camera.world_to_viewport_with_depth(eye, at.translation()) else {
+            continue;
+        };
+        let d = screen.truncate().distance(cursor);
+        if screen.z > 0.0 && d < 28.0 && best.is_none_or(|(b, _)| d < b) {
+            best = Some((d, thing));
+        }
+    }
+    best.map(|(_, Named(id))| id)
+}
+
 /// Names what the pointer is on: the nearest drawn thing to it on screen.
 pub fn point(
     window: Query<&Window, With<PrimaryWindow>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     named: Query<(&Named, &GlobalTransform)>,
     sim: Res<Sim>,
+    menu: Query<(), With<crate::menu::Menu>>,
     mut pointer: Query<(&mut Text, &mut Node, &mut Visibility), With<Pointer>>,
 ) {
     let Ok((mut text, mut node, mut visible)) = pointer.single_mut() else {
@@ -190,18 +212,11 @@ pub fn point(
     let Some(cursor) = window.cursor_position() else {
         return;
     };
-    let mut best: Option<(f32, Named)> = None;
-    for (&thing, at) in &named {
-        // Only what's in front, within a small reach of the pointer.
-        let Ok(screen) = camera.world_to_viewport_with_depth(eye, at.translation()) else {
-            continue;
-        };
-        let d = screen.truncate().distance(cursor);
-        if screen.z > 0.0 && d < 28.0 && best.is_none_or(|(b, _)| d < b) {
-            best = Some((d, thing));
-        }
+    // An open menu names the thing already.
+    if !menu.is_empty() {
+        return;
     }
-    if let Some((_, Named(id))) = best {
+    if let Some(id) = pointed_at(cursor, camera, eye, &named) {
         let world = sim.world();
         text.0 = if id == sim.me() {
             "you".into()

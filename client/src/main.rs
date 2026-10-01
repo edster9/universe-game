@@ -6,7 +6,9 @@
 //! docs/challenges/first-steps.md.
 //!
 //! Controls: hold the right mouse button and drag to look around the
-//! islander, the wheel to come closer or go further; Enter to type a
+//! islander, the wheel to come closer or go further; a left click on
+//! something opens a menu of what to do with it, and on open ground walks
+//! there; Enter to type a
 //! command, Esc to stop, ` to resize the console; F to fly free (WASD, E/Q
 //! up and down, Shift faster) and F again to snap back; B the backpack, V
 //! the body (click it for everything measured); hold T and speak a command;
@@ -41,6 +43,7 @@ use engine::world::{EntityId, World as EngineWorld};
 mod camera;
 mod draw;
 mod grid;
+mod menu;
 mod panels;
 mod terminal;
 mod terrain;
@@ -265,6 +268,7 @@ fn main() {
                 terminal::type_in,
                 controls,
                 panels::keys,
+                menu::click,
                 tools::run_typed,
                 walking::walk_keys,
                 grid::toggle,
@@ -529,7 +533,7 @@ fn run_world(
     if !news.is_empty() {
         console.say(Said::News, &news);
     }
-    let busy = session.world().pending(session.player()).is_some();
+    let busy = session.world().pending(session.player()).is_some() || session.queue_busy();
     sim.owed = owed - whole;
     if *was_busy && !busy && settings.snap && sim.speed > 1.0 {
         sim.speed = 1.0;

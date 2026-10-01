@@ -2889,6 +2889,116 @@ pub fn start_or_approach(
     }
 }
 
+/// Something a person could do with a thing they perceive: what a client
+/// offers when it's clicked.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Choice {
+    pub intent: Intent,
+    /// It's out of reach, so they'd walk up to it first.
+    pub walk_first: bool,
+}
+
+/// What `actor` could do with `thing` now, by the laws: each action that
+/// needs only the thing, and putting into it what they carry (one of each
+/// alike), each checked as if done now, without doing it. Something out of
+/// reach is checked as if they'd walked up to it, and walking up to it comes
+/// first. Only what they perceive: no oracles.
+pub fn choices(world: &World, actor: EntityId, thing: EntityId) -> Vec<Choice> {
+    let Ok(reach) = Reach::of(world, actor) else {
+        return Vec::new();
+    };
+    let carried = reach.carried.contains(&thing);
+    if thing == actor
+        || !(carried || reach.inside.contains(&thing) || reach.everyone().contains(&thing))
+    {
+        return Vec::new();
+    }
+    let it = pointer(thing);
+    let mut candidates = vec![
+        Intent::Gather { source: it.clone() },
+        Intent::Take { item: it.clone() },
+        Intent::Drop { item: it.clone() },
+        Intent::Eat { item: it.clone() },
+        Intent::Drink { source: it.clone() },
+        Intent::Read { item: it.clone() },
+        Intent::Light {
+            chamber: it.clone(),
+        },
+        Intent::Wear {
+            item: it.clone(),
+            on: Covering::Feet,
+        },
+        Intent::Wear {
+            item: it.clone(),
+            on: Covering::Body,
+        },
+        Intent::TakeOff { item: it.clone() },
+        Intent::Divide { item: it.clone() },
+        Intent::Disassemble { item: it.clone() },
+        Intent::Attack {
+            target: it.clone(),
+            with: None,
+        },
+    ];
+    // Putting in what they carry: one of each alike, by name and about the
+    // same size.
+    let mut alike: Vec<(String, Mass)> = Vec::new();
+    for held in world.held(actor) {
+        let (label, mass) = (world.label_for(actor, held), world.weight(held));
+        let about = |a: Mass, b: Mass| a.mg() * 4 <= b.mg() * 5 && b.mg() * 4 <= a.mg() * 5;
+        if held == thing
+            || world.worn(held).is_some()
+            || alike.iter().any(|(l, m)| *l == label && about(*m, mass))
+        {
+            continue;
+        }
+        alike.push((label, mass));
+        candidates.push(Intent::Put {
+            item: pointer(held),
+            into: it.clone(),
+        });
+    }
+    // Out of reach: judged as if they'd walked up to it.
+    let far = !carried && !world.within_reach(actor, thing);
+    let mut near = None;
+    if far && let Some(at) = world.spot(thing) {
+        let mut walked = world.clone();
+        let walk = Intent::Walk { to: it.clone() };
+        if walked
+            .apply(
+                Cause::Action {
+                    actor,
+                    intent: walk,
+                },
+                vec![Change::Spot { entity: actor, at }],
+            )
+            .is_ok()
+        {
+            near = Some(walked);
+        }
+    }
+    let judged = near.as_ref().unwrap_or(world);
+    let mut offered: Vec<Choice> = candidates
+        .into_iter()
+        .filter(|intent| plan(judged, actor, intent).is_ok())
+        .map(|intent| Choice {
+            intent,
+            walk_first: far,
+        })
+        .collect();
+    // Walking up to it, if there's something to do there, or it's someone.
+    if far && (!offered.is_empty() || world.is_agent(thing)) {
+        offered.insert(
+            0,
+            Choice {
+                intent: Intent::Walk { to: it },
+                walk_first: false,
+            },
+        );
+    }
+    offered
+}
+
 /// "go to the patch": a walk within the place, if no way out is called
 /// that and something here is.
 fn as_walk(world: &World, actor: EntityId, intent: &Intent) -> Option<Intent> {
@@ -2927,6 +3037,12 @@ pub fn journey(world: &World, actor: EntityId) -> Option<(EntityId, EntityId, u6
 /// what they perceive.
 pub fn pointer(id: EntityId) -> String {
     format!("#{}", id.0)
+}
+
+/// What a pointer ("#12") points at, if it's one and the thing exists.
+pub fn pointed(world: &World, text: &str) -> Option<EntityId> {
+    let id = EntityId(text.trim().strip_prefix('#')?.parse().ok()?);
+    world.exists(id).then_some(id)
 }
 
 /// Whether `viewer` calls `id` by `name`.

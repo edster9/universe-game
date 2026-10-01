@@ -252,3 +252,35 @@ The owner got halfway through the fire, and found three things:
   - The client now draws with **DirectX 12** on Windows (Vulkan with `WGPU_BACKEND=vulkan`). It passed every test.
   - Everything the client logs, and any panic, now goes to **`client.log`** beside the program. If it ever freezes or crashes again, the reason is kept, even when it was started by a double click.
 - **The backpack merged sticks and twigs** into "lump of wood x5". The islander calls both a lump of wood (they're recognised by material, not size), and the backpack grouped by name alone. Now alike means the same name and about the same size (within a quarter): "lump of wood x2: 400 g, about 200 g each" and "lump of wood x3: 60 g, about 20 g each". The test covers it. Whether people should have words for sizes of wood (twig, stick, log) is a vocabulary question for the coming conversation.
+
+## Shortcuts, faster gathering, and clicking (2026-09-30, the owner's requests)
+
+The owner asked for shortcuts in the console, gathering in seconds, and clicking on things (requirements: "Shortcuts, faster gathering, and clicking", and "Clicking on things"). All three are built.
+
+- **Gathering in seconds.** The companion's island gathers materials quickly: grass and twigs 3 s, sticks 4 s, stones 5 s, flint 8 s, driftwood 8 s, clay 5 s, bog iron 10 s, bushes 10 s, a tree 3 min with an axe. The fire's kit (two sticks, three tufts of grass, three twigs, five stones) is now 51 s of gathering, plus the short walks between the patches. Food keeps its times (shellfish 10 min, fish and forage 15 min): the stranger's day is built on them, and changing them moved where the stranger was at 13:00. Walking between places is unchanged (beach to forest about 7 min).
+- **Shortcuts** (the console's session, `crates/console/src/session/queue.rs`):
+  - `gather sticks x3` does it three times;
+  - `gather wood 500 g` keeps on until the islander carries at least that much more (by mass, so it knows a stick is 200 g without being told);
+  - `drop wood x2` and `drop wood 400 g` work the same way, and `drop all` puts everything down except what's worn;
+  - `go to sticks; gather sticks x2` does one command after another.
+  
+  Each time is an ordinary command through the laws. The first refusal stops the rest, with its reason. The reply puts alike outcomes together, then gives what's carried against before and how long it took: "You find 200 g of wood. (x3) You carry 600 g more than before. (That took 12 s.)" In the client, the queue goes on as each action ends; `stop`, or a WASD key during a walk, stops it, and the clock snaps back to real speed only when the whole queue is done. This queue is the seed of saved skills.
+- **Clicking on things** (client `menu.rs`, console `menu.rs`, engine `laws::choices`). A left click on something drawn opens a small menu beside it, under its name in the islander's words, of what they could do with it now. The engine works the menu out from the laws themselves. It checks each action that needs only the thing (gather, take, drop, eat, drink, read, light, wear, take off, divide, take apart, attack), and putting into it each kind of thing carried, as if done now, without doing it. Only what would work is offered. Something out of reach is judged as if the islander had walked up to it; "walk up to it" comes first, and every choice walks up before doing it. Gathering is offered once, x3, and x10. Choosing sends the command to the console as if typed, shown in the islander's words ("walk to fallen sticks; gather from fallen sticks x3"), and the laws decide again. A left click on open ground walks there. Esc, or a click elsewhere, closes the menu. No oracles: nothing the islander can't perceive gets a menu.
+
+**Proofs:**
+- The fire script now gathers by the shortcuts ("go to sticks; gather sticks x2").
+- The backpack script drops by count and by mass, and hauls driftwood for a hard day's work by the load: `gather driftwood x20`, `drop all`, 210 times, until stamina runs out. That's 4,200 searches, since each is now 8 s rather than 15 min.
+- The console's test `a_click_offers_what_the_laws_allow_and_sends_a_command`:
+  - far sticks offer walk up, gather, x3 and x10;
+  - choosing x3 walks up and gathers three, told by name;
+  - near, no walking;
+  - carried wood offers drop;
+  - flint on the hillside, out of sight, offers nothing.
+- **Played in the client on Windows**, with the mouse driven by a PowerShell script (`C:\Users\edste\universe-game\test\click.ps1`, which captures the window with PrintWindow; a plain screen copy misses DirectX). Clicking a stick opened the menu, choosing "gather x3" walked and gathered three in 19 s, and clicking the ground walked there.
+
+**Simplified, and open:**
+- Actions that need a second thing aren't offered yet, except putting what you carry into what you clicked. That leaves out rubbing wood into the ring, lighting with a drill, and attacking with the spear. The choices are to pick the second thing, or to drag one thing onto another; it's for a conversation.
+- What's carried isn't drawn, so it can't be clicked yet. Dropping is by the console (`drop all`), or later by clicking the backpack's lines.
+- Dry grass offers "wear" and "wear on your feet": grass is soft, and the laws allow it. Honest, if odd.
+- The menu is worked out once, when it opens; choosing checks again.
+- Voice doesn't know "times three" yet: say "x3" or type it.

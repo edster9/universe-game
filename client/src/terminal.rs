@@ -1,8 +1,8 @@
 //! The console: translucent, along the bottom of the window. An input
 //! line, and a log where replies, news, and grey debugging messages scroll.
-//! Enter to type (and to send), Esc to stop, the key left of 1 (`) to make
-//! it bigger, smaller, or hidden; up and down
-//! bring back earlier commands. Commands go through the console's own
+//! Enter to type, Enter again to send (or Esc to stop), and the keys go
+//! back to the game; the key left of 1 (`) makes it bigger, smaller, or
+//! hidden; while typing, up and down bring back earlier commands. Commands go through the console's own
 //! session, so every reply and refusal is the one the scripts prove.
 //!
 //! With `--script`, the client plays a script file through the console
@@ -139,7 +139,7 @@ pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
         });
     console.say(
         Said::Debug,
-        "Enter to type a command, Esc to stop; \"help\" lists them. Hold T to speak one. ` resizes this.",
+        "Enter to type a command, Enter to send it; \"help\" lists them. Hold T to speak one. ` resizes this.",
     );
 }
 
@@ -207,6 +207,8 @@ pub fn type_in(
         match &key.logical_key {
             Key::Escape => console.typing = false,
             Key::Enter => {
+                // Sent, and the keys go back to the game: [ and ] work at once.
+                console.typing = false;
                 let line = std::mem::take(&mut console.input);
                 console.back = 0;
                 if !line.trim().is_empty() {

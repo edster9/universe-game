@@ -34,7 +34,7 @@ Then the companion's stories in the client (asking, trading, temperament) come a
 **Only what they perceive.** A new law in the engine, `view::scene`, says what a person pictures: everything where they stand, and the fixed things they remember seeing at other places. The client draws only that. At the start, only the beach and whoever is on it are drawn. The forest appears when the islander arrives there, and afterwards stays as they remember it. The boars are drawn only while the islander is where the boars are. The land and sea are scenery everywhere.
 
 **The console.** It sits at the bottom left, translucent, where games keep their chat:
-- Enter types and sends; Esc stops typing; up and down bring back earlier commands; the key left of 1 (`) cycles it through small, large, and hidden.
+- Enter opens the input line, and Enter again sends the command and gives the keys back to the game (changed after the owner's first try: with the line left open, `]` went into it instead of speeding the clock); Esc closes it without sending; up and down bring back earlier commands; the key left of 1 (`) cycles it through small, large, and hidden.
 - Colours: what you typed in blue, replies in white, refusals in amber, news in gold, and the client's own messages in grey.
 - It goes through the console's own session, so every reply is the one the scripts prove.
 - Commands are the same as in the text console, but the clock doesn't wait for them. `go forest` starts the walk, the islander is drawn on their way, and "You go to the forest." arrives as news when they get there. The HUD shows "busy until 08:06" while they walk.

@@ -618,6 +618,14 @@ Added the same day, on those findings:
 - **Skills, good and bad.** You might do exactly what Claude did with the eleven variations: make fire eleven ways, and fail in some. **Each can be saved as a skill. It doesn't have to be a good skill; it could be a bad one.** And **skills can be traded**: with a better fire-making skill, I can give it or teach it to another player. **This is the basis for our game to evolve.**
 - **This is one big fork in the road in the design.** Let me know what you think overall.
 
+Added the same day, correcting Claude's take: **it isn't asking the AI a straight question** ("I want to make fire, how do I go about it?"). **I want to explain, in a natural language prompt, the process of making fire as I know it:** go find something small that could burn first, find something we can rub together, dig a hole or build a rock circle, put things in there, rub things together, and make a fire. Prompted exactly like that, our engine has no way to get from it to the literal commands.
+
+- **The first thing the AI solves is bridging natural language to the command set, but only in the scope of what's available.** Tell it to use a cigarette lighter to light some grass and twigs: it knows what twigs and grass are, but comes back saying **it has no idea what a cigarette lighter is**, because that isn't in our scope of knowledge, and the AI won't do anything about that.
+- **It takes the natural language prompt and looks at all the commands at its disposal, all the knowledge, and all the inventory, and comes up with a way to execute it** with what we have. That's the helper, and **that's the exercise I want to do.**
+- **Later you can tell it to build a rocket, but only once we've gathered all the necessary steps before it.** Building a rocket is a skill, but how to build a combustion chamber to mix two gases is part of the process of how we evolve into building a rocket.
+- **It's useful all through the game**, bridging the gap between our words and the command set.
+- **This comes back to the skill paradigm: I can't bring my personal knowledge into the game if the player's current knowledge doesn't support it.** I know how to build a rocket personally, but the island doesn't have what we need yet. Once we solve one thing at a time, we'll get there. **The AI layer must be able to query the entire language, the skills, the inventory, and everything else to put the plan together.**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

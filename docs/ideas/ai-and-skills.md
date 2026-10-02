@@ -28,21 +28,42 @@ The engine is a physics sandbox, not a recipe book: any sequence that gets the p
 
 ## The direction
 
-**You say what you want; an AI turns it into the literal commands; the engine decides.**
+**Corrected by the owner, 2026-10-01: the AI is a translator, not an adviser.** You don't ask it how to make fire. **You describe the process as you know it, in your own words**, for example:
 
-1. **You ask, in your own words:** "make a fire here, with a ring of stones".
-2. **The AI is shown only what your character could know** (no oracles):
-   - what they see (`look`), what they carry, and what they know how to do;
-   - their words for things;
-   - the commands that exist (`help`);
+> find something small that burns first, find something we can rub together, dig a hole or build a ring of rocks, put things in there, rub things together, and make a fire
+
+**It turns that into the literal commands, within the scope of what your character has:**
+- the commands that exist;
+- what your character knows and has words for;
+- what they carry;
+- what they can see.
+
+Whatever falls outside that scope, it says so and doesn't invent. "Use a cigarette lighter to light grass and twigs" comes back as: grass and twigs, yes, but no idea what a cigarette lighter is.
+
+1. **You describe a process**, in plain words, by typing or speaking.
+2. **The translator reads what's in scope:**
+   - the commands (`help`);
+   - the character's words for things;
+   - what they know how to make (designs, recipes);
+   - what they carry (`backpack`);
+   - what they see (`look`);
    - their saved skills.
    
-   It's never shown the engine's truth: no ids, no hidden numbers, no catalogue of designs.
-3. **It writes a plan as ordinary console commands,** using the queue already built (`go to sticks; gather sticks x2; …`). It brings your own knowledge, as a player would: you know how fire is made, so it does too.
-4. **You see the plan** and run it, change it, or drop it. The AI doesn't decide for you.
-5. **The engine runs it, step by step, through the laws.** Gathering takes time, materials are real, and the fire can fail.
-6. **If a step is refused, the AI can read the refusal and propose a fix**, shown to you the same way.
-7. **Save it as a skill:** "remember that as making fire". It's kept whether it worked or not.
+   It's shown none of the engine's hidden truth.
+3. **It maps each part of your description to commands:**
+   - "something small that burns" becomes the dry grass in sight;
+   - "a ring of rocks" becomes gathering five stones and assembling a fire ring;
+   - "rub things together" becomes `rub wood against wood into ring`.
+   
+   The process is yours. The translator fills in only the literal detail of the steps you described, and only with what's in scope.
+4. **It reports anything it can't map:** a word the character doesn't know, a tool they don't have, or a step with no command.
+5. **You see the commands** and run them, change them, or drop them.
+6. **The engine runs them** through the laws, as it does anything typed. They can fail.
+7. **Save it as a skill**, good or bad.
+
+**Your knowledge only goes as far as the world does.** You may know how to build a rocket, but until the island has what it takes (fuels, a combustion chamber, made one step at a time), the translator can't map "build a rocket" to anything. Each step up the ladder, once made and named, becomes something the next description can use. That's how the climb happens: "build a rocket" is a skill made of skills such as "build a combustion chamber".
+
+The translator helps throughout the game: wherever your words and the literal command set don't meet, it bridges them.
 
 ## Skills
 
@@ -66,8 +87,7 @@ The engine is a physics sandbox, not a recipe book: any sequence that gets the p
 3. **The AI writer** (Bedrock, the standing AWS choice, running Claude; or the same model's API directly in single-player). It reads what the character perceives and the commands, and writes a plan. It works in the console first, and the client's console gets it for free, as does voice: what's spoken is just text.
 4. **Measuring skills, teaching and trading them.**
 
-## Questions for the owner
+## Answered by the owner (2026-10-01)
 
-- **Should the AI know what you know, or what your character knows?** The owner's lean: yours ("you're applying your own skills"). The world still limits it, because only what your character can see, carry, and name can be used. A Stone Age islander asked for a rocket engine gets a plan the engine refuses at the first step.
-- **Should a plan be shown before it runs, always,** or only the first time, with a saved skill running straight away?
-- **Cost:** each written plan is one call to a model, perhaps a few with fixes. Replaying saved skills costs nothing. Who pays in multiplayer is for later.
+- **Your knowledge or your character's?** Yours, as the process you describe. But it can only be carried out with your character's: their words, their designs, their things, and the world's commands. What's out of scope is reported, not made up.
+- **Still open:** whether a saved skill shows its commands before running, every time or only the first; and who pays for the translator in multiplayer.

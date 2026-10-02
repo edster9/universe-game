@@ -584,6 +584,14 @@ Added 2026-09-30. It's simple: right now **the mouse hover tells you what someth
 
 Agreed and built the same day: the engine works out the menu from the laws (each action checked as if done now, only what would work offered); far things are walked up to first; choosing sends the command as if typed; a click on open ground walks there; gathering is offered x3 and x10 too. See "Shortcuts, faster gathering, and clicking" in [challenges/first-steps.md](challenges/first-steps.md).
 
+### The context menu: what you can tell, and what to offer
+
+Added 2026-10-01, after trying the menu. Things are looking good. Early user interface options; maybe it's too early to decide, but let's have the conversation, and it will be very much ongoing.
+
+- **No canned multipliers.** I don't like gather once, three times, or ten times: it's pretty much canned, and doesn't look like good UX. We should be able to gather repeatedly, but we need a better interface to decide how much. **For now, just the standard "gather", without the multiplier**, until we figure out how to do it better.
+- **Far things may not be identifiable yet.** A tree very far away, yes, the mouse can tell you that's a tree. But a little box or a small weapon on the ground, you won't be able to: hovering over it, you might just know there's something there. Get closer, and you'll know what it is. **Does hovering tell you something different far away and close by?**
+- **What you can do with it.** Gather, kick, push, whatever. **Should those choices appear when you can't do them yet, or only when you're next to it?** Choosing gather from far away walks you to it to do it, which isn't bad. Maybe they should show ghosted. But you can always walk up to something: **maybe far away the only option should be go to, or walk to, and the other options appear when you get close.** I want your take on what's a good user interface for these choices.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

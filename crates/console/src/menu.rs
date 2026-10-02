@@ -14,38 +14,26 @@ pub struct Choice {
     pub said: String,
 }
 
-/// How many times the menu offers to gather, besides once.
-const GATHER_TIMES: [u32; 2] = [3, 10];
-
 /// What `who` could do with `thing` now, for a menu.
 pub fn menu(world: &World, who: EntityId, thing: EntityId) -> Vec<Choice> {
     let it = laws::pointer(thing);
     let mut menu = Vec::new();
     for choice in laws::choices(world, who, thing) {
+        // Once each: how to choose how many times is still open (the
+        // owner, 2026-10-01: canned "x3" and "x10" aren't good enough).
         let command = choice.intent.to_string();
-        let times: &[u32] = if matches!(choice.intent, engine::intent::Intent::Gather { .. }) {
-            &GATHER_TIMES
+        let label = if matches!(choice.intent, engine::intent::Intent::Walk { .. }) {
+            "walk up to it".into()
         } else {
-            &[]
+            words(world, who, &command, Some(&it))
         };
-        for n in std::iter::once(1).chain(times.iter().copied()) {
-            let command = if n > 1 {
-                format!("{command} x{n}")
-            } else {
-                command.clone()
-            };
-            let mut label = words(world, who, &command, Some(&it));
-            if matches!(choice.intent, engine::intent::Intent::Walk { .. }) {
-                label = "walk up to it".into();
-            }
-            let line = if choice.walk_first {
-                format!("walk to {it}; {command}")
-            } else {
-                command
-            };
-            let said = words(world, who, &line, None);
-            menu.push(Choice { label, line, said });
-        }
+        let line = if choice.walk_first {
+            format!("walk to {it}; {command}")
+        } else {
+            command
+        };
+        let said = words(world, who, &line, None);
+        menu.push(Choice { label, line, said });
     }
     menu
 }
@@ -101,32 +89,30 @@ mod tests {
 
         // Out of reach: walk up first.
         let far = menu(world, me, sticks);
-        assert_eq!(
-            labels(&far),
-            ["walk up to it", "gather", "gather x3", "gather x10"]
-        );
-        let line = far[2].line.clone();
+        assert_eq!(labels(&far), ["walk up to it", "gather"]);
+        let line = far[1].line.clone();
         assert_eq!(
             line,
-            format!("walk to {0}; gather from {0} x3", laws::pointer(sticks))
+            format!("walk to {0}; gather from {0}", laws::pointer(sticks))
         );
         assert_eq!(
-            far[2].said,
-            "walk to fallen sticks; gather from fallen sticks x3"
+            far[1].said,
+            "walk to fallen sticks; gather from fallen sticks"
         );
         let reply = session.handle(&line);
         assert!(!reply.refused, "{}", reply.text);
-        assert!(reply.text.contains("(x3)"), "{}", reply.text);
+        assert!(
+            reply.text.contains("You find 200 g of wood."),
+            "{}",
+            reply.text
+        );
         // Told in the player's words, not by pointers.
         assert!(!reply.text.contains('#'), "{}", reply.text);
 
         // Within reach now, and carrying wood: no walking, and what's carried
         // can be dropped.
         let (world, me) = (session.world(), session.player());
-        assert_eq!(
-            labels(&menu(world, me, sticks)),
-            ["gather", "gather x3", "gather x10"]
-        );
+        assert_eq!(labels(&menu(world, me, sticks)), ["gather"]);
         let wood = world.held(me)[0];
         assert_eq!(labels(&menu(world, me, wood)), ["drop"]);
         // Something nobody here can see offers nothing.

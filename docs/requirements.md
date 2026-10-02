@@ -637,6 +637,19 @@ Added the same day, on the layers ("that's perfect"):
 - **AI writing code inside the game.** As the game gets much more advanced, we'll create objects that run code internally, and **we could use AI to write that code**. Remember the gold tester, which could run a script to do certain things. Later we'll build computers inside the game: a simple sphere doesn't need any code, but eventually **a rocket will have code running in its computer, for the guidance systems and things like that, which one can write.**
 - We're going places with this, but **let's take it one step at a time.**
 
+
+### A sandbox for skills
+
+Added 2026-10-01, after the translator's test bench. **Yes, we need twig, stick, log separation.**
+
+- **We're finding a good new posture for the game.** We need to stay in the fire-making zone a bit longer, but I want to **create a new setup for our skill training sandbox**, for fine-tuning things.
+- **Re-organise the island a bit:** the starting player is **in the centre of 4 to 5 skill-building zones**. One is **fire, with everything needed to make the fire near each other**; the other areas nearby are for other skills we need to come up with now, to **set the board**, and then we do much more robust exercises and find our footing.
+- **All this is needed before we even try to upgrade to a community or even a village.**
+- **The goal: create a sword or a knife.** Fire is part of it, but we need to get ore, smelt it, cast it, and then sharpen it. **Eventually, build an axe and chop down a tree.** Both use fire, but **think of a few more things that don't depend on fire.**
+- **I want to get to a point where I can actually use the AI in the game without needing to speed it up.** We have a while to get there, but let's set the board correctly.
+
+Claude's proposal: [challenges/skill-grounds.md](challenges/skill-grounds.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

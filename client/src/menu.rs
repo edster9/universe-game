@@ -10,8 +10,7 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use crate::camera::pointed_at;
-use crate::draw::Named;
+use crate::camera::Pointing;
 use crate::terminal::{Console, send_as};
 use crate::terrain::Land;
 use crate::{Play, Sim};
@@ -37,7 +36,7 @@ pub fn click(
     keys: Res<ButtonInput<KeyCode>>,
     window: Query<&Window, With<PrimaryWindow>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
-    named: Query<(&Named, &GlobalTransform)>,
+    mut pointing: Pointing,
     land: Res<Land>,
     mut choices: Query<(&Interaction, &Choice, &mut BackgroundColor)>,
     ui: Query<&Interaction, Without<Choice>>,
@@ -91,7 +90,7 @@ pub fn click(
         return;
     };
     let (world, me) = (session.world(), session.player());
-    match pointed_at(cursor, camera, eye, &named).filter(|&id| id != me) {
+    match pointing.thing(cursor, camera, eye, |id| id != me) {
         Some(thing) => {
             let offered = console::menu::menu(world, me, thing);
             let name = engine::sight::label(world, me, thing);

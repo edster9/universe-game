@@ -702,6 +702,10 @@ Added 2026-10-02, after build mode and the new shapes. **This is looking better.
 
 Added 2026-10-02. I want to try an asset pack from quaternius.com; **they have a lot of good stuff.** Create a directory for third-party assets, extract the **Stylized Nature MegaKit** (Standard) and analyse what's in it. **Then we'll adopt some of these, and if they look good I'll get more from this site**: they have complete **modular village building kits, humans, weapons**, and everything we need, **all the way to sci-fi city building.**
 
+### Build mode picks what you point at
+
+Added 2026-10-02, after asking why not everything in the scene can be moved or picked. **The point of a build mode is to rearrange things**, and **eventually we're going to have a world builder**, so we can pick from a library and add to the scene. Right now I'm just trying to see what's in this pack; **it's not the time for the full 3D beautification yet**, but we need some basic functionality, and then we'll go back to organising our assets.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

@@ -6,11 +6,14 @@
 //! Pointing at something names it, in the islander's words.
 
 use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraState};
+use bevy::ecs::system::SystemParam;
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit};
+use bevy::picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
 use crate::draw::{Named, spot};
+use crate::showcase::Shown;
 use crate::terminal::Console;
 use crate::terrain::Land;
 use crate::{Options, Sim};
@@ -175,32 +178,111 @@ pub fn follow(
     *transform = Transform::from_translation(at).looking_at(target, Vec3::Y);
 }
 
-/// The drawn thing nearest the pointer on screen, in front, within a
-/// small reach of it.
-pub fn pointed_at(
-    cursor: Vec2,
-    camera: &Camera,
-    eye: &GlobalTransform,
-    named: &Query<(&Named, &GlobalTransform)>,
-) -> Option<engine::world::EntityId> {
-    let mut best: Option<(f32, Named)> = None;
-    for (&thing, at) in named {
-        let Ok(screen) = camera.world_to_viewport_with_depth(eye, at.translation()) else {
-            continue;
-        };
-        let d = screen.truncate().distance(cursor);
-        if screen.z > 0.0 && d < 28.0 && best.is_none_or(|(b, _)| d < b) {
-            best = Some((d, thing));
+/// What the pointer can be on: something in the world, or a model in the
+/// showcase.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Picked {
+    Thing(engine::world::EntityId),
+    Shown(Entity),
+}
+
+/// Finding what's under the pointer.
+#[derive(SystemParam)]
+pub struct Pointing<'w, 's> {
+    rays: MeshRayCast<'w, 's>,
+    named: Query<'w, 's, (&'static Named, &'static GlobalTransform)>,
+    owners: Query<'w, 's, (Option<&'static Named>, Has<Shown>)>,
+    parents: Query<'w, 's, &'static ChildOf>,
+}
+
+/// What a drawn mesh belongs to: itself, or the model it's part of.
+fn owner(
+    owners: &Query<(Option<&Named>, Has<Shown>)>,
+    parents: &Query<&ChildOf>,
+    entity: Entity,
+) -> Option<Picked> {
+    std::iter::once(entity)
+        .chain(parents.iter_ancestors(entity))
+        .find_map(|e| match owners.get(e) {
+            Ok((Some(&Named(id)), _)) => Some(Picked::Thing(id)),
+            Ok((None, true)) => Some(Picked::Shown(e)),
+            _ => None,
+        })
+}
+
+impl Pointing<'_, '_> {
+    /// What the pointer is on, of what's `wanted`, and the point on it:
+    /// the first thing its ray meets, by the shapes as drawn; or, for things
+    /// too thin to hit, like a twig, the one whose foot is nearest the
+    /// pointer on screen.
+    pub fn hit(
+        &mut self,
+        cursor: Vec2,
+        camera: &Camera,
+        eye: &GlobalTransform,
+        wanted: impl Fn(Picked) -> bool,
+    ) -> Option<(Picked, Vec3)> {
+        if let Ok(ray) = camera.viewport_to_world(eye, cursor) {
+            let (owners, parents) = (&self.owners, &self.parents);
+            let filter = |e: Entity| owner(owners, parents, e).is_some_and(&wanted);
+            let settings = MeshRayCastSettings::default().with_filter(&filter);
+            if let Some((hit, at)) = self.rays.cast_ray(ray, &settings).first() {
+                return owner(owners, parents, *hit).map(|p| (p, at.point));
+            }
+        }
+        let mut best: Option<(f32, (Picked, Vec3))> = None;
+        for (&Named(id), at) in &self.named {
+            let Ok(screen) = camera.world_to_viewport_with_depth(eye, at.translation()) else {
+                continue;
+            };
+            let d = screen.truncate().distance(cursor);
+            if screen.z > 0.0
+                && d < 28.0
+                && best.is_none_or(|(b, _)| d < b)
+                && wanted(Picked::Thing(id))
+            {
+                best = Some((d, (Picked::Thing(id), at.translation())));
+            }
+        }
+        best.map(|(_, hit)| hit)
+    }
+
+    /// What the pointer is on, of what's `wanted`.
+    pub fn at(
+        &mut self,
+        cursor: Vec2,
+        camera: &Camera,
+        eye: &GlobalTransform,
+        wanted: impl Fn(Picked) -> bool,
+    ) -> Option<Picked> {
+        self.hit(cursor, camera, eye, wanted).map(|(p, _)| p)
+    }
+
+    /// The thing in the world the pointer is on, of what's `wanted`.
+    pub fn thing(
+        &mut self,
+        cursor: Vec2,
+        camera: &Camera,
+        eye: &GlobalTransform,
+        wanted: impl Fn(engine::world::EntityId) -> bool,
+    ) -> Option<engine::world::EntityId> {
+        let picked = self.at(cursor, camera, eye, |p| match p {
+            Picked::Thing(id) => wanted(id),
+            Picked::Shown(_) => false,
+        });
+        match picked {
+            Some(Picked::Thing(id)) => Some(id),
+            _ => None,
         }
     }
-    best.map(|(_, Named(id))| id)
 }
 
 /// Names what the pointer is on: the nearest drawn thing to it on screen.
 pub fn point(
     window: Query<&Window, With<PrimaryWindow>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
-    named: Query<(&Named, &GlobalTransform)>,
+    mut pointing: Pointing,
+    shown: Query<&Shown>,
     sim: Res<Sim>,
     menu: Query<(), With<crate::menu::Menu>>,
     mut pointer: Query<(&mut Text, &mut Node, &mut Visibility), With<Pointer>>,
@@ -220,12 +302,15 @@ pub fn point(
     if !menu.is_empty() {
         return;
     }
-    if let Some(id) = pointed_at(cursor, camera, eye, &named) {
+    if let Some(picked) = pointing.at(cursor, camera, eye, |_| true) {
         let world = sim.world();
-        text.0 = if id == sim.me() {
-            "you".into()
-        } else {
-            engine::sight::label(world, sim.me(), id)
+        text.0 = match picked {
+            Picked::Thing(id) if id == sim.me() => "you".into(),
+            Picked::Thing(id) => engine::sight::label(world, sim.me(), id),
+            Picked::Shown(e) => shown.get(e).map_or_else(
+                |_| String::new(),
+                |s| format!("{} (showcase, not in the world)", s.0),
+            ),
         };
         *visible = Visibility::Inherited;
         node.left = Val::Px(cursor.x + 16.0);

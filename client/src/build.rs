@@ -1,10 +1,12 @@
 //! Build mode, a designer's tool (M, or `/build`): rearranging the world by
-//! hand. Hover over a thing to see its bounding box and axes; hold the left button to
+//! hand. Hover over a thing (anywhere on it, as drawn) to see its bounding
+//! box and axes; hold the left button to
 //! drag it along the ground, or the middle button to lift or lower it; let go
 //! and it stays where it is. Dragged, it follows the ground's rise and fall:
 //! its height is above the ground wherever it is. Nothing falls yet:
 //! something lifted stays in the air. Each move goes through the engine as the designer (as `/place`
-//! does), so `/save` keeps the arrangement. The islander still walks. See
+//! does), so `/save` keeps the arrangement. Models in the showcase move too,
+//! on screen only. The islander still walks. See
 //! "Shortcuts for development" in docs/ideas/tools.md.
 
 use bevy::camera::primitives::MeshAabb;
@@ -13,9 +15,9 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use engine::world::{EntityId, World as EngineWorld};
 
-use crate::camera::pointed_at;
-use crate::draw::{Named, point};
-use crate::menu::ground;
+use crate::camera::{Picked, Pointing};
+use crate::draw::{Named, on_ground, point};
+use crate::showcase::Shown;
 use crate::terminal::{Console, Said};
 use crate::terrain::Land;
 use crate::{Play, Sim};
@@ -30,9 +32,13 @@ pub struct Build {
 /// Something being moved: by the left button along the ground, or by the
 /// middle button up and down.
 struct Grab {
-    id: EntityId,
+    what: Picked,
     lifting: bool,
-    /// From the point on the ground under the pointer to the thing's spot.
+    /// The height it was taken hold of at: the pointer moves it across
+    /// that level, so what's taken by its top follows the pointer as well
+    /// as what's taken by its foot.
+    level: f32,
+    /// From where it was taken hold of to its spot, across.
     offset: Vec2,
     /// Metres above the ground.
     height: f32,
@@ -84,10 +90,11 @@ pub fn drag(
     motion: Res<AccumulatedMouseMotion>,
     window: Query<&Window, With<PrimaryWindow>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
-    named: Query<(&Named, &GlobalTransform)>,
+    mut pointing: Pointing,
     pieces: Query<(Entity, &Mesh3d, &GlobalTransform)>,
     owners: Query<&Named>,
     parents: Query<&ChildOf>,
+    mut shown: Query<(&Shown, &mut Transform)>,
     meshes: Res<Assets<Mesh>>,
     land: Res<Land>,
     mut sim: ResMut<Sim>,
@@ -105,8 +112,8 @@ pub fn drag(
     };
     // The box round it, and its axes from the middle: red east and west,
     // green up and down, blue north and south. For turning things, later.
-    let mut outline = |id: EntityId, colour: Color| {
-        if let Some((low, high)) = bounds(id, &pieces, &owners, &parents, &meshes) {
+    let mut outline = |what: Picked, colour: Color| {
+        if let Some((low, high)) = bounds(what, &pieces, &owners, &parents, &meshes) {
             let size = (high - low).max(Vec3::splat(0.05));
             let middle = (low + high) / 2.0;
             gizmos.cube(Transform::from_translation(middle).with_scale(size), colour);
@@ -116,81 +123,118 @@ pub fn drag(
             );
         }
     };
+    // Where the pointer is at a level: its ray meeting that height.
+    let across = |level: f32| {
+        let ray = camera.viewport_to_world(eye, cursor).ok()?;
+        let t = (level - ray.origin.y) / ray.direction.y;
+        (t > 0.0 && t < 500.0).then(|| ray.get_point(t))
+    };
     let Some(grab) = &mut build.grab else {
         // Nothing held: show what's under the pointer, and pick it up.
         let world = sim.world();
-        let Some(id) = pointed_at(cursor, camera, eye, &named).filter(|&id| movable(world, id))
-        else {
+        let Some((what, held_at)) = pointing.hit(cursor, camera, eye, |p| match p {
+            Picked::Thing(id) => movable(world, id),
+            Picked::Shown(_) => true,
+        }) else {
             return;
         };
-        outline(id, HOVERED);
+        outline(what, HOVERED);
         let lifting = buttons.just_pressed(MouseButton::Middle);
         if !(lifting || buttons.just_pressed(MouseButton::Left)) {
             return;
         }
-        let at = world.spot(id).map(point).unwrap_or_default();
-        let under = camera
-            .viewport_to_world(eye, cursor)
-            .ok()
-            .and_then(|ray| ground(ray, &land))
-            .unwrap_or(at);
+        let (at, height) = match what {
+            Picked::Thing(id) => (
+                world.spot(id).map(point).unwrap_or_default(),
+                world.raised(id) as f32 / 1e6,
+            ),
+            Picked::Shown(e) => {
+                let Ok((_, transform)) = shown.get(e) else {
+                    return;
+                };
+                let at = transform.translation;
+                (at, at.y - land.height(Vec2::new(at.x, at.z)))
+            }
+        };
         build.grab = Some(Grab {
-            id,
+            what,
             lifting,
-            offset: Vec2::new(at.x - under.x, at.z - under.z),
-            height: world.raised(id) as f32 / 1e6,
+            level: held_at.y,
+            offset: Vec2::new(at.x - held_at.x, at.z - held_at.z),
+            height,
         });
         return;
     };
-    outline(grab.id, HELD);
+    outline(grab.what, HELD);
     let button = if grab.lifting {
         MouseButton::Middle
     } else {
         MouseButton::Left
     };
-    let Play::Live(session) = &mut sim.play else {
-        return;
-    };
-    if !buttons.pressed(button) {
-        // Let go: it stays.
-        let world = session.world();
-        let middle = world
-            .place_of(grab.id)
-            .and_then(|p| world.position(p))
-            .unwrap_or((0, 0));
-        let at = world.spot(grab.id).unwrap_or(middle);
-        let text = format!(
-            "Moved {} to {:.1} {:.1}, {:.1} m up.",
-            engine::sight::label(world, session.player(), grab.id),
-            (at.0 - middle.0) as f32 / 1e6,
-            (at.1 - middle.1) as f32 / 1e6,
-            grab.height
-        );
-        console.say(Said::Debug, &text);
-        build.grab = None;
-        return;
-    }
-    let world = session.world();
-    let mut at = world.spot(grab.id).unwrap_or((0, 0));
+    let held = buttons.pressed(button);
     if grab.lifting {
         grab.height = (grab.height - motion.delta.y * LIFT).max(0.0);
-    } else if let Some(under) = camera
-        .viewport_to_world(eye, cursor)
-        .ok()
-        .and_then(|ray| ground(ray, &land))
-    {
-        let x = under.x + grab.offset.x;
-        let z = under.z + grab.offset.y;
-        at = ((x * 1e6) as i64, (-z * 1e6) as i64);
     }
-    // Beyond the edge of the place, it stays where it was.
-    let _ = session.place(grab.id, at, (grab.height * 1e6) as u64);
+    // Where it goes along the ground: under the pointer, as it was taken.
+    let along = (!grab.lifting)
+        .then(|| across(grab.level))
+        .flatten()
+        .map(|u| Vec2::new(u.x + grab.offset.x, u.z + grab.offset.y));
+    match grab.what {
+        Picked::Shown(e) => {
+            let Ok((name, mut transform)) = shown.get_mut(e) else {
+                build.grab = None;
+                return;
+            };
+            let flat = along.unwrap_or(Vec2::new(transform.translation.x, transform.translation.z));
+            transform.translation =
+                on_ground(&land, Vec3::new(flat.x, 0.0, flat.y)) + Vec3::Y * grab.height;
+            if !held {
+                let text = format!(
+                    "Moved {} to {:.1} {:.1}, {:.1} m up (the showcase: not kept by /save).",
+                    name.0, flat.x, -flat.y, grab.height
+                );
+                console.say(Said::Debug, &text);
+                build.grab = None;
+            }
+        }
+        Picked::Thing(id) => {
+            let Play::Live(session) = &mut sim.play else {
+                return;
+            };
+            if !held {
+                // Let go: it stays.
+                let world = session.world();
+                let middle = world
+                    .place_of(id)
+                    .and_then(|p| world.position(p))
+                    .unwrap_or((0, 0));
+                let at = world.spot(id).unwrap_or(middle);
+                let text = format!(
+                    "Moved {} to {:.1} {:.1}, {:.1} m up.",
+                    engine::sight::label(world, session.player(), id),
+                    (at.0 - middle.0) as f32 / 1e6,
+                    (at.1 - middle.1) as f32 / 1e6,
+                    grab.height
+                );
+                console.say(Said::Debug, &text);
+                build.grab = None;
+                return;
+            }
+            let at = along.map_or_else(
+                || session.world().spot(id).unwrap_or((0, 0)),
+                |p| ((p.x * 1e6) as i64, (-p.y * 1e6) as i64),
+            );
+            // Beyond the edge of the place, it stays where it was.
+            let _ = session.place(id, at, (grab.height * 1e6) as u64);
+        }
+    }
 }
 
 /// The box round everything drawn for a thing, in the scene: its shapes,
 /// or the meshes inside its model.
 fn bounds(
-    id: EntityId,
+    what: Picked,
     pieces: &Query<(Entity, &Mesh3d, &GlobalTransform)>,
     owners: &Query<&Named>,
     parents: &Query<&ChildOf>,
@@ -198,12 +242,16 @@ fn bounds(
 ) -> Option<(Vec3, Vec3)> {
     let mut found: Option<(Vec3, Vec3)> = None;
     for (entity, mesh, transform) in pieces {
-        let owner = owners.get(entity).ok().or_else(|| {
-            parents
-                .iter_ancestors(entity)
-                .find_map(|a| owners.get(a).ok())
-        });
-        if owner.is_none_or(|&Named(thing)| thing != id) {
+        let mine = match what {
+            Picked::Thing(id) => std::iter::once(entity)
+                .chain(parents.iter_ancestors(entity))
+                .find_map(|e| owners.get(e).ok())
+                .is_some_and(|&Named(thing)| thing == id),
+            Picked::Shown(root) => {
+                entity == root || parents.iter_ancestors(entity).any(|e| e == root)
+            }
+        };
+        if !mine {
             continue;
         }
         let Some(aabb) = meshes.get(&mesh.0).and_then(|m| m.compute_aabb()) else {

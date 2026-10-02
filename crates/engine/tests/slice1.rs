@@ -376,9 +376,11 @@ fn molten_things_cant_be_held_and_forms_cant_hold_what_would_melt_them() {
         refused(&mut w, &format!("take {key} from hearth")),
         Refusal::NotSolid("the molten iron".into())
     );
+    // A solid lying on the ground isn't poured; one in a container can be
+    // tipped out.
     assert_eq!(
-        refused(&mut w, "pour rock into mould"),
-        Refusal::NotLiquid("the lump of rock".into())
+        refused(&mut w, "pour hammer into mould"),
+        Refusal::NotLiquid("the stone hammer".into())
     );
     // The stone hammer isn't a container.
     assert_eq!(

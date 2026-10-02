@@ -1,5 +1,8 @@
-# Stranded, stage 2: pile everything on before there's a flame, and the
-# ember's heat is spread too thin to light anything.
+# Stranded, stage 2: pile everything on before there's a flame, and it
+# still catches: the ember nestles into the finest tinder, and each size
+# lights the next. A fire laid first and lit after works, as in life. (Until
+# 2026-10-01 this failed, the ember's heat spread too thin; the owner asked
+# for it to work. See docs/challenges/skill-grounds.md, step 4.)
 world stranded.toml
 as survivor
 luck average
@@ -31,6 +34,6 @@ end
 rub wood against wood into ring
 wait 5 min
 look
-expect said lump of wood (20 g
-expect not said lump of wood and ash
+expect said lump of wood and ash
+expect said burning
 expect conserved

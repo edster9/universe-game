@@ -29,7 +29,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Burning turns a fuel into its products and releases its stored energy as heat | in | slice 1, stranded 1 (bodies burn their stores the same way) |
 | Gas in a place's open air passes into its surroundings a little at a time | in | stranded 1 |
 | Anything that burns catches fire above its ignition temperature, anywhere, and burns at a rate set by its surface | in | stranded 2 |
-| A flame heats what it's piled with: a share of the heat a burning piece releases goes to the things held with it, split by their surfaces | in | stranded 2 |
+| A flame heats what it's piled with: a share of the heat a burning piece releases goes to the things held with it, split by how much of each its flame reaches. It reaches a few times its own surface's worth (`flame_reach`, 4× by default), the finest first, passing over what's already alight: an ember nestles into the tinder, burning tinder reaches the twigs, a burning stick everything round it | in | stranded 2; changed in skill grounds 4 (was: split by surfaces, so an ember among sticks spread its heat too thin) |
 | Work becomes heat: rubbing wears dust off the softer thing, and a share of the worker's effort heats the dust | in | stranded 2 |
 | A material can change into another at a temperature (clay fires hard; meat cooks) | in | stranded 4, living 4 |
 | A material can spoil into another at a share a day, keeping its energy; only what's no longer alive spoils | in | living 4 |
@@ -177,7 +177,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | People remember the places they've seen or been to | in | where am I? 5 |
 | At night it's dark: searching needs light, and something burning in the place gives it | in | where am I? 1 |
 | An action that takes time is hard work for a body while it lasts | in | slice 2, stranded 1 |
-| Some work continues over time (rubbing), advanced by nature each second until it ends. Rubbing into a container stops once something else in it catches: what the rubbing was for | in | stranded 2, where am I? 1 |
+| Some work continues over time (rubbing), advanced by nature each second until it ends. Rubbing stops once something else in the container, or in the pile on the ground, catches: what the rubbing was for. Rubbed on the ground, the dust falls at the worker's feet | in | stranded 2, where am I? 1, skill grounds 4 |
 
 ## Moving
 
@@ -192,7 +192,8 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | A stock lies in a patch around its spot, as far as its spread; a fixed thing with no spot or spread covers its whole place | in | first steps 6 |
 | Walking within a place, to just within reach of something or to a spot, takes the distance at the walker's pace and load, like a path; it can be stopped partway, where the walker has got to | in | first steps 6 |
 | Minds and creatures walk up to what they act on before acting; a mind keeps a request until it's within reach to do it | in | first steps 6 |
-| A fire can be made anywhere, but in the open it loses heat faster and dies sooner (later, wind can blow it out); a ring of stones or a pit dug in the ground holds it in, like any container | planned (the owner, 2026-10-01) | skills |
+| A fire can be made anywhere. On bare ground, things lying within `pile_reach` (30 cm) of each other are a pile, and a flame heats what's piled with it, but only a smaller share of its heat reaches them (`open_flame_share`, 25%, against 50% in a container): in the open a fire takes longer to catch and loses heat faster. A ring of stones holds it in, like any container (a dug pit, once there is one). Later, wind can blow an open fire out | in (the owner, 2026-10-01) | skill grounds 4 |
+| Loose pieces can be tipped out of a container into another (`tip`, or `pour`), however hot: an ember carried to the tinder | in | skill grounds 4 |
 | Seeing at a distance: something is made out within 500 times its size and seen within 5,000 times, ten times less in the dark. Its size is measured, never written: across a patch, a shape's length, or the side of a cube of its volume. Made out, it's called by the viewer's own word (or, unlearned, by its look); only seen, it's "something small", "something", "something large", or "someone", with no mass, and can be pointed at and walked up to but not named; further, it isn't seen or drawn. What's held is seen as well as its holder; the air is all around | in | the context menu |
 | Someone who has to find their way knows only the ways they've found or walked; walking a way teaches the way back. Only known ways can be seen or taken | in | where am I? 2 |
 | Exploring is a search: each takes a fixed time, needs light, and with some chance finds the nearest way out not yet known | in | where am I? 2 |

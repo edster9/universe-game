@@ -36,7 +36,8 @@ Commands:
   eat <thing>                       eat something you carry
   drink from <liquid>               drink
   light <thing>                     light a furnace or anything that holds fuel, from a flame already burning nearby
-  pour <liquid> into <container>    pour something molten
+  pour <thing> into <container>     pour something molten, or tip loose pieces from one container into another
+                                    (\"tip dust into ring\": an ember into tinder; \"tip\" too)
   work <thing> into <shape> with <tool>
                                     shape something with a tool
   rub <thing> against <thing> [into <container>] [for <time>]
@@ -44,7 +45,7 @@ Commands:
                                     which can smoulder into an ember; \"into\" a container, the dust lands there,
                                     on whatever tinder is in it. Keeps on until something there catches (10 minutes at most).
                                     A fire is made on the ground: put a container down before rubbing into it
-  divide <thing>                    pull something soft apart into two
+  divide <thing>                    pull something soft apart into two (tinder teased fine catches from a small ember)
   butcher <body> with <tool>        cut a dead body into its parts with something that has an edge
   attack <someone> [with <thing>]   strike at someone
   explore                           search around for a way out you don't know yet

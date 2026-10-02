@@ -42,10 +42,12 @@ datasheet survivor
 expect said temperature: 309 k
 drink water
 expect said you drink
-# Going down costs no climbing: the 3 km to the ridge takes 52 min, not 1 h 50.
+# Going down costs no climbing: the 3 km to the ridge takes 49 min, not 1 h 50.
+# (52 min until 2026-10-01, when the summit fire's wood didn't catch and the
+# ring went down still holding 2.4 kg of it.)
 take fire ring
 go ridge
-expect said (that took 52 min
+expect said (that took 48 min
 go slopes
 go hillside
 go forest

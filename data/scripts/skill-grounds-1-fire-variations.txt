@@ -1,0 +1,94 @@
+# The skill grounds, step 4: fire done properly (docs/challenges/skill-grounds.md).
+# The ways a fire is really made all work, and the ones that fail, fail for
+# the reasons they would in life:
+# - laid first, tinder to sticks, and lit after: it catches;
+# - all fed at once, without waiting: it still climbs to the sticks;
+# - an open fire on bare ground: it works, but takes longer to catch;
+# - an ember carried in one ring and tipped into tinder in another: a whole
+#   tuft is too much for it, tinder teased fine catches;
+# - a log on a tuft of grass: the grass burns away and the log doesn't light.
+world skill-grounds.toml
+as player
+luck average
+
+go hearth
+gather grass x6
+gather twigs x8
+gather sticks x8
+gather deadwood
+gather stones x20
+
+# Laid first, then lit, at the hearth.
+assemble fire ring
+drop fire ring
+put grass in ring
+repeat 3
+  put twig in ring
+end
+put stick in ring
+put stick in ring
+rub stick against stick into ring
+wait 5 min
+look
+expect said stick of wood and ash
+expect said burning
+
+# A log on a tuft alone, at the knapping ground: the tuft burns away, and
+# the log won't light.
+go knapping
+assemble fire ring
+drop fire ring
+put grass in ring
+put log in ring
+rub stick against stick into ring
+wait 5 min
+look
+expect said wood log (3 kg
+expect not said log of wood
+
+# An ember made in one ring and tipped into tinder in another, at the
+# clearing. A whole tuft is too much tinder for it.
+go clearing
+assemble fire ring
+drop fire ring
+put grass in ring
+put twig in ring
+assemble fire ring
+drop fire ring
+rub stick against stick into smallest ring for 75 s
+tip dust into largest ring
+wait until grass is burning
+expect said the grass still isn't burning
+# Teased fine, it catches from a fresh ember.
+divide grass
+divide smallest grass
+put smallest grass in largest ring
+rub stick against stick into smallest ring for 75 s
+tip wood and ash dust into largest ring
+wait until grass is burning
+expect said the grass is burning
+wait until twig is burning
+expect said the twig is burning
+
+# An open fire, on bare ground in the woodland: grass at your feet, rubbed
+# over, then twigs and sticks as each catches.
+go woodland
+drop grass
+rub stick against stick
+expect said smouldering
+look
+expect said lump of dry grass (5 g, 500 K, burning
+expect said burning
+drop twig
+drop twig
+wait until twig is burning
+expect said the twig is burning
+drop twig
+drop twig
+wait 20
+drop stick
+drop stick
+wait until stick is burning
+expect said the stick is burning
+expect alive
+expect conserved

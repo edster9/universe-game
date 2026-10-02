@@ -159,6 +159,9 @@ struct SettingsDef {
     wear_rate: Option<String>,
     friction_share: Option<String>,
     flame_share: Option<String>,
+    flame_reach: Option<String>,
+    open_flame_share: Option<String>,
+    pile_reach: Option<String>,
     hand_hardness: Option<String>,
     hand_push: Option<String>,
     drag: Option<String>,
@@ -994,6 +997,15 @@ fn load_settings(def: &SettingsDef) -> Result<Settings, LoadError> {
     }
     if let Some(f) = &def.flame_share {
         settings.flame_share = parse_percent(f)?;
+    }
+    if let Some(f) = &def.flame_reach {
+        settings.flame_reach = parse_percent(f)?;
+    }
+    if let Some(f) = &def.open_flame_share {
+        settings.open_flame_share = parse_percent(f)?;
+    }
+    if let Some(r) = &def.pile_reach {
+        settings.pile_reach = parse_length("world", r)?;
     }
     if let Some(h) = &def.hand_hardness {
         settings.hand_hardness = parse_number(h, 100, "a hardness like \"1\"")?;

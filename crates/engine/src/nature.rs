@@ -395,21 +395,52 @@ fn burn_in_the_open(world: &World, dt: u64) -> Vec<Change> {
 }
 
 /// Heat from a burning piece to the other things held with it, split by
-/// their surfaces.
+/// how much of each its flame reaches. It reaches a few times its own
+/// surface's worth of others (`flame_reach`), the finest first, passing
+/// over what's already alight: an ember nestles into the finest fuel, which
+/// burning reaches the next size up, and a big piece burning reaches
+/// everything piled round it. In a container (a ring, a pit dug for it)
+/// the flame gives the things with it its full share (`flame_share`); in
+/// the open, on the ground, less of it reaches what's piled with it
+/// (`open_flame_share`), and the rest is lost to the air.
 fn flame(world: &World, id: EntityId, released: u128) -> Vec<Change> {
-    let Some(holder) = world.location(id).filter(|&h| world.is_container(h)) else {
+    let Some(holder) = world.location(id) else {
         return Vec::new();
     };
-    let neighbours: Vec<(EntityId, u128)> = matter_pieces(world, holder)
+    let (with, share) = if world.is_container(holder) {
+        (matter_pieces(world, holder), world.settings.flame_share)
+    } else if world.is_place(holder) {
+        (
+            piled_with(world, id, holder),
+            world.settings.open_flame_share,
+        )
+    } else {
+        return Vec::new();
+    };
+    let Some(own) = surface(world, id) else {
+        return Vec::new();
+    };
+    let mut free = own * u128::from(world.settings.flame_reach) / 10_000;
+    let mut around: Vec<(EntityId, u128)> = with
         .into_iter()
-        .filter(|&n| n != id)
+        .filter(|&n| n != id && !world.is_burning(n))
         .filter_map(|n| surface(world, n).map(|a| (n, a)))
+        .collect();
+    around.sort_by_key(|&(n, _)| (world.mass(n), n));
+    let neighbours: Vec<(EntityId, u128)> = around
+        .into_iter()
+        .map(|(n, area)| {
+            let touched = area.min(free);
+            free -= touched;
+            (n, touched)
+        })
+        .filter(|&(_, touched)| touched > 0)
         .collect();
     let total: u128 = neighbours.iter().map(|(_, a)| a).sum();
     if total == 0 {
         return Vec::new();
     }
-    let shared = released * u128::from(world.settings.flame_share) / 10_000;
+    let shared = released * u128::from(share) / 10_000;
     neighbours
         .into_iter()
         .filter_map(|(n, area)| {
@@ -419,6 +450,27 @@ fn flame(world: &World, id: EntityId, released: u128) -> Vec<Change> {
                 to: Holder::Thing(n),
                 amount: Energy::from_uj(u64::try_from(amount).expect("part of the heat released")),
             })
+        })
+        .collect()
+}
+
+/// What lies on the ground in a pile with `id`: loose pieces of matter
+/// within `pile_reach` of it, in the same place.
+fn piled_with(world: &World, id: EntityId, place: EntityId) -> Vec<EntityId> {
+    let Some(at) = world.spot(id) else {
+        return Vec::new();
+    };
+    world
+        .held(place)
+        .into_iter()
+        .filter(|&e| {
+            e != id
+                && world.composition(e).is_some()
+                && world.is_portable(e)
+                && !world.is_agent(e)
+                && world
+                    .spot(e)
+                    .is_some_and(|s| crate::world::distance(s, at) <= world.settings.pile_reach)
         })
         .collect()
 }
@@ -573,14 +625,17 @@ fn finish_activities(world: &World, _dt: u64) -> Vec<Change> {
             until,
         } = *activity;
         let holding = |id: EntityId| world.location(id) == Some(agent);
-        // Rubbing into a container stops once something else in it catches:
-        // what the rubbing was for.
-        let caught = world.location(dust).is_some_and(|container| {
-            world.is_container(container)
-                && world
-                    .held(container)
-                    .into_iter()
-                    .any(|e| e != dust && world.is_burning(e))
+        // Rubbing stops once something else in the container, or in the
+        // pile on the ground, catches: what the rubbing was for.
+        let caught = world.location(dust).is_some_and(|holder| {
+            let with = if world.is_container(holder) {
+                world.held(holder)
+            } else if world.is_place(holder) {
+                piled_with(world, dust, holder)
+            } else {
+                Vec::new()
+            };
+            with.into_iter().any(|e| e != dust && world.is_burning(e))
         });
         let over = world.tick >= until
             || caught

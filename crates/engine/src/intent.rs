@@ -445,8 +445,10 @@ pub fn parse(line: &str) -> Result<Command, ParseError> {
         "light" => Intent::Light {
             chamber: one("<thing>")?,
         },
-        "pour" => {
-            let (liquid, into) = two(&["into", "in"], "<liquid> into <container>")?;
+        // Tipping is pouring loose pieces out of a container: an ember into
+        // tinder.
+        "pour" | "tip" => {
+            let (liquid, into) = two(&["into", "in"], "<thing> into <container>")?;
             Intent::Pour { liquid, into }
         }
         "work" => {

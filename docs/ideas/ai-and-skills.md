@@ -26,6 +26,8 @@ The engine is a physics sandbox, not a recipe book: any sequence that gets the p
 - an ember tipped into tinder should catch;
 - feeding a fire shouldn't depend on timing nobody can see.
 
+**Changed 2026-10-01** (skill grounds, step 4, in [challenges/skill-grounds.md](../challenges/skill-grounds.md)): an open fire works, slower to catch; everything piled in, then rubbed, catches; an ember tipped into tinder teased fine catches (onto a whole tuft it still dies, as it would); fed all at once, it climbs to the sticks; and "wait until <thing> is burning" shows when each size has caught.
+
 ## The direction
 
 **Corrected by the owner, 2026-10-01: the AI is a translator, not an adviser.** You don't ask it how to make fire. **You describe the process as you know it, in your own words**, for example:

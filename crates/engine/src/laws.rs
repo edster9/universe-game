@@ -1331,7 +1331,12 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             let candidates = reach.around.iter().chain(&reach.inside).copied();
             let found = find(world, actor, candidates, liquid)
                 .ok_or_else(|| Refusal::NotHere(liquid.clone()))?;
-            if !world.is_all(found, State::Liquid) {
+            // A liquid, or loose pieces tipped out of the container they're
+            // in, however hot: an ember carried to the tinder.
+            let tipped = world
+                .location(found)
+                .is_some_and(|holder| world.is_container(holder));
+            if !world.is_all(found, State::Liquid) && !tipped {
                 return Err(Refusal::NotLiquid(named(world, actor, found)));
             }
             // Into something on the ground, or something sitting in another
@@ -1520,6 +1525,16 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
                         take,
                         at: target,
                     });
+                    // On the ground, it falls at the worker's feet, on
+                    // whatever they've piled there.
+                    if target == reach.here
+                        && let Some(feet) = world.spot(actor)
+                    {
+                        changes.push(Change::Spot {
+                            entity: dust,
+                            at: feet,
+                        });
+                    }
                     changes.push(Change::StartActivity {
                         agent: actor,
                         activity: crate::world::Activity::Rubbing {

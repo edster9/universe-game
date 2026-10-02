@@ -68,6 +68,14 @@ pub struct Settings {
     /// Share of the heat a burning piece releases that goes into the things
     /// held with it, in parts per ten thousand.
     pub flame_share: u64,
+    /// How much of what's piled with a burning piece its flame reaches, as
+    /// a share of its own surface, in parts per ten thousand.
+    pub flame_reach: u64,
+    /// The share of a fire's heat that reaches what's piled with it in the
+    /// open, without a container round it, in parts per ten thousand.
+    pub open_flame_share: u64,
+    /// How close together things on the ground lie in one pile, in µm.
+    pub pile_reach: u64,
     /// The hardest material bare hands can pull apart, in hundredths.
     pub hand_hardness: u64,
     /// Share of a worker's effort that bare hands push into a liquid, in
@@ -153,6 +161,9 @@ impl Default for Settings {
             wear_rate: 10,
             friction_share: 5_000,
             flame_share: 5_000,
+            flame_reach: 40_000,
+            open_flame_share: 2_500,
+            pile_reach: 300_000,
             hand_hardness: 100,
             hand_push: 500,
             drag: 10_000,

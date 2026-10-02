@@ -92,6 +92,14 @@ Layers ([ideas/tools.md](../ideas/tools.md)): saving and loading change the whol
    - a fire laid first and lit after catches;
    - an ember tipped into tinder catches;
    - logs are the last fuel.
+
+   **Done** (2026-10-01), proved by `data/scripts/skill-grounds-1-fire-variations.txt`:
+   - **One change did most of it: a flame heats what it reaches, the finest first.** Before, a burning piece shared its heat with everything in the ring by surface, so a tiny ember among sticks gave the grass almost nothing. Now its flame reaches four times its own surface's worth of what's with it, finest first, skipping what's already alight. An ember nestles into the tinder; burning tinder reaches the twigs; burning sticks reach everything. With that, **a fire laid first and lit after catches**, and so does **a fire fed all at once**. **A log on a tuft alone stays unlit** while the tuft burns away; logs light from about five burning sticks. The reach is a number in data (`flame_reach`); twice too little or twice too much both fail, so it's measured, not guessed.
+   - **An open fire works:** grass at your feet, rubbed over, catches (rubbed dust now falls at the worker's feet, and rubbing stops when the pile catches); twigs and sticks dropped on it catch in turn. Only a quarter of a flame's heat reaches the pile in the open, against half in a ring, so it takes about four and a half minutes of rubbing instead of one. No pit yet: digging a hole needs its own small step.
+   - **An ember tipped into tinder catches when the tinder is fine.** A new verb, `tip` (or `pour`), moves loose pieces from one container to another, however hot. A fresh ember tipped onto a whole 5 g tuft warms it to about 470 K and dies, short of grass's 500 K; teased fine first (`divide grass` twice, 1.25 g), it catches in ten seconds. True to life, and no new law needed: it rewards skill.
+   - **Fixed along the way:** the summit fire in `where-4-climb.txt` had never lit its wood; now it burns, and the castaway carries a lighter ring down (49 min, not 52). `stranded-2-everything-at-once.txt` proved the old failure, and now proves a laid fire works. An old test that "pour rock into mould" is refused now tips the rock out of the furnace; it checks a solid on the ground instead.
+   - **Teeth:** sharing by whole surfaces again, no flame heat in the open, or heating what's already alight each fail a proof.
+   - Waiting for each size to catch still matters for a fire built a piece at a time; "wait until <thing> is burning" makes that visible.
 5. **The scripts and bench descriptions,** one skill at a time, fixing what each finds.
 6. **Saved skills:** "remember that as making fire", and replaying it with a kit check.
 7. **The translator inside the client,** layered: the parser, our own translation, then the cloud. The goal: the owner says what to do, at x1, and the islander does it.

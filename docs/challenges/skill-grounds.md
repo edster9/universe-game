@@ -6,23 +6,44 @@ Proposed 2026-10-01; **agreed the same day** ("exactly": the seven skills, the f
 
 ## The board
 
-A new world, `data/skill-grounds.toml`, using the island library (`data/island-things.toml`) and the islanders' culture. The companion's island stays as it is, with its scripts.
+**Relaid 2026-10-02**, at the owner's word ("everything we need, all in a circle around the actor"): the first board had each ground as its own place, so from the start you saw nothing of them, and the game still opened on the companion's island.
 
-The player starts in **a clearing**. Five grounds lie around it, each **about 30 m away: half a minute's walk**. Each ground has everything its skill needs close together, within a few steps of each other.
+`data/skill-grounds.toml`, now **the world the client starts in**, is **one open place**. The player starts in the middle, a clearing; **six zones lie in a ring about 25 m out**, twenty seconds' walk, each with a landmark (a big flat rock with the zone's name, standing just behind it) and **everything its own skills need, within reach of its middle**. Where two skills need the same thing, each zone has its own pile, so nothing is fetched from another zone.
 
 ```
-                 the woodland
-                 (trees, boars)
-                       |
-  the knapping ground --- the clearing --- the fibre grove
-  (flint, stones, sticks)  (start)        (bushes, sticks)
-                    /             \
-           the hearth            the stream bank
-  (grass, twigs, sticks, logs,   (water, fish, clay,
-   stones)                        bog iron)
+                         the woodland
+              trees, roots, flint, stones, sticks, grass,
+              twigs, bushes        (the deep woods beyond: boars)
+   the knapping ground                          the fibre grove
+   flint, stones, sticks                        bushes, sticks, deadwood
+                          the clearing
+                            (start)
+   the hearth                                   the stream bank
+   grass, twigs, sticks,                        a pool, fish, mussels, roots,
+   deadwood, stones                             flint, stones, sticks
+                           the forge
+         bog iron, clay, stones, flint, grass, twigs, sticks, deadwood
 ```
 
-All grounds are reachable from the clearing and from their neighbours. Gathering takes seconds there, as on the companion's island now. Long processes get playable times in this world's data (the furnace, firing clay), so the whole ladder can be played in real time in an evening.
+| Zone | For | Its kit |
+| --- | --- | --- |
+| The hearth | fire | dry grass, dry twigs, fallen sticks, deadwood (logs), loose stones |
+| The forge | a knife (an axe head) from ore | bog iron, clay, stones (furnace, whetstone), flint (a flake to cut moulds and handles), and a fire's makings |
+| The knapping ground | stone tools: a spear, a stone knife | flint, stones, sticks |
+| The fibre grove | rope and shelter | fibrous bushes, sticks, deadwood (poles) |
+| The stream bank | water and food | a pool of the stream, fish (for a spear), mussels, roots and nuts, and flint, stones, sticks for the spear |
+| The woodland | felling, hunting, hide | standing trees (for an axe), roots and nuts, and flint, stones, sticks, grass, twigs, bushes for a spear, a fire to dry a hide, and rope for shoes |
+
+**The boars live in the deep woods**, a second place beyond the woodland, with their own spring, roots, and trees: in one place with nowhere to run, a boar that flees people is cornered and charges, which it did, at once. They come out to the grounds, and hunting means going in.
+
+**Found and fixed while laying it out:**
+- **Names mean the nearest of things alike:** with dry grass in three zones, "go to grass" goes to the nearest patch (only among things on the ground; what's carried keeps the precedence each command gives it, or the castaway in `where-4-climb.txt` drank his pots dry at the stream and died on the summit).
+- **Gathering from something just out of reach says so** ("Out of reach: the roots and nuts, 3.1 m south-west"), instead of "you don't see roots" when something of that name was in hand.
+
+**What it leaves:**
+- **Approaching a zone from a neighbouring zone** stops you on that side of its landmark, and a far patch can be a step out of reach (the refusal says how far and which way). From the clearing ("walk to 0 0", then "go to the forge") everything is in reach.
+- **The islanders don't know metalworking:** no furnace, mould, axe, or iron in their culture. So the forge's kit is all there, but "assemble furnace" is refused, and the trees need "a part put together". How the player comes to know it is the first question of step 5.
+- `data/scripts/skill-grounds-0-the-board.txt` walks to each zone from the clearing and gathers and uses its kit (a spear at the knapping ground, rope at the grove, a fire at the hearth). Switching "the nearest is meant" off fails it.
 
 ## The skills
 
@@ -81,7 +102,7 @@ Layers ([ideas/tools.md](../ideas/tools.md)): saving and loading change the whol
 
 1. **Saving and resuming:** `/save`, `/load`, and a save on quit. Every step after this starts from a save instead of from the beginning. **Done** (2026-10-01): `/save`, `/load`, `/saves`, a save called "last" when the game ends, and `--load <name>` to start from one. Proved by `crates/console/tests/saves.rs`: a fire saved while burning, loaded, and fed comes out exactly as the fire never saved; leaving heat out of the save fails it.
 2. **Making things on demand:** `/make <thing>`, and `/make fire`, with the designer as a named source. **Done** (2026-10-01): `/make` an amount of a material, shaped or not, a design, or a kit from data (`/make fire`, burning in a ring), and `/light`. Proved by `data/scripts/make-on-demand.txt`; the gate's audit catches the designer's matter left uncounted. Creatures wait. See "Shortcuts for development" in [ideas/tools.md](../ideas/tools.md).
-3. **The board:** the world file, the five grounds with their materials, playable times, and words for sizes. **Done** (2026-10-01): `data/skill-grounds.toml` (play as `player`: `client/run.sh --world skill-grounds.toml --as player`), proved by `data/scripts/skill-grounds-0-the-board.txt`. What it found:
+3. **The board:** the world file, the five grounds with their materials, playable times, and words for sizes. **Done** (2026-10-01), **relaid 2026-10-02** as one place with six zones round the player (see "The board" above); the client now starts there. Proved by `data/scripts/skill-grounds-0-the-board.txt`. What the first version found:
    - **Twig, stick, and log** are in the islanders' culture (the library), so they apply on the companion's island too: a piece reads "wood stick", or "stick of wood and ash" once burning; gathering says "You find 200 g of wood, a wood stick."; `scope` gives each size word's range, for the translator. "wood" still names any piece of wood, without asking which. Scripts that expected "lump of wood" were updated. Switching the size words off fails five proofs.
    - **A bug in "wait until … is burning":** with a patch of dry grass in the same place as the fire, it watched the patch (which never burns) instead of the tuft in the ring. It now watches loose pieces first.
    - **A log needs a real fire under it:** one burning stick never lights a 3 kg log; five sticks light it in about two and a half minutes. That's right in spirit; step 4 looks at it again.

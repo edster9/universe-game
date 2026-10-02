@@ -673,6 +673,16 @@ Added the same day: **maybe it's too early to ask, since we don't have a real hu
 
 What Claude found: the engine walks evenly (measured, 60 frames a second, 2.2 cm a frame), but its clock counts whole seconds, so a step started partway through a second was drawn as if it began at the second's start: a leap of up to a metre at every press of a key. And every finished step printed "You walk to …" in the console, a line a second. Fixed in the client, not waiting for animation: the drawn islander follows the engine but never moves faster than one and a half times walking pace (a gap over 5 m is crossed at once), and steps taken by the keys don't print news. Animations will sit on top of this, not replace it.
 
+### The skill grounds, laid out properly
+
+Added 2026-10-02. **Step 5 is a good thing to walk into, but looking around the actor's starting point, I don't see the setup we aimed for.** All I see is some shellfish at a distance and some wood, and nothing else.
+
+- **We need a good inventory of everything we need, all in a circle around the actor.**
+- **The building blocks scattered around in groups, in maybe four zones,** each zone designed for its own skills.
+- **If two skills need wood, pile up wood in two separate zones,** so you don't go from one zone to the other for what you're doing.
+- First, make sure the initial setup has the zones for the skills we're shooting for, with all the necessary inventory properly grouped. **Then we begin the more advanced skill creation.**
+- **Do we even have the ability to save what we did as a skill yet, for the fire?** That needs a conversation of its own. But start with the inventory and the scene, and go from there.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

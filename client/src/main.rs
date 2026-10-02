@@ -17,8 +17,10 @@
 //! world, [ and ] slow it down and speed it up.
 //!
 //! Options:
-//! - `--world <file>` a world in the data folder (companion.toml), `--as
-//!   <id>` who to play (survivor), `--speed <x>` game seconds a second (1).
+//! - `--world <file>` a world in the data folder (skill-grounds.toml; the
+//!   companion's island is companion.toml), `--as <id>` who to play (the
+//!   first person no mind or instinct runs), `--speed <x>` game seconds a
+//!   second (1).
 //! - `--load <save>` picks up a save (`/save`, `/load`) from the `saves`
 //!   folder beside the data folder; a game ends with a save called "last",
 //!   except one that only takes a picture (`--shot`).
@@ -198,12 +200,17 @@ fn main() {
             let session = match arg("--load") {
                 Some(name) => Session::resume(saves, name),
                 None => {
-                    let file = arg("--world").map_or("companion.toml", String::as_str);
-                    let who = arg("--as").map_or("survivor", String::as_str);
-                    console::load_world_file(&data.join(file))
-                        .and_then(|w| w.with_player_rules(who))
-                        .and_then(|world| Session::new(world, who))
-                        .map(|session| session.with_saves(saves))
+                    let file = arg("--world").map_or("skill-grounds.toml", String::as_str);
+                    console::load_world_file(&data.join(file)).and_then(|world| {
+                        // Whoever nobody else plays, unless --as says.
+                        let who = match arg("--as") {
+                            Some(who) => who.clone(),
+                            None => console::person_to_play(&world)
+                                .ok_or("this world has no one to play")?,
+                        };
+                        let world = world.with_player_rules(&who)?;
+                        Session::new(world, &who).map(|session| session.with_saves(saves))
+                    })
                 }
             }
             .unwrap_or_else(|e| fail(&e));

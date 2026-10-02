@@ -1,46 +1,96 @@
 # The skill grounds (docs/challenges/skill-grounds.md), step 3: the board.
-# From the clearing, every ground is about half a minute's walk, and has
-# what its skills need within reach of its middle. A fire at the hearth,
-# fed tinder, twigs, sticks, and at last a log, by the words for sizes.
+# One open place: from the clearing in the middle, six zones in a ring, each
+# with everything its own skills need within reach of its middle, so
+# nothing is fetched from another zone. Each zone's kit is gathered and used
+# here, walking to it from the clearing.
 world skill-grounds.toml
 as player
 luck average
 
 look
-expect said the clearing
-expect said the woodland, the knapping ground, the fibre grove, the stream bank, the hearth
-
-go woodland
-expect said that took 25 s
-look
-expect said standing trees
-expect said a boar
-go knapping
-look
-expect said flint nodules
-expect said loose stones
-expect said fallen sticks
-go clearing
-go grove
-look
+expect said the skill grounds
+expect said the hearth
+expect said the forge
+expect said the knapping ground
+expect said the fibre grove
+expect said the stream bank
+expect said the woodland
+expect said bog iron in a boggy hollow
 expect said fibrous bushes
-gather bushes
-expect said plant fibre
-go stream
-look
-expect said clay in the bank
-expect said bog iron in the streambed
 expect said mussels in the shallows
-gather mussels
-drop all
-go hearth
-look
-expect said dry grass
-expect said dry twigs
-expect said deadwood
-expect time before 5 min
+expect said standing trees
+expect not said a boar
 
-# A fire, fed by sizes, each when the last has caught.
+# The knapping ground: a spear, from its own flint, stones, and sticks.
+go to the knapping ground
+expect said that took 21 s
+gather flint
+gather stones
+gather sticks
+work flint into flake with stone
+work stick into shaft with flake
+assemble spear
+expect said spear
+drop stone
+
+# The fibre grove: rope, from its own bushes, and poles.
+walk to 0 0
+go to the fibre grove
+gather bushes x2
+gather sticks
+gather deadwood
+work fibre into rope
+expect said rope
+drop all
+
+# The forge: everything for a furnace and its fire, all in reach. (The
+# islanders don't know a furnace yet: how they come to know metalworking is
+# step 5's question.)
+walk to 0 0
+go to the forge
+gather bog iron
+gather clay x2
+gather stones x6
+gather flint
+gather grass
+gather twigs
+gather sticks
+gather deadwood
+expect said a wood log
+drop all
+
+# The stream bank: water, mussels, and roots and nuts.
+walk to 0 0
+go to the stream bank
+gather mussels
+gather roots and nuts
+try gather fish
+gather flint
+gather stones
+gather sticks
+drop all
+# Bushes grow in two zones: the nearest is meant, the fibre grove's.
+go to bushes
+expect said that took 1
+walk to 0 0
+
+# The woodland: its trees need an axe, and the boars are in the deep woods.
+walk to 0 0
+go to the woodland
+# (An axe, to the islanders, who don't know one yet: "a part put together".)
+try gather trees
+expect said you need a part put together for the standing trees
+gather flint
+gather stones
+gather sticks
+gather grass
+gather twigs
+gather bushes
+drop all
+
+# The hearth: a fire, fed by sizes, each when the last has caught.
+walk to 0 0
+go to the hearth
 gather grass x3
 gather twigs x4
 expect said you find 20 g of wood, a wood twig

@@ -11,7 +11,7 @@ world skill-grounds.toml
 as player
 luck average
 
-go hearth
+go to the hearth
 gather grass x6
 gather twigs x8
 gather sticks x8
@@ -35,7 +35,7 @@ expect said burning
 
 # A log on a tuft alone, at the knapping ground: the tuft burns away, and
 # the log won't light.
-go knapping
+go to the knapping ground
 assemble fire ring
 drop fire ring
 put grass in ring
@@ -47,8 +47,8 @@ expect said wood log (3 kg
 expect not said log of wood
 
 # An ember made in one ring and tipped into tinder in another, at the
-# clearing. A whole tuft is too much tinder for it.
-go clearing
+# clearing in the middle. A whole tuft is too much tinder for it.
+walk to 0 0
 assemble fire ring
 drop fire ring
 put grass in ring
@@ -72,7 +72,7 @@ expect said the twig is burning
 
 # An open fire, on bare ground in the woodland: grass at your feet, rubbed
 # over, then twigs and sticks as each catches.
-go woodland
+go to the woodland
 drop grass
 rub stick against stick
 expect said smouldering

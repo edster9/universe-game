@@ -1,17 +1,20 @@
 # The skill grounds: a sandbox for training skills, played in real time at
-# x1. The player starts in a clearing; five grounds lie around it, each
-# about 30 m away, half a minute's walk, with everything its skills need
-# within a few steps. See docs/challenges/skill-grounds.md.
+# x1. One open place: the player starts in the middle, a clearing, with six
+# zones in a ring about 25 m out (twenty seconds' walk), each holding
+# everything its own skills need, so nothing is fetched from another zone.
+# Where two skills need the same thing (wood, stones, flint), each zone has
+# its own. See docs/challenges/skill-grounds.md.
 #
-#                  the woodland
-#                  (trees, boars)
-#                        |
-#   the knapping ground --- the clearing --- the fibre grove
-#   (flint, stones, sticks)   (start)        (bushes, sticks)
-#                     /             \
-#            the hearth            the stream bank
-#   (grass, twigs, sticks, logs,   (water, fish, mussels,
-#    stones)                        clay, bog iron)
+#                       the woodland (north)
+#                  felling, hunting, and hide
+#   the knapping ground                 the fibre grove
+#   stone tools                         rope and shelter
+#                       the clearing
+#                         (start)
+#   the hearth                          the stream bank
+#   fire                                water and food
+#                        the forge (south)
+#                   a knife (an axe head) from ore
 #
 # Gathering takes seconds, and food a minute or so, so the whole ladder can
 # be played in an evening.
@@ -55,193 +58,229 @@ bare_feet_pace = "50%"
 bare_feet_wound = "20 mg/s"
 covers = "2 kg"
 
-# Each ground reaches 12 m from its middle: its stocks lie a few steps
-# apart.
-
+# One open place. Each zone's middle is 25 m from the clearing; its stocks
+# lie within 2 m of that middle, so all are in reach from it; and its
+# landmark, a big flat rock, stands just behind, so "go to the hearth" from
+# the clearing stops in the middle of the hearth's things.
 [[place]]
-id = "clearing"
-label = "the clearing"
-exits = ["woodland", "knapping", "grove", "stream", "hearth"]
-distances = { woodland = "30 m", knapping = "30 m", grove = "30 m", stream = "30 m", hearth = "30 m" }
+id = "grounds"
+label = "the skill grounds"
+exits = ["deep-woods"]
+distances = { deep-woods = "40 m" }
 east = "0 m"
 north = "0 m"
-size = "12 m"
-temperature = "300 K"
-night = "292 K"
-
-[[place]]
-id = "woodland"
-label = "the woodland"
-exits = ["clearing", "knapping", "grove"]
-distances = { knapping = "42 m", grove = "42 m" }
-east = "0 m"
-north = "30 m"
-size = "12 m"
-temperature = "300 K"
-night = "292 K"
-
-[[place]]
-id = "knapping"
-label = "the knapping ground"
-exits = ["clearing", "woodland", "hearth"]
-distances = { hearth = "23 m" }
-east = "-30 m"
-north = "0 m"
-size = "12 m"
-temperature = "300 K"
-night = "292 K"
-
-[[place]]
-id = "grove"
-label = "the fibre grove"
-exits = ["clearing", "woodland", "stream"]
-distances = { stream = "23 m" }
-east = "30 m"
-north = "0 m"
-size = "12 m"
-temperature = "300 K"
-night = "292 K"
-
-[[place]]
-id = "stream"
-label = "the stream bank"
-exits = ["clearing", "grove", "hearth"]
-distances = { hearth = "42 m" }
-east = "21 m"
-north = "-21 m"
-size = "12 m"
-temperature = "300 K"
-night = "292 K"
-
-[[place]]
-id = "hearth"
-label = "the hearth"
-exits = ["clearing", "knapping", "stream"]
-east = "-21 m"
-north = "-21 m"
-size = "12 m"
+size = "35 m"
 temperature = "300 K"
 night = "292 K"
 
 [[agent]]
 id = "player"
 label = "the islander"
-at = "clearing"
+at = "grounds"
 kind = "human"
 culture = "islanders"
 temperature = "310 K"
 rules = "player"
 
-# Two boars, keeping to the woodland: to hunt, and to keep food from.
-[[agent]]
-id = "boar"
-label = "a boar"
-at = "woodland"
-kind = "boar"
-count = 2
-temperature = "311 K"
-range = ["woodland"]
+# The woodland: felling a tree, hunting, and hide: trees for an axe, roots and nuts
+# (the boars' food), and what a spear, a fire to dry a hide, and rope for
+# shoes need.
 
-# The hearth: everything a fire needs, tinder to logs, and stones for a ring.
 [[item]]
-id = "hearth-grass"
-label = "dry grass"
-at = "hearth"
-spot = "4 m north"
-spread = "2 m"
-mass = "20 kg"
+id = "woodland"
+label = "the woodland"
+at = "grounds"
+spot = "29.0 m north"
+spread = "1 m"
+mass = "2 t"
 fixed = true
-material = "grass"
-pieces = { size = "5 g", find_time = "3 s" }
+material = "rock"
 
 [[item]]
-id = "hearth-twigs"
-label = "dry twigs"
-at = "hearth"
-spot = "4 m east"
-spread = "2 m"
-mass = "20 kg"
+id = "woodland-trees"
+label = "standing trees"
+at = "grounds"
+spot = "23.0 m north"
+spread = "1.5 m"
+mass = "20 t"
 fixed = true
 material = "wood"
-pieces = { size = "20 g", find_time = "3 s" }
+pieces = { size = "20 kg", find_time = "3 min", edge = "1 mm", needs = "axe" }
+kind = "tree"
 
 [[item]]
-id = "hearth-sticks"
-label = "fallen sticks"
-at = "hearth"
-spot = "4 m south"
-spread = "2 m"
-mass = "50 kg"
+id = "woodland-forage"
+label = "roots and nuts in the leaf litter"
+at = "grounds"
+spot = "23.6 m north, 1.4 m west"
+spread = "0.8 m"
+mass = "150 kg"
 fixed = true
-material = "wood"
-pieces = { size = "200 g", find_time = "4 s" }
+material = "roots"
+pieces = { size = "500 g", find_time = "1 min", chance = "70%" }
+grows = { rate = "20%", limit = "200 kg", from = "floor" }
 
 [[item]]
-id = "hearth-logs"
-label = "deadwood"
-at = "hearth"
-spot = "4 m west"
-spread = "2 m"
-mass = "200 kg"
-fixed = true
-material = "wood"
-pieces = { size = "3 kg", find_time = "8 s" }
-
-[[item]]
-id = "hearth-stones"
-label = "loose stones"
-at = "hearth"
-spot = "3 m north, 3 m west"
-spread = "2 m"
-mass = "500 kg"
-fixed = true
-material = "stone"
-pieces = { size = "1 kg", find_time = "5 s" }
-
-
-# The knapping ground: flint to strike flakes from, stones to strike with,
-# and sticks for shafts.
-[[item]]
-id = "flint"
+id = "woodland-flint"
 label = "flint nodules"
-at = "knapping"
-spot = "4 m north"
-spread = "2 m"
+at = "grounds"
+spot = "25.0 m north, 2.0 m west"
+spread = "0.8 m"
 mass = "200 kg"
 fixed = true
 material = "flint"
 pieces = { size = "500 g", find_time = "8 s" }
 
 [[item]]
-id = "knapping-stones"
+id = "woodland-stones"
 label = "loose stones"
-at = "knapping"
-spot = "4 m east"
-spread = "2 m"
+at = "grounds"
+spot = "26.4 m north, 1.4 m west"
+spread = "0.8 m"
 mass = "500 kg"
 fixed = true
 material = "stone"
 pieces = { size = "1 kg", find_time = "5 s" }
 
 [[item]]
-id = "knapping-sticks"
+id = "woodland-sticks"
 label = "fallen sticks"
-at = "knapping"
-spot = "4 m south"
-spread = "2 m"
+at = "grounds"
+spot = "27.0 m north"
+spread = "0.8 m"
 mass = "50 kg"
 fixed = true
 material = "wood"
 pieces = { size = "200 g", find_time = "4 s" }
 
-
-# The fibre grove: bushes to pull fibre from, and sticks for poles.
 [[item]]
-id = "bushes"
+id = "woodland-grass"
+label = "dry grass"
+at = "grounds"
+spot = "26.4 m north, 1.4 m east"
+spread = "0.8 m"
+mass = "20 kg"
+fixed = true
+material = "grass"
+pieces = { size = "5 g", find_time = "3 s" }
+
+[[item]]
+id = "woodland-twigs"
+label = "dry twigs"
+at = "grounds"
+spot = "25.0 m north, 2.0 m east"
+spread = "0.8 m"
+mass = "20 kg"
+fixed = true
+material = "wood"
+pieces = { size = "20 g", find_time = "3 s" }
+
+[[item]]
+id = "woodland-bushes"
 label = "fibrous bushes"
-at = "grove"
-spot = "4 m north"
-spread = "3 m"
+at = "grounds"
+spot = "23.6 m north, 1.4 m east"
+spread = "0.8 m"
+mass = "500 kg"
+fixed = true
+material = "fibre"
+pieces = { size = "250 g", find_time = "10 s" }
+kind = "shrub"
+
+# The forest floor the roots and nuts grow from, under the woodland.
+[[item]]
+id = "floor"
+label = "the forest floor"
+at = "grounds"
+spot = "25.0 m north"
+spread = "4 m"
+mass = "100 t"
+fixed = true
+material = "litter"
+
+# Beyond the woodland, the deep woods, where the boars live: water, roots
+# and nuts, trees. They come out to the grounds, and run back from people;
+# with nowhere to run, a cornered boar charges. Hunting means going in.
+[[place]]
+id = "deep-woods"
+label = "the deep woods"
+exits = ["grounds"]
+east = "0 m"
+north = "75 m"
+size = "30 m"
+temperature = "300 K"
+night = "292 K"
+
+[[agent]]
+id = "boar"
+label = "a boar"
+at = "deep-woods"
+kind = "boar"
+count = 2
+temperature = "311 K"
+range = ["deep-woods", "grounds"]
+
+[[item]]
+id = "spring"
+label = "a spring"
+at = "deep-woods"
+spot = "5 m east"
+spread = "1.5 m"
+mass = "20 t"
+fixed = true
+material = "water"
+
+[[item]]
+id = "deep-floor"
+label = "the forest floor"
+at = "deep-woods"
+mass = "100 t"
+fixed = true
+material = "litter"
+
+[[item]]
+id = "deep-forage"
+label = "roots and nuts in the leaf litter"
+at = "deep-woods"
+spot = "5 m west"
+spread = "4 m"
+mass = "150 kg"
+fixed = true
+material = "roots"
+pieces = { size = "500 g", find_time = "1 min", chance = "70%" }
+grows = { rate = "20%", limit = "200 kg", from = "deep-floor" }
+
+[[item]]
+id = "deep-trees"
+label = "standing trees"
+at = "deep-woods"
+spot = "10 m north"
+spread = "6 m"
+mass = "40 t"
+fixed = true
+material = "wood"
+pieces = { size = "20 kg", find_time = "3 min", edge = "1 mm", needs = "axe" }
+kind = "tree"
+
+# The fibre grove: rope and shelter: bushes to pull fibre from, and poles for a lean-to
+# or a raised cache.
+
+[[item]]
+id = "grove"
+label = "the fibre grove"
+at = "grounds"
+spot = "14.5 m north, 25.1 m east"
+spread = "1 m"
+mass = "2 t"
+fixed = true
+material = "rock"
+
+[[item]]
+id = "grove-bushes"
+label = "fibrous bushes"
+at = "grounds"
+spot = "11.5 m north, 19.9 m east"
+spread = "0.8 m"
 mass = "500 kg"
 fixed = true
 material = "fibre"
@@ -251,29 +290,54 @@ kind = "shrub"
 [[item]]
 id = "grove-sticks"
 label = "fallen sticks"
-at = "grove"
-spot = "4 m south"
-spread = "2 m"
+at = "grounds"
+spot = "14.5 m north, 21.7 m east"
+spread = "0.8 m"
 mass = "50 kg"
 fixed = true
 material = "wood"
 pieces = { size = "200 g", find_time = "4 s" }
 
-
-# The stream bank: water, fish for a spear, mussels, and the clay and bog
-# iron a knife is made from.
 [[item]]
-id = "water"
+id = "grove-logs"
+label = "deadwood"
+at = "grounds"
+spot = "11.5 m north, 23.4 m east"
+spread = "0.8 m"
+mass = "200 kg"
+fixed = true
+material = "wood"
+pieces = { size = "3 kg", find_time = "8 s" }
+
+# The stream bank: water and food: a pool of the stream, fish for a spear, mussels, and
+# roots and nuts; flint, stones, and sticks to make the spear.
+
+[[item]]
+id = "stream"
+label = "the stream bank"
+at = "grounds"
+spot = "14.5 m south, 25.1 m east"
+spread = "1 m"
+mass = "2 t"
+fixed = true
+material = "rock"
+
+[[item]]
+id = "stream-water"
 label = "the stream's water"
-at = "stream"
+at = "grounds"
+spot = "12.5 m south, 21.7 m east"
+spread = "1.5 m"
 mass = "50 t"
 fixed = true
 material = "water"
 
 [[item]]
-id = "fish"
+id = "stream-fish"
 label = "fish in the stream"
-at = "stream"
+at = "grounds"
+spot = "12.5 m south, 21.7 m east"
+spread = "1.5 m"
 mass = "150 kg"
 fixed = true
 material = "fish"
@@ -281,11 +345,11 @@ pieces = { size = "500 g", find_time = "1 min", chance = "60%", needs = "spear" 
 kind = "fish"
 
 [[item]]
-id = "mussels"
+id = "stream-mussels"
 label = "mussels in the shallows"
-at = "stream"
-spot = "4 m south"
-spread = "3 m"
+at = "grounds"
+spot = "11.0 m south, 23.0 m east"
+spread = "0.8 m"
 mass = "100 kg"
 fixed = true
 composition = { shellfish = "35%", shell = "65%" }
@@ -293,55 +357,261 @@ pieces = { size = "1 kg", find_time = "30 s" }
 kind = "shellfish"
 
 [[item]]
-id = "clay"
-label = "clay in the bank"
-at = "stream"
-spot = "4 m east"
-spread = "2 m"
+id = "stream-forage"
+label = "roots and nuts in the leaf litter"
+at = "grounds"
+spot = "12.6 m south, 23.6 m east"
+spread = "0.8 m"
+mass = "150 kg"
+fixed = true
+material = "roots"
+pieces = { size = "500 g", find_time = "1 min", chance = "70%" }
+grows = { rate = "20%", limit = "200 kg", from = "floor" }
+
+[[item]]
+id = "stream-flint"
+label = "flint nodules"
+at = "grounds"
+spot = "14.2 m south, 22.8 m east"
+spread = "0.8 m"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { size = "500 g", find_time = "8 s" }
+
+[[item]]
+id = "stream-stones"
+label = "loose stones"
+at = "grounds"
+spot = "14.4 m south, 21.1 m east"
+spread = "0.8 m"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 s" }
+
+[[item]]
+id = "stream-sticks"
+label = "fallen sticks"
+at = "grounds"
+spot = "13.2 m south, 19.8 m east"
+spread = "0.8 m"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { size = "200 g", find_time = "4 s" }
+
+# The forge: a knife (and an axe head) from ore: bog iron and clay, stones for a
+# furnace and to hone on, flint for a flake to cut moulds and handles, and
+# everything a fire needs to light the furnace.
+
+[[item]]
+id = "forge"
+label = "the forge"
+at = "grounds"
+spot = "29.0 m south"
+spread = "1 m"
+mass = "2 t"
+fixed = true
+material = "rock"
+
+[[item]]
+id = "forge-bog"
+label = "bog iron in a boggy hollow"
+at = "grounds"
+spot = "23.0 m south"
+spread = "0.8 m"
+mass = "200 kg"
+fixed = true
+composition = { iron = "50%", rock = "50%" }
+pieces = { size = "2 kg", find_time = "10 s" }
+
+[[item]]
+id = "forge-clay"
+label = "clay in a bank"
+at = "grounds"
+spot = "23.6 m south, 1.4 m east"
+spread = "0.8 m"
 mass = "500 kg"
 fixed = true
 material = "clay"
 pieces = { size = "1 kg", find_time = "5 s" }
 
 [[item]]
-id = "bog-iron"
-label = "bog iron in the streambed"
-at = "stream"
-spot = "4 m west"
-spread = "2 m"
+id = "forge-stones"
+label = "loose stones"
+at = "grounds"
+spot = "25.0 m south, 2.0 m east"
+spread = "0.8 m"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 s" }
+
+[[item]]
+id = "forge-flint"
+label = "flint nodules"
+at = "grounds"
+spot = "26.4 m south, 1.4 m east"
+spread = "0.8 m"
 mass = "200 kg"
 fixed = true
-composition = { iron = "50%", rock = "50%" }
-pieces = { size = "2 kg", find_time = "10 s" }
+material = "flint"
+pieces = { size = "500 g", find_time = "8 s" }
 
-
-# The woodland: trees to fell with an axe, roots and nuts, and the boars.
 [[item]]
-id = "trees"
-label = "standing trees"
-at = "woodland"
-mass = "20 t"
+id = "forge-grass"
+label = "dry grass"
+at = "grounds"
+spot = "27.0 m south"
+spread = "0.8 m"
+mass = "20 kg"
+fixed = true
+material = "grass"
+pieces = { size = "5 g", find_time = "3 s" }
+
+[[item]]
+id = "forge-twigs"
+label = "dry twigs"
+at = "grounds"
+spot = "26.4 m south, 1.4 m west"
+spread = "0.8 m"
+mass = "20 kg"
 fixed = true
 material = "wood"
-pieces = { size = "20 kg", find_time = "3 min", edge = "1 mm", needs = "axe" }
-kind = "tree"
+pieces = { size = "20 g", find_time = "3 s" }
 
 [[item]]
-id = "floor"
-label = "the forest floor"
-at = "woodland"
-mass = "100 t"
+id = "forge-sticks"
+label = "fallen sticks"
+at = "grounds"
+spot = "25.0 m south, 2.0 m west"
+spread = "0.8 m"
+mass = "50 kg"
 fixed = true
-material = "litter"
+material = "wood"
+pieces = { size = "200 g", find_time = "4 s" }
 
 [[item]]
-id = "forage"
-label = "roots and nuts in the leaf litter"
-at = "woodland"
-spot = "4 m east"
-spread = "3 m"
-mass = "150 kg"
+id = "forge-logs"
+label = "deadwood"
+at = "grounds"
+spot = "23.6 m south, 1.4 m west"
+spread = "0.8 m"
+mass = "200 kg"
 fixed = true
-material = "roots"
-pieces = { size = "500 g", find_time = "1 min", chance = "70%" }
-grows = { rate = "20%", limit = "200 kg", from = "floor" }
+material = "wood"
+pieces = { size = "3 kg", find_time = "8 s" }
+
+# The hearth: making fire: tinder, kindling, sticks, logs, and stones for a ring.
+
+[[item]]
+id = "hearth"
+label = "the hearth"
+at = "grounds"
+spot = "14.5 m south, 25.1 m west"
+spread = "1 m"
+mass = "2 t"
+fixed = true
+material = "rock"
+
+[[item]]
+id = "hearth-grass"
+label = "dry grass"
+at = "grounds"
+spot = "11.5 m south, 19.9 m west"
+spread = "0.8 m"
+mass = "20 kg"
+fixed = true
+material = "grass"
+pieces = { size = "5 g", find_time = "3 s" }
+
+[[item]]
+id = "hearth-twigs"
+label = "dry twigs"
+at = "grounds"
+spot = "13.8 m south, 20.2 m west"
+spread = "0.8 m"
+mass = "20 kg"
+fixed = true
+material = "wood"
+pieces = { size = "20 g", find_time = "3 s" }
+
+[[item]]
+id = "hearth-sticks"
+label = "fallen sticks"
+at = "grounds"
+spot = "14.3 m south, 22.5 m west"
+spread = "0.8 m"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { size = "200 g", find_time = "4 s" }
+
+[[item]]
+id = "hearth-logs"
+label = "deadwood"
+at = "grounds"
+spot = "12.3 m south, 23.6 m west"
+spread = "0.8 m"
+mass = "200 kg"
+fixed = true
+material = "wood"
+pieces = { size = "3 kg", find_time = "8 s" }
+
+[[item]]
+id = "hearth-stones"
+label = "loose stones"
+at = "grounds"
+spot = "10.5 m south, 22.1 m west"
+spread = "0.8 m"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 s" }
+
+# The knapping ground: stone tools: flint to strike flakes from, stones to strike with, and
+# sticks for shafts: a spear, a stone knife.
+
+[[item]]
+id = "knapping"
+label = "the knapping ground"
+at = "grounds"
+spot = "14.5 m north, 25.1 m west"
+spread = "1 m"
+mass = "2 t"
+fixed = true
+material = "rock"
+
+[[item]]
+id = "knapping-flint"
+label = "flint nodules"
+at = "grounds"
+spot = "11.5 m north, 19.9 m west"
+spread = "0.8 m"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { size = "500 g", find_time = "8 s" }
+
+[[item]]
+id = "knapping-stones"
+label = "loose stones"
+at = "grounds"
+spot = "11.5 m north, 23.4 m west"
+spread = "0.8 m"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { size = "1 kg", find_time = "5 s" }
+
+[[item]]
+id = "knapping-sticks"
+label = "fallen sticks"
+at = "grounds"
+spot = "14.5 m north, 21.7 m west"
+spread = "0.8 m"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { size = "200 g", find_time = "4 s" }

@@ -1971,8 +1971,19 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
 
         Intent::Gather { source } => {
             must_know(world, actor, Process::Gather)?;
-            let found = find(world, actor, reach.around.iter().copied(), source)
-                .ok_or_else(|| Refusal::NotHere(source.clone()))?;
+            // A source is on the ground: something of that name in hand
+            // doesn't count, and one out of reach is too far.
+            let found = match find(world, actor, reach.around.iter().copied(), source) {
+                Some(found) => found,
+                None => {
+                    return Err(
+                        find(world, actor, reach.far.iter().copied(), source).map_or_else(
+                            || Refusal::NotHere(source.clone()),
+                            |far| too_far(world, actor, far),
+                        ),
+                    );
+                }
+            };
             // Starting a search needs light: daylight, or something burning
             // here. One under way when night falls is finished.
             if world.is_dark(reach.here) && world.pending(actor).is_none() {
@@ -3153,13 +3164,37 @@ fn find(
     }
     // The best matches first, and sight only for them: measuring is the
     // costly part. If none of them can be seen well enough, the best of
-    // what can.
-    let best = closest(world, viewer, &candidates, name).1;
+    // what can. Among matches as good as each other, the nearest: the patch
+    // beside you, not the one across the clearing.
+    let best = nearest_first(world, viewer, closest(world, viewer, &candidates, name).1);
     if let Some(&id) = best.iter().find(|id| visible(id)) {
         return Some(id);
     }
     let seen: Vec<EntityId> = candidates.into_iter().filter(visible).collect();
-    closest(world, viewer, &seen, name).1.first().copied()
+    nearest_first(world, viewer, closest(world, viewer, &seen, name).1)
+        .first()
+        .copied()
+}
+
+/// The same things, with those lying on the ground nearest to `viewer`
+/// first among themselves. Anything else (carried, in a container) keeps
+/// its place in the order, which each law sets.
+fn nearest_first(world: &World, viewer: EntityId, mut things: Vec<EntityId>) -> Vec<EntityId> {
+    let Some(me) = world.spot(viewer) else {
+        return things;
+    };
+    let lying = |id: EntityId| world.location(id).is_some_and(|l| world.is_place(l));
+    let slots: Vec<usize> = (0..things.len()).filter(|&i| lying(things[i])).collect();
+    let mut ground: Vec<EntityId> = slots.iter().map(|&i| things[i]).collect();
+    ground.sort_by_key(|&id| {
+        world
+            .spot(id)
+            .map_or(0, |at| crate::world::distance(me, at))
+    });
+    for (slot, id) in slots.into_iter().zip(ground) {
+        things[slot] = id;
+    }
+    things
 }
 
 /// The candidates `name` fits best, and whether any of them will do: they

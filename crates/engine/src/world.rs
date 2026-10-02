@@ -121,6 +121,12 @@ pub struct Settings {
     pub exhausted_pace: u64,
     /// How far from its middle a place reaches, in µm, unless its data says.
     pub place_size: u64,
+    /// How many times its own size away something can be and still be made
+    /// out, and still be seen at all; and how many times shorter both are in
+    /// the dark. See `sight.rs`.
+    pub sight_made_out: u64,
+    pub sight_seen: u64,
+    pub sight_in_dark: u64,
 }
 
 impl Default for Settings {
@@ -169,6 +175,9 @@ impl Default for Settings {
             stamina: 3_000_000_000_000,
             exhausted_pace: 5_000,
             place_size: 50_000_000,
+            sight_made_out: 500,
+            sight_seen: 5_000,
+            sight_in_dark: 10,
         }
     }
 }

@@ -1,6 +1,6 @@
 # The context menu: what you can tell, and what to offer
 
-Proposed 2026-10-01. Not decided. The owner's words are "The context menu: what you can tell, and what to offer" in [requirements.md](../requirements.md). What's built is "Shortcuts, faster gathering, and clicking" in [challenges/first-steps.md](../challenges/first-steps.md).
+Proposed 2026-10-01. **Decided the same day: the owner said "those are all good", adding that sizes must be automatic, measured by the engine for anything, invented ones too, and that knowing what something is depends on the viewer's knowledge. Built: see "Built" at the end.** The owner's words are "The context menu: what you can tell, and what to offer" in [requirements.md](../requirements.md). What's built is "Shortcuts, faster gathering, and clicking" in [challenges/first-steps.md](../challenges/first-steps.md).
 
 The owner raised three questions. This proposes an answer to each.
 
@@ -50,3 +50,39 @@ The canned "x3" and "x10" are gone from the menu (2026-10-01, at the owner's req
 3. **Leave counting to skills:** a saved "start fire" knows its kit and gathers just that, so counting by hand becomes rare.
 
 **Recommended:** 1 now, and 3 when skills come. A plain click gathers once. Shift-click, or a "keep gathering" choice, keeps going until you stop. Skills take care of exact amounts later. The console keeps x3 and 500 g for when you know exactly what you want.
+
+## Built (2026-10-01)
+
+- **Sight** (`crates/engine/src/sight.rs`). Something is made out within 500 times its size and seen within 5,000 times; both are ten times shorter in the dark. The numbers are the world's settings for now; they become each body's eyesight in data when kinds of eyes differ.
+  - **Size is measured, never written:** across a patch, as long as a shape with a length, or else the side of a cube of its volume, from what it's made of. Anything made in play gets a size the same way. A fire ring of five stones measures bigger than one stone, so it's made out from further.
+  - **Knowing what it is** comes from the viewer's own words, which were already built (`words.rs`). Something they've never learned is called by its look: its parts, or what it seems made of. A far-folk iron barb shows to the islander as "flake of dark metal". So a rocket engine, to a Stone Age islander, would be a description of its parts and materials however close they stood.
+  - A 200 g stick (about 7 cm) is made out within about 35 m. A patch of sticks 20 m across is made out from kilometres away. A person is made out from about 200 m.
+- **Where it applies:**
+  - **What a person sees** (`look`): what's only seen is "something small" (under 30 cm), "something", "something large" (over 2 m), or "someone", with no mass. What's unseen isn't listed.
+  - **What the client draws:** `view::scene` leaves out what's unseen.
+  - **Hovering and the menu's title** show the same words.
+  - **Names in commands:** a name only finds what's made out; a pointer ("#12") also finds what's only seen.
+  - **Replies:** `laws::named` says "something small" too, so no refusal gives a name away.
+  - **The menu:**
+    - unseen gets no menu;
+    - only seen gets just "walk up to it";
+    - made out gets the actions, walking up first.
+- **"Keep gathering":**
+  - **The menu:** gathering offers "gather" and "keep gathering".
+  - **The console:** the same is `gather sticks until full`. It goes on until the laws refuse (a full pack or a bare patch, said with the reason) or the player stops it.
+  - **Moving stops it:** a WASD key stops it, or anything else being done in the place, and the console tells what it came to.
+  - **Progress:** the screen's top line shows how it's going: "gather from fallen sticks until full: 5 so far, +1 kg (move or stop to stop)".
+- **Proofs** (`crates/console/tests/sight.rs`):
+  - a dropped stick across the forest is "something small", can't be named, offers only "walk up to it", and walking up makes it a lump of wood again;
+  - a patch is made out from across the forest;
+  - darkness turns a stick 10 m off into "something";
+  - a fire ring made in play measures bigger than its stones.
+  
+  A sabotage that makes everything made out fails two of the three. Played in the client: "keep gathering" walked up and gathered until W stopped it, then told the total.
+- **Cost:** the busy village benchmark took 91.0 s a game day against 87.3 s for the version before, about 4% for sight. The first version was twice as slow, because it measured a whole datasheet per thing; it now measures only volume and length.
+
+**Simplified, and open:**
+- Seeing is still within the place you're in. Seeing into the next place, or from a summit, keeps its own law (`survey`).
+- Nothing blocks sight: no walls, trees, or hills between. A thing in a container is seen as well as the container, whether or not the container is closed.
+- Which person someone is, rather than that it's someone, has no closer band yet.
+- What's remembered of places you've left isn't filtered by how well it was seen.

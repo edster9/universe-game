@@ -1,6 +1,7 @@
 //! Doing something more than once from one command, as a player would ask:
 //! "gather sticks x3", "gather wood 500 g" (until they carry that much
-//! more), "drop wood x2", "drop all", and several commands in a row,
+//! more), "gather sticks until full" (until they can't, or stop), "drop wood
+//! x2", "drop all", and several commands in a row,
 //! "go to sticks; gather sticks x3". It's the player's own repeating, not a
 //! law: each time is a command like any other, checked by the laws, and the
 //! first refusal stops the rest. The seed of saved skills.
@@ -14,8 +15,10 @@ use engine::world::Outcome;
 
 use super::{Reply, Session, sentence};
 
-/// The most times one step is done, so a search that never finds stops.
+/// The most times one step is done, so a search that never finds stops;
+/// and the most for "until full", which a refusal usually ends first.
 const MOST: u32 = 100;
+const MOST_UNTIL_FULL: u32 = 2_000;
 
 pub(super) struct Queue {
     steps: VecDeque<Step>,
@@ -42,6 +45,9 @@ enum Until {
     Moved(u64),
     /// Until there's nothing left to drop.
     Empty,
+    /// Until the laws refuse, as when they can carry no more or the source
+    /// is bare, or they stop.
+    Full,
 }
 
 /// How one time went.
@@ -76,6 +82,13 @@ fn step(part: &str) -> Step {
     };
     if part.eq_ignore_ascii_case("drop all") {
         return step(None, Until::Empty);
+    }
+    let lower = part.to_lowercase();
+    if let Some(line) = lower
+        .strip_suffix(" until full")
+        .filter(|l| !l.trim().is_empty())
+    {
+        return step(Some(part[..line.len()].trim()), Until::Full);
     }
     let words: Vec<&str> = part.split_whitespace().collect();
     let Some((last, before)) = words.split_last() else {
@@ -128,6 +141,27 @@ impl Session {
         self.queue.is_some()
     }
 
+    /// How a queue is going, for a client to show: what's being done, how
+    /// many times so far, and the change in what's carried.
+    pub fn queue_progress(&self) -> Option<String> {
+        let queue = self.queue.as_ref()?;
+        let step = queue.steps.front()?;
+        let mut text = crate::menu::in_words(&self.world, self.player, &step.said());
+        if !matches!(step.until, Until::Times(1)) {
+            text += &format!(": {} so far", step.done.saturating_sub(1));
+        }
+        let carried = self.carried();
+        if carried != queue.carried {
+            let (sign, by) = if carried > queue.carried {
+                ("+", carried - queue.carried)
+            } else {
+                ("-", queue.carried - carried)
+            };
+            text += &format!(", {sign}{}", Mass::from_mg(by));
+        }
+        Some(text)
+    }
+
     /// In real time, when the player's action is over: how it came out,
     /// and on to the next. `None` if there's no queue.
     pub(super) fn queue_catch_up(&mut self) -> Option<String> {
@@ -175,11 +209,15 @@ impl Session {
                 return Some(Reply::say(self.finish(None)));
             };
             let from = *step.carried.get_or_insert(carried);
-            let over = step.done >= MOST
+            let most = match step.until {
+                Until::Full => MOST_UNTIL_FULL,
+                _ => MOST,
+            };
+            let over = step.done >= most
                 || match step.until {
                     Until::Times(n) => step.done >= n,
                     Until::Moved(mass) => carried.abs_diff(from) >= mass,
-                    Until::Empty => false,
+                    Until::Empty | Until::Full => false,
                 };
             let line = match &step.line {
                 _ if over => None,
@@ -315,6 +353,7 @@ impl Session {
             match step.until {
                 Until::Times(n) if n > 1 => text += &format!(", {n} times"),
                 Until::Moved(mass) => text += &format!(", for {}", Mass::from_mg(mass)),
+                Until::Full => text += ", and keep going",
                 _ => {}
             }
         }
@@ -346,6 +385,7 @@ impl Step {
         match self.until {
             Until::Times(n) if n > 1 => format!("{line} x{n}"),
             Until::Moved(mass) => format!("{line} {}", Mass::from_mg(mass)),
+            Until::Full => format!("{line} until full"),
             _ => line.to_string(),
         }
     }
@@ -369,6 +409,10 @@ mod tests {
         assert_eq!(read("gather wood 500g"), ["gather wood 500 g"]);
         assert_eq!(read("gather wood 1.5 kg"), ["gather wood 1.5 kg"]);
         assert_eq!(read("drop all"), ["drop all"]);
+        assert_eq!(
+            read("gather sticks until full"),
+            ["gather sticks until full"]
+        );
         assert_eq!(
             read("go to sticks; gather sticks x2"),
             ["go to sticks", "gather sticks x2"]

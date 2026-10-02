@@ -1446,14 +1446,22 @@ fn things(things: &[Thing]) -> String {
     things
         .iter()
         .map(|t| {
-            let mut details = vec![t.mass.to_string()];
+            // Something seen but not made out has no mass to tell.
+            let mut details: Vec<String> = (t.mass.mg() > 0)
+                .then(|| t.mass.to_string())
+                .into_iter()
+                .collect();
             details.extend(t.temperature.map(|temperature| temperature.to_string()));
             details.extend(t.notes.iter().cloned());
             details.extend(
                 t.away
                     .map(|(gap, way)| format!("{} {way}", laws::metres(gap))),
             );
-            format!("{} ({})", t.label, details.join(", "))
+            if details.is_empty() {
+                t.label.clone()
+            } else {
+                format!("{} ({})", t.label, details.join(", "))
+            }
         })
         .collect::<Vec<_>>()
         .join(", ")

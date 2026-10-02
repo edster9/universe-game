@@ -2914,6 +2914,17 @@ pub fn choices(world: &World, actor: EntityId, thing: EntityId) -> Vec<Choice> {
         return Vec::new();
     }
     let it = pointer(thing);
+    // Something they can't make out: they can only go and see what it is.
+    match crate::sight::sight(world, actor, thing) {
+        crate::sight::Sight::Unseen => return Vec::new(),
+        crate::sight::Sight::Seen => {
+            return vec![Choice {
+                intent: Intent::Walk { to: it },
+                walk_first: false,
+            }];
+        }
+        crate::sight::Sight::MadeOut => {}
+    }
     let mut candidates = vec![
         Intent::Gather { source: it.clone() },
         Intent::Take { item: it.clone() },
@@ -3060,7 +3071,18 @@ fn find(
     candidates: impl IntoIterator<Item = EntityId>,
     name: &str,
 ) -> Option<EntityId> {
-    let candidates: Vec<EntityId> = candidates.into_iter().collect();
+    // Only what they can make out can be named; what they can only see,
+    // they can point at.
+    let eyes = crate::sight::Eyes::of(world, viewer);
+    let needs = if name.trim().starts_with('#') {
+        crate::sight::Sight::Seen
+    } else {
+        crate::sight::Sight::MadeOut
+    };
+    let candidates: Vec<EntityId> = candidates
+        .into_iter()
+        .filter(|&id| eyes.sight(world, id) >= needs)
+        .collect();
     // "smallest …" and "largest …" choose by mass among the matches.
     let lower = normalize(name);
     for (word, smallest) in [("smallest ", true), ("largest ", false)] {
@@ -3215,10 +3237,10 @@ fn normalize(name: &str) -> String {
 /// How to refer to something in a sentence: people and names that already
 /// start with "the" as they are, other things with "the" in front.
 pub fn named(world: &World, viewer: EntityId, id: EntityId) -> String {
-    let label = world.label_for(viewer, id);
+    let label = crate::sight::label(world, viewer, id);
     let proper = world.is_agent(id)
         || label.starts_with("the ")
-        || label.starts_with("something ")
+        || label.starts_with("something")
         || label.chars().next().is_some_and(char::is_uppercase);
     if proper {
         label

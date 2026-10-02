@@ -221,7 +221,7 @@ pub fn point(
         text.0 = if id == sim.me() {
             "you".into()
         } else {
-            world.label_for(sim.me(), id)
+            engine::sight::label(world, sim.me(), id)
         };
         *visible = Visibility::Inherited;
         node.left = Val::Px(cursor.x + 16.0);

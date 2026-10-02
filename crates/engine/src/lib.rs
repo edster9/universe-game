@@ -15,6 +15,7 @@ pub mod laws;
 pub mod matter;
 pub mod mind;
 pub mod nature;
+pub mod sight;
 pub mod units;
 pub mod view;
 pub mod words;

@@ -592,6 +592,12 @@ Added 2026-10-01, after trying the menu. Things are looking good. Early user int
 - **Far things may not be identifiable yet.** A tree very far away, yes, the mouse can tell you that's a tree. But a little box or a small weapon on the ground, you won't be able to: hovering over it, you might just know there's something there. Get closer, and you'll know what it is. **Does hovering tell you something different far away and close by?**
 - **What you can do with it.** Gather, kick, push, whatever. **Should those choices appear when you can't do them yet, or only when you're next to it?** Choosing gather from far away walks you to it to do it, which isn't bad. Maybe they should show ghosted. But you can always walk up to something: **maybe far away the only option should be go to, or walk to, and the other options appear when you get close.** I want your take on what's a good user interface for these choices.
 
+Added the same day, on Claude's take ([ideas/context-menu.md](ideas/context-menu.md)): **those are all good.** And something else:
+
+- **How does the engine know the distances for items, including new inventions?** A piece of wood is inherent to the game's design, so we know its distance problem. But build a cabinet from wood, and it becomes a new item. Put it down, walk away, and someone else sees it from far away: the engine has to decide its distance attributes. **It must be automatic: not up to the inventor, but the engine knowing, by size and things like that, what it is.**
+- **It also has to be something the other person knows about.** Invent something complex, like a rocket engine, and someone who isn't advanced won't know what it is from far away, or even walking up to it close by.
+- **Go ahead and implement this round.** After that, the entire fire-building process: an excellent exercise, but I see a lot of issues with the way it's set up. If we get it right, it sets up the basis for skill building.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

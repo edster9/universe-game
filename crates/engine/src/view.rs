@@ -2,6 +2,7 @@
 //! them now, and a browser will later.
 
 use crate::matter::State;
+use crate::sight::{Eyes, Sight};
 use crate::units::{Credits, Mass, Temperature};
 use crate::world::{EntityId, World};
 
@@ -68,13 +69,32 @@ pub fn look(world: &World, actor: EntityId) -> Option<Look> {
         dark: world.is_dark(here),
         finding_ways: world.finds_ways(actor),
     };
+    // Only what they can see from where they stand, and what they can't
+    // make out only by how big it looks.
+    let eyes = Eyes::of(world, actor);
     for id in world.contents(here).into_iter().filter(|&e| e != actor) {
+        let sight = eyes.sight(world, id);
+        if sight == Sight::Unseen {
+            continue;
+        }
         if world.is_agent(id) {
-            look.people.push(world.label_for(actor, id));
+            look.people.push(eyes.label(world, id));
         } else if world.is_all(id, State::Gas) {
             look.air.push(thing(world, actor, id));
         } else {
-            let mut seen = thing(world, actor, id);
+            let mut seen = if sight == Sight::Seen {
+                // Too far to tell what it is, or how heavy.
+                Thing {
+                    label: crate::sight::something(world, id),
+                    mass: Mass::ZERO,
+                    temperature: None,
+                    notes: Vec::new(),
+                    contents: Vec::new(),
+                    away: None,
+                }
+            } else {
+                thing(world, actor, id)
+            };
             if !world.within_reach(actor, id) {
                 seen.away = Some((world.gap(actor, id), crate::laws::way_to(world, actor, id)));
             }
@@ -142,15 +162,15 @@ fn thing(world: &World, viewer: EntityId, id: EntityId) -> Thing {
     }
 }
 
-/// What a person can picture of the world around them: everything where
-/// they stand, and the fixed things they remember at other places, from when
+/// What a person can picture of the world around them: everything they can
+/// see where they stand, and the fixed things they remember at other places, from when
 /// they last saw them. A client draws only these (no oracles): creatures and
 /// loose things elsewhere stay unseen until the person goes and looks.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Scene {
     /// The place they stand in, if any.
     pub here: Option<EntityId>,
-    /// Everything at that place, the person too.
+    /// Everything they can see at that place, the person too.
     pub in_sight: Vec<EntityId>,
     /// Fixed things remembered at other places: where, and what.
     pub remembered: Vec<(EntityId, EntityId)>,
@@ -159,7 +179,13 @@ pub struct Scene {
 /// What `viewer` can picture now.
 pub fn scene(world: &World, viewer: EntityId) -> Scene {
     let here = world.place_of(viewer);
-    let in_sight = here.map(|p| world.contents(p)).unwrap_or_default();
+    let eyes = Eyes::of(world, viewer);
+    let in_sight = here
+        .map(|p| world.contents(p))
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|&id| eyes.sight(world, id) != Sight::Unseen)
+        .collect();
     let remembered = world
         .memory(viewer)
         .map(|memory| {

@@ -89,7 +89,7 @@ pub fn click(
     match pointed_at(cursor, camera, eye, &named).filter(|&id| id != me) {
         Some(thing) => {
             let offered = console::menu::menu(world, me, thing);
-            let name = world.label_for(me, thing);
+            let name = engine::sight::label(world, me, thing);
             open_menu(&mut commands, window.size(), cursor, &name, offered);
         }
         None => {

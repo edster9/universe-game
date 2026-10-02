@@ -9,7 +9,7 @@ use bevy::prelude::*;
 use engine::intent::Intent;
 
 use crate::camera::Eye;
-use crate::terminal::Console;
+use crate::terminal::{Console, Said};
 use crate::tools::Settings;
 use crate::{Play, Sim};
 
@@ -21,7 +21,7 @@ const TOWARDS: f32 = 0.8;
 /// Walks the islander while WASD is held.
 pub fn walk_keys(
     keys: Res<ButtonInput<KeyCode>>,
-    console: Res<Console>,
+    mut console: ResMut<Console>,
     eye: Res<Eye>,
     mut sim: ResMut<Sim>,
     mut by_keys: Local<bool>,
@@ -57,10 +57,13 @@ pub fn walk_keys(
         let world = session.world();
         let me = session.player();
         let walking = match world.pending(me).map(|p| &p.intent) {
+            None if session.queue_busy() => Some(false),
             None => None,
             Some(Intent::Walk { .. }) => Some(true),
-            // On a path between places, or busy with something else.
-            Some(_) => return,
+            // On a path between places: the keys wait until they arrive.
+            Some(Intent::Go { .. }) => return,
+            // Busy with something else here, like gathering: moving stops it.
+            Some(_) => Some(false),
         };
         let (Some(here), Some(spot)) = (world.place_of(me), world.spot(me)) else {
             return;
@@ -94,10 +97,16 @@ pub fn walk_keys(
     match walking {
         // A walk the keys started: let it finish, then the next step.
         Some(true) if *by_keys => return,
-        // A walk someone typed or spoke: the keys take over from where
-        // they've got to, stepping on from there next frame.
-        Some(_) => {
-            session.handle("stop");
+        // A walk someone typed or spoke, or anything else being done here,
+        // or kept going: the keys take over, stopping it (a walk where
+        // they've got to), and stepping on from there next frame.
+        Some(walking) => {
+            let reply = session.handle("stop");
+            // A walk taken over needs no word; anything else stopped, and
+            // what it came to, does.
+            if !walking && !reply.refused {
+                console.say(Said::Reply, &reply.text);
+            }
             return;
         }
         None => {}

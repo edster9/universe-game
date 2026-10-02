@@ -599,6 +599,14 @@ fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud
         Some(p) => format!(", busy until {}", sim.session().clock(p.until)),
         None => String::new(),
     };
+    // Something kept going: how it's going.
+    let doing = match &sim.play {
+        Play::Live(session) => match session.queue_progress() {
+            Some(progress) => format!("{doing}; {progress} (move or stop to stop)"),
+            None => doing,
+        },
+        Play::Script(_) => doing,
+    };
     let view = if eye.flying {
         "flying free: arrows, E/Q, Shift; F to go back; WASD still walks"
     } else {

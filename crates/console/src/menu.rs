@@ -33,7 +33,18 @@ pub fn menu(world: &World, who: EntityId, thing: EntityId) -> Vec<Choice> {
             command
         };
         let said = words(world, who, &line, None);
+        let keep = matches!(choice.intent, engine::intent::Intent::Gather { .. })
+            .then(|| (format!("{line} until full"), format!("{said} until full")));
         menu.push(Choice { label, line, said });
+        // Gathering can go on until the pack is full or the source is bare,
+        // or the player stops it.
+        if let Some((line, said)) = keep {
+            menu.push(Choice {
+                label: "keep gathering".into(),
+                line,
+                said,
+            });
+        }
     }
     menu
 }
@@ -58,9 +69,13 @@ fn words(world: &World, who: EntityId, command: &str, it: Option<&str>) -> Strin
         let end = &token[bare.len()..];
         out.push(match laws::pointed(world, bare) {
             Some(id) if it.is_some() => {
-                format!("{} ({}){end}", world.label_for(who, id), world.weight(id))
+                format!(
+                    "{} ({}){end}",
+                    engine::sight::label(world, who, id),
+                    world.weight(id)
+                )
             }
-            Some(id) => format!("{}{end}", world.label_for(who, id)),
+            Some(id) => format!("{}{end}", engine::sight::label(world, who, id)),
             None => token.to_string(),
         });
     }
@@ -89,7 +104,7 @@ mod tests {
 
         // Out of reach: walk up first.
         let far = menu(world, me, sticks);
-        assert_eq!(labels(&far), ["walk up to it", "gather"]);
+        assert_eq!(labels(&far), ["walk up to it", "gather", "keep gathering"]);
         let line = far[1].line.clone();
         assert_eq!(
             line,
@@ -112,7 +127,10 @@ mod tests {
         // Within reach now, and carrying wood: no walking, and what's carried
         // can be dropped.
         let (world, me) = (session.world(), session.player());
-        assert_eq!(labels(&menu(world, me, sticks)), ["gather"]);
+        assert_eq!(
+            labels(&menu(world, me, sticks)),
+            ["gather", "keep gathering"]
+        );
         let wood = world.held(me)[0];
         assert_eq!(labels(&menu(world, me, wood)), ["drop"]);
         // Something nobody here can see offers nothing.

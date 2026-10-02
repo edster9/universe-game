@@ -3071,6 +3071,7 @@ fn find(
     candidates: impl IntoIterator<Item = EntityId>,
     name: &str,
 ) -> Option<EntityId> {
+    let candidates: Vec<EntityId> = candidates.into_iter().collect();
     // Only what they can make out can be named; what they can only see,
     // they can point at.
     let eyes = crate::sight::Eyes::of(world, viewer);
@@ -3079,17 +3080,18 @@ fn find(
     } else {
         crate::sight::Sight::MadeOut
     };
-    let candidates: Vec<EntityId> = candidates
-        .into_iter()
-        .filter(|&id| eyes.sight(world, id) >= needs)
-        .collect();
+    let visible = |id: &EntityId| eyes.sight(world, *id) >= needs;
     // "smallest …" and "largest …" choose by mass among the matches.
     let lower = normalize(name);
     for (word, smallest) in [("smallest ", true), ("largest ", false)] {
         if let Some(rest) = lower.strip_prefix(word) {
-            let matching = candidates.iter().copied().filter(|&id| {
-                is_called(world, viewer, id, rest) || mentions(world, viewer, id, rest)
-            });
+            let matching = candidates
+                .iter()
+                .copied()
+                .filter(|&id| {
+                    is_called(world, viewer, id, rest) || mentions(world, viewer, id, rest)
+                })
+                .filter(visible);
             return if smallest {
                 matching.min_by_key(|&id| (world.mass(id), id))
             } else {
@@ -3097,7 +3099,15 @@ fn find(
             };
         }
     }
-    closest(world, viewer, &candidates, name).1.first().copied()
+    // The best matches first, and sight only for them: measuring is the
+    // costly part. If none of them can be seen well enough, the best of
+    // what can.
+    let best = closest(world, viewer, &candidates, name).1;
+    if let Some(&id) = best.iter().find(|id| visible(id)) {
+        return Some(id);
+    }
+    let seen: Vec<EntityId> = candidates.into_iter().filter(visible).collect();
+    closest(world, viewer, &seen, name).1.first().copied()
 }
 
 /// The candidates `name` fits best, and whether they fit it exactly. Anyone

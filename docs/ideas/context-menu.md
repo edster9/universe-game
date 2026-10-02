@@ -79,7 +79,8 @@ The canned "x3" and "x10" are gone from the menu (2026-10-01, at the owner's req
   - a fire ring made in play measures bigger than its stones.
   
   A sabotage that makes everything made out fails two of the three. Played in the client: "keep gathering" walked up and gathered until W stopped it, then told the total.
-- **Cost:** the busy village benchmark took 91.0 s a game day against 87.3 s for the version before, about 4% for sight. The first version was twice as slow, because it measured a whole datasheet per thing; it now measures only volume and length.
+- **Cost:** none measurable once tuned. The month-long village takes 50.8 s against 50.7 s before sight, on the same machine. The first version measured a whole datasheet for every thing whenever anyone named something, which made it two and a half times slower; it now measures only volume and length, and only for the best matches of a name.
+- **Trials, all as before:** the stranger alive after 30 days in 10 of 10, 60 of 60 boars, and every castaway (30 of 30 in each challenge).
 
 **Simplified, and open:**
 - Seeing is still within the place you're in. Seeing into the next place, or from a summit, keeps its own law (`survey`).

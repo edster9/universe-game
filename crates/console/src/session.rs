@@ -77,7 +77,7 @@ Testing tools:
   log [n]                           the last n entries that passed the gate
   become <person>                   act as someone else
   /save <name>                      save the whole world, to pick up later exactly where it was
-  /load [name]                      pick up a save (\"last\", made when a game ends, if no name)
+  /load [name]                      pick up a save (\"last\", made when a game ends, if no name; \"previous\" is the one before)
   /saves                            the saves there are
   /make <thing> [in <container>]    the designer puts something in front of you: an amount of a material
                                     (\"2 kg wood\", \"300 g wood as shaft\"), a design (\"fire ring\"), or a kit
@@ -1160,10 +1160,10 @@ impl Session {
                         })?,
                     None,
                 ),
-                None => (
-                    self.world.place_of(self.player).ok_or("you're nowhere")?,
-                    self.world.spot(self.player),
-                ),
+                None => {
+                    let here = self.world.place_of(self.player).ok_or("you're nowhere")?;
+                    (here, self.beside_me(here))
+                }
             };
             engine::designer::make(&mut self.world, &make, at, spot)
         });
@@ -1174,6 +1174,22 @@ impl Session {
             )),
             Err(why) => Reply::refuse(sentence(&why)),
         }
+    }
+
+    /// A spot a step and a half from the player, toward the middle of where
+    /// they are (or north of them at the middle): close enough to reach,
+    /// not on their feet.
+    fn beside_me(&self, here: EntityId) -> Option<(i64, i64)> {
+        const AWAY: i64 = 1_500_000;
+        let me = self.world.spot(self.player)?;
+        let middle = self.world.position(here).unwrap_or(me);
+        let (east, north) = (middle.0 - me.0, middle.1 - me.1);
+        let far = i64::try_from(engine::world::distance(me, middle)).unwrap_or(i64::MAX);
+        Some(if far > AWAY {
+            (me.0 + east * AWAY / far, me.1 + north * AWAY / far)
+        } else {
+            (me.0, me.1 + AWAY)
+        })
     }
 
     /// The designer's flame lights something within reach.

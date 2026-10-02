@@ -10,6 +10,9 @@ rules player
 go forest
 /make fire
 expect said The designer makes the fire ring
+# A step and a half away, within reach.
+try take ring
+expect said holds something too hot to carry among your things
 wait 1 min
 look
 expect said stick of wood and ash
@@ -29,5 +32,13 @@ try /make spear
 expect said its material is the maker's choice
 try /make 1 kg moonrock
 expect said no material called
+# Taken apart, a burning ring leaves its fire burning where it stood, in the
+# open, among its hot stones.
+disassemble largest fire ring
+wait 1 min
+look
+expect said lump of stone (1 kg
+expect said of wood and ash
+expect said burning
 expect alive
 expect conserved

@@ -91,5 +91,11 @@ fn saves_are_named_listed_and_missing_ones_refused() {
     assert!(ok(&mut s, "/saves").contains("second, first"));
     let back = ok(&mut s, "/load first");
     assert!(back.contains("The beach"), "{back}");
+    // Making "last" again keeps the one before as "previous".
+    s.save(console::session::LAST).unwrap();
+    ok(&mut s, "go forest");
+    s.save(console::session::LAST).unwrap();
+    assert!(ok(&mut s, "/load previous").contains("The beach"));
+    assert!(ok(&mut s, "/load").contains("The forest"));
     let _ = std::fs::remove_dir_all(&saves);
 }

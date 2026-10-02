@@ -50,7 +50,7 @@ The owner: "all these shortcuts will be needed". See [challenges/skill-grounds.m
 | `/save <name>` | single player | Writes the whole world to a file: the clock, every piece of matter, every mind, and who's played. **Built.** |
 | `/load [name]` | single player | Picks a saved world up exactly where it was; with no name, "last", the save made when a game ends. **Built.** |
 | `/saves` | single player | The saves there are, newest first. **Built.** |
-| `/make <thing> [in <container>]` | server's choice | Puts something from the world's data in front of you, from the designer as a named source: an amount of a material (`/make 2 kg wood`), shaped (`/make 300 g wood as shaft`), a design (`/make fire ring`), or a kit (`/make fire`: a fire laid in a ring and already burning). **Built.** |
+| `/make <thing> [in <container>]` | server's choice | Puts something from the world's data a step and a half from you (the owner, 2026-10-02: not on your feet), from the designer as a named source: an amount of a material (`/make 2 kg wood`), shaped (`/make 300 g wood as shaft`), a design (`/make fire ring`), or a kit (`/make fire`: a fire laid in a ring and already burning). **Built.** |
 | `/light <thing>` | server's choice | The designer's flame: heats something within reach past the point where it catches. **Built.** |
 
 **How it's built** (2026-10-01):

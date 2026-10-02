@@ -13,6 +13,8 @@ use super::{Reply, Session};
 
 /// The name of the save made when a game ends, and resumed by `/load` alone.
 pub const LAST: &str = "last";
+/// The save "last" was before it was last made again: one game back.
+pub const PREVIOUS: &str = "previous";
 
 #[derive(serde::Serialize)]
 struct Writing<'a> {
@@ -78,6 +80,10 @@ impl Session {
             world: &self.world,
         })
         .map_err(|e| format!("the world couldn't be saved ({e})"))?;
+        // Making "last" again keeps the one before as "previous".
+        if name == LAST && path.exists() {
+            let _ = std::fs::rename(&path, file(&folder, PREVIOUS)?);
+        }
         std::fs::create_dir_all(&folder)
             .and_then(|()| std::fs::write(&path, text))
             .map_err(|e| format!("can't write {}: {e}", path.display()))?;

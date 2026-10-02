@@ -146,6 +146,7 @@ fn data_dir() -> PathBuf {
 }
 
 fn main() {
+    STARTED.get_or_init(std::time::Instant::now);
     // "--from x,y,z" and "--from=x,y,z" alike.
     let args: Vec<String> = std::env::args()
         .flat_map(|a| match a.split_once('=') {
@@ -309,6 +310,11 @@ fn main() {
             .chain(),
     );
     app.add_systems(Last, save_at_end.after(bevy::window::ExitSystems));
+    if std::env::args().any(|a| a == "--frames")
+        && let Some(render) = app.get_sub_app_mut(bevy::render::RenderApp)
+    {
+        render.add_systems(bevy::render::Render, shaders_waiting);
+    }
     use_system_font(&mut app);
     app.run();
 }
@@ -663,6 +669,28 @@ fn frames(time: Res<Time>, mut count: Local<(u32, f32)>) {
         count.1 = now;
     }
 }
+
+/// With `--frames`, prints how many shaders are still being compiled
+/// whenever that changes: nothing is drawn with a shader until it's ready.
+fn shaders_waiting(
+    cache: Res<bevy::render::render_resource::PipelineCache>,
+    mut last: Local<Option<usize>>,
+) {
+    let waiting = cache.waiting_pipelines().count();
+    if *last != Some(waiting) {
+        println!(
+            "{:.1} s: {waiting} shaders compiling",
+            STARTED
+                .get_or_init(std::time::Instant::now)
+                .elapsed()
+                .as_secs_f32()
+        );
+        *last = Some(waiting);
+    }
+}
+
+/// When the program started, for `--frames`.
+static STARTED: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
 
 /// With `--shot`, saves a frame after a few seconds, then exits.
 fn shot(

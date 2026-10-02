@@ -131,6 +131,11 @@ pub enum Refusal {
     UnknownShape(String),
     NotSolid(String),
     TooHot(String),
+    /// Something in it is too hot to carry among your things.
+    HotInside {
+        thing: String,
+        hot: String,
+    },
     CannotWork(String),
     UnknownDesign(String),
     MissingPart {
@@ -291,6 +296,10 @@ impl fmt::Display for Refusal {
             Refusal::UnknownShape(name) => write!(f, "you don't know a shape called {name}"),
             Refusal::NotSolid(name) => write!(f, "{name} isn't solid"),
             Refusal::TooHot(name) => write!(f, "{name} is too hot to touch"),
+            Refusal::HotInside { thing, hot } => write!(
+                f,
+                "{thing} holds something too hot to carry among your things: {hot}"
+            ),
             Refusal::CannotWork(name) => write!(f, "{name} can't be shaped"),
             Refusal::UnknownDesign(name) => write!(f, "you don't know a design called {name}"),
             Refusal::MissingPart { slot, needs } if slot.is_empty() => {
@@ -2227,6 +2236,21 @@ fn lift(world: &World, actor: EntityId, found: EntityId) -> Result<Vec<Change>, 
         .is_some_and(|t| t > world.settings().max_touch_temperature)
     {
         return Err(Refusal::TooHot(named(world, actor, found)));
+    }
+    // Nor anything in it: no burning ember goes in among your things.
+    // (Carrying something lit in hand, a lantern, waits for equipping.)
+    let mut inside = world.held(found);
+    while let Some(piece) = inside.pop() {
+        if world
+            .temperature(piece)
+            .is_some_and(|t| t > world.settings().max_touch_temperature)
+        {
+            return Err(Refusal::HotInside {
+                thing: named(world, actor, found),
+                hot: named(world, actor, piece),
+            });
+        }
+        inside.extend(world.held(piece));
     }
     Ok(vec![Change::Move {
         entity: found,

@@ -656,6 +656,19 @@ Added the same day, on the proposal: **exactly.** We'll master things and **save
 - **Also instantly adding a burning fire, or a horse, or whatever, to the world on demand,** to save time.
 - **All these shortcuts will be needed.** Update all these, and let me know where we go next.
 
+### First play of the shortcuts: hands, and taking things apart
+
+Added 2026-10-02, after trying the save, `/make`, and the skill grounds in the client. **Good start; a lot of experiments to do**, but a few things jumped out:
+
+- **Starting up, the ground took about 5 seconds to show.** It used to be instant, so something happened.
+- **`/make` put the fire right where I'm standing.** For making things for debugging, **place them one or two metres away from the actor.**
+- **Clicking the fire offers "take" and "take apart".** Taking apart makes some sense, back to its original parts, so **certain compound things like a fire can be scattered maybe, but it's not a chair that you can take apart.** We need some thinking about these actions for certain compound objects.
+- **"Take" is not a valid option for something like a fire**, and the game needs to know that. **I did take the fire, and all its parts are in my backpack, slowly losing weight over time.**
+- **But it shouldn't be a strict rule that something containing fire can't be picked up:** a candle or a lantern has fire in it, and those can be picked up. **We need eventual support for an "equip" command:** you can pick up a candle or a lantern that isn't lit and have it in your backpack, but **once lit, it's in a state that's no longer backpack-friendly**, and you carry it a special way, **like it's equipped in a hand. The same goes for a spear, a sword, and a gun.** So we need to plan for these things.
+- **So we're using DirectX on Windows and not Vulkan?** We have to plan for a macOS build too, which I thought would be Vulkan only, so maybe we need the same for both. **But it's just the rendering layer, so whatever works.**
+
+Claude's take: [ideas/hands-and-joins.md](ideas/hands-and-joins.md).
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

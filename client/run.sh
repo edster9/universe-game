@@ -27,6 +27,16 @@ powershell.exe -NoProfile -Command \
 mkdir -p "$TARGET/models"
 [ -f "$TARGET/models/ggml-base.en.bin" ] || curl -sSL -o "$TARGET/models/ggml-base.en.bin" \
     https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
+# DirectX 12's fast shader compiler, beside the program, once: without it,
+# the old one takes seconds before anything is drawn.
+DXC=v1.9.2609/dxc_2026_09_29.zip
+if [ ! -f "$TARGET/dxcompiler.dll" ]; then
+    tmp=$(mktemp -d)
+    curl -sSL -o "$tmp/dxc.zip" "https://github.com/microsoft/DirectXShaderCompiler/releases/download/$DXC"
+    unzip -q -o "$tmp/dxc.zip" -d "$tmp" 2>/dev/null || true
+    cp "$(find "$tmp" -ipath '*x64*dxcompiler.dll' | head -1)" "$(find "$tmp" -ipath '*x64*dxil.dll' | head -1)" "$TARGET/"
+    rm -rf "$tmp"
+fi
 # The worlds and scripts, beside the program.
 rm -rf "$TARGET/data"
 cp -r ../data "$TARGET/data"

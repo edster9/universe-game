@@ -1291,8 +1291,13 @@ impl World {
                     return Err(Fault::NotAnAssembly(assembly));
                 }
                 let at = self.location(assembly).ok_or(Fault::NotLocated(assembly))?;
+                // Its parts, and whatever it held, stay where it stood.
+                let stood = self.spots.get(&assembly).copied();
                 for part in self.contents(assembly) {
                     self.put(part, at);
+                    if let Some(spot) = stood {
+                        self.spots.insert(part, spot);
+                    }
                 }
                 self.assemblies.remove(&assembly);
                 self.containers.remove(&assembly);

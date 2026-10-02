@@ -429,6 +429,15 @@ impl Session {
         if all.is_empty() {
             return Reply::refuse(format!("You don't see {name} here."));
         }
+        // Loose pieces, such as the tuft in the ring, rather than the patch
+        // of the same name they were gathered from; a fixed thing only if
+        // nothing loose is called that.
+        let loose: Vec<EntityId> = all
+            .iter()
+            .copied()
+            .filter(|&id| self.world.is_portable(id))
+            .collect();
+        let all = if loose.is_empty() { all } else { loose };
         // A container is burning when something in it is: "the fire ring".
         let alight = |w: &World, id: EntityId| {
             w.is_burning(id) || (w.is_container(id) && w.held(id).iter().any(|&e| w.is_burning(e)))

@@ -81,7 +81,12 @@ Layers ([ideas/tools.md](../ideas/tools.md)): saving and loading change the whol
 
 1. **Saving and resuming:** `/save`, `/load`, and a save on quit. Every step after this starts from a save instead of from the beginning. **Done** (2026-10-01): `/save`, `/load`, `/saves`, a save called "last" when the game ends, and `--load <name>` to start from one. Proved by `crates/console/tests/saves.rs`: a fire saved while burning, loaded, and fed comes out exactly as the fire never saved; leaving heat out of the save fails it.
 2. **Making things on demand:** `/make <thing>`, and `/make fire`, with the designer as a named source. **Done** (2026-10-01): `/make` an amount of a material, shaped or not, a design, or a kit from data (`/make fire`, burning in a ring), and `/light`. Proved by `data/scripts/make-on-demand.txt`; the gate's audit catches the designer's matter left uncounted. Creatures wait. See "Shortcuts for development" in [ideas/tools.md](../ideas/tools.md).
-3. **The board:** the world file, the five grounds with their materials, playable times, and words for sizes.
+3. **The board:** the world file, the five grounds with their materials, playable times, and words for sizes. **Done** (2026-10-01): `data/skill-grounds.toml` (play as `player`: `client/run.sh --world skill-grounds.toml --as player`), proved by `data/scripts/skill-grounds-0-the-board.txt`. What it found:
+   - **Twig, stick, and log** are in the islanders' culture (the library), so they apply on the companion's island too: a piece reads "wood stick", or "stick of wood and ash" once burning; gathering says "You find 200 g of wood, a wood stick."; `scope` gives each size word's range, for the translator. "wood" still names any piece of wood, without asking which. Scripts that expected "lump of wood" were updated. Switching the size words off fails five proofs.
+   - **A bug in "wait until … is burning":** with a patch of dry grass in the same place as the fire, it watched the patch (which never burns) instead of the tuft in the ring. It now watches loose pieces first.
+   - **A log needs a real fire under it:** one burning stick never lights a 3 kg log; five sticks light it in about two and a half minutes. That's right in spirit; step 4 looks at it again.
+   - Times as played: 25 s between grounds, gathering 3 to 10 s a piece, a fire from nothing to a burning log in about 15 minutes.
+   - Not yet: firing clay and the furnace at playable times, which the knife (step 5) will measure.
 4. **Fire, done properly:**
    - an open fire works but loses heat faster; a ring or a dug pit holds it in (the owner's rule);
    - a fire laid first and lit after catches;

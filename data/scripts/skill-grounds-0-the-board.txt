@@ -1,0 +1,76 @@
+# The skill grounds (docs/challenges/skill-grounds.md), step 3: the board.
+# From the clearing, every ground is about half a minute's walk, and has
+# what its skills need within reach of its middle. A fire at the hearth,
+# fed tinder, twigs, sticks, and at last a log, by the words for sizes.
+world skill-grounds.toml
+as player
+luck average
+
+look
+expect said the clearing
+expect said the woodland, the knapping ground, the fibre grove, the stream bank, the hearth
+
+go woodland
+expect said that took 25 s
+look
+expect said standing trees
+expect said a boar
+go knapping
+look
+expect said flint nodules
+expect said loose stones
+expect said fallen sticks
+go clearing
+go grove
+look
+expect said fibrous bushes
+gather bushes
+expect said plant fibre
+go stream
+look
+expect said clay in the bank
+expect said bog iron in the streambed
+expect said mussels in the shallows
+gather mussels
+drop all
+go hearth
+look
+expect said dry grass
+expect said dry twigs
+expect said deadwood
+expect time before 5 min
+
+# A fire, fed by sizes, each when the last has caught.
+gather grass x3
+gather twigs x4
+expect said you find 20 g of wood, a wood twig
+gather sticks x6
+expect said a wood stick
+gather deadwood
+expect said a wood log
+gather stones x5
+assemble fire ring
+drop fire ring
+put grass in ring
+rub wood against wood into ring
+wait until grass is burning
+expect said burning
+put grass in ring
+repeat 4
+  put twig in ring
+end
+wait until twig is burning
+expect said the twig is burning
+put stick in ring
+put stick in ring
+wait until stick is burning
+expect said the stick is burning
+repeat 3
+  put stick in ring
+end
+wait 1 min
+put log in ring
+wait until log is burning
+expect said the log is burning
+expect alive
+expect conserved

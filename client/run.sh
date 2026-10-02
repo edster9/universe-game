@@ -16,7 +16,12 @@ export CFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3" CXXFLAGS_x86_64_pc_window
 cargo zigbuild --release --target x86_64-pc-windows-gnu
 TARGET=/mnt/c/Users/edste/universe-game/client
 mkdir -p "$TARGET"
-cp target/x86_64-pc-windows-gnu/release/client.exe "$TARGET/"
+# A running game can't be overwritten, but it can be renamed: set it aside.
+if ! cp target/x86_64-pc-windows-gnu/release/client.exe "$TARGET/" 2>/dev/null; then
+    rm -f "$TARGET/client-old.exe" 2>/dev/null || true
+    mv "$TARGET/client.exe" "$TARGET/client-old.exe"
+    cp target/x86_64-pc-windows-gnu/release/client.exe "$TARGET/"
+fi
 # Explorer shows when a file was created, which overwriting keeps (Windows
 # even keeps it for a file deleted and made again under the same name), so
 # set it to now: the date shown is the build's.

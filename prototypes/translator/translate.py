@@ -1,7 +1,7 @@
 """A test of the translator: plain words in, the game's literal commands out.
 
 The player describes a process in their own words. Claude, on Amazon
-Bedrock, is shown only the character's scope (the console's `scope`: the
+Bedrock or Anthropic's API directly, is shown only the character's scope (the console's `scope`: the
 commands, the character's words, the ways they know to make things, what they
 carry, and what they see) and turns the description into commands, reporting
 whatever it can't map rather than inventing it. With --run, the commands are
@@ -10,6 +10,10 @@ happens. See docs/ideas/ai-and-skills.md.
 
     uv run --with 'anthropic[bedrock]' prototypes/translator/translate.py \
         --setup "go forest" --run "find something small that burns ..."
+
+Anthropic's API directly needs ANTHROPIC_API_KEY set (or `ant auth login`);
+Bedrock needs `--provider bedrock` and an AWS profile (AWS_PROFILE) whose
+account has Claude enabled.
 """
 
 import argparse
@@ -118,8 +122,8 @@ def main():
     parser.add_argument("--as", dest="person", default="survivor")
     parser.add_argument("--setup", default="", help="commands to play first, ';'-separated")
     parser.add_argument("--run", action="store_true", help="play the commands")
-    # The most capable model enabled on the account tried (2026-10-01).
-    parser.add_argument("--model", default="us.anthropic.claude-opus-4-6-v1")
+    parser.add_argument("--provider", choices=["anthropic", "bedrock"], default="anthropic")
+    parser.add_argument("--model", help="defaults to Claude Opus 5.5 for the provider")
     parser.add_argument("--effort", default="medium")
     parser.add_argument("--show-scope", action="store_true")
     args = parser.parse_args()
@@ -131,8 +135,13 @@ def main():
     if args.show_scope:
         print(scope, "\n")
 
-    client = anthropic.AnthropicBedrock(aws_region=os.environ.get("AWS_REGION", "us-east-1"))
-    plan, usage, took = translate(client, args.model, args.effort, scope, args.description)
+    if args.provider == "bedrock":
+        client = anthropic.AnthropicBedrockMantle(aws_region=os.environ.get("AWS_REGION", "us-east-1"))
+        model = args.model or "anthropic.claude-opus-5-5"
+    else:
+        client = anthropic.Anthropic()
+        model = args.model or "claude-opus-5-5"
+    plan, usage, took = translate(client, model, args.effort, scope, args.description)
     print(f"PLAYER: {args.description}\n")
     print("COMMANDS")
     for c in plan.commands:
@@ -145,7 +154,7 @@ def main():
         print("ASSUMED")
         for a in plan.assumptions:
             print(f"  {a}")
-    print(f"\n({took:.1f} s, {usage.input_tokens} tokens in, {usage.output_tokens} out)")
+    print(f"\n({model}, {took:.1f} s, {usage.input_tokens} tokens in, {usage.output_tokens} out)")
 
     if args.run:
         print("\nPLAYED")

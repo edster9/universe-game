@@ -115,11 +115,84 @@ class Live:
         return self.read()
 
 
+class Usage:
+    def __init__(self, input_tokens: int, output_tokens: int):
+        self.input_tokens, self.output_tokens = input_tokens, output_tokens
+
+
+def read_plan(text: str) -> "Plan":
+    # The object itself, even with words around it.
+    text = text[text.find("{") : text.rfind("}") + 1]
+    return Plan.model_validate_json(text)
+
+
 def translate(client, model: str, effort: str, scope: str, description: str, extra: str = ""):
     user = f"SCOPE\n{scope}\n\nTHE PLAYER SAYS\n{description}"
     if extra:
         user += f"\n\n{extra}"
     started = time.time()
+    if client == "xai":
+        # xAI's own API, for Grok.
+        import urllib.error
+        import urllib.request
+
+        schema = json.dumps(Plan.model_json_schema())
+        body = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": SYSTEM + f"\n\nReply with only a JSON object matching this schema, nothing else:\n{schema}"},
+                {"role": "user", "content": user},
+            ],
+            "max_tokens": 16000,
+        }
+        if effort in ("low", "high"):
+            body["reasoning_effort"] = effort
+
+        def post(body):
+            request = urllib.request.Request(
+                "https://api.x.ai/v1/chat/completions",
+                data=json.dumps(body).encode(),
+                headers={
+                    "Authorization": f"Bearer {os.environ['GROK_API_KEY']}",
+                    "Content-Type": "application/json",
+                },
+            )
+            return json.load(urllib.request.urlopen(request, timeout=300))
+
+        try:
+            data = post(body)
+        except urllib.error.HTTPError as e:
+            if e.code != 400 or "reasoning_effort" not in body:
+                raise
+            # Not every model takes an effort.
+            body.pop("reasoning_effort")
+            data = post(body)
+        took = time.time() - started
+        text = data["choices"][0]["message"]["content"]
+        usage = Usage(data["usage"]["prompt_tokens"], data["usage"]["completion_tokens"])
+        return read_plan(text), usage, took
+    if client == "converse":
+        # Any model on Bedrock, through its model-neutral Converse API.
+        import boto3
+
+        from botocore.config import Config
+
+        runtime = boto3.client(
+            "bedrock-runtime",
+            region_name=os.environ.get("AWS_REGION", "us-east-1"),
+            config=Config(read_timeout=300, retries={"max_attempts": 1}),
+        )
+        schema = json.dumps(Plan.model_json_schema())
+        response = runtime.converse(
+            modelId=model,
+            system=[{"text": SYSTEM + f"\n\nReply with only a JSON object matching this schema, nothing else:\n{schema}"}],
+            messages=[{"role": "user", "content": [{"text": user}]}],
+            inferenceConfig={"maxTokens": 16000},
+        )
+        took = time.time() - started
+        text = "".join(c.get("text", "") for c in response["output"]["message"]["content"])
+        usage = Usage(response["usage"]["inputTokens"], response["usage"]["outputTokens"])
+        return read_plan(text), usage, took
     # Haiku 4.5 takes no effort and thinks only with a budget: plain there.
     extra_args = {} if "haiku" in model else {
         "thinking": {"type": "adaptive"},
@@ -139,9 +212,7 @@ def translate(client, model: str, effort: str, scope: str, description: str, ext
     if response.stop_reason == "refusal":
         sys.exit(f"refused: {response.stop_details}")
     text = "".join(b.text for b in response.content if b.type == "text").strip()
-    # The object itself, even with words around it.
-    text = text[text.find("{") : text.rfind("}") + 1]
-    return Plan.model_validate_json(text), response.usage, took
+    return read_plan(text), response.usage, took
 
 
 def main():
@@ -151,7 +222,12 @@ def main():
     parser.add_argument("--as", dest="person", default="survivor")
     parser.add_argument("--setup", default="", help="commands to play first, ';'-separated")
     parser.add_argument("--run", action="store_true", help="play the commands")
-    parser.add_argument("--provider", choices=["anthropic", "bedrock"], default="anthropic")
+    parser.add_argument(
+        "--provider",
+        choices=["anthropic", "bedrock", "converse", "xai"],
+        default="anthropic",
+        help="converse: any Bedrock model, such as global.xai.grok-4.7",
+    )
     parser.add_argument("--model", help="defaults to Claude Opus 5.5 for the provider")
     parser.add_argument("--effort", default="medium")
     parser.add_argument("--show-scope", action="store_true")
@@ -165,14 +241,23 @@ def main():
     if args.show_scope:
         print(scope, "\n")
 
-    if args.provider == "bedrock":
+    if args.provider == "xai":
+        client = "xai"
+        model = args.model or "grok-4.7"
+    elif args.provider == "converse":
+        client = "converse"
+        model = args.model or "global.xai.grok-4.7"
+    elif args.provider == "bedrock":
         # Bedrock's InvokeModel endpoint, with global routing. (Its newer
         # Messages endpoint takes structured outputs, but on the account
         # tried it couldn't subscribe to the models; this one answers.)
         client = anthropic.AnthropicBedrock(aws_region=os.environ.get("AWS_REGION", "us-east-1"))
         model = args.model or "global.anthropic.claude-opus-5-5"
     else:
-        client = anthropic.Anthropic()
+        # A key not scoped to a workspace has to say which one to use.
+        workspace = os.environ.get("ANTHROPIC_WORKSPACE_ID")
+        headers = {"anthropic-workspace-id": workspace} if workspace else None
+        client = anthropic.Anthropic(default_headers=headers)
         model = args.model or "claude-opus-5-5"
     plan, usage, took = translate(client, model, args.effort, scope, args.description)
     print(f"PLAYER: {args.description}\n")

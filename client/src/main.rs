@@ -53,6 +53,7 @@ mod grid;
 mod menu;
 mod panels;
 mod shapes;
+mod showcase;
 mod terminal;
 mod terrain;
 mod tools;
@@ -228,7 +229,8 @@ fn main() {
     if let Some(script) = arg("--hear-script") {
         std::process::exit(hear_script(script, &data, &model));
     }
-    let style: draw::Style = toml::from_str(draw::STYLE).expect("the style file");
+    let mut style: draw::Style = toml::from_str(draw::STYLE).expect("the style file");
+    style.keep_found(&draw::assets_folder());
     let land = Land::of(play_world(&play));
     let speed = number("--speed").unwrap_or(1.0);
 
@@ -276,6 +278,7 @@ fn main() {
     .init_resource::<tools::Settings>()
     .init_resource::<draw::Drawn>()
     .init_resource::<build::Build>()
+    .init_resource::<showcase::Showcase>()
     .init_resource::<walking::ByKeys>()
     .insert_resource(voice::Voice::new(&model))
     .add_systems(
@@ -313,6 +316,7 @@ fn main() {
                 terminal::play_script,
                 draw::draw_scenery,
                 draw::draw_movers,
+                showcase::draw,
                 build::drag,
                 camera::follow,
                 camera::point,

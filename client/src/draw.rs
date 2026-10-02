@@ -25,6 +25,18 @@ pub struct Look {
     /// Other forms for smaller pieces, smallest first: a twig, a stick.
     #[serde(default)]
     smaller: Vec<Smaller>,
+    /// Models to draw it with instead (glTF files under the client's
+    /// `assets` folder), one picked for each piece, at their own size times
+    /// `scale`. Left out when the files aren't there.
+    #[serde(default)]
+    models: Vec<String>,
+    #[serde(default = "one")]
+    scale: f32,
+    /// At most this many pieces, drawn over at least this many metres, so
+    /// big models don't crowd each other.
+    most: Option<u64>,
+    #[serde(default)]
+    over: f32,
 }
 
 /// A form for pieces under a weight, in grams.
@@ -53,9 +65,55 @@ pub struct Style {
     #[serde(default)]
     design: BTreeMap<String, Look>,
     fallback: Look,
+    /// Models shown on their own, to see what a pack looks like: a
+    /// designer's preview, not anything in the world.
+    #[serde(default)]
+    pub showcase: Vec<Shown>,
+}
+
+/// A model shown in the preview: where (metres east and north of the
+/// middle of the world), and how big.
+#[derive(Deserialize, Clone)]
+pub struct Shown {
+    pub model: String,
+    #[serde(default = "one")]
+    pub scale: f32,
+    pub east: f32,
+    pub north: f32,
+}
+
+/// The client's `assets` folder, found as the renderer finds it.
+pub fn assets_folder() -> std::path::PathBuf {
+    std::env::var("BEVY_ASSET_ROOT")
+        .or_else(|_| std::env::var("CARGO_MANIFEST_DIR"))
+        .map(std::path::PathBuf::from)
+        .ok()
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                .and_then(|p| p.parent().map(ToOwned::to_owned))
+        })
+        .unwrap_or_default()
+        .join("assets")
 }
 
 impl Style {
+    /// Forgets the models whose files aren't in `assets`: those things are
+    /// drawn by their shapes.
+    pub fn keep_found(&mut self, assets: &std::path::Path) {
+        let found = |m: &String| assets.join(m).is_file();
+        for look in self
+            .kind
+            .values_mut()
+            .chain(self.material.values_mut())
+            .chain(self.design.values_mut())
+            .chain([&mut self.fallback])
+        {
+            look.models.retain(found);
+        }
+        self.showcase.retain(|s| found(&s.model));
+    }
+
     /// How to draw a thing: by its kind if it has one, else by what it's
     /// mostly made of.
     fn look(&self, world: &EngineWorld, id: EntityId) -> Look {
@@ -84,6 +142,9 @@ impl Style {
         if let Some(smaller) = look.smaller.iter().find(|s| grams < s.under) {
             look.form = smaller.form.clone();
             look.size = smaller.size;
+            look.models.clear();
+            look.most = None;
+            look.over = 0.0;
         }
         look
     }
@@ -94,6 +155,7 @@ impl Style {
 pub struct Kit {
     meshes: BTreeMap<String, Handle<Mesh>>,
     materials: BTreeMap<String, Handle<StandardMaterial>>,
+    models: BTreeMap<String, Handle<bevy::world_serialization::WorldAsset>>,
 }
 
 /// A drawn piece of something in the world: pointing at it names it.
@@ -273,6 +335,20 @@ impl Kit {
         handle
     }
 
+    /// A model's first scene, loaded once.
+    pub fn model(
+        &mut self,
+        assets: &AssetServer,
+        path: &str,
+    ) -> Handle<bevy::world_serialization::WorldAsset> {
+        self.models
+            .entry(path.to_string())
+            .or_insert_with(|| {
+                assets.load(bevy::gltf::GltfAssetLabel::Scene(0).from_asset(path.to_string()))
+            })
+            .clone()
+    }
+
     /// A material that gives its own light, as flames do: `glow` is how
     /// bright, in the renderer's light values.
     fn glowing(
@@ -343,6 +419,9 @@ pub struct Brush<'a, 'w> {
     pub kit: &'a mut Kit,
     pub meshes: &'a mut Assets<Mesh>,
     pub materials: &'a mut Assets<StandardMaterial>,
+    /// For loading models: scenery only, since what moves is redrawn every
+    /// frame.
+    pub assets: Option<&'a AssetServer>,
 }
 
 impl Brush<'_, '_> {
@@ -433,6 +512,20 @@ impl Brush<'_, '_> {
         marker: impl Bundle + Clone,
     ) {
         let s = look.size;
+        // A model, in a variant of its own.
+        if let (Some(assets), false) = (self.assets, look.models.is_empty()) {
+            let path = &look.models[(turn * 100.0) as usize % look.models.len()];
+            let model = self.kit.model(assets, path);
+            self.commands.spawn((
+                bevy::world_serialization::WorldAssetRoot(model),
+                Transform::from_translation(at)
+                    .with_rotation(Quat::from_rotation_y(turn))
+                    .with_scale(Vec3::splat(look.scale)),
+                named,
+                marker,
+            ));
+            return;
+        }
         // One of the shapes made in code, in a variant of its own.
         let variant = (turn * 100.0) as u64;
         if let Some(mesh) = self.kit.shape(self.meshes, &look.form, variant) {
@@ -481,7 +574,8 @@ impl Brush<'_, '_> {
             "mound" => vec![(
                 "mound",
                 look.colour.as_str(),
-                Transform::from_translation(at).with_scale(Vec3::new(s, s * 0.08, s)),
+                // Low, however wide: a forest floor is no hill.
+                Transform::from_translation(at).with_scale(Vec3::new(s, (s * 0.08).min(0.3), s)),
             )],
             "person" => vec![(
                 "person",
@@ -533,6 +627,7 @@ pub fn draw_scenery(
     mut kit: ResMut<Kit>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    assets: Res<AssetServer>,
     drawn: Query<Entity, With<Scenery>>,
     mut last: Local<Vec<Pictured>>,
 ) {
@@ -568,6 +663,7 @@ pub fn draw_scenery(
         kit: &mut kit,
         meshes: &mut meshes,
         materials: &mut materials,
+        assets: Some(&assets),
     };
     for entity in &drawn {
         brush.commands.entity(entity).despawn();
@@ -577,14 +673,14 @@ pub fn draw_scenery(
         let n = if matches!(look.form.as_str(), "pool" | "mound") {
             1
         } else {
-            n
+            look.most.map_or(n, |most| n.min(most))
         };
         let seed = id_seed(world, thing);
         // Around its spot, over as far as it spreads.
         let at = world
             .spot(thing)
             .map_or_else(|| place_at(world, place), point);
-        let spread = world.spread(thing) as f32 / 1e6;
+        let spread = (world.spread(thing) as f32 / 1e6).max(look.over);
         for i in 0..n {
             let offset = scatter(seed, i, spread * 0.9);
             let turn = (seed.wrapping_add(i) % 628) as f32 / 100.0;
@@ -621,6 +717,7 @@ pub fn draw_movers(
         kit: &mut kit,
         meshes: &mut meshes,
         materials: &mut materials,
+        assets: None,
     };
     for entity in &drawn {
         brush.commands.entity(entity).despawn();

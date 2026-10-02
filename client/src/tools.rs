@@ -89,6 +89,12 @@ const SETTINGS: &[(&str, &str, Layer, &str)] = &[
         Layer::ServersChoice,
         "build mode: drag things with the left button, lift them with the middle one",
     ),
+    (
+        "showcase",
+        "",
+        Layer::Always,
+        "models from an asset pack set out to look at, not in the world",
+    ),
 ];
 
 /// Everything a tool can change.
@@ -101,6 +107,7 @@ pub struct Changeable<'w> {
     panels: ResMut<'w, Panels>,
     land: Res<'w, Land>,
     build: ResMut<'w, crate::build::Build>,
+    showcase: ResMut<'w, crate::showcase::Showcase>,
 }
 
 impl Changeable<'_> {
@@ -116,6 +123,7 @@ impl Changeable<'_> {
             "backpack" => on(self.panels.backpack),
             "body" => on(self.panels.body),
             "build" => on(self.build.on),
+            "showcase" => on(self.showcase.shown),
             _ => String::new(),
         }
     }
@@ -139,6 +147,7 @@ impl Changeable<'_> {
             "backpack" => &mut self.panels.backpack,
             "body" => &mut self.panels.body,
             "build" => &mut self.build.on,
+            "showcase" => &mut self.showcase.shown,
             _ => {
                 return Err(format!(
                     "there's no setting \"{name}\"; /settings lists them"

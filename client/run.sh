@@ -42,6 +42,10 @@ if [ ! -f "$TARGET/dxcompiler.dll" ]; then
     cp "$(find "$tmp" -ipath '*x64*dxcompiler.dll' | head -1)" "$(find "$tmp" -ipath '*x64*dxil.dll' | head -1)" "$TARGET/"
     rm -rf "$tmp"
 fi
+# Models and other assets, beside the program, where the renderer looks for
+# them: only what's changed is copied.
+mkdir -p "$TARGET/assets"
+cp -ru ../assets/. "$TARGET/assets/"
 # The worlds and scripts, beside the program.
 rm -rf "$TARGET/data"
 cp -r ../data "$TARGET/data"

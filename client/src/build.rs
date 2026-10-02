@@ -85,7 +85,9 @@ pub fn drag(
     window: Query<&Window, With<PrimaryWindow>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     named: Query<(&Named, &GlobalTransform)>,
-    pieces: Query<(&Named, &Mesh3d, &Transform)>,
+    pieces: Query<(Entity, &Mesh3d, &GlobalTransform)>,
+    owners: Query<&Named>,
+    parents: Query<&ChildOf>,
     meshes: Res<Assets<Mesh>>,
     land: Res<Land>,
     mut sim: ResMut<Sim>,
@@ -104,7 +106,7 @@ pub fn drag(
     // The box round it, and its axes from the middle: red east and west,
     // green up and down, blue north and south. For turning things, later.
     let mut outline = |id: EntityId, colour: Color| {
-        if let Some((low, high)) = bounds(id, &pieces, &meshes) {
+        if let Some((low, high)) = bounds(id, &pieces, &owners, &parents, &meshes) {
             let size = (high - low).max(Vec3::splat(0.05));
             let middle = (low + high) / 2.0;
             gizmos.cube(Transform::from_translation(middle).with_scale(size), colour);
@@ -185,15 +187,23 @@ pub fn drag(
     let _ = session.place(grab.id, at, (grab.height * 1e6) as u64);
 }
 
-/// The box round everything drawn for a thing, in the scene.
+/// The box round everything drawn for a thing, in the scene: its shapes,
+/// or the meshes inside its model.
 fn bounds(
     id: EntityId,
-    pieces: &Query<(&Named, &Mesh3d, &Transform)>,
+    pieces: &Query<(Entity, &Mesh3d, &GlobalTransform)>,
+    owners: &Query<&Named>,
+    parents: &Query<&ChildOf>,
     meshes: &Assets<Mesh>,
 ) -> Option<(Vec3, Vec3)> {
     let mut found: Option<(Vec3, Vec3)> = None;
-    for (Named(thing), mesh, transform) in pieces {
-        if *thing != id {
+    for (entity, mesh, transform) in pieces {
+        let owner = owners.get(entity).ok().or_else(|| {
+            parents
+                .iter_ancestors(entity)
+                .find_map(|a| owners.get(a).ok())
+        });
+        if owner.is_none_or(|&Named(thing)| thing != id) {
             continue;
         }
         let Some(aabb) = meshes.get(&mesh.0).and_then(|m| m.compute_aabb()) else {

@@ -118,10 +118,14 @@ fn stick(seed: u64) -> Mesh {
 /// A log lying on the ground, with the stub of a branch.
 fn log(seed: u64) -> Mesh {
     let r = 0.13;
-    let body = Mesh::from(Cylinder::new(r, 1.0).mesh().resolution(10).build()).transformed_by(
-        Transform::from_translation(Vec3::new(0.0, r, 0.0))
-            .with_rotation(Quat::from_rotation_z(FRAC_PI_2)),
-    );
+    let body = Cylinder::new(r, 1.0)
+        .mesh()
+        .resolution(10)
+        .build()
+        .transformed_by(
+            Transform::from_translation(Vec3::new(0.0, r, 0.0))
+                .with_rotation(Quat::from_rotation_z(FRAC_PI_2)),
+        );
     let at = Vec3::new((rand(seed, 1) - 0.5) * 0.5, r * 1.5, 0.0);
     join(vec![
         body,

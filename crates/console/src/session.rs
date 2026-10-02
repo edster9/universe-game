@@ -39,7 +39,8 @@ Commands:
   rub <thing> against <thing> [into <container>] [for <time>]
                                     rub two pieces hard together: the work turns to heat and wears off hot dust,
                                     which can smoulder into an ember; \"into\" a container, the dust lands there,
-                                    on whatever tinder is in it. Keeps on until something there catches (10 minutes at most)
+                                    on whatever tinder is in it. Keeps on until something there catches (10 minutes at most).
+                                    A fire is made on the ground: put a container down before rubbing into it
   divide <thing>                    pull something soft apart into two
   butcher <body> with <tool>        cut a dead body into its parts with something that has an edge
   attack <someone> [with <thing>]   strike at someone
@@ -56,7 +57,8 @@ Commands:
   offer <thing> to <person> for <thing>
                                     offer a trade
   ask <person> to <command>         ask someone with a mind of their own to do something
-  wait [seconds]                    let time pass; \"wait until free\", \"wait until 08:30\"
+  wait [seconds]                    let time pass; \"wait until free\", \"wait until 08:30\",
+                                    \"wait until <thing> is burning\" (a few minutes at most)
   start <command>                   start something without waiting for it
   <command> x3                      do it three times (\"gather sticks x3\")
   <command> 500 g                   do it until you carry that much more, or less (\"gather wood 500 g\")
@@ -71,7 +73,9 @@ Testing tools:
   log [n]                           the last n entries that passed the gate
   become <person>                   act as someone else
   quit
-Things can be named by part of their description (\"lump\"), or by id (\"#12\").";
+Things can be named by part of their description (\"lump\"), or by id (\"#12\").
+\"smallest <thing>\" and \"largest <thing>\" choose by size among things of that name
+(\"put smallest wood in ring\": the twigs before the sticks).";
 
 /// The longest wait allowed in one command: one game day.
 const MAX_WAIT: u64 = 30 * 86_400;
@@ -378,6 +382,72 @@ impl Session {
     /// Waits a number of seconds ("wait 60"), or a time with a unit ("wait 2
     /// h", "wait 3 day"); until the player's action is over ("wait until
     /// free"); or until a time of day ("wait until 08:30").
+    /// Lets time pass, a second at a time, until something the player sees
+    /// by that name is burning, for at most a few minutes: so feeding a fire
+    /// never depends on timing nobody can see.
+    fn wait_until_burning(&mut self, name: &str) -> Reply {
+        const MOST: u64 = 180;
+        let name = name.trim_start_matches("the ").to_lowercase();
+        let words: Vec<&str> = name.split_whitespace().collect();
+        let me = self.player;
+        let named = |session: &Session| -> Vec<EntityId> {
+            let w = &session.world;
+            let Some(here) = w.place_of(me) else {
+                return Vec::new();
+            };
+            // What's in the place, and inside what's there, not what anyone
+            // carries.
+            let mut seen = Vec::new();
+            for id in w.contents(here).into_iter().filter(|&id| !w.is_agent(id)) {
+                seen.push(id);
+                seen.extend(w.held(id));
+            }
+            seen.into_iter()
+                .filter(|&id| {
+                    let label = engine::sight::label(w, me, id).to_lowercase();
+                    words.iter().all(|word| label.contains(word))
+                })
+                .collect()
+        };
+        let all = named(self);
+        if all.is_empty() {
+            return Reply::refuse(format!("You don't see {name} here."));
+        }
+        // A container is burning when something in it is: "the fire ring".
+        let alight = |w: &World, id: EntityId| {
+            w.is_burning(id) || (w.is_container(id) && w.held(id).iter().any(|&e| w.is_burning(e)))
+        };
+        // Something by that name that isn't burning yet: what's already
+        // alight doesn't count.
+        let waiting: Vec<EntityId> = all
+            .iter()
+            .copied()
+            .filter(|&id| !alight(&self.world, id))
+            .collect();
+        if waiting.is_empty() {
+            return Reply::say(format!("The {name} is already burning."));
+        }
+        let caught = |session: &Session| {
+            waiting
+                .iter()
+                .any(|&id| session.world.exists(id) && alight(&session.world, id))
+        };
+        let mut waited = 0;
+        while !caught(self) && waited < MOST {
+            if let Err(fault) = nature::run(&mut self.world, 1) {
+                return Reply::refuse(format!("!! engine fault: {fault}"));
+            }
+            waited += 1;
+        }
+        let took = units::show_duration(waited.max(1));
+        let text = if caught(self) {
+            format!("After {took}, the {name} is burning.")
+        } else {
+            format!("After {took}, the {name} still isn't burning.")
+        };
+        Reply::say(self.with_outcome(text))
+    }
+
     fn wait(&mut self, time: &str) -> Reply {
         if let Some(until) = time.strip_prefix("until ").map(str::trim) {
             return self.wait_until(until);
@@ -409,6 +479,18 @@ impl Session {
 
     /// Lets time pass until the player is free, or until a time of day.
     fn wait_until(&mut self, until: &str) -> Reply {
+        if let Some(name) = [
+            " is burning",
+            " burns",
+            " catches fire",
+            " catches",
+            " burning",
+        ]
+        .iter()
+        .find_map(|end| until.strip_suffix(end))
+        {
+            return self.wait_until_burning(name.trim());
+        }
         let now = self.world.tick();
         let seconds = if until == "free" || until == "done" {
             match self.world.pending(self.player) {
@@ -1300,7 +1382,10 @@ impl Session {
             .lines()
             .filter(|l| !l.trim_start().starts_with("as <person>"))
             .collect();
-        let commands = commands.join("\n");
+        let naming = HELP
+            .find("Things can be named")
+            .map_or("", |at| &HELP[at..]);
+        let commands = format!("{}\n{naming}", commands.join("\n"));
         let parts = |slots: &[(String, Requirement)]| {
             slots
                 .iter()

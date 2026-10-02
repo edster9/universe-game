@@ -1,0 +1,35 @@
+# A fire fed by watching it: each size goes on once the last has caught,
+# with "wait until <thing> is burning" instead of waits nobody could know.
+# Found needed by the translator's test bench (docs/ideas/ai-and-skills.md).
+world companion.toml
+as survivor
+luck average
+rules player
+go forest
+go to sticks; gather sticks x2
+go to grass; gather grass x3
+go to twigs; gather twigs x3
+go hillside
+go to stones; gather stones x5
+assemble fire ring
+drop fire ring
+put grass in ring
+rub wood against wood into ring
+wait until grass is burning
+expect said the grass is already burning
+put grass in ring
+put grass in ring
+put smallest wood in ring
+put smallest wood in ring
+put smallest wood in ring
+wait until lump of wood is burning
+expect said the lump of wood is burning
+put wood in ring
+put wood in ring
+wait until lump of wood is burning
+expect said the lump of wood is burning
+wait 10 min
+look
+expect said lump of wood and ash
+expect said burning
+expect conserved

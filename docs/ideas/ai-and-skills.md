@@ -141,3 +141,28 @@ Through Amazon Bedrock on the owner's account, with `prototypes/translator/trans
 **What it says about the approach:** there's real hope. The strongest model turned a plain description into a working fire, reported the one part outside the character's world, and fixed its own mistake from the game's refusal. The instructions matter a great deal: two changes to them took Sonnet from one mapped step to a whole plan, though not every time. The help text matters just as much: a translator knows only what the help tells it.
 
 **Next:** many more descriptions (the cigarette lighter, the variations, places not yet seen), several runs each, to measure how often each model gets it right, and tune the instructions until a cheaper model is good enough.
+
+## The test bench (2026-10-01)
+
+`prototypes/translator/bench.py` plays six plain descriptions several times on each model, and scores each run from what happens in the game:
+- **the owner's fire:** is something burning;
+- **a cigarette lighter:** reported as out of scope, and never put in a command;
+- **grab three sticks:** three carried;
+- **stones never seen:** no trip to a place the character doesn't know has stones, and the stones reported;
+- **a fire, fed:** wood burning a minute after the plan ends;
+- **put it all down:** the backpack empty.
+
+The owner chose to drop Grok and Opus for their turnaround (Grok 4.7 took 27 s direct and 145 s through Bedrock; Opus 10 to 13 s) and focus on Sonnet 5.5, with Haiku 4.5 as the cheap comparison. Three runs of each, straight from Anthropic, about 5 seconds a plan:
+
+| | Owner's fire | Lighter | Three sticks | Stones unseen | Fire, fed | Put down | Total |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Sonnet 5.5 (best run) | 3/3 | 3/3 | 3/3 | 3/3 | 0/3 | 3/3 | 15/18 |
+| Haiku 4.5 (best run) | 0/3 | 3/3 | 3/3 | 2/3 | 0/3 | 3/3 | 11/18 |
+
+**The simple cases pass every time on both:** the lighter is always reported, three sticks are gathered, everything is put down, and stones never seen are never fetched. **Fires are where they fail**, and nearly every failure traced back to our game, not the model's understanding:
+- **"Once the grass is burning" couldn't be said.** Added: `wait until <thing> is burning`. It waits only for something by that name lying here, not already alight, and not carried, and counts a container as burning when something in it is ("wait until the fire ring is burning"). It gives up after three minutes. `data/scripts/wait-until-burning.txt` proves it: the twigs catch 14 s after going on, and the sticks 1 min 47 s after theirs.
+- **The help didn't say a fire is made on the ground,** so the ring was rubbed into while still held, and the repairs were spent on that. It does now.
+- **Sizes have no words.** Twigs and sticks are both "lump of wood" to the islander, so "put the twigs on" comes out as "put wood in fire ring", which can put the sticks on too early, and "wait until twigs is burning" names nothing. "smallest" and "largest" exist, and the scope now says so, but the real fix is the vocabulary conversation owed on words for sizes (twig, stick, log).
+- **Now and then Sonnet's reply isn't a valid plan,** twice in a row on one description, though it worked when tried alone. The bench now keeps the reply to find out why.
+
+**Where it stands:** viable for simple and medium descriptions with Sonnet at about 5 seconds and a cent each. Multi-stage processes like a fed fire need the game's words to catch up: words for sizes, and perhaps "feed the fire" as a saved skill. The owner, 2026-10-01: we're in the beginning phases of fine-tuning this.

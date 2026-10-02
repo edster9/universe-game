@@ -120,13 +120,28 @@ class Usage:
         self.input_tokens, self.output_tokens = input_tokens, output_tokens
 
 
+class BadReply(Exception):
+    """The model's reply wasn't the plan asked for."""
+
+
 def read_plan(text: str) -> "Plan":
     # The object itself, even with words around it.
-    text = text[text.find("{") : text.rfind("}") + 1]
-    return Plan.model_validate_json(text)
+    body = text[text.find("{") : text.rfind("}") + 1]
+    try:
+        return Plan.model_validate_json(body)
+    except Exception as e:
+        raise BadReply(f"{e}\n--- reply ---\n{text[:2000]}") from None
 
 
 def translate(client, model: str, effort: str, scope: str, description: str, extra: str = ""):
+    """One translation; a reply that isn't a plan is asked for once more."""
+    try:
+        return translate_once(client, model, effort, scope, description, extra)
+    except BadReply:
+        return translate_once(client, model, effort, scope, description, extra)
+
+
+def translate_once(client, model: str, effort: str, scope: str, description: str, extra: str = ""):
     user = f"SCOPE\n{scope}\n\nTHE PLAYER SAYS\n{description}"
     if extra:
         user += f"\n\n{extra}"

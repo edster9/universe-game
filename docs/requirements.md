@@ -602,6 +602,13 @@ Added the same day, on Claude's take ([ideas/context-menu.md](ideas/context-menu
 
 Added 2026-10-01, after a round of trials and benchmarks. **These tests are just taking way too long.** I understand what they're for, the castaway's long survival, but in these stages, especially when we turn off the need to sleep and food, **we need to step back on these and work more towards skill creation and other aspects** before we run these long kinds of tests.
 
+
+### The fire, and a fork in the road
+
+Added 2026-10-01. **This is the big fork in the road in the design of this game.** Before getting into the directions we could go, an exercise: explain the fire-making process. Looking at the script, it's quite complex, all the things you have to do to make fire: gather the twigs, the wood, the grass, the rocks, each picked up and gathered a certain number of times; then build the ring of rocks, put the grass in, rub things together, and add more wood. **What would happen if you did all of this partially?** Not enough wood, or no ring of rocks? **Does the script have to be exactly this, or will other variations work to build the fire?**
+
+Claude played out eleven variations against the laws; the answer is in the conversation of 2026-10-01 and will be recorded with the decision.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

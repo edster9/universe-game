@@ -186,6 +186,7 @@ impl Session {
             "wait" | "z" => self.wait(rest),
             "datasheet" | "ds" => Reply::say(self.datasheet(rest)),
             "designs" => Reply::say(self.designs()),
+            "scope" => Reply::say(self.scope()),
             "recall" | "memory" => Reply::say(self.recall()),
             "body" => Reply::say(body(&self.world, self.player, rest == "all").join("\n")),
             "backpack" | "pack" => Reply::say(backpack(&self.world, self.player).join("\n")),
@@ -1265,6 +1266,93 @@ impl Session {
         )];
         lines.extend(format_datasheet(&datasheet::measure(&self.world, id)));
         lines.join("\n")
+    }
+
+    /// Everything the player's character could put to use, and nothing
+    /// they couldn't: the commands, their own words, the ways they know to
+    /// make things, what they carry, and what they see. What a translator
+    /// from plain words to commands is given to work with (no oracles). See
+    /// docs/ideas/ai-and-skills.md.
+    fn scope(&mut self) -> String {
+        let (w, me) = (&self.world, self.player);
+        // The player's commands, not the developer's.
+        let commands: Vec<&str> = HELP
+            .split("Testing tools:")
+            .next()
+            .unwrap_or(HELP)
+            .trim()
+            .lines()
+            .filter(|l| !l.trim_start().starts_with("as <person>"))
+            .collect();
+        let commands = commands.join("\n");
+        let parts = |slots: &[(String, Requirement)]| {
+            slots
+                .iter()
+                .map(|(_, needs)| w.requirement_for(me, needs))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        let (mut words, mut recipes): (Vec<String>, Vec<String>) = match w.lexicon(me) {
+            Some(lexicon) => (
+                lexicon.words.iter().map(|(word, _)| word.clone()).collect(),
+                lexicon
+                    .recipes
+                    .iter()
+                    .map(|(word, recipe)| format!("{word}: {}", parts(&recipe.slots)))
+                    .collect(),
+            ),
+            // A world with no cultures: everyone knows every name.
+            None => (
+                w.materials()
+                    .values()
+                    .map(|m| m.label.clone())
+                    .chain(w.shapes().values().map(|s| s.label.clone()))
+                    .collect(),
+                w.designs()
+                    .values()
+                    .map(|d| format!("{}: {}", d.label, parts(&d.slots)))
+                    .collect(),
+            ),
+        };
+        words.sort();
+        words.dedup();
+        recipes.sort();
+        recipes.dedup();
+        let carried = backpack(w, me).join("\n");
+        let mut remembered = self.recall();
+        // What they saw at each place they know, when they were last there.
+        let here = w.place_of(me);
+        if let Some(memory) = w.memory(me) {
+            for (&place, (_, things)) in &memory.sightings {
+                if Some(place) == here {
+                    continue;
+                }
+                let mut seen: Vec<String> = things
+                    .iter()
+                    .filter(|&&t| w.exists(t) && !w.is_agent(t))
+                    .map(|&t| w.label_for(me, t))
+                    .collect();
+                seen.sort();
+                seen.dedup();
+                if !seen.is_empty() {
+                    remembered += &format!(
+                        "\nAt {}, when you were last there: {}.",
+                        w.label_for(me, place),
+                        seen.join(", ")
+                    );
+                }
+            }
+        }
+        let seen = self.look();
+        format!(
+            "COMMANDS\n{commands}\n\nWORDS YOU KNOW\n{}\n\nWAYS YOU KNOW TO MAKE THINGS (assemble <word>)\n{}\n\nWHAT YOU CARRY\n{carried}\n\nWHAT YOU REMEMBER\n{remembered}\n\nWHAT YOU SEE\n{seen}",
+            words.join(", "),
+            if recipes.is_empty() {
+                "none".to_string()
+            } else {
+                recipes.join("\n")
+            },
+        )
     }
 
     fn designs(&self) -> String {

@@ -48,10 +48,10 @@ fn small_things_far_off_are_only_something() {
     let menu = console::menu::menu(s.world(), s.player(), stick);
     let labels: Vec<&str> = menu.iter().map(|c| c.label.as_str()).collect();
     assert_eq!(labels, ["walk up to it"]);
-    assert!(s.handle("walk to lump of wood").refused);
+    assert!(s.handle("walk to wood stick").refused);
     let walked = ok(&mut s, &menu[0].line);
-    // Up close, it's a lump of wood again.
-    assert!(walked.contains("lump of wood"), "{walked}");
+    // Up close, it's a wood stick again.
+    assert!(walked.contains("wood stick"), "{walked}");
     assert_eq!(sight(s.world(), s.player(), stick), Sight::MadeOut);
 }
 

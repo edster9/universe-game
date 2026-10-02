@@ -29,8 +29,8 @@ def burning(final: dict) -> bool:
 
 
 def wood_burning(final: dict) -> bool:
-    # "lump of wood and ash (15 g, 1224 K, burning)"
-    return bool(re.search(r"lump of wood[^)]*burning", final["look"]))
+    # "stick of wood and ash (150 g, 1224 K, burning)": a stick or a log alight.
+    return bool(re.search(r"(stick|log) of wood[^)]*burning", final["look"]))
 
 
 CASES = [

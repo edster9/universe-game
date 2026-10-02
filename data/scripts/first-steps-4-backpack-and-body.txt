@@ -26,7 +26,7 @@ repeat 3
   gather grass
 end
 backpack
-expect said lump of wood x2: 400 g
+expect said wood stick x2: 400 g
 expect said lump of dry grass x3: 15 g
 drop grass
 backpack
@@ -42,7 +42,7 @@ expect said nothing
 go beach
 go to driftwood
 gather driftwood x3
-expect said you find 2 kg of wood. (x3)
+expect said you find 2 kg of wood, a wood log. (x3)
 expect said you carry 6 kg more than before. (that took 24 s.)
 drop all
 expect said you carry 6 kg less than before.

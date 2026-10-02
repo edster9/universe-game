@@ -117,7 +117,7 @@ mod tests {
         let reply = session.handle(&line);
         assert!(!reply.refused, "{}", reply.text);
         assert!(
-            reply.text.contains("You find 200 g of wood."),
+            reply.text.contains("You find 200 g of wood, a wood stick."),
             "{}",
             reply.text
         );

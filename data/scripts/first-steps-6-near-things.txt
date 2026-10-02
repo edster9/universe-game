@@ -16,21 +16,21 @@ expect said fallen sticks (50 kg, 11 m east)
 go to sticks
 expect said you walk to sticks
 gather sticks
-expect said you find 200 g of wood
+expect said you find 200 g of wood, a wood stick
 go to sticks
 expect said you're already there
 
 # Dropped, it lies at your feet; walk away and it's out of reach.
 drop wood
-take lump
-expect said you take the lump of wood
+take stick
+expect said you take the wood stick
 drop wood
 go to grass
-try take lump
-expect said out of reach: the lump of wood
-go to lump
-take lump
-expect said you take the lump of wood
+try take stick
+expect said out of reach: the wood stick
+go to stick
+take stick
+expect said you take the wood stick
 
 # A spot, in metres east and north of the place's middle; and its edge.
 walk to 10 -10

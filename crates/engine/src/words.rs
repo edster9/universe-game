@@ -27,6 +27,13 @@ pub enum Meaning {
     Kind(String),
     /// Anything that looks like this example.
     Like(Look),
+    /// An unshaped piece of a material, from `from` up to `under` in mass.
+    /// The narrowest range that fits is its word.
+    Sized {
+        material: MaterialId,
+        from: Mass,
+        under: Option<Mass>,
+    },
 }
 
 /// A way to make something: the parts to put together, and the design they
@@ -339,8 +346,19 @@ impl World {
             };
         }
         let Some(shape) = self.shape_of.get(&id) else {
-            return if self.mass(id) < Mass::from_mg(1_000) {
+            let mass = self.mass(id);
+            return if mass < Mass::from_mg(1_000) {
                 format!("{names} dust")
+            } else if let Some(word) =
+                matter::dominant(composition).and_then(|m| size_word(lexicon, m, mass))
+            {
+                // Named like a shaped piece: "<material> <word>", or "<word>
+                // of <materials>" once it's partly something else.
+                if composition.len() == 1 {
+                    format!("{names} {word}")
+                } else {
+                    format!("{word} of {names}")
+                }
             } else {
                 format!("lump of {names}")
             };
@@ -534,6 +552,27 @@ fn material_word(lexicon: &Lexicon, material: MaterialId) -> Option<&str> {
         Meaning::Material(id) if *id == material => Some(w.as_str()),
         _ => None,
     })
+}
+
+/// The viewer's word for a piece of `material` this heavy: the one whose
+/// range of sizes is narrowest, if any fits.
+fn size_word(lexicon: &Lexicon, material: MaterialId, mass: Mass) -> Option<&str> {
+    lexicon
+        .words
+        .iter()
+        .filter_map(|(word, meaning)| match meaning {
+            Meaning::Sized {
+                material: m,
+                from,
+                under,
+            } if *m == material && mass >= *from && under.is_none_or(|u| mass < u) => {
+                let width = under.map_or(u64::MAX, |u| u.mg() - from.mg());
+                Some((width, word.as_str()))
+            }
+            _ => None,
+        })
+        .min()
+        .map(|(_, word)| word)
 }
 
 fn shape_word<'a>(lexicon: &'a Lexicon, shape: &str) -> Option<&'a str> {

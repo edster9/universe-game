@@ -60,10 +60,10 @@ fn the_body_shows_what_the_datasheet_measures_and_the_backpack_what_is_carried()
     assert_eq!(
         pack,
         [
-            // A twig is a lump of wood too, but not alike a stick.
-            "lump of wood x2: 400 g, about 200 g each",
+            // A twig is wood too, but not alike a stick.
+            "wood stick x2: 400 g, about 200 g each",
             "lump of dry grass: 5 g",
-            "lump of wood: 20 g",
+            "wood twig: 20 g",
             "carrying 425 g of 40 kg"
         ]
     );

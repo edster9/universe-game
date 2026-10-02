@@ -23,12 +23,12 @@ expect said you need to be carrying a barb
 go hillside
 drop the stabber
 
-# To the islander, it's a chip of dark metal on a lump of wood.
+# To the islander, it's a chip of dark metal on a stick of wood.
 become islander
 go forest
 go hillside
 look
-expect said flake of dark metal joined to lump of wood
+expect said flake of dark metal joined to wood stick
 
 # The islander's spear, before anyone names it: like the stranger's stabber.
 become islander
@@ -48,7 +48,7 @@ expect said stabber of iron and wood
 
 # The islander takes the barb from the stabber and makes a spear with it.
 become islander
-disassemble the flake of dark metal joined to lump of wood
+disassemble the flake of dark metal joined to wood stick
 take the flake
 expect said you take the flake of dark metal
 go forest

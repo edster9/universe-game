@@ -1087,11 +1087,35 @@ impl Session {
                 "You pull it apart, and now hold {} of it in each hand.",
                 Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX))
             ),
-            (Intent::Gather { .. }, Some(Change::Split { take, .. })) => format!(
-                "You find {} of {}.",
-                Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX)),
-                w.describe_composition_for(self.player, take)
-            ),
+            (Intent::Gather { .. }, Some(Change::Split { take, .. })) => {
+                let mass =
+                    Mass::from_mg(u64::try_from(matter::total_mass(take)).unwrap_or(u64::MAX));
+                // The piece found is the newest thing they hold.
+                match w.held(self.player).iter().max() {
+                    // A word for its size, when there is one: "a wood stick".
+                    Some(&piece) if w.mass(piece) == mass => {
+                        let label = w.label_for(self.player, piece);
+                        let a = if label.starts_with(['a', 'e', 'i', 'o', 'u']) {
+                            "an"
+                        } else {
+                            "a"
+                        };
+                        let found = format!(
+                            "You find {mass} of {}",
+                            w.describe_composition_for(self.player, take)
+                        );
+                        if label.starts_with("lump of ") {
+                            format!("{found}.")
+                        } else {
+                            format!("{found}, {a} {label}.")
+                        }
+                    }
+                    _ => format!(
+                        "You find {mass} of {}.",
+                        w.describe_composition_for(self.player, take)
+                    ),
+                }
+            }
             _ => "Done.".into(),
         }
     }
@@ -1466,7 +1490,30 @@ impl Session {
         };
         let (mut words, mut recipes): (Vec<String>, Vec<String>) = match w.lexicon(me) {
             Some(lexicon) => (
-                lexicon.words.iter().map(|(word, _)| word.clone()).collect(),
+                lexicon
+                    .words
+                    .iter()
+                    .map(|(word, meaning)| match meaning {
+                        // Words for sizes say what they mean: a translator
+                        // can't guess the ranges.
+                        engine::words::Meaning::Sized {
+                            material,
+                            from,
+                            under,
+                        } => {
+                            let what = w
+                                .material_word_for(me, *material)
+                                .unwrap_or_else(|| w.materials()[material].label.clone());
+                            let range = match (from.mg(), under) {
+                                (0, Some(under)) => format!("under {under}"),
+                                (_, Some(under)) => format!("{from} to {under}"),
+                                (_, None) => format!("{from} or more"),
+                            };
+                            format!("{word} (a piece of {what}, {range})")
+                        }
+                        _ => word.clone(),
+                    })
+                    .collect(),
                 lexicon
                     .recipes
                     .iter()

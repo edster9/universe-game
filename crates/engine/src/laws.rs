@@ -3123,7 +3123,9 @@ fn find(
     closest(world, viewer, &seen, name).1.first().copied()
 }
 
-/// The candidates `name` fits best, and whether they fit it exactly. Anyone
+/// The candidates `name` fits best, and whether any of them will do: they
+/// fit it exactly, or it's the word for their material, which names any
+/// piece of it, whatever its size or the word for that size. Anyone
 /// means first what's called exactly that, and last anything whose name
 /// mentions it. Someone with words of their own means, between those, what
 /// the name says a thing is ("x" before "y of x"), then a plain piece of the
@@ -3142,11 +3144,23 @@ fn closest(
         return (true, exact);
     }
     if world.has_words(viewer) {
+        let wanted = normalize(name);
+        // Unshaped pieces of the material the name is for, whatever their
+        // size.
+        let piece_of = |id: EntityId| {
+            world.shape(id).is_none()
+                && world.assembly(id).is_none()
+                && world
+                    .composition(id)
+                    .and_then(matter::dominant)
+                    .and_then(|m| world.material_word_for(viewer, m))
+                    .is_some_and(|word| normalize(&word) == wanted)
+        };
         let first = matching(&|id| begins(world, viewer, id, name));
         if !first.is_empty() {
-            return (false, first);
+            let any_will_do = first.iter().all(|&id| piece_of(id));
+            return (any_will_do, first);
         }
-        let wanted = normalize(name);
         let plain = matching(&|id| {
             world.assembly(id).is_none()
                 && !world.is_agent(id)
@@ -3162,7 +3176,7 @@ fn closest(
                     })
         });
         if !plain.is_empty() {
-            return (false, plain);
+            return (true, plain);
         }
     }
     (false, matching(&|id| mentions(world, viewer, id, name)))
@@ -3189,8 +3203,8 @@ fn which(
         return None;
     }
     let candidates: Vec<EntityId> = candidates.into_iter().collect();
-    let (exact, fits) = closest(world, viewer, &candidates, name);
-    if exact {
+    let (any_will_do, fits) = closest(world, viewer, &candidates, name);
+    if any_will_do {
         return None;
     }
     let mut labels: Vec<String> = Vec::new();

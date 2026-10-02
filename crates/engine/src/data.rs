@@ -67,6 +67,21 @@ struct CultureDef {
     /// Their own word for something they know, by its id.
     #[serde(default)]
     words: BTreeMap<String, String>,
+    /// Words for a material within a range of sizes, measured, never
+    /// written: a small piece of one material may have its own word.
+    #[serde(default)]
+    sizes: Vec<SizeDef>,
+}
+
+/// A word for pieces of a material from `from` (or nothing) up to `under`
+/// (or without limit).
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SizeDef {
+    word: String,
+    material: String,
+    from: Option<String>,
+    under: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -1910,6 +1925,24 @@ fn load_culture(world: &World, def: &CultureDef) -> Result<Lexicon, LoadError> {
                 def.id
             ));
         }
+    }
+    for size in &def.sizes {
+        if !def.knows.contains(&size.material) {
+            return fail(format!(
+                "the culture {} has a word for a size of {:?}, which it doesn't know",
+                def.id, size.material
+            ));
+        }
+        let material = material_id(world, &def.id, &size.material)?;
+        let mass = |m: &Option<String>| m.as_deref().map(|m| parse_mass(&def.id, m)).transpose();
+        lexicon.words.push((
+            size.word.clone(),
+            Meaning::Sized {
+                material,
+                from: mass(&size.from)?.unwrap_or(Mass::ZERO),
+                under: mass(&size.under)?,
+            },
+        ));
     }
     Ok(lexicon)
 }

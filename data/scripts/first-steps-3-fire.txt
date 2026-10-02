@@ -39,7 +39,7 @@ put wood in ring
 put wood in ring
 wait 10 min
 look
-expect said lump of wood and ash
+expect said of wood and ash
 expect said burning
 expect said night, lit by fire
 expect alive

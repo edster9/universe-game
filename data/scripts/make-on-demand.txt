@@ -12,7 +12,7 @@ go forest
 expect said The designer makes the fire ring
 wait 1 min
 look
-expect said lump of wood and ash
+expect said stick of wood and ash
 expect said burning
 # Fed by hand, like any fire.
 /make 2 kg wood

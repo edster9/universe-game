@@ -24,7 +24,7 @@ go forest
 gather sticks
 go beach
 drop wood
-try sleep in lump of wood
+try sleep in wood stick
 expect said gives no shelter
 wait 8 h
 sleep in lean-to for 10 h

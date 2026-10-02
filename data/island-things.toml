@@ -425,6 +425,13 @@ knows = [
     "spear", "raft", "lean-to", "fire-ring", "cache",
     "animal", "boar", "tree", "shrub", "human",
 ]
+# Words for sizes: a piece of wood is a twig, a stick, or a log by how heavy
+# it is, measured. See docs/challenges/skill-grounds.md.
+sizes = [
+    { word = "twig", material = "wood", under = "50 g" },
+    { word = "stick", material = "wood", from = "50 g", under = "2 kg" },
+    { word = "log", material = "wood", from = "2 kg" },
+]
 
 
 # Kinds of living things: a tree of kinds, each with a parent. A kind can

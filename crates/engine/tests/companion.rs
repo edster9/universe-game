@@ -286,7 +286,7 @@ fn a_request_is_taken_up_once_and_dropped_if_it_can_no_longer_be_done() {
         say(&mut w, "ask the stranger to take the lump of wood"),
         None
     );
-    say(&mut w, "take the lump of wood");
+    say(&mut w, "take the wood");
     engine::nature::run(&mut w, 1_200).unwrap();
     assert_eq!(requests(&w, stranger), 0);
     assert_eq!(w.contents(islander).len(), 1);

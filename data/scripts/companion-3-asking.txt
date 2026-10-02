@@ -16,7 +16,7 @@ ask the stranger to give wood to the islander
 expect said the stranger agrees
 wait 20 min
 inventory
-expect said lump of wood (2 kg)
+expect said wood log (2 kg)
 
 try ask the stranger to drink water
 expect said the stranger says, "i can't drink the sea."

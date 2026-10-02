@@ -65,6 +65,20 @@ Whatever falls outside that scope, it says so and doesn't invent. "Use a cigaret
 
 The translator helps throughout the game: wherever your words and the literal command set don't meet, it bridges them.
 
+## Layers (the owner, 2026-10-01)
+
+What a player says or types goes up through layers, and stops at the first that understands it. The cloud is the last resort:
+
+1. **The console's own parser.** "go forest" or "gather sticks x3" is understood as it is, with no model and no cost.
+2. **Built-in translation, ours and local.** It takes a stab at what the parser can't take literally:
+   - saved skills by name ("make fire");
+   - other ways of saying a command ("pick up", "grab", "collect");
+   - spoken forms (the voice shaping already built: "times three", "ten minutes");
+   - plans that worked before. Each cloud translation that worked can be kept and reused when the same thing is said in the same situation, so this layer grows with play.
+3. **The cloud translator** (Claude on Bedrock or Anthropic's API), for descriptions nothing below could map.
+
+Each layer passes on only what it can't fully map, and says which layer answered, so we can measure how often the cloud is needed. That number is what the costs in [research/translator-costs.md](../research/translator-costs.md) rest on.
+
 ## Skills
 
 - **A skill is a saved plan, in the character's words:** its steps, what it needs (a kit), and conditions such as "wait until it's burning" in place of fixed waits.

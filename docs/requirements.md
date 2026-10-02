@@ -626,6 +626,8 @@ Added the same day, correcting Claude's take: **it isn't asking the AI a straigh
 - **It's useful all through the game**, bridging the gap between our words and the command set.
 - **This comes back to the skill paradigm: I can't bring my personal knowledge into the game if the player's current knowledge doesn't support it.** I know how to build a rocket personally, but the island doesn't have what we need yet. Once we solve one thing at a time, we'll get there. **The AI layer must be able to query the entire language, the skills, the inventory, and everything else to put the plan together.**
 
+Added the same day, after the cost projections ([research/translator-costs.md](research/translator-costs.md)): **there's definitely hope here, but we still have to test the viability.** And there will be **multiple layers**: what's said is first scanned internally. **If it says "go forest", we're not going to waste time going to Haiku**: we take a first pass ourselves. **A second layer: built-in things we've made that take a stab at translating what was said into the commands** (the approach Claude wanted to do first). **And if all else fails, it goes to the next level up, the cloud.**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

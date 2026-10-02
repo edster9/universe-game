@@ -650,6 +650,12 @@ Added 2026-10-01, after the translator's test bench. **Yes, we need twig, stick,
 
 Claude's proposal: [challenges/skill-grounds.md](challenges/skill-grounds.md).
 
+Added the same day, on the proposal: **exactly.** We'll master things and **save them as skills, and next time we start, we just execute our skills.**
+
+- **For the sake of development, to save time,** we could even start the game with a fire already burning. **Better yet, let's start thinking about just saving and resuming.**
+- **Also instantly adding a burning fire, or a horse, or whatever, to the world on demand,** to save time.
+- **All these shortcuts will be needed.** Update all these, and let me know where we go next.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

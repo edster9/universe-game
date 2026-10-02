@@ -41,6 +41,16 @@ Edits still go through the gate, as a named source, like sunlight: god mode's he
 
 Inspecting tools (datasheets, the gate's log, minds and memories) show what the actor couldn't know, so in multiplayer they're the server's choice, like god mode.
 
+## Shortcuts for development (agreed 2026-10-01)
+
+The owner: "all these shortcuts will be needed". See [challenges/skill-grounds.md](../challenges/skill-grounds.md).
+
+| Tool | Layer | What it does |
+| --- | --- | --- |
+| `/save <name>` | single player | Writes the whole world to a file: the clock, every piece of matter, every mind |
+| `/load <name>` | single player | Picks a saved world up exactly where it was |
+| `/make <thing>` | server's choice | Puts something from the world's data in front of you, from the designer as a named source; `/make fire` makes a fire already burning in a ring |
+
 ## Next steps (proposed)
 
 1. The console's testing tools (`totals`, `datasheet`, `log`, `as`, `become`) also answer to a slash (`/datasheet me`), keeping the old names so scripts don't change.

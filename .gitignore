@@ -14,3 +14,7 @@ gpu-bench-*.txt
 .DS_Store
 # Patched copies of libraries, made by a script (client/vendor.sh)
 vendor/
+
+# Secrets: API keys, kept on this machine only
+.env
+.env.*

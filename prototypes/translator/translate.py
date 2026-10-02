@@ -11,7 +11,8 @@ happens. See docs/ideas/ai-and-skills.md.
     uv run --with 'anthropic[bedrock]' prototypes/translator/translate.py \
         --setup "go forest" --run "find something small that burns ..."
 
-Anthropic's API directly needs ANTHROPIC_API_KEY set (or `ant auth login`);
+Anthropic's API directly needs ANTHROPIC_API_KEY, set in the shell or in the
+project's .env file (which git ignores);
 Bedrock needs `--provider bedrock` and an AWS profile (AWS_PROFILE) whose
 account has Claude enabled.
 """
@@ -28,6 +29,22 @@ from pydantic import BaseModel
 import anthropic
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def load_env():
+    """Reads KEY=value lines from the project's .env (kept out of git), for
+    keys not already set, such as ANTHROPIC_API_KEY."""
+    env = ROOT / ".env"
+    if not env.exists():
+        return
+    for line in env.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env()
 CONSOLE = ROOT / "target" / "release" / "console"
 
 SYSTEM = """You translate a player's plain description of what they want to do into \

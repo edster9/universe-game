@@ -1476,6 +1476,12 @@ fn changes_for(world: &World, actor: EntityId, intent: &Intent) -> Result<Vec<Ch
             if world.is_living(actor) {
                 let target = match into {
                     Some(name) => {
+                        // A fire is made on the ground, not in your hands.
+                        if find(world, actor, reach.around.iter().copied(), name).is_none()
+                            && let Some(held) = find(world, actor, carried(), name)
+                        {
+                            return Err(Refusal::PutItDown(world.label_for(actor, held)));
+                        }
                         let found = find(world, actor, reach.around.iter().copied(), name)
                             .ok_or_else(|| Refusal::NotHere(name.clone()))?;
                         if !world.is_container(found) {
@@ -3011,7 +3017,8 @@ pub fn choices(world: &World, actor: EntityId, thing: EntityId) -> Vec<Choice> {
 }
 
 /// "go to the patch": a walk within the place, if no way out is called
-/// that and something here is.
+/// that and something here is. "go to the hillside": the way out of that
+/// name.
 fn as_walk(world: &World, actor: EntityId, intent: &Intent) -> Option<Intent> {
     let Intent::Go {
         place,
@@ -3027,6 +3034,12 @@ fn as_walk(world: &World, actor: EntityId, intent: &Intent) -> Option<Intent> {
         return None;
     }
     let to = place.strip_prefix("to ").unwrap_or(place).trim();
+    if to != place.as_str() && way(world, actor, &reach, to, None).is_ok() {
+        return Some(Intent::Go {
+            place: to.to_string(),
+            aboard: None,
+        });
+    }
     find(world, actor, reach.everyone(), to)?;
     Some(Intent::Walk { to: to.to_string() })
 }

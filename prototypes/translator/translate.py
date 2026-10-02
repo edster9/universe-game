@@ -38,25 +38,32 @@ character knows, the ways they know to make things, what they carry, and what \
 they see. That is everything you may use.
 
 Rules:
-- The process is the player's. Carry out the steps they describe, in their \
-order, filling in only the literal detail each step needs: walking up to \
-things ("go to <thing>") before gathering or taking them, how many pieces a \
-way of making something needs, what to put where.
+- The process is the player's: follow their steps, in their order. Your job \
+is to make each step happen with the commands, so do everything that can be \
+done in scope, filling in the literal detail each step needs:
+  - choosing what to use: map loose phrases to things in scope ("something \
+small that burns" can be dry grass; "something we can rub together" can be \
+two sticks of wood);
+  - getting it: walking up to things ("go to <thing>") before gathering or \
+taking them, and fetching what a step needs from wherever the character can \
+see it or remembers it ("go <place>", gather, and go back);
+  - how many: as many pieces as a way of making something needs;
+  - putting things where the step says.
+- Large amounts in a place (a patch, a bed, a bank, "50 kg") are sources: \
+"gather" from them, a piece at a time. "take" is for single things.
 - Use only commands from COMMANDS, and name things only with words from WORDS \
-YOU KNOW or names shown under WHAT YOU CARRY and WHAT YOU SEE. Map loose \
-phrases to those ("something small that burns" may be dry grass in sight).
-- Never invent things, tools, places, or abilities that aren't in scope. If \
-part of the description can't be done with what's in scope (a thing the \
-character has no word for, a tool they don't have and can't make, a step no \
-command does), leave it out of the commands and report it under `unmapped`, \
-with the phrase and a short reason. If something has an in-scope alternative \
-the player offered ("dig a hole or build a ring"), use the one in scope and \
-report the other.
-- Don't add goals the player didn't describe. If a step is ambiguous, choose \
-the simplest reading and say so under `assumptions`.
+YOU KNOW or names shown under WHAT YOU CARRY, WHAT YOU REMEMBER, and WHAT YOU \
+SEE.
+- Report under `unmapped` only what can't be done with anything in scope: a \
+thing the character has no word for and can't see or remember, a tool they \
+don't have and can't make, a step no command does. Give the phrase and a \
+short reason. If the player offered alternatives ("dig a hole or build a \
+ring"), use the one in scope and report the other.
+- Don't add goals beyond the player's description. If a step is ambiguous, \
+choose the simplest reading and say so under `assumptions`.
 - One command per entry, exactly as typed at the console. You may use the \
-console's shortcuts: "<command> x3" to repeat, and "wait <seconds>" or "wait \
-<n> min" to let time pass."""
+console's shortcuts: "<command> x3" to repeat, "<command>; <command>" in a \
+row, and "wait <seconds>" or "wait <n> min" to let time pass."""
 
 
 class Unmapped(BaseModel):
@@ -115,7 +122,8 @@ def translate(client, model: str, effort: str, scope: str, description: str, ext
     if response.stop_reason == "refusal":
         sys.exit(f"refused: {response.stop_details}")
     text = "".join(b.text for b in response.content if b.type == "text").strip()
-    text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    # The object itself, even with words around it.
+    text = text[text.find("{") : text.rfind("}") + 1]
     return Plan.model_validate_json(text), response.usage, took
 
 
@@ -130,6 +138,7 @@ def main():
     parser.add_argument("--model", help="defaults to Claude Opus 5.5 for the provider")
     parser.add_argument("--effort", default="medium")
     parser.add_argument("--show-scope", action="store_true")
+    parser.add_argument("--repairs", type=int, default=2, help="fixes allowed after refusals")
     args = parser.parse_args()
 
     live = Live(args.world, args.person)
@@ -165,12 +174,33 @@ def main():
 
     if args.run:
         print("\nPLAYED")
-        for c in plan.commands:
+        commands, repairs, done = list(plan.commands), 0, []
+        while commands:
+            c = commands.pop(0)
             state = live.send(c)
             print(f"> {c}\n{state['reply']}")
-            if state.get("refused"):
+            if state.get("refused") != "true" and state.get("refused") is not True:
+                done.append(c)
+                continue
+            if repairs >= args.repairs:
                 print("(refused: stopping here)")
                 break
+            # Refused: the translator sees why, and what the character sees
+            # now, and fixes the rest of the plan.
+            repairs += 1
+            scope = live.send("scope")["reply"]
+            extra = (
+                "ALREADY DONE\n" + "\n".join(done)
+                + f"\n\nTHIS COMMAND WAS REFUSED\n{c}\n{state['reply']}"
+                + "\n\nSTILL TO DO\n" + "\n".join(commands)
+                + "\n\nGive the commands that carry on from here to finish the player's "
+                "description, fixing what was refused. The scope above is as things stand now."
+            )
+            plan, usage, took = translate(client, model, args.effort, scope, args.description, extra)
+            print(f"  (repaired in {took:.1f} s: {'; '.join(plan.commands)})")
+            for u in plan.unmapped:
+                print(f"  (can't: {u.phrase}: {u.reason})")
+            commands = list(plan.commands)
         print("\n> look\n" + live.send("look")["reply"])
 
 

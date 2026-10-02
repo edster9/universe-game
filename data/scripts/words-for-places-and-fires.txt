@@ -1,0 +1,23 @@
+# Saying it as people do: "go to the forest" goes there, as "go forest"
+# does, and "go to sticks" still walks up to the sticks. A fire is made on
+# the ground: rubbing into a ring still in your hands says to put it down.
+# Both were found by the translator's first trial (docs/ideas/ai-and-skills.md).
+world companion.toml
+as survivor
+luck average
+rules player
+
+go to the forest
+expect said you go to the forest
+go to sticks; gather sticks x2
+expect said you walk to sticks
+go to hillside
+expect said you go to the hillside
+go to stones; gather stones x5
+assemble fire ring
+try rub wood against wood into fire ring
+expect said put the fire ring of stone down first
+drop fire ring
+rub wood against wood into fire ring for 10 s
+expect said you rub them together
+expect conserved

@@ -22,17 +22,30 @@ Commands:
   walk to <thing>                   walk up to something in this place, within reach (\"go to\" too)
   walk to <east> <north>            walk to a spot, in metres from the middle of this place
   stop                              stop what you're doing; a walk stops where you've got to
+  gather <source>                   search a patch or source for a piece of it (\"gather sticks\", \"gather grass\")
   take <thing> [from <container>]   pick something up
   drop <thing>                      put something down; \"drop all\" puts down everything
   put <thing> in <container>        put something inside something
   give <thing> to <person>          hand something over
   pay <person> <amount>             pay credits
   dig <source> with <tool>          dig material out of the ground
-  light <thing>                     light a fire in something that burns fuel
+  fill <container> from <liquid>    fill a container
+  eat <thing>                       eat something you carry
+  drink from <liquid>               drink
+  light <thing>                     light a furnace or anything that holds fuel, from a flame already burning nearby
   pour <liquid> into <container>    pour something molten
   work <thing> into <shape> with <tool>
                                     shape something with a tool
-  rub <thing> against <thing>       rub two parts together to make both finer (10 minutes)
+  rub <thing> against <thing> [into <container>] [for <time>]
+                                    rub two pieces hard together: the work turns to heat and wears off hot dust,
+                                    which can smoulder into an ember; \"into\" a container, the dust lands there,
+                                    on whatever tinder is in it. Keeps on until something there catches (10 minutes at most)
+  divide <thing>                    pull something soft apart into two
+  butcher <body> with <tool>        cut a dead body into its parts with something that has an edge
+  attack <someone> [with <thing>]   strike at someone
+  explore                           search around for a way out you don't know yet
+  survey                            take in the view: see what lies in the distance
+  read <thing>                      read something, such as a map
   assemble <design>                 put carried parts together to a design (or \"make\")
   disassemble <thing>               take something apart into its parts
   wear <thing> [on your feet]       wear something soft you carry; \"take off <thing>\"
@@ -40,6 +53,9 @@ Commands:
   call <thing> a <word>             name something in your own words (\"call it a …\")
   tell <person> that <thing> is a <word>
                                     teach someone your word for something
+  offer <thing> to <person> for <thing>
+                                    offer a trade
+  ask <person> to <command>         ask someone with a mind of their own to do something
   wait [seconds]                    let time pass; \"wait until free\", \"wait until 08:30\"
   start <command>                   start something without waiting for it
   <command> x3                      do it three times (\"gather sticks x3\")

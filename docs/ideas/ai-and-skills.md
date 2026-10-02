@@ -118,3 +118,26 @@ Each layer passes on only what it can't fully map, and says which layer answered
 
 - **Your knowledge or your character's?** Yours, as the process you describe. But it can only be carried out with your character's: their words, their designs, their things, and the world's commands. What's out of scope is reported, not made up.
 - **Still open:** whether a saved skill shows its commands before running, every time or only the first; and who pays for the translator in multiplayer.
+
+## First trial (2026-10-01)
+
+Through Amazon Bedrock on the owner's account, with `prototypes/translator/translate.py`. The islander had been to the forest and the hillside and stood in the forest. The owner's description:
+
+> find something small that could burn first, find something we can rub together, dig a hole or build a rock circle, put things in there, and go ahead and rub things together and make a fire
+
+| Model | Time | Plan | In the game |
+| --- | --- | --- | --- |
+| **Opus 5.5** | 10 s, 2,800 tokens in, 780 out (about 3¢) | Right: grass, two sticks, five remembered stones from the hillside, the ring, grass in it, rub into it; "dig a hole" reported as out of scope (no tool) | **A fire.** Told "put the fire ring down first", it repaired itself in 5 s (drop the ring, rub), and the grass caught |
+| **Sonnet 5.5** | 3 to 4 s, about 1¢ | Right on one run, but missed walking up to the stones; on two other runs it stopped after gathering, calling the trip to the hillside "not asked for" | One run was stopped by the stones being out of reach (before repairs existed); the others did only the gathering |
+| **Haiku 4.5** | 4 to 5 s, under half a cent | Muddled: invented rubbing flint against stone, wrote commands the game doesn't take, gathered what wasn't needed, and its repairs went round in circles | No fire |
+
+**What the trial found in our own game:**
+- **Twelve commands were missing from `help`**, so no translator could know them: gather, eat, drink, fill, explore, attack, read, survey, offer, ask, butcher, divide.
+- **`rub`'s help said it only makes parts finer.** It now says the work turns to heat, wearing off hot dust that can smoulder into an ember.
+- **"go to the hillside" didn't go there:** only "go hillside" did. It does now.
+- **Rubbing into a fire ring still in your hands said "you don't see fire ring here".** It now says "put the fire ring down first". Both are proved by `data/scripts/words-for-places-and-fires.txt`.
+- **The scope needed memory:** what was seen at places the character knows, or no plan could fetch stones from the hillside.
+
+**What it says about the approach:** there's real hope. The strongest model turned a plain description into a working fire, reported the one part outside the character's world, and fixed its own mistake from the game's refusal. The instructions matter a great deal: two changes to them took Sonnet from one mapped step to a whole plan, though not every time. The help text matters just as much: a translator knows only what the help tells it.
+
+**Next:** many more descriptions (the cigarette lighter, the variations, places not yet seen), several runs each, to measure how often each model gets it right, and tune the instructions until a cheaper model is good enough.

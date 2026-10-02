@@ -582,7 +582,7 @@ Added 2026-09-30, after trying the fire.
 
 Added 2026-09-30. It's simple: right now **the mouse hover tells you what something is**, so **if I left-click right there, a small context menu shows the things I can do with it**, like "gather", "push", "pull", whatever, **depending on what interactions are allowed at any given situation**.
 
-Agreed and built the same day: the engine works out the menu from the laws (each action checked as if done now, only what would work offered); far things are walked up to first; choosing sends the command as if typed; a click on open ground walks there; gathering is offered x3 and x10 too. See "Shortcuts, faster gathering, and clicking" in [challenges/first-steps.md](challenges/first-steps.md).
+Agreed and built the same day: the engine works out the menu from the laws (each action checked as if done now, only what would work offered); far things are walked up to first; choosing sends the command as if typed; a click on open ground walks there; gathering was offered x3 and x10 too, until the owner asked for just once (below). See "Shortcuts, faster gathering, and clicking" in [challenges/first-steps.md](challenges/first-steps.md).
 
 ### The context menu: what you can tell, and what to offer
 

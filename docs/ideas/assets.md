@@ -23,3 +23,15 @@ The owner would buy a pack, or use a free one. Claude's take:
   Both come in formats Bevy loads (glTF), and CC0 means no conditions.
 - **Paid packs** (Synty's POLYGON range is the best known) look more finished, but **check the licence before buying**: store licences usually allow use in a game but not sharing the raw files. **Our repository is public**, so paid models would have to live outside git (a folder the build copies, ignored by git), not in the repo.
 - **Recommendation:** try a free CC0 pack first, for the things our own shapes do worst: trees, bushes, and the landmarks. A thing would be drawn by a model when the style names one for its form, falling back to our shapes; the engine is untouched. Keep our shapes for anything whose size or make-up matters (twig, stick, log, a piece of flint), since they scale from what the thing is. Decide after seeing one in the scene.
+
+## Quaternius' Stylized Nature MegaKit: what's in it (2026-10-02)
+
+The owner downloaded the free Standard version; it's kept in `assets/third-party/quaternius/stylized-nature-megakit/` (git ignores the packs; see `assets/third-party/README.md`). **CC0**, so anything we adopt can be committed. 68 models, each as glTF (which Bevy loads directly), FBX, and OBJ, sharing 20 textures. The full kit (116 models, the autumn and purple trees, more rocks and bushes) is the paid Pro version.
+
+- **Trees, 25:** pines (5, 7 to 10 m), common leafy trees (5, 7 to 9 m), dead trees (5, 10 to 16 m), twisted trees (5, 16 to 19 m). 1,600 to 10,000 triangles each.
+- **Rocks and stones, 24:** medium rocks (3, about 3 m), pebbles (11, round and square), rock-path pieces (10, flat stepping-stone patches).
+- **Plants, 19:** grass (4: short and tall, common and wispy), bushes (2, plain and flowering), fern, clover (2), plants (4), flowers (4, single and group), mushrooms (2, one a shelf fungus), petals (5, ground scatter).
+- **Not in it:** twigs, sticks, logs, stumps, flint, ore, shells. Those stay our own shapes.
+- **Sizes are the artist's, not real ones** (grass 1.3 to 1.9 m, a "pebble" half a metre), which doesn't matter: the style scales each form to the size it gives.
+- **Looks:** the previews are rendered in Unreal with Quaternius' own stylized shader (in the paid Source version). Bevy's standard lighting will look plainer, with the same shapes and textures. Leaves use cut-out textures (alpha mask), which Bevy supports.
+- **Weight:** 48 MB for the glTF set, mostly six 2048-pixel bark textures (4 to 5 MB each); we'd shrink those when adopting.

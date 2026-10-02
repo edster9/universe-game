@@ -19,3 +19,7 @@ vendor/
 .env
 .env.*
 /saves/
+
+# Third-party asset packs as downloaded: big, and some not ours to share.
+# Models we adopt are copied into the client and committed (CC0 only).
+/assets/third-party/*/

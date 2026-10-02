@@ -1,0 +1,33 @@
+# The designer's shortcuts for development: "/make fire" puts down a fire
+# already burning in a ring, and "/make" an amount of a material, shaped or
+# not, or something built to a design. The designer is a named source, so
+# what they give is counted and the totals still hold. See
+# docs/challenges/skill-grounds.md.
+world companion.toml
+as survivor
+luck average
+rules player
+go forest
+/make fire
+expect said The designer makes the fire ring
+wait 1 min
+look
+expect said lump of wood and ash
+expect said burning
+# Fed by hand, like any fire.
+/make 2 kg wood
+take wood
+put wood in ring
+wait 5 min
+look
+expect said burning
+/make 300 g wood as shaft
+expect said wood shaft
+/make fire ring
+expect said The designer makes the fire ring
+try /make spear
+expect said its material is the maker's choice
+try /make 1 kg moonrock
+expect said no material called
+expect alive
+expect conserved

@@ -3,9 +3,12 @@
 //!     cargo run -p console [-- --world <file.toml>] [--as <person-id>]
 //!     cargo run -p console -- --script <file.txt>
 //!     cargo run -p console -- --world <file.toml> --as <person-id> --live [--real-time]
+//!     cargo run -p console -- --load <save> [--live [--real-time]]
 //!
 //! `--live` answers each command with a line of JSON, for a program to drive
-//! a person; `--real-time` runs the world with the wall clock.
+//! a person; `--real-time` runs the world with the wall clock. `--load`
+//! picks up a save from the `saves` folder beside the data folder (`/save`,
+//! `/load`); the console, not the live channel, saves as "last" on quitting.
 //!
 //! Lines can also be piped in, which is how scripted sessions run.
 
@@ -15,6 +18,7 @@ use std::process::ExitCode;
 use console::session::Session;
 
 const DEFAULT_WORLD: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/slice0.toml");
+const SAVES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../saves");
 
 fn main() -> ExitCode {
     // `--script <file>` plays a script and prints what happened.
@@ -47,13 +51,15 @@ fn main() -> ExitCode {
     let mut world_path = DEFAULT_WORLD.to_string();
     let mut player = "traveller".to_string();
     let (mut live, mut real_time) = (false, false);
+    let mut load = None;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--live" => live = true,
             "--real-time" => real_time = true,
-            "--world" | "--as" => match (arg.as_str(), args.next()) {
+            "--world" | "--as" | "--load" => match (arg.as_str(), args.next()) {
                 ("--world", Some(path)) => world_path = path,
+                ("--load", Some(name)) => load = Some(name),
                 (_, Some(id)) => player = id,
                 _ => {
                     eprintln!("{arg} needs a value");
@@ -62,21 +68,21 @@ fn main() -> ExitCode {
             },
             _ => {
                 eprintln!(
-                    "usage: console [--world <file.toml>] [--as <person-id>] [--live [--real-time]]"
+                    "usage: console [--world <file.toml>] [--as <person-id>] [--load <save>] [--live [--real-time]]"
                 );
                 return ExitCode::FAILURE;
             }
         }
     }
 
-    let world = match console::load_world_file(std::path::Path::new(&world_path)) {
-        Ok(world) => world,
-        Err(e) => {
-            eprintln!("{e}");
-            return ExitCode::FAILURE;
-        }
+    let saves = std::path::PathBuf::from(SAVES);
+    let started = match load {
+        Some(name) => Session::resume(saves, &name),
+        None => console::load_world_file(std::path::Path::new(&world_path))
+            .and_then(|world| Session::new(world, &player))
+            .map(|session| session.with_saves(saves)),
     };
-    let mut session = match Session::new(world, &player) {
+    let mut session = match started {
         Ok(session) => session,
         Err(e) => {
             eprintln!("{e}");
@@ -113,6 +119,13 @@ fn main() -> ExitCode {
         if interactive {
             print!("> ");
             let _ = io::stdout().flush();
+        }
+    }
+    // A game ends with a save, and the next can start from it.
+    if interactive {
+        match session.save(console::session::LAST) {
+            Ok(text) => println!("{text}"),
+            Err(e) => eprintln!("{e}"),
         }
     }
     ExitCode::SUCCESS

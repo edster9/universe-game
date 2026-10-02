@@ -14,6 +14,7 @@ license = "MIT"
 engine = { path = "crates/engine" }
 serde = { version = "1", features = ["derive"] }
 toml = "0.9"
+serde_json = "1"
 proptest = "1"
 
 # The challenge tests simulate many days; build tests optimised so they run

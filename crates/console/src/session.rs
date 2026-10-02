@@ -11,6 +11,9 @@ use engine::view::{self, Thing};
 use engine::world::{Claim, EntityId, News, Requirement, World};
 
 mod queue;
+mod saves;
+
+pub use saves::LAST;
 
 pub const HELP: &str = "\
 Commands:
@@ -72,6 +75,13 @@ Testing tools:
   time                              how long the world has been running
   log [n]                           the last n entries that passed the gate
   become <person>                   act as someone else
+  /save <name>                      save the whole world, to pick up later exactly where it was
+  /load [name]                      pick up a save (\"last\", made when a game ends, if no name)
+  /saves                            the saves there are
+  /make <thing> [in <container>]    the designer puts something in front of you: an amount of a material
+                                    (\"2 kg wood\", \"300 g wood as shaft\"), a design (\"fire ring\"), or a kit
+                                    (\"fire\": one burning in a ring)
+  /light <thing>                    the designer's flame lights something
   quit
 Things can be named by part of their description (\"lump\"), or by id (\"#12\").
 \"smallest <thing>\" and \"largest <thing>\" choose by size among things of that name
@@ -96,6 +106,8 @@ pub struct Session {
     was_asleep: bool,
     /// What the player asked to do more than once, or one after another.
     queue: Option<queue::Queue>,
+    /// Where saves are kept, if saving is on.
+    saves: Option<std::path::PathBuf>,
 }
 
 pub struct Reply {
@@ -136,6 +148,7 @@ impl Session {
                 real_time: false,
                 was_asleep: false,
                 queue: None,
+                saves: None,
             }),
             _ => Err(format!(
                 "there's no person with the id {player:?} in this world"
@@ -208,6 +221,9 @@ impl Session {
             "designs" => Reply::say(self.designs()),
             "scope" => Reply::say(self.scope()),
             "recall" | "memory" => Reply::say(self.recall()),
+            tool @ ("/save" | "/load" | "/saves") => self.saving(tool, rest),
+            "/make" => self.make(rest),
+            "/light" => self.light(rest),
             "body" => Reply::say(body(&self.world, self.player, rest == "all").join("\n")),
             "backpack" | "pack" => Reply::say(backpack(&self.world, self.player).join("\n")),
             _ => self.command(line),
@@ -1093,6 +1109,53 @@ impl Session {
         }
     }
 
+    /// The designer puts something in front of the player, or in a
+    /// container they name (`engine::designer`).
+    fn make(&mut self, what: &str) -> Reply {
+        let (what, into) = match what.rsplit_once(" in ") {
+            Some((what, into)) => (what, Some(into)),
+            None => (what, None),
+        };
+        let made = engine::designer::parse(&self.world, what).and_then(|make| {
+            let (at, spot) = match into {
+                Some(name) => (
+                    laws::find_reachable(&self.world, self.player, name)
+                        .filter(|&c| self.world.is_container(c))
+                        .ok_or_else(|| {
+                            format!("there's no container called \"{name}\" in reach")
+                        })?,
+                    None,
+                ),
+                None => (
+                    self.world.place_of(self.player).ok_or("you're nowhere")?,
+                    self.world.spot(self.player),
+                ),
+            };
+            engine::designer::make(&mut self.world, &make, at, spot)
+        });
+        match made {
+            Ok(thing) => Reply::say(format!(
+                "The designer makes {}.",
+                laws::named(&self.world, self.player, thing)
+            )),
+            Err(why) => Reply::refuse(sentence(&why)),
+        }
+    }
+
+    /// The designer's flame lights something within reach.
+    fn light(&mut self, name: &str) -> Reply {
+        let Some(thing) = laws::find_reachable(&self.world, self.player, name) else {
+            return Reply::refuse(format!("There's nothing called \"{name}\" in reach."));
+        };
+        match engine::designer::light(&mut self.world, thing) {
+            Ok(()) => Reply::say(format!(
+                "The designer lights {}.",
+                laws::named(&self.world, self.player, thing)
+            )),
+            Err(why) => Reply::refuse(sentence(&why)),
+        }
+    }
+
     fn log(&self, count: &str) -> String {
         let count = if count.is_empty() {
             10
@@ -1126,6 +1189,7 @@ impl Session {
                     Cause::Nature { tick } => {
                         format!("#{} nature at {tick} s: {changes}", entry.seq)
                     }
+                    Cause::Designer => format!("#{} the designer: {changes}", entry.seq),
                 }
             })
             .collect::<Vec<_>>()
@@ -1214,6 +1278,13 @@ impl Session {
                 }
                 engine::world::Outcome::Interrupted => format!("{} is cut short", w.label(*agent)),
             },
+            Change::Provide { at, make } => {
+                let mass = Mass::from_mg(u64::try_from(matter::total_mass(make)).unwrap_or(0));
+                format!("the designer gives {mass} of matter -> {}", w.label(*at))
+            }
+            &Change::Endow { entity, amount } => {
+                format!("the designer gives {amount} of heat -> {}", w.label(entity))
+            }
             &Change::Vitality {
                 entity,
                 inflow,

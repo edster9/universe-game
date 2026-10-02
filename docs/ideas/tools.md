@@ -47,9 +47,16 @@ The owner: "all these shortcuts will be needed". See [challenges/skill-grounds.m
 
 | Tool | Layer | What it does |
 | --- | --- | --- |
-| `/save <name>` | single player | Writes the whole world to a file: the clock, every piece of matter, every mind |
-| `/load <name>` | single player | Picks a saved world up exactly where it was |
-| `/make <thing>` | server's choice | Puts something from the world's data in front of you, from the designer as a named source; `/make fire` makes a fire already burning in a ring |
+| `/save <name>` | single player | Writes the whole world to a file: the clock, every piece of matter, every mind, and who's played. **Built.** |
+| `/load [name]` | single player | Picks a saved world up exactly where it was; with no name, "last", the save made when a game ends. **Built.** |
+| `/saves` | single player | The saves there are, newest first. **Built.** |
+| `/make <thing> [in <container>]` | server's choice | Puts something from the world's data in front of you, from the designer as a named source: an amount of a material (`/make 2 kg wood`), shaped (`/make 300 g wood as shaft`), a design (`/make fire ring`), or a kit (`/make fire`: a fire laid in a ring and already burning). **Built.** |
+| `/light <thing>` | server's choice | The designer's flame: heats something within reach past the point where it catches. **Built.** |
+
+**How it's built** (2026-10-01):
+- **Saves** are files in a `saves` folder beside the data folder, one per name, about 75 KB for the companion's island. The client and the console save as "last" when a game ends (not the live channel or scripts, and not a client run that only takes a picture), and both start from a save with `--load <name>`. A save from an older version of the game that no longer fits is refused with the reason; there's no upgrading of old saves yet.
+- **The designer** is a named source like sunlight and vitality: the gate counts the matter and energy the designer gives (heat, and the energy held in what's made), and conserves everything else. Two changes come from it: a new piece of matter, and heat. A design is made part by part, each piece the size it's gathered in the world, and assembled and measured like any other. A design with a shaped part is refused with what to do instead, since the part's material is the maker's choice. Kits are data (`[[kit]]`: a holder, what's inside, and whether it's lit), so the engine still names nothing.
+- **Not yet:** making creatures (`/make <kind>`, a boar, a horse once there are horses), and words for sizes (`/make log`) until the skill grounds have them.
 
 ## Next steps (proposed)
 

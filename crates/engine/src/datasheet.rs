@@ -17,7 +17,9 @@ use crate::world::{EntityId, Role, Settings, World};
 
 /// Something the engine can measure. Named for the quantity, never for a
 /// kind of thing.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub enum Property {
     Mass,
     Volume,
@@ -136,7 +138,7 @@ impl Property {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Value {
     Mass(Mass),
     /// µm³.
@@ -196,7 +198,7 @@ impl fmt::Display for Value {
 }
 
 /// A measured description of one thing.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Datasheet {
     /// Material labels and their share by mass, in parts per ten thousand,
     /// most first.

@@ -19,7 +19,7 @@
 //! expect said sea            the last reply mentions "sea"
 //! expect not said burning    the last reply doesn't mention "burning"
 //! rules player               the player lives by players' rules: on vitality, needing no food, drink, or sleep
-//! expect conserved           mass, energy (apart from sunlight and vitality), and credits are as they started
+//! expect conserved           mass, energy (apart from sunlight, vitality, and the designer), and credits are as they started
 //! expect not said burning    the last reply doesn't mention "burning"
 //! expect time after 2 day    at least this much time has passed
 //! expect time before 3 day   less than this much time has passed

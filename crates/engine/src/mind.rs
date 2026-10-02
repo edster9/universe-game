@@ -25,7 +25,7 @@ const JUST_NOW: u64 = 60;
 const DANGER: u64 = 3_600;
 
 /// How far a mind thinks.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Scope {
     /// Its standing orders, nothing else: when none applies, it waits.
     Confined,
@@ -34,7 +34,7 @@ pub enum Scope {
 }
 
 /// How a mind meets someone who goes for it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Temperament {
     /// Strikes at them for as long as they're there.
     Fight,
@@ -48,7 +48,7 @@ pub enum Temperament {
 
 /// A mind: its scope, its temperament, and its standing orders, first
 /// first.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Mind {
     pub scope: Scope,
     pub temperament: Temperament,
@@ -61,7 +61,7 @@ pub struct Mind {
 }
 
 /// "When these hold, do this."
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Order {
     pub when: Vec<Condition>,
     pub command: Intent,
@@ -70,7 +70,7 @@ pub struct Order {
 }
 
 /// Something a person can tell for themselves.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Condition {
     Night,
     Day,

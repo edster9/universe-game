@@ -21,7 +21,7 @@ const CELL: f32 = 25.0;
 
 /// The land's shape, as a function anyone can ask: how high the ground is
 /// at a point.
-#[derive(Resource, Clone)]
+#[derive(Resource, Clone, PartialEq)]
 pub struct Land {
     /// Each place: where, how high, and how far its land reaches.
     places: Vec<(Vec2, f32, f32)>,

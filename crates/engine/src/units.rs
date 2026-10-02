@@ -9,7 +9,20 @@ use std::str::FromStr;
 pub const SECONDS_PER_TICK: u64 = 1;
 
 /// A mass, stored in milligrams.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize,
+    serde::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+)]
+#[serde(transparent)]
 pub struct Mass(u64);
 
 impl Mass {
@@ -58,7 +71,20 @@ impl fmt::Display for Mass {
 }
 
 /// A temperature, stored in millikelvin.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize,
+    serde::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+)]
+#[serde(transparent)]
 pub struct Temperature(u64);
 
 impl Temperature {
@@ -87,7 +113,20 @@ impl fmt::Display for Temperature {
 }
 
 /// An amount of energy, stored in microjoules.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize,
+    serde::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+)]
+#[serde(transparent)]
 pub struct Energy(u64);
 
 impl Energy {
@@ -129,7 +168,20 @@ impl fmt::Display for Energy {
 
 /// An amount of credits. A plain counter until money becomes real in slice 3
 /// (see docs/ideas/money.md).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize,
+    serde::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+)]
+#[serde(transparent)]
 pub struct Credits(u64);
 
 impl Credits {
@@ -279,7 +331,7 @@ pub fn show_duration(seconds: u64) -> String {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct UnitError(String);
 
 impl fmt::Display for UnitError {

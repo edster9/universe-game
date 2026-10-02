@@ -79,8 +79,8 @@ Layers ([ideas/tools.md](../ideas/tools.md)): saving and loading change the whol
 
 ## Steps
 
-1. **Saving and resuming:** `/save`, `/load`, and a save on quit. Every step after this starts from a save instead of from the beginning.
-2. **Making things on demand:** `/make <thing>`, and `/make fire`, with the designer as a named source.
+1. **Saving and resuming:** `/save`, `/load`, and a save on quit. Every step after this starts from a save instead of from the beginning. **Done** (2026-10-01): `/save`, `/load`, `/saves`, a save called "last" when the game ends, and `--load <name>` to start from one. Proved by `crates/console/tests/saves.rs`: a fire saved while burning, loaded, and fed comes out exactly as the fire never saved; leaving heat out of the save fails it.
+2. **Making things on demand:** `/make <thing>`, and `/make fire`, with the designer as a named source. **Done** (2026-10-01): `/make` an amount of a material, shaped or not, a design, or a kit from data (`/make fire`, burning in a ring), and `/light`. Proved by `data/scripts/make-on-demand.txt`; the gate's audit catches the designer's matter left uncounted. Creatures wait. See "Shortcuts for development" in [ideas/tools.md](../ideas/tools.md).
 3. **The board:** the world file, the five grounds with their materials, playable times, and words for sizes.
 4. **Fire, done properly:**
    - an open fire works but loses heat faster; a ring or a dug pit holds it in (the owner's rule);

@@ -6,7 +6,7 @@ use std::fmt;
 
 use crate::units::Credits;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Command {
     Look,
     Inventory,
@@ -14,7 +14,7 @@ pub enum Command {
 }
 
 /// A request to change the world. The laws decide whether it's allowed.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Intent {
     Go {
         place: String,
@@ -307,7 +307,7 @@ impl fmt::Display for Intent {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ParseError(pub String);
 
 impl fmt::Display for ParseError {

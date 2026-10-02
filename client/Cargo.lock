@@ -2100,6 +2100,8 @@ name = "console"
 version = "0.1.0"
 dependencies = [
  "engine",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2469,6 +2471,7 @@ name = "engine"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
  "toml",
 ]
 

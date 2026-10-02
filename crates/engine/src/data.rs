@@ -38,6 +38,22 @@ struct WorldFile {
     kinds: Vec<KindDef>,
     #[serde(default, rename = "culture")]
     cultures: Vec<CultureDef>,
+    #[serde(default, rename = "kit")]
+    kits: Vec<KitDef>,
+}
+
+/// What the designer's `/make <id>` puts down together (`designer.rs`): a
+/// holder, things in it, and whether they're lit. Each is said as at the
+/// console: a design's name, or "30 g <material>".
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct KitDef {
+    id: String,
+    holder: String,
+    #[serde(default)]
+    inside: Vec<String>,
+    #[serde(default)]
+    lit: bool,
 }
 
 /// What a people knows to begin with: the materials, shapes, designs, and
@@ -540,7 +556,7 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
             || !library.items.is_empty()
         {
             return fail(format!(
-                "{name} is a library, so it holds only materials, shapes, designs, kinds, and cultures"
+                "{name} is a library, so it holds only materials, shapes, designs, kinds, cultures, and kits"
             ));
         }
         file.materials.splice(0..0, library.materials);
@@ -548,6 +564,7 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
         file.designs.splice(0..0, library.designs);
         file.kinds.splice(0..0, library.kinds);
         file.cultures.splice(0..0, library.cultures);
+        file.kits.splice(0..0, library.kits);
     }
     let mut world = World {
         settings: load_settings(&file.world)?,
@@ -572,6 +589,24 @@ pub fn load_world_with(text: &str, libraries: &[&str]) -> Result<World, LoadErro
         }
     }
     load_designs(&mut world, &file.designs)?;
+    for kit in &file.kits {
+        let make = |text: &str| {
+            crate::designer::parse(&world, text)
+                .map_err(|e| LoadError(format!("the kit {}: {e}", kit.id)))
+        };
+        let loaded = crate::designer::Kit {
+            holder: make(&kit.holder)?,
+            inside: kit
+                .inside
+                .iter()
+                .map(|t| make(t))
+                .collect::<Result<_, _>>()?,
+            lit: kit.lit,
+        };
+        if world.kits.insert(kit.id.clone(), loaded).is_some() {
+            return fail(format!("the kit {:?} is defined twice", kit.id));
+        }
+    }
 
     let mut seen = BTreeSet::new();
     let all_ids = file

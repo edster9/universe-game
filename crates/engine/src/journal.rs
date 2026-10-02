@@ -227,3 +227,39 @@ impl<'a, K: Ord + Clone> IntoIterator for &'a Set<K> {
         self.0.map.keys()
     }
 }
+
+/// A table is saved as its entries, in order: what it's recording isn't
+/// part of the world.
+impl<K, V> serde::Serialize for Table<K, V>
+where
+    K: Ord + Clone + serde::Serialize,
+    V: Clone + serde::Serialize,
+{
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.collect_seq(self.map.iter())
+    }
+}
+
+impl<'de, K, V> serde::Deserialize<'de> for Table<K, V>
+where
+    K: Ord + Clone + serde::Deserialize<'de>,
+    V: Clone + serde::Deserialize<'de>,
+{
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let entries: Vec<(K, V)> = serde::Deserialize::deserialize(d)?;
+        Ok(entries.into_iter().collect())
+    }
+}
+
+impl<K: Ord + Clone + serde::Serialize> serde::Serialize for Set<K> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.collect_seq(self.iter())
+    }
+}
+
+impl<'de, K: Ord + Clone + serde::Deserialize<'de>> serde::Deserialize<'de> for Set<K> {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let keys: Vec<K> = serde::Deserialize::deserialize(d)?;
+        Ok(keys.into_iter().collect())
+    }
+}

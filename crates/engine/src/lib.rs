@@ -7,6 +7,7 @@
 
 pub mod data;
 pub mod datasheet;
+pub mod designer;
 pub mod gate;
 pub mod instinct;
 pub mod intent;

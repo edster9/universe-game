@@ -9,11 +9,14 @@ use std::collections::BTreeMap;
 
 use crate::units::{Energy, Mass, Temperature};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+#[serde(transparent)]
 pub struct MaterialId(pub(crate) u16);
 
 /// A material's properties, all from data.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Material {
     pub key: String,
     pub label: String,
@@ -58,7 +61,7 @@ pub struct Material {
     pub insulates: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum State {
     Solid,
     Liquid,

@@ -17,7 +17,7 @@ use crate::world::{EntityId, Requirement, Role, World, list_and};
 const UNFAMILIAR: &str = "something unfamiliar";
 
 /// What a word means to the person who knows it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Meaning {
     /// A material, known when seen.
     Material(MaterialId),
@@ -31,14 +31,14 @@ pub enum Meaning {
 
 /// A way to make something: the parts to put together, and the design they
 /// follow, if the way came with one.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Recipe {
     pub design: Option<String>,
     pub slots: Vec<(String, Requirement)>,
 }
 
 /// A person's own words, and the ways they know to make things.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Lexicon {
     /// Each word and what it means. A word can mean several things, and
     /// several words can mean one.
@@ -50,7 +50,7 @@ pub struct Lexicon {
 }
 
 /// One part of a thing, as the eye sees it.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Part {
     /// A shaped piece, and what it's made of. An example learned from a
     /// design leaves the material open.
@@ -66,7 +66,7 @@ pub enum Part {
 
 /// How a thing looks: what it does, what it's made of, and how big it is.
 /// Recognising compares looks.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Look {
     /// The jobs its parts do, apart from being held.
     pub does: BTreeSet<Role>,
@@ -78,7 +78,9 @@ pub struct Look {
 }
 
 /// How closely a thing matches an example, least close first.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord,
+)]
 pub enum Closeness {
     /// It does the same jobs, at about the same size, from different parts.
     Like,

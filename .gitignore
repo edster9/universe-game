@@ -18,3 +18,4 @@ vendor/
 # Secrets: API keys, kept on this machine only
 .env
 .env.*
+/saves/

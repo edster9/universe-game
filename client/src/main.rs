@@ -19,6 +19,9 @@
 //! Options:
 //! - `--world <file>` a world in the data folder (companion.toml), `--as
 //!   <id>` who to play (survivor), `--speed <x>` game seconds a second (1).
+//! - `--load <save>` picks up a save (`/save`, `/load`) from the `saves`
+//!   folder beside the data folder; a game ends with a save called "last",
+//!   except one that only takes a picture (`--shot`).
 //! - `--shot <file.png> [--after <seconds>]` saves one frame and exits.
 //! - `--yaw`, `--pitch` (degrees) and `--zoom` (metres) set the camera
 //!   around the islander; `--from x,y,z --look x,y,z` start it flying.
@@ -185,12 +188,19 @@ fn main() {
             ))
         }
         None => {
-            let file = arg("--world").map_or("companion.toml", String::as_str);
-            let who = arg("--as").map_or("survivor", String::as_str);
-            let world = console::load_world_file(&data.join(file))
-                .and_then(|w| w.with_player_rules(who))
-                .unwrap_or_else(|e| fail(&e));
-            let session = Session::new(world, who).unwrap_or_else(|e| fail(&e));
+            let saves = data.parent().unwrap_or(&data).join("saves");
+            let session = match arg("--load") {
+                Some(name) => Session::resume(saves, name),
+                None => {
+                    let file = arg("--world").map_or("companion.toml", String::as_str);
+                    let who = arg("--as").map_or("survivor", String::as_str);
+                    console::load_world_file(&data.join(file))
+                        .and_then(|w| w.with_player_rules(who))
+                        .and_then(|world| Session::new(world, who))
+                        .map(|session| session.with_saves(saves))
+                }
+            }
+            .unwrap_or_else(|e| fail(&e));
             Play::Live(Box::new(session.with_real_time()))
         }
     };
@@ -298,8 +308,29 @@ fn main() {
         )
             .chain(),
     );
+    app.add_systems(Last, save_at_end.after(bevy::window::ExitSystems));
     use_system_font(&mut app);
     app.run();
+}
+
+/// A game ends with a save, and the next can start from it: in the frame
+/// the game is told to end, unless it was only taking a picture.
+fn save_at_end(
+    mut exits: MessageReader<AppExit>,
+    mut sim: ResMut<Sim>,
+    options: Res<Options>,
+    mut saved: Local<bool>,
+) {
+    if exits.read().next().is_none() || *saved || options.shot.is_some() {
+        return;
+    }
+    *saved = true;
+    if let Play::Live(session) = &mut sim.play {
+        match session.save(console::session::LAST) {
+            Ok(text) => info!("{text}"),
+            Err(e) => warn!("{e}"),
+        }
+    }
 }
 
 /// Where the client keeps its log: beside the program.

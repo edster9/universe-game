@@ -13,11 +13,14 @@ use crate::matter::{self, Composition, MaterialId, Materials, State};
 use crate::units::{Credits, Energy, Mass, Temperature};
 
 /// An entity is just an ID. Everything about it lives in components.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+#[serde(transparent)]
 pub struct EntityId(pub(crate) u32);
 
 /// World-wide constants, from the data file's `[world]` section.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Settings {
     /// The temperature hardness is measured at, and the default ambient.
     pub reference_temperature: Temperature,
@@ -183,7 +186,7 @@ impl Default for Settings {
 }
 
 /// Something a person keeps doing over time, advanced by nature each step.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Activity {
     /// Rubbing two things together: the softer wears into `dust`, and the
     /// effort becomes heat in the dust.
@@ -198,7 +201,7 @@ pub enum Activity {
 /// Where chance comes from. Normal play is seeded. Tests can fix luck so the
 /// same steps always give the same result however the engine changes: every
 /// roll comes up at one value, and a lower roll is luckier.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Luck {
     #[default]
     Seeded,
@@ -217,7 +220,7 @@ impl Luck {
 /// A living body's needs and limits, from data. The body itself is matter:
 /// it burns what it has digested to stay warm and alive, loses its vital
 /// fluid, and sweats to cool down.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Life {
     /// Energy it burns at rest, in µW.
     pub resting_power: u64,
@@ -284,7 +287,7 @@ pub struct Life {
 
 /// A source made of loose pieces, which can be gathered one piece at a time.
 /// A solid source has to be cut or dug instead.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Pieces {
     pub size: Mass,
     /// How long one search takes, in seconds.
@@ -304,7 +307,7 @@ pub struct Pieces {
 /// A living source that grows toward a limit, drawing matter from another
 /// piece (a population growing from what surrounds it) and energy from
 /// sunlight.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Growth {
     /// Growth when small, in parts per ten thousand of its mass per day. It
     /// slows as it nears its limit.
@@ -316,7 +319,9 @@ pub struct Growth {
 
 /// What a shaped part does, which decides what gets measured about it.
 /// These are laws, so they're named for what they do, not what they're called.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord,
+)]
 pub enum Role {
     /// Cuts. Measured: edge width and hardness.
     Cutting,
@@ -345,7 +350,9 @@ pub enum Role {
 }
 
 /// Something a person can be told or read, and later see for themselves.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub enum Claim {
     /// A place exists.
     Place(EntityId),
@@ -358,7 +365,7 @@ pub enum Claim {
 /// What a person remembers. What they've seen for themselves is certain;
 /// what they've been told or read is only possible, until they see it. See
 /// docs/ideas/memory.md.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Memory {
     /// Whether they have to find ways out, rather than knowing them all.
     pub finds_ways: bool,
@@ -390,7 +397,7 @@ pub struct Memory {
 
 /// A kind of creature or growing thing, from data. Kinds form a hierarchy:
 /// every kind but the broadest has a parent. See docs/ideas/kinds.md.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Kind {
     pub label: String,
     pub parent: Option<String>,
@@ -405,7 +412,7 @@ pub struct Kind {
 }
 
 /// The rules an instinct follows, beyond looking after its own body.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Instinct {
     /// Kinds it runs from when one is at the same place.
     pub flees: Vec<String>,
@@ -426,7 +433,7 @@ pub struct Instinct {
 /// universe grants to players' bodies, as the sun grants the world light. It
 /// enters as a named inflow the gate accounts for. What a body doesn't use
 /// tops up its stamina; hard work draws stamina down.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Vitality {
     /// The energy it brings, in µW.
     pub power: u64,
@@ -442,7 +449,7 @@ pub struct Vitality {
 }
 
 /// A body's need for sleep.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Sleep {
     /// How long it can stay awake before it's tired, in seconds.
     pub awake: u64,
@@ -465,7 +472,7 @@ pub struct Sleep {
 
 /// An action someone has started, to be carried out when its time is up.
 /// Until then they're busy with it, and the world goes on around them.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Pending {
     pub intent: crate::intent::Intent,
     /// When it began.
@@ -474,7 +481,7 @@ pub struct Pending {
 }
 
 /// Something that happened to someone, kept for them to hear of.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum News {
     /// `by` went for them, and wounded them (bleeding `wound` mg a second) or
     /// missed.
@@ -484,7 +491,7 @@ pub enum News {
 }
 
 /// How an action someone started came out, kept for them to hear of.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Outcome {
     /// Carried out: what it changed.
     Done(Vec<crate::gate::Change>),
@@ -495,7 +502,7 @@ pub enum Outcome {
 }
 
 /// Where on a body something is worn.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Covering {
     /// Underfoot, between the body and the ground, where walking wears it.
     Feet,
@@ -506,7 +513,7 @@ pub enum Covering {
 /// Something worn: where, which part of it takes the wear, and how heavy
 /// that part was when it was put on. Half of that worn away, it's worn
 /// through.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Worn {
     pub on: Covering,
     pub sole: EntityId,
@@ -514,7 +521,7 @@ pub struct Worn {
 }
 
 /// A shape from data, and what it takes to measure it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ShapeDef {
     pub label: String,
     pub role: Option<Role>,
@@ -534,7 +541,7 @@ pub struct ShapeDef {
 }
 
 /// What fills one slot of a design.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Requirement {
     Shape(String),
     Design(String),
@@ -543,7 +550,7 @@ pub enum Requirement {
 }
 
 /// A design from data: which parts go together.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Design {
     pub label: String,
     /// Slot name and what fills it.
@@ -561,7 +568,7 @@ pub struct Design {
 }
 
 /// A container that shapes liquid setting inside it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Form {
     pub shape: String,
     /// Tolerance of what sets in it, in µm.
@@ -570,7 +577,7 @@ pub struct Form {
 
 /// Parts put together to a design, and the datasheet measured when it was
 /// assembled.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Assembly {
     /// The design it was built to, or none if it was put together without
     /// one, as something new.
@@ -581,7 +588,7 @@ pub struct Assembly {
 }
 
 /// An insulated enclosure where fuel burns and heats whatever is inside.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Chamber {
     /// Most fuel it can burn per tick.
     pub burn_rate: Mass,
@@ -597,7 +604,7 @@ pub const LOG_WINDOW: usize = 1_000;
 
 /// Sorted collections throughout, so iteration order never depends on the
 /// machine: the engine must be deterministic.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default, PartialEq, Eq)]
 pub struct World {
     pub(crate) next_id: u32,
     pub(crate) tick: u64,
@@ -608,6 +615,8 @@ pub struct World {
     pub(crate) materials: Materials,
     pub(crate) shapes: BTreeMap<String, ShapeDef>,
     pub(crate) designs: BTreeMap<String, Design>,
+    /// What the designer's `/make` can put down together, by id.
+    pub(crate) kits: BTreeMap<String, crate::designer::Kit>,
 
     /// The ID each entity was given in the data file, or "#n" if it was made
     /// during play.
@@ -700,6 +709,10 @@ pub struct World {
     /// vitality. The gate conserves the totals less these too.
     pub(crate) vital_energy: u128,
     pub(crate) vital_matter: u128,
+    /// Energy, and matter in mg, that the designer has given: the person
+    /// building or testing the world, a named source too (`designer.rs`).
+    pub(crate) designed_energy: u128,
+    pub(crate) designed_matter: u128,
     pub(crate) agents: Set<EntityId>,
     pub(crate) portable: Set<EntityId>,
     pub(crate) containers: Set<EntityId>,
@@ -847,16 +860,21 @@ impl World {
         self.sunlight
     }
 
-    /// The world's mass, less what has entered as vitality: what the gate
-    /// conserves.
-    pub fn own_mass(&self) -> u128 {
-        self.total_mass() - self.vital_matter
+    /// Energy, in µJ, and matter, in mg, the designer has given so far.
+    pub fn designed(&self) -> (u128, u128) {
+        (self.designed_energy, self.designed_matter)
     }
 
-    /// The world's energy, less what has entered as sunlight and vitality:
-    /// what the gate conserves.
+    /// The world's mass, less what has entered as vitality and from the
+    /// designer: what the gate conserves.
+    pub fn own_mass(&self) -> u128 {
+        self.total_mass() - self.vital_matter - self.designed_matter
+    }
+
+    /// The world's energy, less what has entered as sunlight, vitality, and
+    /// from the designer: what the gate conserves.
     pub fn own_energy(&self) -> u128 {
-        self.total_energy() - self.sunlight - self.vital_energy
+        self.total_energy() - self.sunlight - self.vital_energy - self.designed_energy
     }
 
     /// The same world with this person living by players' rules: on
@@ -1732,10 +1750,13 @@ impl World {
             materials: _,
             shapes: _,
             designs: _,
+            kits: _,
             kinds: _,
             sunlight: _,
             vital_energy: _,
             vital_matter: _,
+            designed_energy: _,
+            designed_matter: _,
             log: _,
             logged: _,
             log_window: _,

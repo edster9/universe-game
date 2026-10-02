@@ -2,16 +2,19 @@
 //! opposed to commands, which the actor does in it. Tools start with a
 //! slash. For now they're settings: `/settings` lists them, `/set <name>
 //! <value>` (or `/<name> <value>`) changes one, and `/<name>` alone flips
-//! one that's on or off. Keys change the same settings. Each tool has a
-//! layer, which says who may use it. See docs/ideas/tools.md.
+//! one that's on or off. Keys change the same settings. `/save`, `/load`
+//! and `/saves` (single player), and `/make` and `/light` (the server's
+//! choice), are the session's own. Each tool has a layer, which says who
+//! may use it. See docs/ideas/tools.md.
 
 use bevy::prelude::*;
 
-use crate::Sim;
 use crate::camera::Eye;
 use crate::grid::Grid;
 use crate::panels::Panels;
 use crate::terminal::{Console, Said};
+use crate::terrain::Land;
+use crate::{Play, Sim};
 
 /// Settings that aren't kept anywhere else.
 #[derive(Resource)]
@@ -91,6 +94,7 @@ pub struct Changeable<'w> {
     grid: ResMut<'w, Grid>,
     eye: ResMut<'w, Eye>,
     panels: ResMut<'w, Panels>,
+    land: Res<'w, Land>,
 }
 
 impl Changeable<'_> {
@@ -168,12 +172,21 @@ fn parse(line: &str) -> Tool<'_> {
 
 /// Runs a tool, and says what came of it.
 pub fn run(line: &str, console: &mut Console, things: &mut Changeable) {
+    let first = line.split_whitespace().next().unwrap_or("");
+    if ["/save", "/load", "/saves", "/make", "/light"].contains(&first) {
+        session_tool(line, console, things);
+        return;
+    }
     let (name, value) = match parse(line) {
         Tool::Help => {
             console.say(
                 Said::Debug,
                 "Tools: /settings lists the settings; /set <name> <value>, or /<name> <value>, \
-                 changes one; /<name> alone flips one that's on or off.",
+                 changes one; /<name> alone flips one that's on or off. /save <name> saves the \
+                 whole world, /load [name] picks a save up (\"last\" is made when the game ends), \
+                 and /saves lists them (single player). /make <thing> puts something in front of \
+                 you (\"/make fire\", \"/make 2 kg wood\", \"/make fire ring\"), and /light <thing> \
+                 lights it.",
             );
             return;
         }
@@ -205,6 +218,30 @@ pub fn run(line: &str, console: &mut Console, things: &mut Changeable) {
             console.say(Said::Debug, &format!("{name} = {value}"));
         }
         Err(why) => console.say(Said::Refused, &format!("{why}.")),
+    }
+}
+
+/// The session's own tools: saving and loading the whole world (single
+/// player), and the designer making things (the server's choice).
+fn session_tool(line: &str, console: &mut Console, things: &mut Changeable) {
+    let Play::Live(session) = &mut things.sim.play else {
+        console.say(Said::Refused, "That's only for a game played live.");
+        return;
+    };
+    let reply = session.handle(line);
+    let said = if reply.refused {
+        Said::Refused
+    } else {
+        Said::Reply
+    };
+    console.say(said, &reply.text);
+    // The land is drawn once, at the start.
+    if !reply.refused && Land::of(session.world()) != *things.land {
+        console.say(
+            Said::Refused,
+            "This save is of another world, so the land drawn is still the old one: \
+             start the game with --load <name> to see it.",
+        );
     }
 }
 

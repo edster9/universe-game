@@ -402,6 +402,15 @@ label = "fire ring"
 holds = true
 parts = { a = "stone", b = "stone", c = "stone", d = "stone", e = "stone" }
 
+# What the designer's "/make fire" puts down: a fire laid in a ring of
+# stones, tinder to a log, already burning. For development, to start where
+# a fire is wanted without making one (docs/ideas/tools.md).
+[[kit]]
+id = "fire"
+holder = "fire ring"
+inside = ["30 g grass", "20 g wood", "20 g wood", "20 g wood", "200 g wood", "200 g wood", "2 kg wood"]
+lit = true
+
 # The islanders: the people who live on islands like this one, and what they
 # know to begin with. Their words for things are the things' labels. See
 # docs/ideas/vocabulary.md. They know hide, but not leather, and they know no

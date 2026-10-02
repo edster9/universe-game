@@ -12,6 +12,7 @@ Status: **in** (in the engine), **planned** (needed by an accepted challenge).
 | Energy is never created or destroyed: heat, chemical energy, and heat given to surroundings add up | in | slices 1, 2 |
 | Credits are never created or destroyed (until money is real, in slice 3) | in | slice 0 |
 | Energy enters only through named sources. Sunlight is the first: it supplies the energy living things store as they grow, and the warmth that heats things back up by day. The gate conserves everything else | in | stranded 3, where am I? 1 |
+| The designer (the person building or testing a world, at the keyboard) is a named source of matter and energy: what `/make` and `/light` give is counted by the gate, never from nowhere. A tool, not something anyone in the world can do | in | skill grounds |
 
 ## Matter and heat
 

@@ -14,7 +14,7 @@ use crate::world::{EntityId, World};
 
 /// The only kinds of change the world allows. Laws propose them; only the
 /// gate applies them.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Change {
     /// Put `entity` in or on `to`: a place, a person, a container.
     Move { entity: EntityId, to: EntityId },
@@ -232,6 +232,14 @@ pub enum Change {
         agent: EntityId,
         outcome: crate::world::Outcome,
     },
+    /// The designer, a named source, puts a new piece of matter made of
+    /// `make` at `at` (a place, a person, or a container), as warm as the
+    /// place's surroundings. Its mass, its heat, and the energy held in what
+    /// it's made of come from the designer. A tool, not a law
+    /// (`designer.rs`).
+    Provide { at: EntityId, make: Composition },
+    /// The designer gives `entity` heat, as a flame would.
+    Endow { entity: EntityId, amount: Energy },
     /// Someone starts wearing something they carry, or, with `None`, stops.
     Wear {
         agent: EntityId,
@@ -241,7 +249,7 @@ pub enum Change {
 }
 
 /// Something that can hold heat.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Holder {
     Thing(EntityId),
     /// A place's surroundings: the air and ground that heat escapes into.
@@ -249,16 +257,18 @@ pub enum Holder {
 }
 
 /// Why something happened.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Cause {
     /// Someone did something.
     Action { actor: EntityId, intent: Intent },
     /// The laws acted on their own during a tick: burning, heat, melting.
     Nature { tick: u64 },
+    /// The designer made something (`designer.rs`).
+    Designer,
 }
 
 /// One accepted set of changes, as recorded by the gate.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct LogEntry {
     pub seq: u64,
     pub cause: Cause,
@@ -267,7 +277,7 @@ pub struct LogEntry {
 
 /// Why the gate refused a set of changes. The laws should have refused first,
 /// so a fault means a law has a bug.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Fault {
     UnknownEntity(EntityId),
     NotLocated(EntityId),
@@ -399,11 +409,13 @@ impl World {
     /// well formed around everything that changed.
     fn check_changes(&self, totals: &Totals) -> Result<(), Fault> {
         let (mass, energy, credits) = self.change_in_totals();
-        if mass != self.vital_matter as i128 - totals.vital_matter as i128 {
+        let came = (self.vital_matter + self.designed_matter) as i128
+            - (totals.vital_matter + totals.designed_matter) as i128;
+        if mass != came {
             return Err(Fault::NotConserved("mass"));
         }
-        let entered = (self.sunlight + self.vital_energy) as i128
-            - (totals.sunlight + totals.vital_energy) as i128;
+        let entered = (self.sunlight + self.vital_energy + self.designed_energy) as i128
+            - (totals.sunlight + totals.vital_energy + totals.designed_energy) as i128;
         if energy != entered {
             return Err(Fault::NotConserved("energy"));
         }
@@ -669,6 +681,29 @@ impl World {
                 self.put(new, *at);
                 self.portable.insert(new);
                 Ok(())
+            }
+
+            Change::Provide { at, make } => {
+                self.must_exist(*at)?;
+                let place = self.place_of(*at).ok_or(Fault::NotAPlace(*at))?;
+                let capacity = matter::heat_capacity(&self.materials, make);
+                let heat = matter::energy_at(self.ambient(place), capacity);
+                let heat = u64::try_from(heat).map_err(|_| Fault::Overflow(*at))?;
+                let new = self.spawn(None, None);
+                self.matter.insert(new, make.clone());
+                self.heat.insert(new, Energy::from_uj(heat));
+                self.put(new, *at);
+                self.portable.insert(new);
+                // Its heat, and the energy held in what it's made of.
+                self.designed_matter += matter::total_mass(make);
+                self.designed_energy +=
+                    u128::from(heat) + matter::chemical_energy(&self.materials, make);
+                Ok(())
+            }
+
+            Change::Endow { entity, amount } => {
+                self.designed_energy += u128::from(amount.uj());
+                self.give_heat(Holder::Thing(*entity), *amount)
             }
 
             Change::Shift { from, to, take } => {
@@ -1417,6 +1452,8 @@ struct Totals {
     sunlight: u128,
     vital_energy: u128,
     vital_matter: u128,
+    designed_energy: u128,
+    designed_matter: u128,
 }
 
 impl Totals {
@@ -1426,6 +1463,8 @@ impl Totals {
             sunlight: world.sunlight,
             vital_energy: world.vital_energy,
             vital_matter: world.vital_matter,
+            designed_energy: world.designed_energy,
+            designed_matter: world.designed_matter,
         }
     }
 
@@ -1434,6 +1473,8 @@ impl Totals {
         world.sunlight = self.sunlight;
         world.vital_energy = self.vital_energy;
         world.vital_matter = self.vital_matter;
+        world.designed_energy = self.designed_energy;
+        world.designed_matter = self.designed_matter;
     }
 }
 

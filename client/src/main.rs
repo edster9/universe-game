@@ -92,6 +92,11 @@ impl Sim {
     }
 
     /// The world's time, with the fraction of a second not yet run.
+    /// Game seconds a real second.
+    pub fn speed(&self) -> f32 {
+        self.speed
+    }
+
     pub fn now(&self) -> f32 {
         self.world().tick() as f32 + self.owed
     }
@@ -259,6 +264,8 @@ fn main() {
     .init_resource::<Console>()
     .init_resource::<terminal::Shots>()
     .init_resource::<tools::Settings>()
+    .init_resource::<draw::Drawn>()
+    .init_resource::<walking::ByKeys>()
     .insert_resource(voice::Voice::new(&model))
     .add_systems(
         Startup,
@@ -290,6 +297,7 @@ fn main() {
             // Then the world, and drawing it.
             (
                 run_world,
+                draw::follow_me,
                 terminal::play_script,
                 draw::draw_scenery,
                 draw::draw_movers,
@@ -553,6 +561,7 @@ fn run_world(
     settings: Res<tools::Settings>,
     mut sim: ResMut<Sim>,
     mut console: ResMut<Console>,
+    by_keys: Res<walking::ByKeys>,
     mut was_busy: Local<bool>,
 ) {
     if sim.paused {
@@ -567,6 +576,12 @@ fn run_world(
         session.advance(whole as u64);
     }
     let news = session.catch_up();
+    // A step the keys took needs no word.
+    let news: String = news
+        .lines()
+        .filter(|line| !(by_keys.0 && line.starts_with("You walk to ")))
+        .collect::<Vec<_>>()
+        .join("\n");
     if !news.is_empty() {
         console.say(Said::News, &news);
     }

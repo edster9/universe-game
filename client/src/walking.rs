@@ -18,13 +18,18 @@ const STEP: f32 = 1.3;
 /// A way out within this angle of where you're walking is the one you take.
 const TOWARDS: f32 = 0.8;
 
+/// Whether the islander is walking a step the keys started. Each step ends
+/// with news ("You walk to 2.63 0.18."), which a held key needn't say.
+#[derive(Resource, Default)]
+pub struct ByKeys(pub bool);
+
 /// Walks the islander while WASD is held.
 pub fn walk_keys(
     keys: Res<ButtonInput<KeyCode>>,
     mut console: ResMut<Console>,
     eye: Res<Eye>,
     mut sim: ResMut<Sim>,
-    mut by_keys: Local<bool>,
+    mut by_keys: ResMut<ByKeys>,
 ) {
     if console.typing {
         return;
@@ -47,7 +52,7 @@ pub fn walk_keys(
         return;
     };
     if heading == Vec2::ZERO {
-        *by_keys = false;
+        by_keys.0 = false;
         return;
     }
     let heading = heading.normalize();
@@ -96,7 +101,7 @@ pub fn walk_keys(
     };
     match walking {
         // A walk the keys started: let it finish, then the next step.
-        Some(true) if *by_keys => return,
+        Some(true) if by_keys.0 => return,
         // A walk someone typed or spoke, or anything else being done here,
         // or kept going: the keys take over, stopping it (a walk where
         // they've got to), and stepping on from there next frame.
@@ -112,7 +117,7 @@ pub fn walk_keys(
         None => {}
     }
     let reply = session.handle(&line);
-    *by_keys = !reply.refused && line.starts_with("walk");
+    by_keys.0 = !reply.refused && line.starts_with("walk");
 }
 
 /// With the `reach` setting, a circle on the ground around the islander:
@@ -121,6 +126,7 @@ pub fn draw_reach(
     settings: Res<Settings>,
     sim: Res<Sim>,
     land: Res<crate::terrain::Land>,
+    drawn: Res<crate::draw::Drawn>,
     mut gizmos: Gizmos,
 ) {
     if !settings.reach {
@@ -131,7 +137,9 @@ pub fn draw_reach(
     let Some(reach) = world.reach(me) else {
         return;
     };
-    let at = crate::draw::spot(world, &land, me, sim.now());
+    let at = drawn
+        .at
+        .unwrap_or_else(|| crate::draw::spot(world, &land, me, sim.now()));
     let radius = reach as f32 / 1e6;
     let points = (0..=48).map(|i| {
         let angle = i as f32 / 48.0 * std::f32::consts::TAU;

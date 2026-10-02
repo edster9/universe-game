@@ -669,6 +669,10 @@ Added 2026-10-02, after trying the save, `/make`, and the skill grounds in the c
 
 Claude's take: [ideas/hands-and-joins.md](ideas/hands-and-joins.md).
 
+Added the same day: **maybe it's too early to ask, since we don't have a real human figure with walk and run animations yet, but moving with WASD makes the actor jerky and jumpy, as in the original first steps.** I know we go from keys to the command layer, but maybe it's something to smooth out and investigate now. **Take a look: it might need an earlier fix, but if better actor animations later would fix it, we can wait.**
+
+What Claude found: the engine walks evenly (measured, 60 frames a second, 2.2 cm a frame), but its clock counts whole seconds, so a step started partway through a second was drawn as if it began at the second's start: a leap of up to a metre at every press of a key. And every finished step printed "You walk to …" in the console, a line a second. Fixed in the client, not waiting for animation: the drawn islander follows the engine but never moves faster than one and a half times walking pace (a gap over 5 m is crossed at once), and steps taken by the keys don't print news. Animations will sit on top of this, not replace it.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

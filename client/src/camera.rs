@@ -111,6 +111,7 @@ pub fn follow(
     console: Res<Console>,
     sim: Res<Sim>,
     land: Res<Land>,
+    drawn: Res<crate::draw::Drawn>,
     mut eye: ResMut<Eye>,
     mut camera: Query<(&mut Transform, &mut FreeCameraState), With<Camera3d>>,
 ) {
@@ -153,7 +154,10 @@ pub fn follow(
     eye.distance = (eye.distance * (-lines * 0.15).exp()).clamp(NEAREST, FURTHEST);
 
     let world = sim.world();
-    let me = spot(world, &land, sim.me(), sim.now()) + Vec3::Y * HEAD;
+    let me = drawn
+        .at
+        .unwrap_or_else(|| spot(world, &land, sim.me(), sim.now()))
+        + Vec3::Y * HEAD;
     // Follow smoothly, but jump when they've moved far at once.
     let target = match eye.target {
         Some(t) if t.distance(me) < 50.0 => t.lerp(me, 1.0 - (-time.delta_secs() * 8.0).exp()),

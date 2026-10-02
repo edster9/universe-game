@@ -138,6 +138,41 @@ pub fn spot(world: &EngineWorld, land: &Land, id: EntityId, now: f32) -> Vec3 {
     on_ground(land, at)
 }
 
+/// Where the islander is drawn: following where the engine has them, but
+/// never faster than a little over walking pace, so they never jump. The
+/// engine keeps time in whole seconds, and a step taken partway through one
+/// starts, to it, at the second's beginning: drawn as it is, the islander
+/// would leap ahead at every press of a key. A big gap (a save loaded, a
+/// speed-up) is crossed at once.
+#[derive(Resource, Default)]
+pub struct Drawn {
+    pub at: Option<Vec3>,
+}
+
+/// How much faster than they walk the drawn islander may catch up.
+const CATCH_UP: f32 = 1.5;
+/// A gap wider than this, in metres, is crossed at once.
+const SNAP: f32 = 5.0;
+
+/// Moves the drawn islander towards where the engine has them.
+pub fn follow_me(time: Res<Time>, sim: Res<Sim>, land: Res<Land>, mut drawn: ResMut<Drawn>) {
+    let world = sim.world();
+    let me = sim.me();
+    let target = spot(world, &land, me, sim.now());
+    let pace = world
+        .life(me)
+        .map_or(1.2, |l| l.walking_speed as f32 / 1_000.0);
+    let most = pace * CATCH_UP * sim.speed() * time.delta_secs();
+    drawn.at = Some(match drawn.at {
+        Some(at) if at.distance(target) <= SNAP * sim.speed().max(1.0) => {
+            let flat = Vec3::new(target.x - at.x, 0.0, target.z - at.z);
+            let moved = at + flat.clamp_length_max(most);
+            on_ground(&land, moved)
+        }
+        _ => target,
+    });
+}
+
 /// A spot from the engine (µm east and north) in the scene's metres.
 pub fn point((east, north): (i64, i64)) -> Vec3 {
     Vec3::new(east as f32 / 1e6, 0.0, -(north as f32 / 1e6))
@@ -497,6 +532,7 @@ pub fn draw_movers(
     commands: Commands,
     time: Res<Time>,
     sim: Res<Sim>,
+    me_drawn: Res<Drawn>,
     style: Res<Style>,
     land: Res<Land>,
     mut kit: ResMut<Kit>,
@@ -545,6 +581,10 @@ pub fn draw_movers(
             look.size *= 0.5;
         }
         let turn = (id_seed(world, id) % 628) as f32 / 100.0;
-        brush.piece(&look, spot(world, &land, id, now), turn, Named(id), Mover);
+        let at = match me_drawn.at {
+            Some(at) if id == sim.me() => at,
+            _ => spot(world, &land, id, now),
+        };
+        brush.piece(&look, at, turn, Named(id), Mover);
     }
 }

@@ -3,9 +3,14 @@
 # docs/ideas/assets.md). The engine never draws; this is the client's own
 # data, keyed by the ids in the world's data files.
 #
-# Forms: rock (a lump), log (lying wood), tree, bush, tuft (grass), pool (a
-# flat patch of liquid), mound (a low heap), person, beast, none (not
-# drawn). `size` is a piece's size in metres.
+# Forms made in code (client/src/shapes.rs): twig, stick, log, tuft (grass
+# blades), stone, shard (knapped-looking, for flint), nugget (lumpy ore),
+# boulder (a big flat rock), shell, nuts (roots and nuts), bush, pine (a
+# tree), ring (stones in a circle), kiln (a furnace). Simple ones: rock (a
+# ball), pool (a flat patch of liquid), mound (a low heap), person, beast,
+# none (not drawn). `size` is a piece's size in metres. `smaller` gives other
+# forms for lighter pieces, by weight in grams: a twig, a stick. Things built
+# to a design are drawn by `[design.<id>]`.
 
 [kind.human]
 form = "person"
@@ -18,7 +23,7 @@ colour = "#5a3a22"
 size = 0.9
 
 [kind.tree]
-form = "tree"
+form = "pine"
 colour = "#2e6b30"
 size = 9.0
 
@@ -28,9 +33,9 @@ colour = "#3f8f3a"
 size = 1.6
 
 [kind.shellfish]
-form = "rock"
-colour = "#e8e2d4"
-size = 0.35
+form = "shell"
+colour = "#2f3440"
+size = 0.12
 
 [kind.fish]
 form = "none"
@@ -39,21 +44,25 @@ form = "none"
 form = "log"
 colour = "#8b5a2b"
 size = 1.2
+smaller = [
+    { under = 50.0, form = "twig", size = 0.35 },
+    { under = 2000.0, form = "stick", size = 0.9 },
+]
 
 [material.stone]
-form = "rock"
+form = "stone"
 colour = "#8a8a8a"
-size = 0.7
+size = 0.3
 
 [material.flint]
-form = "rock"
-colour = "#4a4f5a"
-size = 0.5
+form = "shard"
+colour = "#3b4049"
+size = 0.25
 
 [material.iron]
-form = "rock"
+form = "nugget"
 colour = "#6b3a2a"
-size = 0.45
+size = 0.3
 
 [material.water]
 form = "pool"
@@ -74,14 +83,14 @@ colour = "#6b4f2a"
 size = 30.0
 
 [material.roots]
-form = "rock"
+form = "nuts"
 colour = "#7a5a3a"
-size = 0.3
+size = 0.5
 
 [material.grass]
 form = "tuft"
-colour = "#a4c24a"
-size = 0.7
+colour = "#b7b45a"
+size = 0.45
 
 [material.fibre]
 form = "bush"
@@ -89,14 +98,33 @@ colour = "#6f9a3a"
 size = 1.2
 
 [material.shell]
-form = "rock"
+form = "shell"
 colour = "#f2eee4"
-size = 0.2
+size = 0.12
 
 [material.shellfish]
-form = "rock"
+form = "shell"
 colour = "#e8e2d4"
-size = 0.25
+size = 0.12
+
+# Rock: in big pieces, the skill grounds' landmarks; in small ones, the
+# rusty lumps of bog iron (half rock, half iron).
+[material.rock]
+form = "boulder"
+colour = "#7d7468"
+size = 2.2
+smaller = [{ under = 50000.0, form = "nugget", size = 0.3 }]
+
+# Things built to a design.
+[design.fire-ring]
+form = "ring"
+colour = "#8a8a8a"
+size = 1.0
+
+[design.furnace]
+form = "kiln"
+colour = "#a0522d"
+size = 1.1
 
 # Anything not listed.
 [fallback]

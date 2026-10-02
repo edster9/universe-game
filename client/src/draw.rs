@@ -22,6 +22,17 @@ pub struct Look {
     colour: String,
     #[serde(default = "one")]
     size: f32,
+    /// Other forms for smaller pieces, smallest first: a twig, a stick.
+    #[serde(default)]
+    smaller: Vec<Smaller>,
+}
+
+/// A form for pieces under a weight, in grams.
+#[derive(Deserialize, Clone)]
+pub struct Smaller {
+    under: f32,
+    form: String,
+    size: f32,
 }
 
 fn grey() -> String {
@@ -38,6 +49,9 @@ pub struct Style {
     kind: BTreeMap<String, Look>,
     #[serde(default)]
     material: BTreeMap<String, Look>,
+    /// Things built to a design, by the design's id.
+    #[serde(default)]
+    design: BTreeMap<String, Look>,
     fallback: Look,
 }
 
@@ -45,16 +59,33 @@ impl Style {
     /// How to draw a thing: by its kind if it has one, else by what it's
     /// mostly made of.
     fn look(&self, world: &EngineWorld, id: EntityId) -> Look {
+        if let Some(look) = world
+            .assembly(id)
+            .and_then(|a| a.design.as_ref())
+            .and_then(|d| self.design.get(d))
+        {
+            return look.clone();
+        }
         if let Some(look) = world.kind_of(id).and_then(|k| self.kind.get(k)) {
             return look.clone();
         }
-        world
+        let mut look = world
             .composition(id)
             .and_then(engine::matter::dominant)
             .map(|m| &world.materials()[&m].key)
             .and_then(|key| self.material.get(key))
             .unwrap_or(&self.fallback)
-            .clone()
+            .clone();
+        // A piece's weight: a stock's pieces, or the thing itself.
+        let grams = world
+            .pieces(id)
+            .map_or_else(|| world.mass(id).mg(), |p| p.size.mg()) as f32
+            / 1_000.0;
+        if let Some(smaller) = look.smaller.iter().find(|s| grams < s.under) {
+            look.form = smaller.form.clone();
+            look.size = smaller.size;
+        }
+        look
     }
 }
 
@@ -206,6 +237,23 @@ impl Kit {
         let handle = meshes.add(mesh);
         self.meshes.insert(form.to_string(), handle.clone());
         handle
+    }
+
+    /// A shape made in code (`shapes.rs`), in one of its variants.
+    fn shape(
+        &mut self,
+        meshes: &mut Assets<Mesh>,
+        form: &str,
+        variant: u64,
+    ) -> Option<Handle<Mesh>> {
+        let key = format!("{form}/{}", variant % crate::shapes::variants(form));
+        if let Some(handle) = self.meshes.get(&key) {
+            return Some(handle.clone());
+        }
+        let mesh = crate::shapes::build(form, variant % crate::shapes::variants(form))?;
+        let handle = meshes.add(mesh);
+        self.meshes.insert(key, handle.clone());
+        Some(handle)
     }
 
     fn material(
@@ -385,6 +433,21 @@ impl Brush<'_, '_> {
         marker: impl Bundle + Clone,
     ) {
         let s = look.size;
+        // One of the shapes made in code, in a variant of its own.
+        let variant = (turn * 100.0) as u64;
+        if let Some(mesh) = self.kit.shape(self.meshes, &look.form, variant) {
+            let material = self.kit.material(self.materials, &look.colour);
+            self.commands.spawn((
+                Mesh3d(mesh),
+                MeshMaterial3d(material),
+                Transform::from_translation(at)
+                    .with_rotation(Quat::from_rotation_y(turn))
+                    .with_scale(Vec3::splat(s)),
+                named,
+                marker,
+            ));
+            return;
+        }
         let parts: Vec<(&str, &str, Transform)> = match look.form.as_str() {
             "none" => Vec::new(),
             "log" => vec![(
@@ -599,5 +662,32 @@ pub fn draw_movers(
             _ => spot(world, &land, id, now),
         };
         brush.piece(&look, at, turn, Named(id), Mover);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{STYLE, Style};
+
+    /// The style reads, and every form it names is one the client draws.
+    #[test]
+    fn every_form_in_the_style_is_drawn() {
+        let style: Style = toml::from_str(STYLE).expect("the style file");
+        let simple = ["rock", "pool", "mound", "person", "beast", "none", "tree"];
+        let looks = style
+            .kind
+            .values()
+            .chain(style.material.values())
+            .chain(style.design.values())
+            .chain([&style.fallback]);
+        for look in looks {
+            let forms = std::iter::once(&look.form).chain(look.smaller.iter().map(|s| &s.form));
+            for form in forms {
+                assert!(
+                    simple.contains(&form.as_str()) || crate::shapes::build(form, 0).is_some(),
+                    "the style names a form nobody draws: {form}"
+                );
+            }
+        }
     }
 }

@@ -52,6 +52,7 @@ mod draw;
 mod grid;
 mod menu;
 mod panels;
+mod shapes;
 mod terminal;
 mod terrain;
 mod tools;

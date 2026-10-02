@@ -12,10 +12,15 @@ as player
 luck average
 
 go to the hearth
+go to grass
 gather grass x6
+go to twigs
 gather twigs x8
+go to sticks
 gather sticks x8
+go to deadwood
 gather deadwood
+go to stones
 gather stones x20
 
 # Laid first, then lit, at the hearth.

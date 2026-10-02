@@ -59,9 +59,9 @@ bare_feet_wound = "20 mg/s"
 covers = "2 kg"
 
 # One open place. Each zone's middle is 25 m from the clearing; its stocks
-# lie within 2 m of that middle, so all are in reach from it; and its
-# landmark, a big flat rock, stands just behind, so "go to the hearth" from
-# the clearing stops in the middle of the hearth's things.
+# lie 4 m round that middle, a few steps apart (the owner, 2026-10-02: not
+# jammed together); and its landmark, a big flat rock, stands just behind.
+# Rearrange it in the client's build mode, and keep it with /save.
 [[place]]
 id = "grounds"
 label = "the skill grounds"
@@ -90,7 +90,7 @@ rules = "player"
 id = "woodland"
 label = "the woodland"
 at = "grounds"
-spot = "29.0 m north"
+spot = "31.5 m north"
 spread = "1 m"
 mass = "2 t"
 fixed = true
@@ -100,7 +100,7 @@ material = "rock"
 id = "woodland-trees"
 label = "standing trees"
 at = "grounds"
-spot = "23.0 m north"
+spot = "21.0 m north"
 spread = "1.5 m"
 mass = "20 t"
 fixed = true
@@ -112,7 +112,7 @@ kind = "tree"
 id = "woodland-forage"
 label = "roots and nuts in the leaf litter"
 at = "grounds"
-spot = "23.6 m north, 1.4 m west"
+spot = "22.2 m north, 2.8 m west"
 spread = "0.8 m"
 mass = "150 kg"
 fixed = true
@@ -124,7 +124,7 @@ grows = { rate = "20%", limit = "200 kg", from = "floor" }
 id = "woodland-flint"
 label = "flint nodules"
 at = "grounds"
-spot = "25.0 m north, 2.0 m west"
+spot = "25.0 m north, 4.0 m west"
 spread = "0.8 m"
 mass = "200 kg"
 fixed = true
@@ -135,7 +135,7 @@ pieces = { size = "500 g", find_time = "8 s" }
 id = "woodland-stones"
 label = "loose stones"
 at = "grounds"
-spot = "26.4 m north, 1.4 m west"
+spot = "27.8 m north, 2.8 m west"
 spread = "0.8 m"
 mass = "500 kg"
 fixed = true
@@ -146,7 +146,7 @@ pieces = { size = "1 kg", find_time = "5 s" }
 id = "woodland-sticks"
 label = "fallen sticks"
 at = "grounds"
-spot = "27.0 m north"
+spot = "29.0 m north"
 spread = "0.8 m"
 mass = "50 kg"
 fixed = true
@@ -157,7 +157,7 @@ pieces = { size = "200 g", find_time = "4 s" }
 id = "woodland-grass"
 label = "dry grass"
 at = "grounds"
-spot = "26.4 m north, 1.4 m east"
+spot = "27.8 m north, 2.8 m east"
 spread = "0.8 m"
 mass = "20 kg"
 fixed = true
@@ -168,7 +168,7 @@ pieces = { size = "5 g", find_time = "3 s" }
 id = "woodland-twigs"
 label = "dry twigs"
 at = "grounds"
-spot = "25.0 m north, 2.0 m east"
+spot = "25.0 m north, 4.0 m east"
 spread = "0.8 m"
 mass = "20 kg"
 fixed = true
@@ -179,7 +179,7 @@ pieces = { size = "20 g", find_time = "3 s" }
 id = "woodland-bushes"
 label = "fibrous bushes"
 at = "grounds"
-spot = "23.6 m north, 1.4 m east"
+spot = "22.2 m north, 2.8 m east"
 spread = "0.8 m"
 mass = "500 kg"
 fixed = true
@@ -269,7 +269,7 @@ kind = "tree"
 id = "grove"
 label = "the fibre grove"
 at = "grounds"
-spot = "14.5 m north, 25.1 m east"
+spot = "15.8 m north, 27.3 m east"
 spread = "1 m"
 mass = "2 t"
 fixed = true
@@ -279,7 +279,7 @@ material = "rock"
 id = "grove-bushes"
 label = "fibrous bushes"
 at = "grounds"
-spot = "11.5 m north, 19.9 m east"
+spot = "10.5 m north, 18.1 m east"
 spread = "0.8 m"
 mass = "500 kg"
 fixed = true
@@ -291,7 +291,7 @@ kind = "shrub"
 id = "grove-sticks"
 label = "fallen sticks"
 at = "grounds"
-spot = "14.5 m north, 21.7 m east"
+spot = "16.5 m north, 21.7 m east"
 spread = "0.8 m"
 mass = "50 kg"
 fixed = true
@@ -302,7 +302,7 @@ pieces = { size = "200 g", find_time = "4 s" }
 id = "grove-logs"
 label = "deadwood"
 at = "grounds"
-spot = "11.5 m north, 23.4 m east"
+spot = "10.5 m north, 25.1 m east"
 spread = "0.8 m"
 mass = "200 kg"
 fixed = true
@@ -316,7 +316,7 @@ pieces = { size = "3 kg", find_time = "8 s" }
 id = "stream"
 label = "the stream bank"
 at = "grounds"
-spot = "14.5 m south, 25.1 m east"
+spot = "15.8 m south, 27.3 m east"
 spread = "1 m"
 mass = "2 t"
 fixed = true
@@ -348,7 +348,7 @@ kind = "fish"
 id = "stream-mussels"
 label = "mussels in the shallows"
 at = "grounds"
-spot = "11.0 m south, 23.0 m east"
+spot = "9.5 m south, 24.3 m east"
 spread = "0.8 m"
 mass = "100 kg"
 fixed = true
@@ -360,7 +360,7 @@ kind = "shellfish"
 id = "stream-forage"
 label = "roots and nuts in the leaf litter"
 at = "grounds"
-spot = "12.6 m south, 23.6 m east"
+spot = "12.7 m south, 25.5 m east"
 spread = "0.8 m"
 mass = "150 kg"
 fixed = true
@@ -372,7 +372,7 @@ grows = { rate = "20%", limit = "200 kg", from = "floor" }
 id = "stream-flint"
 label = "flint nodules"
 at = "grounds"
-spot = "14.2 m south, 22.8 m east"
+spot = "15.9 m south, 23.9 m east"
 spread = "0.8 m"
 mass = "200 kg"
 fixed = true
@@ -383,7 +383,7 @@ pieces = { size = "500 g", find_time = "8 s" }
 id = "stream-stones"
 label = "loose stones"
 at = "grounds"
-spot = "14.4 m south, 21.1 m east"
+spot = "16.3 m south, 20.5 m east"
 spread = "0.8 m"
 mass = "500 kg"
 fixed = true
@@ -394,7 +394,7 @@ pieces = { size = "1 kg", find_time = "5 s" }
 id = "stream-sticks"
 label = "fallen sticks"
 at = "grounds"
-spot = "13.2 m south, 19.8 m east"
+spot = "13.9 m south, 17.9 m east"
 spread = "0.8 m"
 mass = "50 kg"
 fixed = true
@@ -409,7 +409,7 @@ pieces = { size = "200 g", find_time = "4 s" }
 id = "forge"
 label = "the forge"
 at = "grounds"
-spot = "29.0 m south"
+spot = "31.5 m south"
 spread = "1 m"
 mass = "2 t"
 fixed = true
@@ -419,7 +419,7 @@ material = "rock"
 id = "forge-bog"
 label = "bog iron in a boggy hollow"
 at = "grounds"
-spot = "23.0 m south"
+spot = "21.0 m south"
 spread = "0.8 m"
 mass = "200 kg"
 fixed = true
@@ -430,7 +430,7 @@ pieces = { size = "2 kg", find_time = "10 s" }
 id = "forge-clay"
 label = "clay in a bank"
 at = "grounds"
-spot = "23.6 m south, 1.4 m east"
+spot = "22.2 m south, 2.8 m east"
 spread = "0.8 m"
 mass = "500 kg"
 fixed = true
@@ -441,7 +441,7 @@ pieces = { size = "1 kg", find_time = "5 s" }
 id = "forge-stones"
 label = "loose stones"
 at = "grounds"
-spot = "25.0 m south, 2.0 m east"
+spot = "25.0 m south, 4.0 m east"
 spread = "0.8 m"
 mass = "500 kg"
 fixed = true
@@ -452,7 +452,7 @@ pieces = { size = "1 kg", find_time = "5 s" }
 id = "forge-flint"
 label = "flint nodules"
 at = "grounds"
-spot = "26.4 m south, 1.4 m east"
+spot = "27.8 m south, 2.8 m east"
 spread = "0.8 m"
 mass = "200 kg"
 fixed = true
@@ -463,7 +463,7 @@ pieces = { size = "500 g", find_time = "8 s" }
 id = "forge-grass"
 label = "dry grass"
 at = "grounds"
-spot = "27.0 m south"
+spot = "29.0 m south"
 spread = "0.8 m"
 mass = "20 kg"
 fixed = true
@@ -474,7 +474,7 @@ pieces = { size = "5 g", find_time = "3 s" }
 id = "forge-twigs"
 label = "dry twigs"
 at = "grounds"
-spot = "26.4 m south, 1.4 m west"
+spot = "27.8 m south, 2.8 m west"
 spread = "0.8 m"
 mass = "20 kg"
 fixed = true
@@ -485,7 +485,7 @@ pieces = { size = "20 g", find_time = "3 s" }
 id = "forge-sticks"
 label = "fallen sticks"
 at = "grounds"
-spot = "25.0 m south, 2.0 m west"
+spot = "25.0 m south, 4.0 m west"
 spread = "0.8 m"
 mass = "50 kg"
 fixed = true
@@ -496,7 +496,7 @@ pieces = { size = "200 g", find_time = "4 s" }
 id = "forge-logs"
 label = "deadwood"
 at = "grounds"
-spot = "23.6 m south, 1.4 m west"
+spot = "22.2 m south, 2.8 m west"
 spread = "0.8 m"
 mass = "200 kg"
 fixed = true
@@ -509,7 +509,7 @@ pieces = { size = "3 kg", find_time = "8 s" }
 id = "hearth"
 label = "the hearth"
 at = "grounds"
-spot = "14.5 m south, 25.1 m west"
+spot = "15.8 m south, 27.3 m west"
 spread = "1 m"
 mass = "2 t"
 fixed = true
@@ -519,7 +519,7 @@ material = "rock"
 id = "hearth-grass"
 label = "dry grass"
 at = "grounds"
-spot = "11.5 m south, 19.9 m west"
+spot = "10.5 m south, 18.1 m west"
 spread = "0.8 m"
 mass = "20 kg"
 fixed = true
@@ -530,7 +530,7 @@ pieces = { size = "5 g", find_time = "3 s" }
 id = "hearth-twigs"
 label = "dry twigs"
 at = "grounds"
-spot = "13.8 m south, 20.2 m west"
+spot = "15.1 m south, 18.7 m west"
 spread = "0.8 m"
 mass = "20 kg"
 fixed = true
@@ -541,7 +541,7 @@ pieces = { size = "20 g", find_time = "3 s" }
 id = "hearth-sticks"
 label = "fallen sticks"
 at = "grounds"
-spot = "14.3 m south, 22.5 m west"
+spot = "16.1 m south, 23.3 m west"
 spread = "0.8 m"
 mass = "50 kg"
 fixed = true
@@ -552,7 +552,7 @@ pieces = { size = "200 g", find_time = "4 s" }
 id = "hearth-logs"
 label = "deadwood"
 at = "grounds"
-spot = "12.3 m south, 23.6 m west"
+spot = "12.1 m south, 25.5 m west"
 spread = "0.8 m"
 mass = "200 kg"
 fixed = true
@@ -563,7 +563,7 @@ pieces = { size = "3 kg", find_time = "8 s" }
 id = "hearth-stones"
 label = "loose stones"
 at = "grounds"
-spot = "10.5 m south, 22.1 m west"
+spot = "8.5 m south, 22.5 m west"
 spread = "0.8 m"
 mass = "500 kg"
 fixed = true
@@ -577,7 +577,7 @@ pieces = { size = "1 kg", find_time = "5 s" }
 id = "knapping"
 label = "the knapping ground"
 at = "grounds"
-spot = "14.5 m north, 25.1 m west"
+spot = "15.8 m north, 27.3 m west"
 spread = "1 m"
 mass = "2 t"
 fixed = true
@@ -587,7 +587,7 @@ material = "rock"
 id = "knapping-flint"
 label = "flint nodules"
 at = "grounds"
-spot = "11.5 m north, 19.9 m west"
+spot = "10.5 m north, 18.1 m west"
 spread = "0.8 m"
 mass = "200 kg"
 fixed = true
@@ -598,7 +598,7 @@ pieces = { size = "500 g", find_time = "8 s" }
 id = "knapping-stones"
 label = "loose stones"
 at = "grounds"
-spot = "11.5 m north, 23.4 m west"
+spot = "10.5 m north, 25.1 m west"
 spread = "0.8 m"
 mass = "500 kg"
 fixed = true
@@ -609,7 +609,7 @@ pieces = { size = "1 kg", find_time = "5 s" }
 id = "knapping-sticks"
 label = "fallen sticks"
 at = "grounds"
-spot = "14.5 m north, 21.7 m west"
+spot = "16.5 m north, 21.7 m west"
 spread = "0.8 m"
 mass = "50 kg"
 fixed = true

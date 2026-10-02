@@ -235,6 +235,32 @@ fn burns(world: &World, thing: EntityId) -> bool {
         .is_some_and(|m| world.materials[&m].ignition_point.is_some())
 }
 
+/// Moves something lying in a place to `at` (µm east and north), held
+/// `height` µm above the ground: the designer arranging the world.
+pub fn place(
+    world: &mut World,
+    thing: EntityId,
+    at: (i64, i64),
+    height: u64,
+) -> Result<(), String> {
+    if !world.location(thing).is_some_and(|l| world.is_place(l)) {
+        return Err("only something lying in a place can be moved about".into());
+    }
+    if world.is_agent(thing) {
+        return Err("someone alive moves themselves".into());
+    }
+    apply(
+        world,
+        vec![
+            Change::Spot { entity: thing, at },
+            Change::Raise {
+                entity: thing,
+                height,
+            },
+        ],
+    )
+}
+
 /// The designer's flame: heats something past the point where it catches.
 pub fn light(world: &mut World, thing: EntityId) -> Result<(), String> {
     let ignition = world

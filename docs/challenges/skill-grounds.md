@@ -8,7 +8,7 @@ Proposed 2026-10-01; **agreed the same day** ("exactly": the seven skills, the f
 
 **Relaid 2026-10-02**, at the owner's word ("everything we need, all in a circle around the actor"): the first board had each ground as its own place, so from the start you saw nothing of them, and the game still opened on the companion's island.
 
-`data/skill-grounds.toml`, now **the world the client starts in**, is **one open place**. The player starts in the middle, a clearing; **six zones lie in a ring about 25 m out**, twenty seconds' walk, each with a landmark (a big flat rock with the zone's name, standing just behind it) and **everything its own skills need, within reach of its middle**. Where two skills need the same thing, each zone has its own pile, so nothing is fetched from another zone.
+`data/skill-grounds.toml`, now **the world the client starts in**, is **one open place**. The player starts in the middle, a clearing; **six zones lie in a ring about 25 m out**, twenty seconds' walk, each with a landmark (a big flat rock with the zone's name, standing just behind it) and **everything its own skills need, a few steps apart** (4 m round its middle since the owner's "way too jam-packed", 2026-10-02; rearrange them in build mode). Where two skills need the same thing, each zone has its own pile, so nothing is fetched from another zone.
 
 ```
                          the woodland

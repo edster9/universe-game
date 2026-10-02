@@ -83,6 +83,8 @@ Testing tools:
                                     (\"2 kg wood\", \"300 g wood as shaft\"), a design (\"fire ring\"), or a kit
                                     (\"fire\": one burning in a ring)
   /light <thing>                    the designer's flame lights something
+  /place <thing> <east> <north> [<up>]
+                                    the designer moves something lying here, in metres from the middle (build mode in the client)
   quit
 Things can be named by part of their description (\"lump\"), or by id (\"#12\").
 \"smallest <thing>\" and \"largest <thing>\" choose by size among things of that name
@@ -225,6 +227,7 @@ impl Session {
             tool @ ("/save" | "/load" | "/saves") => self.saving(tool, rest),
             "/make" => self.make(rest),
             "/light" => self.light(rest),
+            "/place" => self.place_tool(rest),
             "body" => Reply::say(body(&self.world, self.player, rest == "all").join("\n")),
             "backpack" | "pack" => Reply::say(backpack(&self.world, self.player).join("\n")),
             _ => self.command(line),
@@ -1192,6 +1195,48 @@ impl Session {
         })
     }
 
+    /// The designer moves something lying in the player's place to `at`
+    /// (µm east and north), `height` µm off the ground. For build mode.
+    pub fn place(&mut self, thing: EntityId, at: (i64, i64), height: u64) -> Result<(), String> {
+        engine::designer::place(&mut self.world, thing, at, height)
+    }
+
+    /// `/place <thing> <east> <north> [<up>]`, in metres from the middle of
+    /// where the player is.
+    fn place_tool(&mut self, rest: &str) -> Reply {
+        let words: Vec<&str> = rest.split_whitespace().collect();
+        let metres = |w: &str| w.parse::<f64>().ok().map(|m| (m * 1e6).round() as i64);
+        let numbers: Vec<i64> = words.iter().rev().map_while(|w| metres(w)).collect();
+        let (name, numbers) = match numbers.len() {
+            2 | 3 => (
+                words[..words.len() - numbers.len()].join(" "),
+                numbers.into_iter().rev().collect::<Vec<_>>(),
+            ),
+            _ => return Reply::refuse("Try /place <thing> <east> <north> [<up>], in metres."),
+        };
+        let Some(here) = self.world.place_of(self.player) else {
+            return Reply::refuse("You're nowhere.");
+        };
+        let middle = self.world.position(here).unwrap_or((0, 0));
+        let thing = self.world.contents(here).into_iter().find(|&id| {
+            laws::named(&self.world, self.player, id).trim_start_matches("the ")
+                == name.trim_start_matches("the ")
+                || laws::pointer(id) == name
+        });
+        let Some(thing) = thing else {
+            return Reply::refuse(format!("There's nothing called \"{name}\" here."));
+        };
+        let at = (middle.0 + numbers[0], middle.1 + numbers[1]);
+        let height = numbers.get(2).copied().unwrap_or(0).max(0) as u64;
+        match self.place(thing, at, height) {
+            Ok(()) => Reply::say(format!(
+                "The designer moves {}.",
+                laws::named(&self.world, self.player, thing)
+            )),
+            Err(why) => Reply::refuse(sentence(&why)),
+        }
+    }
+
     /// The designer's flame lights something within reach.
     fn light(&mut self, name: &str) -> Reply {
         let Some(thing) = laws::find_reachable(&self.world, self.player, name) else {
@@ -1332,6 +1377,11 @@ impl Session {
                 let mass = Mass::from_mg(u64::try_from(matter::total_mass(make)).unwrap_or(0));
                 format!("the designer gives {mass} of matter -> {}", w.label(*at))
             }
+            &Change::Raise { entity, height } => format!(
+                "{} held {:.2} m off the ground",
+                w.label(entity),
+                height as f64 / 1e6
+            ),
             &Change::Endow { entity, amount } => {
                 format!("the designer gives {amount} of heat -> {}", w.label(entity))
             }

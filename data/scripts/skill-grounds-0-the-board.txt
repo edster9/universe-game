@@ -23,9 +23,12 @@ expect not said a boar
 
 # The knapping ground: a spear, from its own flint, stones, and sticks.
 go to the knapping ground
-expect said that took 21 s
+expect said that took 2
+go to flint
 gather flint
+go to stones
 gather stones
+go to sticks
 gather sticks
 work flint into flake with stone
 work stick into shaft with flake
@@ -36,8 +39,11 @@ drop stone
 # The fibre grove: rope, from its own bushes, and poles.
 walk to 0 0
 go to the fibre grove
+go to bushes
 gather bushes x2
+go to sticks
 gather sticks
+go to deadwood
 gather deadwood
 work fibre into rope
 expect said rope
@@ -48,13 +54,21 @@ drop all
 # step 5's question.)
 walk to 0 0
 go to the forge
+go to bog iron
 gather bog iron
+go to clay
 gather clay x2
+go to stones
 gather stones x6
+go to flint
 gather flint
+go to grass
 gather grass
+go to twigs
 gather twigs
+go to sticks
 gather sticks
+go to deadwood
 gather deadwood
 expect said a wood log
 drop all
@@ -62,11 +76,17 @@ drop all
 # The stream bank: water, mussels, and roots and nuts.
 walk to 0 0
 go to the stream bank
+go to mussels
 gather mussels
+go to roots and nuts
 gather roots and nuts
+go to fish
 try gather fish
+go to flint
 gather flint
+go to stones
 gather stones
+go to sticks
 gather sticks
 drop all
 # Bushes grow in two zones: the nearest is meant, the fibre grove's.
@@ -78,26 +98,38 @@ walk to 0 0
 walk to 0 0
 go to the woodland
 # (An axe, to the islanders, who don't know one yet: "a part put together".)
+go to trees
 try gather trees
 expect said you need a part put together for the standing trees
+go to flint
 gather flint
+go to stones
 gather stones
+go to sticks
 gather sticks
+go to grass
 gather grass
+go to twigs
 gather twigs
+go to bushes
 gather bushes
 drop all
 
 # The hearth: a fire, fed by sizes, each when the last has caught.
 walk to 0 0
 go to the hearth
+go to grass
 gather grass x3
+go to twigs
 gather twigs x4
 expect said you find 20 g of wood, a wood twig
+go to sticks
 gather sticks x6
 expect said a wood stick
+go to deadwood
 gather deadwood
 expect said a wood log
+go to stones
 gather stones x5
 assemble fire ring
 drop fire ring

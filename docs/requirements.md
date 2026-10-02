@@ -683,6 +683,17 @@ Added 2026-10-02. **Step 5 is a good thing to walk into, but looking around the 
 - First, make sure the initial setup has the zones for the skills we're shooting for, with all the necessary inventory properly grouped. **Then we begin the more advanced skill creation.**
 - **Do we even have the ability to save what we did as a skill yet, for the fire?** That needs a conversation of its own. But start with the inventory and the scene, and go from there.
 
+### Build mode: arranging the world by hand
+
+Added 2026-10-02, before saving to GitHub. **Spread each zone's items a little more apart: they're way too jam-packed.** And a debug tool, so I can rearrange the world myself and save it, instead of asking Claude to rearrange and guess:
+
+- **A key to enter build mode**, and to leave it. **In build mode I can still move the player.**
+- **Hovering over an item highlights its bounding box.**
+- **Left click and hold moves it**; ordinary mouse movement covers two of the axes, and **holding the middle button covers the third, up and down.** You're holding either the left or the middle button to move; **let go, and the item is in its new place.**
+- **There's no gravity yet**, so an item above the ground stays in the air; gravity and collision come at some point.
+- Asked about the up-and-down axis: **the ground isn't flat, and I wasn't sure moving an item along it would follow the terrain** rather than sink on an incline; if it snaps to the ground, the up-and-down move matters less.
+- **Show the x, y, z axes on the bounding box too**, so we can add rotation soon.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

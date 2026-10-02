@@ -12,7 +12,8 @@
 //! command, Esc to stop, ` to resize the console; F to fly free (WASD, E/Q
 //! up and down, Shift faster) and F again to snap back; B the backpack, V
 //! the body (click it for everything measured); hold T and speak a command;
-//! G shows a grid on the ground, for seeing movement;
+//! G shows a grid on the ground, for seeing movement; M is build mode (drag
+//! things with the left button, lift them with the middle one);
 //! Space pauses the
 //! world, [ and ] slow it down and speed it up.
 //!
@@ -45,6 +46,7 @@ use console::script::Playing;
 use console::session::Session;
 use engine::world::{EntityId, World as EngineWorld};
 
+mod build;
 mod camera;
 mod draw;
 mod grid;
@@ -272,6 +274,7 @@ fn main() {
     .init_resource::<terminal::Shots>()
     .init_resource::<tools::Settings>()
     .init_resource::<draw::Drawn>()
+    .init_resource::<build::Build>()
     .init_resource::<walking::ByKeys>()
     .insert_resource(voice::Voice::new(&model))
     .add_systems(
@@ -293,6 +296,7 @@ fn main() {
                 terminal::type_in,
                 controls,
                 panels::keys,
+                build::toggle,
                 menu::click,
                 tools::run_typed,
                 walking::walk_keys,
@@ -308,6 +312,7 @@ fn main() {
                 terminal::play_script,
                 draw::draw_scenery,
                 draw::draw_movers,
+                build::drag,
                 camera::follow,
                 camera::point,
                 grid::draw,

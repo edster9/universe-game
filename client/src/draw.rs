@@ -135,7 +135,8 @@ pub fn spot(world: &EngineWorld, land: &Land, id: EntityId, now: f32) -> Vec3 {
     } else {
         point(here)
     };
-    on_ground(land, at)
+    // Held up by the designer, in build mode: nothing falls yet.
+    on_ground(land, at) + Vec3::Y * (world.raised(id) as f32 / 1e6)
 }
 
 /// Where the islander is drawn: following where the engine has them, but
@@ -453,6 +454,10 @@ impl Brush<'_, '_> {
     }
 }
 
+/// A fixed thing as pictured: where, which, how many pieces, its spot, and
+/// how high it's held. Any of them changing redraws the scenery.
+type Pictured = (EntityId, EntityId, u64, Option<(i64, i64)>, u64);
+
 /// The fixed things the islander pictures, as clusters of pieces around
 /// their places: redrawn when what's pictured, or how much of it there is,
 /// changes.
@@ -466,11 +471,11 @@ pub fn draw_scenery(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     drawn: Query<Entity, With<Scenery>>,
-    mut last: Local<Vec<(EntityId, EntityId, u64)>>,
+    mut last: Local<Vec<Pictured>>,
 ) {
     let world = sim.world();
     let scene = engine::view::scene(world, sim.me());
-    let mut fixed: Vec<(EntityId, EntityId, u64)> = scene
+    let mut fixed: Vec<Pictured> = scene
         .remembered
         .iter()
         .copied()
@@ -481,7 +486,15 @@ pub fn draw_scenery(
                 .filter(|&&t| !world.is_agent(t) && !world.is_portable(t))
                 .map(move |&t| (here, t))
         }))
-        .map(|(place, t)| (place, t, pieces(world.mass(t).mg() as f32 / 1e6)))
+        .map(|(place, t)| {
+            (
+                place,
+                t,
+                pieces(world.mass(t).mg() as f32 / 1e6),
+                world.spot(t),
+                world.raised(t),
+            )
+        })
         .collect();
     fixed.sort();
     if *last == fixed {
@@ -496,7 +509,7 @@ pub fn draw_scenery(
     for entity in &drawn {
         brush.commands.entity(entity).despawn();
     }
-    for &(place, thing, n) in &fixed {
+    for &(place, thing, n, _, raised) in &fixed {
         let look = style.look(world, thing);
         let n = if matches!(look.form.as_str(), "pool" | "mound") {
             1
@@ -514,7 +527,7 @@ pub fn draw_scenery(
             let turn = (seed.wrapping_add(i) % 628) as f32 / 100.0;
             brush.piece(
                 &look,
-                on_ground(&land, at + offset),
+                on_ground(&land, at + offset) + Vec3::Y * (raised as f32 / 1e6),
                 turn,
                 Named(thing),
                 Scenery,

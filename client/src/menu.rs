@@ -45,7 +45,12 @@ pub fn click(
     mut console: ResMut<Console>,
     mut sim: ResMut<Sim>,
     mut exit: MessageWriter<AppExit>,
+    build: Res<crate::build::Build>,
 ) {
+    // In build mode, clicks move things instead.
+    if build.on {
+        return;
+    }
     let close = |commands: &mut Commands| {
         for menu in &open {
             commands.entity(menu).despawn();
@@ -113,7 +118,7 @@ pub fn click(
 }
 
 /// Where a ray from the camera meets the ground, within a few hundred metres.
-fn ground(ray: Ray3d, land: &Land) -> Option<Vec3> {
+pub(crate) fn ground(ray: Ray3d, land: &Land) -> Option<Vec3> {
     (1..=1_000)
         .map(|i| ray.get_point(i as f32 * 0.5))
         .find(|p| p.y <= land.height(Vec2::new(p.x, p.z)))

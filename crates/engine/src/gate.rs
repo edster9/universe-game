@@ -240,6 +240,9 @@ pub enum Change {
     Provide { at: EntityId, make: Composition },
     /// The designer gives `entity` heat, as a flame would.
     Endow { entity: EntityId, amount: Energy },
+    /// The designer holds something `height` µm above the ground, or puts it
+    /// back on it with 0.
+    Raise { entity: EntityId, height: u64 },
     /// Someone starts wearing something they carry, or, with `None`, stops.
     Wear {
         agent: EntityId,
@@ -698,6 +701,16 @@ impl World {
                 self.designed_matter += matter::total_mass(make);
                 self.designed_energy +=
                     u128::from(heat) + matter::chemical_energy(&self.materials, make);
+                Ok(())
+            }
+
+            &Change::Raise { entity, height } => {
+                self.must_exist(entity)?;
+                if height == 0 {
+                    self.raised.remove(&entity);
+                } else {
+                    self.raised.insert(entity, height);
+                }
                 Ok(())
             }
 

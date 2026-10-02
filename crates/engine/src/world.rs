@@ -670,6 +670,9 @@ pub struct World {
     /// How far a stock spreads around its spot, in µm. A fixed thing with no
     /// spread covers its whole place.
     pub(crate) spreads: Table<EntityId, u64>,
+    /// How far above the ground something is held, in µm, where the designer
+    /// put it. No law uses it yet: nothing falls.
+    pub(crate) raised: Table<EntityId, u64>,
     /// How far each place reaches from its middle, in µm, if its data says.
     pub(crate) sizes: Table<EntityId, u64>,
     /// How landmarks look from far away. Only these can be seen from afar.
@@ -1569,6 +1572,11 @@ impl World {
 
     /// Where something is, in µm east and north: its own spot in a place,
     /// or the spot of whatever holds it. A place is at its middle.
+    /// How far above the ground the designer put something, in µm.
+    pub fn raised(&self, id: EntityId) -> u64 {
+        self.raised.get(&id).copied().unwrap_or(0)
+    }
+
     pub fn spot(&self, id: EntityId) -> Option<(i64, i64)> {
         if self.is_place(id) {
             return self.position(id);
@@ -1724,6 +1732,7 @@ impl World {
             positions,
             spots,
             spreads,
+            raised,
             sizes,
             from_afar,
             memories,
@@ -1789,6 +1798,7 @@ impl World {
         f(positions);
         f(spots);
         f(spreads);
+        f(raised);
         f(sizes);
         f(from_afar);
         f(memories);

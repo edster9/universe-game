@@ -43,7 +43,6 @@ enum Layer {
     Always,
     /// Changes the world or yourself, not anyone's time: allowed or not by
     /// the server's administrator.
-    #[allow(dead_code)]
     ServersChoice,
     /// Changes the shared clock: never on a server.
     SinglePlayer,
@@ -84,6 +83,12 @@ const SETTINGS: &[(&str, &str, Layer, &str)] = &[
     ("fly", "F", Layer::Always, "the camera flies free"),
     ("backpack", "B", Layer::Always, "the backpack window"),
     ("body", "V", Layer::Always, "the body window"),
+    (
+        "build",
+        "M",
+        Layer::ServersChoice,
+        "build mode: drag things with the left button, lift them with the middle one",
+    ),
 ];
 
 /// Everything a tool can change.
@@ -95,6 +100,7 @@ pub struct Changeable<'w> {
     eye: ResMut<'w, Eye>,
     panels: ResMut<'w, Panels>,
     land: Res<'w, Land>,
+    build: ResMut<'w, crate::build::Build>,
 }
 
 impl Changeable<'_> {
@@ -109,6 +115,7 @@ impl Changeable<'_> {
             "fly" => on(self.eye.flying),
             "backpack" => on(self.panels.backpack),
             "body" => on(self.panels.body),
+            "build" => on(self.build.on),
             _ => String::new(),
         }
     }
@@ -131,6 +138,7 @@ impl Changeable<'_> {
             "fly" => &mut self.eye.flying,
             "backpack" => &mut self.panels.backpack,
             "body" => &mut self.panels.body,
+            "build" => &mut self.build.on,
             _ => {
                 return Err(format!(
                     "there's no setting \"{name}\"; /settings lists them"

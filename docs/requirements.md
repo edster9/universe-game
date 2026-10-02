@@ -598,6 +598,10 @@ Added the same day, on Claude's take ([ideas/context-menu.md](ideas/context-menu
 - **It also has to be something the other person knows about.** Invent something complex, like a rocket engine, and someone who isn't advanced won't know what it is from far away, or even walking up to it close by.
 - **Go ahead and implement this round.** After that, the entire fire-building process: an excellent exercise, but I see a lot of issues with the way it's set up. If we get it right, it sets up the basis for skill building.
 
+### The long tests can wait
+
+Added 2026-10-01, after a round of trials and benchmarks. **These tests are just taking way too long.** I understand what they're for, the castaway's long survival, but in these stages, especially when we turn off the need to sleep and food, **we need to step back on these and work more towards skill creation and other aspects** before we run these long kinds of tests.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

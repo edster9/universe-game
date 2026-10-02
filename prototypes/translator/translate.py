@@ -101,18 +101,22 @@ def translate(client, model: str, effort: str, scope: str, description: str, ext
         "thinking": {"type": "adaptive"},
         "output_config": {"effort": effort},
     }
-    response = client.messages.parse(
+    # The plan as JSON in the reply: not every endpoint takes structured
+    # outputs, so the shape is asked for, then checked.
+    schema = json.dumps(Plan.model_json_schema())
+    response = client.messages.create(
         model=model,
         max_tokens=16000,
-        system=SYSTEM,
+        system=SYSTEM + f"\n\nReply with only a JSON object matching this schema, nothing else:\n{schema}",
         messages=[{"role": "user", "content": user}],
-        output_format=Plan,
         **extra_args,
     )
     took = time.time() - started
     if response.stop_reason == "refusal":
         sys.exit(f"refused: {response.stop_details}")
-    return response.parsed_output, response.usage, took
+    text = "".join(b.text for b in response.content if b.type == "text").strip()
+    text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    return Plan.model_validate_json(text), response.usage, took
 
 
 def main():
@@ -136,8 +140,11 @@ def main():
         print(scope, "\n")
 
     if args.provider == "bedrock":
-        client = anthropic.AnthropicBedrockMantle(aws_region=os.environ.get("AWS_REGION", "us-east-1"))
-        model = args.model or "anthropic.claude-opus-5-5"
+        # Bedrock's InvokeModel endpoint, with global routing. (Its newer
+        # Messages endpoint takes structured outputs, but on the account
+        # tried it couldn't subscribe to the models; this one answers.)
+        client = anthropic.AnthropicBedrock(aws_region=os.environ.get("AWS_REGION", "us-east-1"))
+        model = args.model or "global.anthropic.claude-opus-5-5"
     else:
         client = anthropic.Anthropic()
         model = args.model or "claude-opus-5-5"

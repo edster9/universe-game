@@ -79,6 +79,19 @@ What a player says or types goes up through layers, and stops at the first that 
 
 Each layer passes on only what it can't fully map, and says which layer answered, so we can measure how often the cloud is needed. That number is what the costs in [research/translator-costs.md](../research/translator-costs.md) rest on.
 
+## Why it matters beyond the fire (the owner, 2026-10-01)
+
+- **A selling point.** "A truly AI-driven human interface to a universe": you describe what you want to do in your own words, and the world's laws decide what happens. The owner knows of nothing like it, and counts it as one of the game's first marketability factors.
+- **How it could be paid for:**
+  - **Free credits for demo players:** a set amount to try it.
+  - **A tracked budget:** translations, in tokens, counted per day and per month for each player.
+  - **Paid plans get a much bigger slice**, as part of the subscription goes to the player's AI allowance.
+  - **Bring your own key:** a player can give the app their own API key, and it's used behind the scenes for them, outside the game's budget.
+  
+  Numbers are in [research/translator-costs.md](../research/translator-costs.md).
+- **The same bridge, for code.** As the game advances, things will run code: the gold tester's script, the "money validator" in [code-and-laws.md](code-and-laws.md), and later [computers inside the game](in-game-computer.md). A sphere needs no code; a rocket's guidance computer does. A player could describe what a program should do and have AI write it, in the in-game computer's own language and only with the sensors and devices actually wired to it. It's the same rule as the translator: AI proposes, the engine decides, and nothing outside the device's scope can be used.
+- **One step at a time.** First, prove the translator on the fire.
+
 ## Skills
 
 - **A skill is a saved plan, in the character's words:** its steps, what it needs (a kit), and conditions such as "wait until it's burning" in place of fixed waits.

@@ -628,6 +628,15 @@ Added the same day, correcting Claude's take: **it isn't asking the AI a straigh
 
 Added the same day, after the cost projections ([research/translator-costs.md](research/translator-costs.md)): **there's definitely hope here, but we still have to test the viability.** And there will be **multiple layers**: what's said is first scanned internally. **If it says "go forest", we're not going to waste time going to Haiku**: we take a first pass ourselves. **A second layer: built-in things we've made that take a stab at translating what was said into the commands** (the approach Claude wanted to do first). **And if all else fails, it goes to the next level up, the cloud.**
 
+Added the same day, on the layers ("that's perfect"):
+
+- **A marketability factor.** If this game could be marketed as **a truly AI-driven human interface to a universe**, it would probably be a very unique one; I don't think it exists yet. We've probably discovered **one of our first marketability factors** and utilities of this universe game.
+- **Credits and plans.** The game could give **free credits to demo users**, a certain amount, and **track tokens per day or per month** for budgets. **On a paid plan you get a much bigger slice**, because part of your monthly subscription goes to your AI slice.
+- **Bring your own key.** There's no reason you can't give the app your own API key, and the app uses it behind the scenes for you.
+- So there are multiple ways, if the game takes off, to market it **as a human AI interface to the universe game, for a lot of the problem solving** you want to do.
+- **AI writing code inside the game.** As the game gets much more advanced, we'll create objects that run code internally, and **we could use AI to write that code**. Remember the gold tester, which could run a script to do certain things. Later we'll build computers inside the game: a simple sphere doesn't need any code, but eventually **a rocket will have code running in its computer, for the guidance systems and things like that, which one can write.**
+- We're going places with this, but **let's take it one step at a time.**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

@@ -694,6 +694,10 @@ Added 2026-10-02, before saving to GitHub. **Spread each zone's items a little m
 - Asked about the up-and-down axis: **the ground isn't flat, and I wasn't sure moving an item along it would follow the terrain** rather than sink on an incline; if it snaps to the ground, the up-and-down move matters less.
 - **Show the x, y, z axes on the bounding box too**, so we can add rotation soon.
 
+### Many directions at once
+
+Added 2026-10-02, after build mode and the new shapes. **This is looking better.** There are many directions for different people, different devs, to solve, so **we have to do a lot of things in parallel**: **world building and 3D asset packs** is one; **improving skills and gameplay** is another; and then **the AI side**. I need to balance things out, but **we're off to a really good start.** A list of UX and terminal-interaction improvements is coming next, before more skill exercises.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

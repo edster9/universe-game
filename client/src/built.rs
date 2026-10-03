@@ -131,9 +131,7 @@ pub fn follow(
 ) {
     let world = sim.world();
     for (Follows(thing), mut transform, mut visible) in &mut models {
-        let lying = world
-            .location(*thing)
-            .is_some_and(|l| world.is_place(l));
+        let lying = world.location(*thing).is_some_and(|l| world.is_place(l));
         *visible = if lying {
             Visibility::Inherited
         } else {

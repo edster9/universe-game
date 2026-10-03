@@ -22,6 +22,8 @@
 //!   companion's island is companion.toml), `--as <id>` who to play (the
 //!   first person no mind or instinct runs), `--speed <x>` game seconds a
 //!   second (1).
+//! - `--world <name>` plays another world in the data folder ("skill-yard",
+//!   the default, or "skill-grounds"; ".toml" can be left off).
 //! - `--load <save>` picks up a save (`/save`, `/load`) from the `saves`
 //!   folder beside the data folder; a game ends with a save called "last",
 //!   except one that only takes a picture (`--shot`).
@@ -188,7 +190,8 @@ fn main() {
     };
     let data = data_dir();
     // The skill yard, built in Blender, unless --world says otherwise.
-    let world_file = arg("--world").map_or("skill-yard.toml", String::as_str);
+    let world_file = world_named(&data, arg("--world").map_or("skill-yard", String::as_str));
+    let world_file = world_file.as_str();
     let built = if options.script.is_none() {
         built::Built::for_world(world_file)
     } else {
@@ -492,6 +495,34 @@ fn play_world(play: &Play) -> &EngineWorld {
         Play::Live(session) => session.world(),
         Play::Script(playing) => playing.session().world(),
     }
+}
+
+/// A world's data file, by its name, with or without ".toml"; or, if
+/// there's no such world, the worlds there are.
+fn world_named(data: &std::path::Path, name: &str) -> String {
+    let file = if name.ends_with(".toml") {
+        name.to_string()
+    } else {
+        format!("{name}.toml")
+    };
+    if data.join(&file).is_file() {
+        return file;
+    }
+    // Worlds have places; libraries, only things to make worlds of.
+    let mut worlds: Vec<String> = std::fs::read_dir(data)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| std::fs::read_to_string(p).is_ok_and(|t| t.contains("[[place]]")))
+        .filter_map(|p| Some(p.file_stem()?.to_string_lossy().into_owned()))
+        .collect();
+    worlds.sort();
+    fail(&format!(
+        "There's no world called \"{}\". The worlds are: {}.",
+        file.trim_end_matches(".toml"),
+        worlds.join(", ")
+    ))
 }
 
 fn fail(why: &str) -> ! {

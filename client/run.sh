@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # Builds the client as a Windows program, from WSL, copies it to the C: drive,
 # and starts it there: a real Windows process on the GPU. Any arguments go to
-# the client, e.g. `client/run.sh --shot shot.png --after 5`, or
-# `client/run.sh --script companion-3-asking.txt` to play a script.
+# the client:
+#   client/run.sh                          the skill yard (the default)
+#   client/run.sh --world skill-grounds    another world (".toml" optional)
+#   client/run.sh --load last              pick up a save
+#   client/run.sh --script companion-3-asking.txt   play a script
+#   client/run.sh --shot shot.png --after 5          a screenshot, then quit
 set -euo pipefail
 cd "$(dirname "$0")"
 ZIGBUILD_BIN=$(dirname "$(ls ~/.version-fox/temp/*/rust/cargo/bin/cargo-zigbuild 2>/dev/null | head -1)" 2>/dev/null || true)

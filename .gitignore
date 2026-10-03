@@ -25,3 +25,7 @@ vendor/
 /assets/third-party/**
 !/assets/third-party/**/
 !/assets/third-party/**/README.md
+# Blender: the catalogue holds the packs' models, so it's made by a script,
+# never kept; and Blender's backup copies.
+/blender/catalogue.blend
+*.blend1

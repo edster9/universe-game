@@ -115,3 +115,11 @@ So the owner's sequence holds: built in Blender, loaded, and you're in it; from 
 ## Decided, 2026-10-02
 
 The owner: "I want to agree on everything." All six points above are decided: the three kinds and the rule that sorts them; the house as one thing, with only working parts separate; felling the tree nearest you, recorded by the engine, growing back; building by footprint, site, time, and house; Blender as the master for base worlds, with play kept in saves; and the first test, the skill grounds rebuilt in Blender. The plain-words section above was rewritten at the owner's request, for reading aloud.
+
+**Build mode moves things, not sources** (the owner, 2026-10-02): a source is moved in Blender and converted again. Exceptions may come; none yet.
+
+## The first world in Blender (built 2026-10-02)
+
+At the owner's request ("one big square area with walls"), Claude built it by script in the owner's own Blender (5.0, run without its window from WSL), so no MCP server was needed. Everything is in `blender/` (see its README): **`catalogue.toml`**, the catalogue as text (25 entries: 3 things, 15 sources, 7 kinds of decoration); **`catalogue.blend`**, the models, made from the catalogue and the packs by `make_catalogue.py` and kept out of git, as it holds pack models; and **`skill-yard.blend`**, the skill grounds as a walled yard 100 m across, which **links** to the catalogue rather than copying from it, so it holds no pack models and is kept in git. It has two places (the yard and the deep woods), 9 things, 39 sources drawn with 214 models, and the ground, walls, paths, and decoration as scenery. From now on the .blend file is the master, edited by hand; the script made only its first version.
+
+The tags are Blender custom properties (`ug_entry`, `ug_id`, `ug_label`, `ug_mass` on things and sources, `ug_place` on places); anything without `ug_entry` is scenery. A source is an empty marking its area with its models as children, so moving the empty moves the source, and adding or removing children changes how much it holds.

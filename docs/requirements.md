@@ -730,6 +730,12 @@ First, **how is a world definable?** Take the forest of 400 trees: **I want to w
 
 Added 2026-10-02. **Yes, I want to agree on everything**, but I want the three kinds of items inside Blender reiterated: the explanation wasn't entirely clear the way it was read. **Write the three variations in clearer, full paragraphs**, and replay them.
 
+### A first world in Blender
+
+Added 2026-10-02. I get the three distinctions; it's a pretty good classification. **Build mode can move the third category, things, but not sources: to move a source, we go back to Blender.** That makes perfect sense for now; there might be exceptions later, but I don't see one yet.
+
+**Can you make a Blender file and classify and tag everything in it, so I can open it and look?** Or does that need an MCP server, where I launch Blender and you talk to it through some interface? Either way, **I want to recreate our world in Blender, but a much simpler one: not a huge island, just one big square area with walls**, so we're confined and everything we need for the various examples is in there; the rest is up to you. **The first problem is how we interface with Blender.** I don't have people to model in Blender yet, but I'm a quick learner: **once I have a base file, I can modify it, add to it, and run it through our converter again.** If you can't make one, we'll build it step by step in Blender, which would be a good learning experience on its own.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

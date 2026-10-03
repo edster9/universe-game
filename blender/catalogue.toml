@@ -1,0 +1,291 @@
+# The catalogue: what each model placed in Blender means to the game
+# (docs/ideas/world-building.md). A model of a rock isn't a rock until an
+# entry here says so.
+#
+# Each entry:
+#   id      the name placed objects carry (Blender's custom property
+#           `ug_entry`, or the collection they're an instance of)
+#   is      "scenery" (seen, never used), "source" (many alike, taken from:
+#           one thing to the engine), or "thing" (counts on its own)
+#   label   its name in the world's own words, unless a placement names it
+#   models  model files under assets/third-party (see each pack's README),
+#           one picked per placement; or `shape`, one of the simple shapes
+#           blender/make_catalogue.py makes itself, with a `colour`
+#   scale   how big the model is drawn, times its own size
+#
+# What it means to the engine, in the words of the world's data files:
+#   material, composition, kind, fixed, mass, pieces, grows, and, for people
+#   and creatures, culture, rules, temperature.
+#   each    for a source: the mass each drawn model stands for, so a stand of
+#           12 trees at 1 t each holds 12 t; placing more trees adds more.
+#           Without it, a source's mass is `mass` (a placement can change it).
+#   grows   for a source that grows back: `rate` a day, `limit` as a share of
+#           its placed mass, and `from` the entry of the source it draws on
+#           (the nearest one in the same place).
+
+# Things -------------------------------------------------------------------
+
+[[entry]]
+id = "landmark-rock"
+is = "thing"
+label = "a big rock"
+material = "rock"
+mass = "2 t"
+fixed = true
+models = [
+    "quaternius/stylized-nature-megakit/glTF/Rock_Medium_1.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Rock_Medium_2.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Rock_Medium_3.gltf",
+]
+scale = 0.8
+
+[[entry]]
+id = "player"
+is = "thing"
+label = "the islander"
+kind = "human"
+culture = "islanders"
+temperature = "310 K"
+rules = "player"
+shape = "person"
+colour = "#d9a066"
+
+[[entry]]
+id = "boar"
+is = "thing"
+label = "a boar"
+kind = "boar"
+temperature = "311 K"
+shape = "beast"
+colour = "#5a3a22"
+
+# Sources ------------------------------------------------------------------
+
+[[entry]]
+id = "standing-trees"
+is = "source"
+label = "standing trees"
+material = "wood"
+kind = "tree"
+each = "1 t"
+pieces = { size = "20 kg", find_time = "3 min", edge = "1 mm", needs = "axe" }
+models = [
+    "quaternius/stylized-nature-megakit/glTF/CommonTree_1.gltf",
+    "quaternius/stylized-nature-megakit/glTF/CommonTree_2.gltf",
+    "quaternius/stylized-nature-megakit/glTF/CommonTree_3.gltf",
+    "quaternius/stylized-nature-megakit/glTF/CommonTree_4.gltf",
+    "quaternius/stylized-nature-megakit/glTF/CommonTree_5.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Pine_1.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Pine_2.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Pine_3.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Pine_4.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Pine_5.gltf",
+]
+
+[[entry]]
+id = "fibrous-bushes"
+is = "source"
+label = "fibrous bushes"
+material = "fibre"
+kind = "shrub"
+each = "100 kg"
+pieces = { size = "250 g", find_time = "10 s" }
+models = ["quaternius/stylized-nature-megakit/glTF/Bush_Common_Flowers.gltf"]
+scale = 0.7
+
+[[entry]]
+id = "dry-grass"
+is = "source"
+label = "dry grass"
+material = "grass"
+each = "4 kg"
+pieces = { size = "5 g", find_time = "3 s" }
+models = [
+    "quaternius/stylized-nature-megakit/glTF/Grass_Common_Short.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Grass_Wispy_Short.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Grass_Common_Tall.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Grass_Wispy_Tall.gltf",
+]
+scale = 0.35
+
+[[entry]]
+id = "loose-stones"
+is = "source"
+label = "loose stones"
+material = "stone"
+each = "50 kg"
+pieces = { size = "1 kg", find_time = "5 s" }
+models = [
+    "quaternius/stylized-nature-megakit/glTF/Pebble_Round_1.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Pebble_Round_3.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Pebble_Square_1.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Pebble_Square_4.gltf",
+]
+scale = 0.6
+
+[[entry]]
+id = "flint-nodules"
+is = "source"
+label = "flint nodules"
+material = "flint"
+each = "40 kg"
+pieces = { size = "500 g", find_time = "8 s" }
+shape = "shard"
+colour = "#3b4049"
+
+[[entry]]
+id = "fallen-sticks"
+is = "source"
+label = "fallen sticks"
+material = "wood"
+each = "10 kg"
+pieces = { size = "200 g", find_time = "4 s" }
+shape = "stick"
+colour = "#8b5a2b"
+
+[[entry]]
+id = "dry-twigs"
+is = "source"
+label = "dry twigs"
+material = "wood"
+each = "4 kg"
+pieces = { size = "20 g", find_time = "3 s" }
+shape = "twig"
+colour = "#8b5a2b"
+
+[[entry]]
+id = "deadwood"
+is = "source"
+label = "deadwood"
+material = "wood"
+each = "40 kg"
+pieces = { size = "3 kg", find_time = "8 s" }
+shape = "log"
+colour = "#7a4f2a"
+
+[[entry]]
+id = "roots-and-nuts"
+is = "source"
+label = "roots and nuts in the leaf litter"
+material = "roots"
+each = "30 kg"
+pieces = { size = "500 g", find_time = "1 min", chance = "70%" }
+grows = { rate = "20%", limit = "130%", from = "forest-floor" }
+shape = "nuts"
+colour = "#7a5a3a"
+
+[[entry]]
+id = "forest-floor"
+is = "source"
+label = "the forest floor"
+material = "litter"
+mass = "100 t"
+shape = "patch"
+colour = "#6b4f2a"
+
+[[entry]]
+id = "water"
+is = "source"
+label = "water"
+material = "water"
+mass = "50 t"
+shape = "pool"
+colour = "#3a7bd5"
+
+[[entry]]
+id = "fish"
+is = "source"
+label = "fish in the water"
+material = "fish"
+kind = "fish"
+mass = "150 kg"
+pieces = { size = "500 g", find_time = "1 min", chance = "60%", needs = "spear" }
+shape = "fish"
+colour = "#9fb4c8"
+
+[[entry]]
+id = "mussels"
+is = "source"
+label = "mussels in the shallows"
+kind = "shellfish"
+composition = { shellfish = "35%", shell = "65%" }
+mass = "100 kg"
+pieces = { size = "1 kg", find_time = "30 s" }
+shape = "shell"
+colour = "#2f3440"
+
+[[entry]]
+id = "bog-iron"
+is = "source"
+label = "bog iron in a boggy hollow"
+composition = { iron = "50%", rock = "50%" }
+mass = "200 kg"
+pieces = { size = "2 kg", find_time = "10 s" }
+shape = "nugget"
+colour = "#6b3a2a"
+
+[[entry]]
+id = "clay-bank"
+is = "source"
+label = "clay in a bank"
+material = "clay"
+mass = "500 kg"
+pieces = { size = "1 kg", find_time = "5 s" }
+shape = "mound"
+colour = "#b5651d"
+
+# Scenery: decoration, to drag in from Blender's asset browser ---------------
+
+[[entry]]
+id = "fern"
+is = "scenery"
+models = ["quaternius/stylized-nature-megakit/glTF/Fern_1.gltf"]
+scale = 0.3
+
+[[entry]]
+id = "flowers"
+is = "scenery"
+models = [
+    "quaternius/stylized-nature-megakit/glTF/Flower_3_Group.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Flower_4_Group.gltf",
+]
+scale = 0.35
+
+[[entry]]
+id = "clover"
+is = "scenery"
+models = [
+    "quaternius/stylized-nature-megakit/glTF/Clover_1.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Clover_2.gltf",
+]
+scale = 0.4
+
+[[entry]]
+id = "mushrooms"
+is = "scenery"
+models = [
+    "quaternius/stylized-nature-megakit/glTF/Mushroom_Common.gltf",
+    "quaternius/stylized-nature-megakit/glTF/Mushroom_Laetiporus.gltf",
+]
+scale = 0.4
+
+[[entry]]
+id = "stepping-stones"
+is = "scenery"
+models = [
+    "quaternius/stylized-nature-megakit/glTF/RockPath_Round_Wide.gltf",
+    "quaternius/stylized-nature-megakit/glTF/RockPath_Square_Wide.gltf",
+]
+scale = 0.6
+
+[[entry]]
+id = "dead-tree"
+is = "scenery"
+models = ["quaternius/stylized-nature-megakit/glTF/DeadTree_2.gltf"]
+scale = 0.6
+
+[[entry]]
+id = "twisted-tree"
+is = "scenery"
+models = ["quaternius/stylized-nature-megakit/glTF/TwistedTree_1.gltf"]
+scale = 0.45

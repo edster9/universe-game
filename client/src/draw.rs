@@ -766,7 +766,8 @@ pub fn draw_movers(
 mod tests {
     use super::{STYLE, Style};
 
-    /// Every model the style names is listed in its pack's README, which
+    /// Every model the style or the Blender catalogue names is listed in its
+    /// pack's README, which
     /// git keeps though it never keeps the pack: someone who forks the
     /// project learns from it what to download.
     #[test]
@@ -779,15 +780,33 @@ mod tests {
             .chain(style.design.values())
             .chain([&style.fallback])
             .flat_map(|look| look.models.iter())
-            .chain(style.showcase.iter().map(|s| &s.model));
-        let assets = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../assets");
+            .chain(style.showcase.iter().map(|s| &s.model))
+            .cloned()
+            .collect::<Vec<_>>();
+        // And every model in the Blender catalogue (blender/catalogue.toml),
+        // whose paths start inside third-party.
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let catalogue: toml::Table = toml::from_str(
+            &std::fs::read_to_string(root.join("blender/catalogue.toml")).expect("the catalogue"),
+        )
+        .expect("the catalogue reads");
+        let blender = catalogue["entry"]
+            .as_array()
+            .expect("entries")
+            .iter()
+            .filter_map(|e| e.get("models").and_then(|m| m.as_array()))
+            .flatten()
+            .filter_map(|m| m.as_str())
+            .map(|m| format!("third-party/{m}"));
+        let models = models.into_iter().chain(blender);
+        let assets = root.join("assets");
         for model in models {
             // third-party/<maker>/<pack>/...
             let pack: Vec<&str> = model.splitn(4, '/').take(3).collect();
             let readme = assets.join(pack.join("/")).join("README.md");
             let text = std::fs::read_to_string(&readme)
                 .unwrap_or_else(|_| panic!("{model}: no README at {}", readme.display()));
-            let name = model.rsplit('/').next().unwrap_or(model);
+            let name = model.rsplit('/').next().unwrap_or(&model);
             let name = name.strip_suffix(".gltf").unwrap_or(name);
             assert!(
                 text.contains(&format!("`{name}`")),

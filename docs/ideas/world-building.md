@@ -1,10 +1,20 @@
 # World building: what a world is made of, and what can be touched
 
-Proposed 2026-10-02. **Not decided.** The owner's words are "World building, in parallel with skills" and "What the world is made of, and what can be touched" in [requirements.md](../requirements.md). It builds on "the one and the many" ([granularity.md](granularity.md), agreed 2026-09-30) and answers the parts that decision left open for this conversation: how the map changes when trees are felled or land is cleared, and how building changes the world.
+Proposed 2026-10-02 and **agreed the same day, all six points** (see "Decided" at the end). The owner's words are "World building, in parallel with skills" and "What the world is made of, and what can be touched" in [requirements.md](../requirements.md). It builds on "the one and the many" ([granularity.md](granularity.md), agreed 2026-09-30) and answers the parts that decision left open for this conversation: how the map changes when trees are felled or land is cleared, and how building changes the world.
 
-## The short version
+## The three kinds, in plain words
 
-A world built in Blender is made of **three kinds of things**, and each placed object says which kind it is:
+Every object a world builder places in Blender is one of three kinds, and says which.
+
+**Scenery** is everything in the world that you can see but never use. The ground under your feet, the cliffs, the roads, the outside walls of a city's buildings, a forest on a distant hillside, and the flowers and mushrooms placed for decoration are all scenery. The game draws scenery exactly as it was built, but the engine doesn't keep track of any of it piece by piece, because nothing can ever happen to it. The engine learns only three things from scenery: the shape of the ground, so people walk on it at the right height; later, which parts block the way, so people walk around a building rather than through it; and what the ground is made of, so you can gather sand on a beach. When you move the mouse over scenery, nothing happens: no name, no menu. If a builder wants part of the scenery to be usable, such as a way into a building, they place a door there as a separate thing.
+
+**A source** is a place where you gather or work, made of many alike things that you take from but never single out: a stand of trees, a patch of grass, a pile of loose stones, a flint deposit, fish in the shallows. In Blender, the builder marks out the source's area, says what it is (what it's made of, how much there is, how big a piece you take, which tool you need, and whether it grows back), and scatters the models that show it, such as four hundred trees. To the engine, the whole source is one thing, however many trees are drawn. When you point at any tree in the stand, the whole stand answers by one name, "standing trees". When you fell a tree, the work takes its time; then the tree nearest you disappears and a log lies on the ground. The engine remembers which tree went, so every player sees the same gap and a save keeps it, and over time the trees grow back. Clearing ground for a town is felling every tree in that area.
+
+**A thing** is anything that counts on its own: anything you can pick up, carry, use, open, or name; anything alive; and anything anyone has made. A spear on the ground, a door, a car, a chest, a named landmark boulder, a boar, a fire you lit, and a house you built are all things. In Blender, the builder places things from the catalogue, so each arrives with its meaning attached, and can adjust one, such as making a boulder heavier or giving it a name. The engine keeps every thing individually, with its own place and history, and things are fully interactive: pointing shows the name, clicking opens the menu, and build mode moves them. A thing made of parts, such as a house built from a kit of walls, a roof, and a door, is still one thing: you click the house, not a wall. Only a part that does something on its own, such as a door that opens or a chest that holds things, is a separate thing attached to it. Everything players make in play, from a fire to a town, is things, and it lives in the saves, not in the Blender file.
+
+**The rule that sorts them:** if a player can't change it or take from it, it's scenery; if they take from it but it's one of many alike, it's part of a source; otherwise it's a thing.
+
+In short:
 
 | Kind | What it is | In the engine | Hover and click |
 | --- | --- | --- | --- |
@@ -93,7 +103,7 @@ So the owner's sequence holds: built in Blender, loaded, and you're in it; from 
 - **New data:** a source's list of drawn spots, and which have been taken; the ground's height grid; later, what blocks the way.
 - **Sight and names** already work on things and sources only; scenery simply isn't in the engine, so it can't be named or pointed at. (Navigation by landmarks still works: a landmark is a thing.)
 
-## Questions for the owner
+## Questions for the owner (all agreed, 2026-10-02)
 
 1. **Three kinds** (scenery, sources, things), with the rule "if a player can't change it or take from it, it's scenery": agree?
 2. **The house is one thing**; a part is its own thing only if it does something (a door, a chest): agree?
@@ -101,3 +111,7 @@ So the owner's sequence holds: built in Blender, loaded, and you're in it; from 
 4. **Building** goes footprint, then site, then time, then the house, with materials at the site and the ground clear first: agree?
 5. **Blender is the master** for base worlds, and everything made in play lives in saves, never written back to Blender: agree?
 6. **The first test**, once agreed: the skill grounds rebuilt in Blender with all three kinds (ground and decoration as scenery; the woodland stand, grass, and stones as sources; landmarks and a kit as things), converted, and the existing proofs passing on it.
+
+## Decided, 2026-10-02
+
+The owner: "I want to agree on everything." All six points above are decided: the three kinds and the rule that sorts them; the house as one thing, with only working parts separate; felling the tree nearest you, recorded by the engine, growing back; building by footprint, site, time, and house; Blender as the master for base worlds, with play kept in saves; and the first test, the skill grounds rebuilt in Blender. The plain-words section above was rewritten at the owner's request, for reading aloud.

@@ -726,6 +726,10 @@ First, **how is a world definable?** Take the forest of 400 trees: **I want to w
 
 **This style dictates how we model things in Blender, how we define them, and how we bring them into the engine to render.** Right now it's a desert island with some fire-making material, but **think bigger soon**: shortly we'll build weapons and tools and start on the raft; from the raft we graduate to a hut, then a bigger house, and so on, and then a town starts to form. **How is the world definition done? All inside Blender, then loaded, and now you're in it; and from that point on we can add more items to the world.** Think in these dimensions and come back with some directions.
 
+### Agreed: the three kinds
+
+Added 2026-10-02. **Yes, I want to agree on everything**, but I want the three kinds of items inside Blender reiterated: the explanation wasn't entirely clear the way it was read. **Write the three variations in clearer, full paragraphs**, and replay them.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

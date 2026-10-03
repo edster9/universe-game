@@ -40,7 +40,7 @@ Started 2026-09-28. The first attempt is text-only slices of the engine, in Rust
 | [ideas/the-client.md](ideas/the-client.md) | Proposal: web or native. The browser's ceilings, checked; a native Rust client (Bevy the lean), with the web for the website, launcher, and tools |
 | [ideas/web-stack.md](ideas/web-stack.md) | Proposal: the browser stack, layer by layer (protocol, engine in the browser, interface, renderer), with pros and cons |
 | [ideas/assets.md](ideas/assets.md) | For a later conversation: where the game's 3D assets come from |
-| [ideas/world-building.md](ideas/world-building.md) | Proposed: worlds built in Blender; scenery, sources, and things; what can be touched; felling, clearing, and building |
+| [ideas/world-building.md](ideas/world-building.md) | Decided: worlds built in Blender; scenery, sources, and things; what can be touched; felling, clearing, and building |
 | [ideas/rendering.md](ideas/rendering.md) | For a later conversation: how the game is drawn |
 | [ideas/space-travel.md](ideas/space-travel.md) | For a later conversation: space, gravity, and faster than light |
 | [ideas/universes.md](ideas/universes.md) | Many universes, different rules, the climb, and universes that die |

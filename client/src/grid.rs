@@ -71,7 +71,10 @@ pub fn draw(
         (middle.x / FINE).round() as i32,
         (middle.z / FINE).round() as i32,
     );
-    let ground = |x: f32, z: f32| Vec3::new(x, land.height(Vec2::new(x, z)) + LIFT, z);
+    // On flat ground (a world built in Blender), just above it; on the
+    // land's coarse bumps, higher, or the lines sink into them.
+    let lift = if land.is_flat() { 0.02 } else { LIFT };
+    let ground = |x: f32, z: f32| Vec3::new(x, land.height(Vec2::new(x, z)) + lift, z);
     let points = (2.0 * REACH / STEP) as i32;
     for n in -lines..=lines {
         for along_x in [true, false] {

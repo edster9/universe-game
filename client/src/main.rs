@@ -22,6 +22,7 @@
 //!   companion's island is companion.toml), `--as <id>` who to play (the
 //!   first person no mind or instinct runs), `--speed <x>` game seconds a
 //!   second (1).
+//! - `--no-vsync` draws as fast as it can, for measuring with `--frames`.
 //! - `--world <name>` plays another world in the data folder ("skill-yard",
 //!   the default, or "skill-grounds"; ".toml" can be left off).
 //! - `--load <save>` picks up a save (`/save`, `/load`) from the `saves`
@@ -266,6 +267,13 @@ fn main() {
                 primary_window: Some(Window {
                     title: "Universe game".into(),
                     resolution: (1600, 900).into(),
+                    // As fast as it can draw, not waiting for the screen:
+                    // for measuring what drawing costs.
+                    present_mode: if std::env::args().any(|a| a == "--no-vsync") {
+                        bevy::window::PresentMode::AutoNoVsync
+                    } else {
+                        bevy::window::PresentMode::AutoVsync
+                    },
                     ..default()
                 }),
                 ..default()
@@ -304,6 +312,8 @@ fn main() {
             grid::setup,
         ),
     )
+    // How the scene is drawn, when the settings for it change.
+    .add_systems(Update, camera::graphics)
     .add_systems(
         Update,
         (
@@ -559,13 +569,23 @@ fn setup(
         commands.spawn((Mesh3d(meshes.add(mesh)), MeshMaterial3d(ground.clone())));
     }
 
-    // The sun, turned by `day_and_night`.
+    // The sun, turned by `day_and_night`. Its shadows in two layers out to
+    // 100 m, not Bevy's four out to 150: shadows are the dearest thing
+    // drawn (measured 2026-10-02), and 100 m covers what the islander sees
+    // close enough to matter.
     commands.spawn((
         DirectionalLight {
             illuminance: 12_000.0,
             shadow_maps_enabled: true,
             ..default()
         },
+        bevy::light::CascadeShadowConfigBuilder {
+            num_cascades: 2,
+            first_cascade_far_bound: 15.0,
+            maximum_distance: 100.0,
+            ..default()
+        }
+        .build(),
         Transform::default(),
         Sun,
     ));
@@ -690,9 +710,26 @@ fn day_and_night(
     sky.0 = Color::srgb(0.03 + 0.52 * day, 0.05 + 0.68 * day, 0.12 + 0.8 * day);
 }
 
-fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud>>) {
+/// The top line: the time, how fast it runs, and how fast it's drawn; and
+/// below it, where the islander is and what they're doing. The keys are in
+/// the console, said once at the start (the owner, 2026-10-02: the top
+/// needs little help now, and clashed with the backpack and body windows).
+fn hud(
+    sim: Res<Sim>,
+    eye: Res<camera::Eye>,
+    time: Res<Time>,
+    mut fps: Local<f32>,
+    mut text: Query<&mut Text, With<Hud>>,
+) {
     let world = sim.world();
     let me = sim.me();
+    // Frames a second, smoothed over a second or so.
+    let dt = time.delta_secs().max(1e-4);
+    *fps = if *fps == 0.0 {
+        1.0 / dt
+    } else {
+        *fps + (1.0 / dt - *fps) * (dt * 2.0).min(1.0)
+    };
     let clock = world.time_of_day().map_or(String::new(), |t| {
         format!(
             "Day {}, {:02}:{:02}",
@@ -721,14 +758,13 @@ fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud
         },
         Play::Script(_) => doing,
     };
-    let view = if eye.flying {
-        "flying free: arrows, E/Q, Shift; F to go back; WASD still walks"
+    let flying = if eye.flying {
+        "   flying: arrows, E/Q, Shift; F to land"
     } else {
-        "WASD walk, right- or middle-drag or arrows to look, wheel to zoom, F fly, B backpack, V body, T speak, G grid"
+        ""
     };
     for mut text in &mut text {
-        text.0 =
-            format!("{clock}   {state}\n{here}{doing}\n{view}; Space pause, [ ] slower/faster");
+        text.0 = format!("{clock}   {state}   {:.0} fps{flying}\n{here}{doing}", *fps);
     }
 }
 

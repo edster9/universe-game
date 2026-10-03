@@ -23,6 +23,13 @@ pub struct Settings {
     pub snap: bool,
     /// A circle on the ground showing how far the islander can reach.
     pub reach: bool,
+    /// How the scene is drawn, for speed against looks: the sun's shadows,
+    /// smoothed edges (4x MSAA), the glow round flames (bloom, which also
+    /// needs the wider colour range of HDR), and haze far off.
+    pub shadows: bool,
+    pub msaa: bool,
+    pub bloom: bool,
+    pub fog: bool,
 }
 
 impl Default for Settings {
@@ -30,6 +37,10 @@ impl Default for Settings {
         Settings {
             snap: true,
             reach: false,
+            shadows: true,
+            msaa: true,
+            bloom: true,
+            fog: true,
         }
     }
 }
@@ -95,6 +106,20 @@ const SETTINGS: &[(&str, &str, Layer, &str)] = &[
         Layer::Always,
         "models from an asset pack set out to look at, not in the world",
     ),
+    ("shadows", "", Layer::Always, "the sun casts shadows"),
+    (
+        "msaa",
+        "",
+        Layer::Always,
+        "smoothed edges (4x multisampling)",
+    ),
+    (
+        "bloom",
+        "",
+        Layer::Always,
+        "a glow round flames and bright things",
+    ),
+    ("fog", "", Layer::Always, "haze in the distance"),
 ];
 
 /// Everything a tool can change.
@@ -124,6 +149,10 @@ impl Changeable<'_> {
             "body" => on(self.panels.body),
             "build" => on(self.build.on),
             "showcase" => on(self.showcase.shown),
+            "shadows" => on(self.settings.shadows),
+            "msaa" => on(self.settings.msaa),
+            "bloom" => on(self.settings.bloom),
+            "fog" => on(self.settings.fog),
             _ => String::new(),
         }
     }
@@ -148,6 +177,10 @@ impl Changeable<'_> {
             "body" => &mut self.panels.body,
             "build" => &mut self.build.on,
             "showcase" => &mut self.showcase.shown,
+            "shadows" => &mut self.settings.shadows,
+            "msaa" => &mut self.settings.msaa,
+            "bloom" => &mut self.settings.bloom,
+            "fog" => &mut self.settings.fog,
             _ => {
                 return Err(format!(
                     "there's no setting \"{name}\"; /settings lists them"

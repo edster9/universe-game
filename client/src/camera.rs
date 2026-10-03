@@ -68,14 +68,7 @@ pub fn setup(mut commands: Commands, options: Res<Options>, sim: Res<Sim>, land:
         // Flames glow past their edges.
         bevy::post_process::bloom::Bloom::NATURAL,
         Transform::from_translation(from).looking_at(look, Vec3::Y),
-        DistanceFog {
-            color: Color::srgb(0.62, 0.74, 0.88),
-            falloff: FogFalloff::Linear {
-                start: 3_000.0,
-                end: 40_000.0,
-            },
-            ..default()
-        },
+        haze(),
         FreeCamera {
             walk_speed: 20.0,
             run_speed: 200.0,
@@ -321,5 +314,52 @@ pub fn point(
         *visible = Visibility::Inherited;
         node.left = Val::Px(cursor.x + 16.0);
         node.top = Val::Px(cursor.y - 8.0);
+    }
+}
+
+/// Haze far off.
+fn haze() -> DistanceFog {
+    DistanceFog {
+        color: Color::srgb(0.62, 0.74, 0.88),
+        falloff: FogFalloff::Linear {
+            start: 3_000.0,
+            end: 40_000.0,
+        },
+        ..default()
+    }
+}
+
+/// How the scene is drawn, as the settings say (`/shadows`, `/msaa`,
+/// `/bloom`, `/fog`), when they change.
+pub fn graphics(
+    mut commands: Commands,
+    settings: Res<crate::tools::Settings>,
+    camera: Query<Entity, With<Camera3d>>,
+    mut sun: Query<&mut DirectionalLight>,
+) {
+    if !settings.is_changed() {
+        return;
+    }
+    let Ok(camera) = camera.single() else {
+        return;
+    };
+    let mut camera = commands.entity(camera);
+    camera.insert(if settings.msaa {
+        Msaa::Sample4
+    } else {
+        Msaa::Off
+    });
+    if settings.bloom {
+        camera.insert(bevy::post_process::bloom::Bloom::NATURAL);
+    } else {
+        camera.remove::<(bevy::post_process::bloom::Bloom, bevy::camera::Hdr)>();
+    }
+    if settings.fog {
+        camera.insert(haze());
+    } else {
+        camera.remove::<DistanceFog>();
+    }
+    for mut light in &mut sun {
+        light.shadow_maps_enabled = settings.shadows;
     }
 }

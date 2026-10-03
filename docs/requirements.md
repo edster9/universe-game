@@ -756,6 +756,15 @@ Added 2026-10-02. **No, we don't have a sample yet: these .blend files are going
 
 Added 2026-10-02. **Make sure all the docs are correct for someone to clone, get up and running, and commit to git.** The worlds they can get from S3, and the assets they have to download and extract; **that's all that's needed of what isn't in git.**
 
+### Performance again, the top text, and feedback on work
+
+Added 2026-10-02. A few performance issues again:
+- **Resizing the window causes major slowdowns**, seemingly killing the GPU; it takes a while to recover, and can kill the game. **First priority: examine and fix.**
+- **I made a fire and the frame rate went down**, and then walking and flying were really slow.
+- **The top text section isn't needed**, or it needs to be aware of the backpack and body windows, because they clash. We don't need much help at the top any more: **just the time, the frame rate, and basic messages.**
+
+After those are fixed, improvements to the tasks the actor is given: **picking up wood, or any item, takes time, but there's no feedback on what's happening.** We should have **some sort of progress bar near the action, near the actor, counting down to when it will be done**; maybe in the top message section, but I've usually seen it near the action itself. Then **we should talk about what happens if you're picking up wood, aren't done yet, and walk away: what should the result be?**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

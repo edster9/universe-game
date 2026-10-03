@@ -144,6 +144,12 @@ pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
         });
     console.say(
         Said::Debug,
+        "Keys: WASD walk; right- or middle-drag, or the arrows, to look; the wheel to zoom; \
+         F fly; B backpack; V body; T speak; G grid; M build mode; Space pause; [ ] slower \
+         or faster.",
+    );
+    console.say(
+        Said::Debug,
         "Enter to type a command, Enter to send it; \"help\" lists them. Hold T to speak one. ` resizes this.",
     );
 }

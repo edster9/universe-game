@@ -144,7 +144,11 @@ pub fn draw_reach(
     let points = (0..=48).map(|i| {
         let angle = i as f32 / 48.0 * std::f32::consts::TAU;
         let p = Vec2::new(at.x + radius * angle.cos(), at.z + radius * angle.sin());
-        Vec3::new(p.x, land.height(p) + 0.1, p.y)
+        Vec3::new(
+            p.x,
+            land.height(p) + if land.is_flat() { 0.02 } else { 0.1 },
+            p.y,
+        )
     });
     gizmos.linestrip(points, Color::srgba(0.4, 0.9, 1.0, 0.9));
 }

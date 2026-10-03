@@ -471,7 +471,11 @@ impl Brush<'_, '_> {
                 color: Color::srgb(1.0, 0.6, 0.28),
                 intensity: 400_000.0 * h * h * flicker,
                 range: 40.0 * h.sqrt(),
-                shadow_maps_enabled: true,
+                // No shadows: a light that casts them draws the whole scene
+                // six times more each frame, and, made afresh each frame as
+                // this one is, filled the graphics card's memory until the
+                // game crawled (2026-10-02).
+                shadow_maps_enabled: false,
                 ..default()
             },
             Transform::from_translation(at + Vec3::Y * h * 0.8),

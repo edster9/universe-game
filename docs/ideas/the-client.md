@@ -147,6 +147,12 @@ The owner: go ahead with Bevy and a basic scene render, built as a native Window
 
 **Since then (first steps, stages 1 and 2):** the overview became the islander's own view, the clock runs at real speed by default, and commands are typed into a console. See [first-steps.md](../challenges/first-steps.md).
 
+## Performance, measured 2026-10-02
+
+The owner found resizing the window crippling, and a fire slowing everything. **One cause:** the fire's light cast shadows, and was made afresh each frame with the rest of what moves, so each frame took six new shadow images: graphics memory rose from 1 GB to 5.7 GB of the laptop's 6 GB (an RTX 4050), and the frame rate fell from 75 to 15 and kept falling; resizing then needs new screen-sized images, and with the card full, that's what tipped it over. Fixed: the fire's light casts no shadows. After it, resizing 60 times, and maximizing and restoring 10 times, with a fire lit, kept memory steady (1.3 to 1.6 GB) and the frame rate even.
+
+What each part of drawing costs, measured with the window maximized (3200×1876), a fire lit, and no frame cap (`client.exe --no-vsync --frames`): everything on, 77 frames a second; the sun's shadows off, 106 (3.6 ms a frame, the dearest); bloom and HDR off, 91 (2 ms, 250 MB); MSAA off, 90 (1.9 ms, 510 MB); fog off, 87 (probably mostly noise); all four off, 136. **Shadows in two cascades out to 100 m**, not Bevy's four out to 150, brought everything-on to 91 (shadows now 1.6 ms) and saved 250 MB, and look the same; that's the setting now. Each part can be switched off: `/shadows`, `/msaa`, `/bloom`, `/fog` (the always layer of tools).
+
 ## Questions for the owner
 
 1. ~~A native client~~ (decided).

@@ -710,6 +710,12 @@ Added 2026-10-02, after asking why not everything in the scene can be moved or p
 
 Added 2026-10-02. I was going to mention the git ignore for assets we download: **due to licensing, we have no idea**, and **we cannot put those in our git repository, for many reasons: size, and also licensing.** We're going to buy some commercial items soon. So **put READMEs inside the assets folder, check them in, and specify what's there**, so that **if somebody forks the project, they'll know what assets they need from the particular pack we're using, and which particular files from the pack are to be included**, so the game has the assets it needs.
 
+### World building, in parallel with skills
+
+Added 2026-10-02. These aren't two separate directions: they're **parallel directions, things that need solving, and they kind of depend on each other**, so I need advice on how to approach them. **One path is the one we're on**: skill building and AI integration, with the player looking around at what's available, clicking on things, putting things together, and building skills and saving them. **The second is world building, which is very important overall.** We can't keep building the world the way we do now. **At some point it'll be the responsibility of third-party helpers to design the base worlds**, do all the placements of everything on the board, and **define the classification of what things are, with their metadata. Just because you have a model of a rock, the game doesn't know it's a rock**; these have to be set. So I want a conversation on world building next.
+
+I spoke to a few people who are very enthusiastic about this project. Since we're not doing this in Godot, Unreal, or Unity, where they'd normally build the world, **the common consensus is to build it in Blender**: glTF is made for exactly this, carrying metadata, and there are existing Blender-to-Bevy plugins, so a world can be built and defined there, with all its metadata, and loaded into our game. Before going into much more detail: what do you think of the approach so far?
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

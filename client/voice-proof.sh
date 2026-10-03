@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 SCRIPT=${1:?a script in data/scripts}
-TARGET=/mnt/c/Users/edste/universe-game/client
+. ./where.sh
 mkdir -p "$TARGET/voice"
 # Each command once: not the header, expectations, repeats, or comments.
 python3 - "../data/scripts/$SCRIPT" "$TARGET/voice/say.ps1" <<'PY'

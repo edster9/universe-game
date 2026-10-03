@@ -10,8 +10,11 @@
 #   client/run.sh --install                build and install it, without starting it
 set -euo pipefail
 cd "$(dirname "$0")"
+# Rust from rustup, Zig (on the PATH, or unpacked in ~/.local/zig), and
+# cargo-zigbuild (see README.md, "The game client").
+ZIG_DIR=$(ls -d ~/.local/zig/zig-* 2>/dev/null | tail -1 || true)
 ZIGBUILD_BIN=$(dirname "$(ls ~/.version-fox/temp/*/rust/cargo/bin/cargo-zigbuild 2>/dev/null | head -1)" 2>/dev/null || true)
-export PATH=~/.cargo/bin:~/.local/zig/zig-x86_64-linux-0.16.0:$PATH:${ZIGBUILD_BIN:-}:~/.cargo/bin
+export PATH=~/.cargo/bin:${ZIG_DIR:-}:$PATH:${ZIGBUILD_BIN:-}
 # Whisper, for voice: a patched copy (see vendor.sh), bindings made with
 # libclang, and built for CPUs with AVX2 (2015 on), which makes it ten times
 # faster.
@@ -19,7 +22,7 @@ export PATH=~/.cargo/bin:~/.local/zig/zig-x86_64-linux-0.16.0:$PATH:${ZIGBUILD_B
 export LIBCLANG_PATH=${LIBCLANG_PATH:-/usr/lib/llvm-18/lib}
 export CFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3" CXXFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3"
 cargo zigbuild --release --target x86_64-pc-windows-gnu
-TARGET=/mnt/c/Users/edste/universe-game/client
+. ./where.sh
 mkdir -p "$TARGET"
 # A running game can't be overwritten, but it can be renamed: set it aside.
 if ! cp target/x86_64-pc-windows-gnu/release/client.exe "$TARGET/" 2>/dev/null; then
@@ -31,7 +34,7 @@ fi
 # even keeps it for a file deleted and made again under the same name), so
 # set it to now: the date shown is the build's.
 powershell.exe -NoProfile -Command \
-    "(Get-Item 'C:\\Users\\edste\\universe-game\\client\\client.exe').CreationTime = Get-Date" \
+    "(Get-Item '$(wslpath -w "$TARGET/client.exe")').CreationTime = Get-Date" \
     >/dev/null 2>&1 || true
 # Whisper's English model, beside the program, once.
 mkdir -p "$TARGET/models"
@@ -55,7 +58,7 @@ cp -ru ../assets/. "$TARGET/assets/"
 rm -rf "$TARGET/data"
 cp -r ../data "$TARGET/data"
 if [ "${1:-}" = "--install" ]; then
-    echo "Installed in C:\\Users\\edste\\universe-game\\client."
+    echo "Installed in $(wslpath -w "$TARGET")."
     exit 0
 fi
 cd "$TARGET"

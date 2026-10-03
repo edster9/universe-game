@@ -241,7 +241,7 @@ fn main() {
     }
     let mut style: draw::Style = toml::from_str(draw::STYLE).expect("the style file");
     style.keep_found(&draw::assets_folder());
-    let land = Land::of(play_world(&play));
+    let land = Land::of(play_world(&play)).flat_if(built.scene.is_some());
     let speed = number("--speed").unwrap_or(1.0);
 
     keep_crashes();

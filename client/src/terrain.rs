@@ -29,6 +29,10 @@ pub struct Land {
     paths: Vec<(Vec2, Vec2, f32, f32)>,
     /// Places joined by paths over land, drawn as one piece of land.
     islands: Vec<Vec<usize>>,
+    /// A world built in Blender brings its own ground, level at nought, so
+    /// the land here is flat: things stand on Blender's ground, not above it.
+    /// (Until Blender's ground heights come across with the world.)
+    flat: bool,
 }
 
 fn reach(height: f32, base: f32) -> f32 {
@@ -89,7 +93,18 @@ impl Land {
                 .collect(),
             paths,
             islands,
+            flat: false,
         }
+    }
+
+    pub fn is_flat(&self) -> bool {
+        self.flat
+    }
+
+    /// The same land, flat at nought if the world was built in Blender.
+    pub fn flat_if(mut self, built: bool) -> Land {
+        self.flat = built;
+        self
     }
 
     /// The middle of all the places, on the level.
@@ -100,6 +115,9 @@ impl Land {
 
     /// Ground height at a point, in metres above the sea.
     pub fn height(&self, p: Vec2) -> f32 {
+        if self.flat {
+            return 0.0;
+        }
         // Heights blend between places, nearest counting most.
         let (mut sum, mut weight) = (0.0, 0.0);
         let mut nearest = f32::MAX;
@@ -216,4 +234,26 @@ fn distance_to_segment(p: Vec2, a: Vec2, b: Vec2) -> (f32, f32) {
     let ab = b - a;
     let t = ((p - a).dot(ab) / ab.length_squared().max(1e-6)).clamp(0.0, 1.0);
     (p.distance(a + ab * t), t)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Land;
+    use bevy::math::Vec2;
+
+    /// In a world built in Blender, things stand on Blender's ground, level
+    /// at nought; the land made from places stands at least 2 m above it,
+    /// which once left the islander and the landmark rocks in the air.
+    #[test]
+    fn a_world_built_in_blender_stands_on_its_own_ground() {
+        let data = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../data"));
+        let world = console::load_world_file(&data.join("skill-yard.toml")).unwrap();
+        let island = Land::of(&world);
+        let built = Land::of(&world).flat_if(true);
+        for at in [Vec2::ZERO, Vec2::new(0.0, -30.5), Vec2::new(36.0, -36.0)] {
+            assert!(island.height(at) >= 2.0 - 3.0, "{at}");
+            assert_eq!(built.height(at), 0.0, "{at}");
+        }
+        assert!(island.height(Vec2::ZERO) > 1.0);
+    }
 }

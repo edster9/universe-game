@@ -253,7 +253,7 @@ fn session_tool(line: &str, console: &mut Console, things: &mut Changeable) {
     };
     console.say(said, &reply.text);
     // The land is drawn once, at the start.
-    if !reply.refused && Land::of(session.world()) != *things.land {
+    if !reply.refused && Land::of(session.world()).flat_if(things.land.is_flat()) != *things.land {
         console.say(
             Said::Refused,
             "This save is of another world, so the land drawn is still the old one: \

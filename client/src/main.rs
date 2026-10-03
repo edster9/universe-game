@@ -724,7 +724,7 @@ fn hud(sim: Res<Sim>, eye: Res<camera::Eye>, mut text: Query<&mut Text, With<Hud
     let view = if eye.flying {
         "flying free: arrows, E/Q, Shift; F to go back; WASD still walks"
     } else {
-        "WASD walk, right-drag or arrows to look, wheel to zoom, F fly, B backpack, V body, T speak, G grid"
+        "WASD walk, right- or middle-drag or arrows to look, wheel to zoom, F fly, B backpack, V body, T speak, G grid"
     };
     for mut text in &mut text {
         text.0 =

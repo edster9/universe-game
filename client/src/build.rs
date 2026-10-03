@@ -45,6 +45,13 @@ struct Grab {
     height: f32,
 }
 
+impl Build {
+    /// Whether something is held, so the camera leaves the mouse alone.
+    pub fn holding(&self) -> bool {
+        self.grab.is_some()
+    }
+}
+
 /// How many metres a pixel of the mouse's movement lifts something.
 const LIFT: f32 = 0.01;
 

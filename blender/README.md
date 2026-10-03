@@ -13,6 +13,16 @@ Worlds are built in Blender and converted for the game (decided 2026-10-02; see 
 | `make_skill_yard.py` | Made the first version of `skill-yard.blend`; not run again unless we start over | Yes |
 | `blender.sh` | Runs a script in Windows' Blender from WSL, without its window | Yes |
 
+## Which command makes what
+
+| Command | Reads | Makes | In git |
+| --- | --- | --- | --- |
+| `blender/blender.sh make_catalogue.py` | `catalogue.toml`, the packs | `blender/catalogue.blend` | No |
+| `blender/blender.sh make_skill_yard.py` | `catalogue.blend` | `blender/skill-yard.blend` (the first version only; it's edited by hand since) | Yes |
+| `blender/convert.sh skill-yard` | `skill-yard.world.toml` (the manifest, written by hand), `skill-yard.blend`, `catalogue.toml` | `assets/worlds/skill-yard/`: the export (`skill-yard.gltf`, `skill-yard.bin`, and the textures it uses), which the client draws; and `data/skill-yard.toml`, the world's data for the engine | The export no (it holds the packs' models); the data yes |
+
+`blender.sh` only runs a script in Blender; which files it makes depends on the script. Blender also leaves a `.blend1` beside a file it saves: the version before, as a backup (git ignores it).
+
 ## Getting started (or after a fresh clone)
 
 1. Download the packs listed in [assets/third-party](../assets/third-party/README.md) and put their files where each README says. Without them, the catalogue draws simple shapes instead.

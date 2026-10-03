@@ -1,5 +1,6 @@
 //! The islander's camera: above and behind them, following wherever they
-//! go. The mouse turns it around them (hold the right button and drag), as
+//! go. The mouse turns it around them (hold the right or middle button and
+//! drag, the middle as in Blender), as
 //! do the arrow keys, and the angle stays while they walk; the wheel brings
 //! it closer or further. F breaks out into free flying, a developer's tool,
 //! with the arrows (WASD still walks the islander), and F again snaps back.
@@ -115,6 +116,7 @@ pub fn follow(
     sim: Res<Sim>,
     land: Res<Land>,
     drawn: Res<crate::draw::Drawn>,
+    build: Res<crate::build::Build>,
     mut eye: ResMut<Eye>,
     mut camera: Query<(&mut Transform, &mut FreeCameraState), With<Camera3d>>,
 ) {
@@ -136,7 +138,11 @@ pub fn follow(
         return;
     }
 
-    if buttons.pressed(MouseButton::Right) {
+    // Dragging with the right button turns the camera round the islander,
+    // and so does the middle one, as in Blender, unless build mode is
+    // lifting something with it.
+    let middle = buttons.pressed(MouseButton::Middle) && !build.holding();
+    if buttons.pressed(MouseButton::Right) || middle {
         eye.yaw -= motion.delta.x * 0.005;
         eye.pitch = (eye.pitch + motion.delta.y * 0.005).clamp(-0.3, 1.45);
     }

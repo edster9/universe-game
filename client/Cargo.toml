@@ -12,6 +12,7 @@ console = { path = "../crates/console" }
 bevy = { version = "0.19", default-features = false, features = ["3d", "ui", "free_camera", "png"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.9"
+serde_json = "1"
 # Voice: speech to text on the player's own machine, and the microphone.
 whisper-rs = "0.16"
 cpal = "0.18"

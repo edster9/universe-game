@@ -15,6 +15,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use engine::world::{EntityId, World as EngineWorld};
 
+use crate::built::Built;
 use crate::camera::{Picked, Pointing};
 use crate::draw::{Named, on_ground, point};
 use crate::showcase::Shown;
@@ -77,9 +78,12 @@ pub fn say(console: &mut Console, on: bool) {
     );
 }
 
-/// Something the designer can move: lying in a place, and not alive.
-fn movable(world: &EngineWorld, id: EntityId) -> bool {
-    world.location(id).is_some_and(|l| world.is_place(l)) && !world.is_agent(id)
+/// Something the designer can move: lying in a place, and not alive, nor a
+/// source placed in Blender (sources move in Blender, the owner, 2026-10-02).
+fn movable(world: &EngineWorld, built: &Built, id: EntityId) -> bool {
+    world.location(id).is_some_and(|l| world.is_place(l))
+        && !world.is_agent(id)
+        && !built.sources.contains(&id)
 }
 
 /// Hovering, grabbing, moving, and letting go.
@@ -99,6 +103,7 @@ pub fn drag(
     land: Res<Land>,
     mut sim: ResMut<Sim>,
     mut console: ResMut<Console>,
+    blender: Res<Built>,
     mut gizmos: Gizmos,
 ) {
     if !build.on {
@@ -133,7 +138,7 @@ pub fn drag(
         // Nothing held: show what's under the pointer, and pick it up.
         let world = sim.world();
         let Some((what, held_at)) = pointing.hit(cursor, camera, eye, |p| match p {
-            Picked::Thing(id) => movable(world, id),
+            Picked::Thing(id) => movable(world, &blender, id),
             Picked::Shown(_) => true,
         }) else {
             return;

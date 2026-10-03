@@ -67,6 +67,10 @@ How the converter reads the world:
 
 Proofs on the converted world: `data/scripts/skill-yard-0-the-board.txt` and `skill-yard-1-fire-variations.txt`, the skill grounds' own, played on the yard. Moving things around in Blender can change how far walks take, which those proofs check in places.
 
+## In the game
+
+The client opens the skill yard by default and draws it from the export (`client/src/built.rs`): scenery just as it was placed; each source by its own models, where they stand in Blender; each thing by its own model, following the engine, so build mode (M) moves it (and `/save` keeps where). People and creatures, and anything made in play, the client draws itself. Build mode leaves sources alone: they move in Blender. After changing the world in Blender, convert it again and restart the client (`client/run.sh` copies the export beside it).
+
 ## Next
 
-The client drawing the world's scenery from the export (the walls, paths, and decoration), and each source drawn by its own models where Blender put them, so that felling takes the tree nearest you.
+A source's models known to the engine, so felling takes the tree nearest you and gathering thins a pile; ground heights from Blender.

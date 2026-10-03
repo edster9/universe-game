@@ -9,16 +9,11 @@ use bevy::prelude::*;
 use crate::draw::{Kit, Style, on_ground};
 use crate::terrain::Land;
 
-/// Whether the showcase is out.
-#[derive(Resource)]
+/// Whether the showcase is out: not unless asked for (`/showcase`), now
+/// that the pack has been seen.
+#[derive(Resource, Default)]
 pub struct Showcase {
     pub shown: bool,
-}
-
-impl Default for Showcase {
-    fn default() -> Self {
-        Showcase { shown: true }
-    }
 }
 
 /// A model in the showcase, by name.

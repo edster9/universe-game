@@ -47,6 +47,7 @@ use console::session::Session;
 use engine::world::{EntityId, World as EngineWorld};
 
 mod build;
+mod built;
 mod camera;
 mod draw;
 mod grid;
@@ -186,6 +187,13 @@ fn main() {
         open: arg("--open").cloned().unwrap_or_default(),
     };
     let data = data_dir();
+    // The skill yard, built in Blender, unless --world says otherwise.
+    let world_file = arg("--world").map_or("skill-yard.toml", String::as_str);
+    let built = if options.script.is_none() {
+        built::Built::for_world(world_file)
+    } else {
+        built::Built::default()
+    };
     let play = match &options.script {
         Some(script) => {
             // A script's name, or its path.
@@ -204,8 +212,7 @@ fn main() {
             let session = match arg("--load") {
                 Some(name) => Session::resume(saves, name),
                 None => {
-                    let file = arg("--world").map_or("skill-grounds.toml", String::as_str);
-                    console::load_world_file(&data.join(file)).and_then(|world| {
+                    console::load_world_file(&data.join(world_file)).and_then(|world| {
                         // Whoever nobody else plays, unless --as says.
                         let who = match arg("--as") {
                             Some(who) => who.clone(),
@@ -279,12 +286,14 @@ fn main() {
     .init_resource::<draw::Drawn>()
     .init_resource::<build::Build>()
     .init_resource::<showcase::Showcase>()
+    .insert_resource(built)
     .init_resource::<walking::ByKeys>()
     .insert_resource(voice::Voice::new(&model))
     .add_systems(
         Startup,
         (
             setup,
+            built::spawn,
             camera::setup,
             terminal::setup,
             panels::setup,
@@ -312,6 +321,8 @@ fn main() {
             // Then the world, and drawing it.
             (
                 run_world,
+                built::join,
+                built::follow,
                 draw::follow_me,
                 terminal::play_script,
                 draw::draw_scenery,
@@ -491,11 +502,13 @@ fn fail(why: &str) -> ! {
 fn setup(
     mut commands: Commands,
     land: Res<Land>,
+    built: Res<built::Built>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // The sea, all round, and the land: scenery everywhere, as anyone would
-    // see it from where they stand.
+    // see it from where they stand. A world built in Blender brings its own.
+    let blender = built.scene.is_some();
     commands.spawn((
         Mesh3d(meshes.add(Plane3d::default().mesh().size(200_000.0, 200_000.0))),
         MeshMaterial3d(materials.add(StandardMaterial {
@@ -503,14 +516,15 @@ fn setup(
             perceptual_roughness: 0.25,
             ..default()
         })),
-        Transform::default(),
+        // Under a Blender world's own ground, which would hide it anyway.
+        Transform::from_xyz(0.0, if blender { -1.0 } else { 0.0 }, 0.0),
     ));
     let ground = materials.add(StandardMaterial {
         base_color: Color::WHITE,
         perceptual_roughness: 0.95,
         ..default()
     });
-    for mesh in land.mesh() {
+    for mesh in land.mesh().into_iter().filter(|_| !blender) {
         commands.spawn((Mesh3d(meshes.add(mesh)), MeshMaterial3d(ground.clone())));
     }
 

@@ -629,6 +629,7 @@ pub fn draw_scenery(
     mut materials: ResMut<Assets<StandardMaterial>>,
     assets: Res<AssetServer>,
     drawn: Query<Entity, With<Scenery>>,
+    built: Res<crate::built::Built>,
     mut last: Local<Vec<Pictured>>,
 ) {
     let world = sim.world();
@@ -644,6 +645,8 @@ pub fn draw_scenery(
                 .filter(|&&t| !world.is_agent(t) && !world.is_portable(t))
                 .map(move |&t| (here, t))
         }))
+        // What Blender's scene draws, it draws.
+        .filter(|(_, t)| !built.drawn.contains(t))
         .map(|(place, t)| {
             (
                 place,
@@ -711,6 +714,7 @@ pub fn draw_movers(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     drawn: Query<Entity, With<Mover>>,
+    built: Res<crate::built::Built>,
 ) {
     let mut brush = Brush {
         commands,
@@ -741,7 +745,7 @@ pub fn draw_movers(
             };
             brush.fire(at + Vec3::Y * 0.2, grams, t, seed);
         }
-        if !moves {
+        if !moves || built.drawn.contains(&id) {
             continue;
         }
         let mut look = style.look(world, id);

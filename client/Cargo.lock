@@ -2031,6 +2031,7 @@ dependencies = [
  "cpal",
  "engine",
  "serde",
+ "serde_json",
  "toml",
  "whisper-rs",
 ]

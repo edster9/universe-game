@@ -748,6 +748,10 @@ Added 2026-10-02. **Some items say "nothing you can do with it right now", but w
 
 Added 2026-10-02. **I asked because it's a binary file, and it will change very often.** I guess without it the world has nothing to render, and someone who clones the repo won't have anything to work with. **But we'll have a lot of these .blend files soon as the game expands, and git won't be the place for them.** We should plan for **a sample .blend for a new git clone**, but **the evolving world map should not be in git.**
 
+### The worlds in S3, a folder for source worlds
+
+Added 2026-10-02. **No, we don't have a sample yet: these .blend files are going to be very temporary as we train the system and work up.** Use the positiveignition AWS key to **make a public S3 bucket for now, and a script to upload these world files into it.** Then **move the .blend files out of the blender folder**: that folder should be the Blender utilities and what they produce, like the catalogue. **We need a source world folder**: `assets/worlds` is the final output. Maybe `blender/worlds`, where the game worlds start to pile up, or maybe somewhere else?
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

@@ -32,3 +32,8 @@ vendor/
 
 # Worlds exported from Blender: they hold the packs' models.
 /assets/worlds/
+
+# The source worlds, built in Blender: temporary while we train the system,
+# kept in S3 (blender/worlds.sh), not in git. Only the folder's README is.
+/worlds/*
+!/worlds/README.md

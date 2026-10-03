@@ -10,4 +10,4 @@ B="${BLENDER:-/mnt/c/Program Files/Blender Foundation/Blender 5.0/blender.exe}"
 script="$1"
 shift
 "$B" --background --factory-startup --python "$(wslpath -w "$PWD/$script")" -- "$@" 2>&1 |
-    grep -E "^(CATALOGUE|MISSING|WORLD|PREVIEW|Error|Traceback|  File|    )|Error:" || true
+    grep -E "^(CATALOGUE|MISSING|WORLD|PREVIEW|RELINKED|Error|Traceback|  File|    )|Error:" || true

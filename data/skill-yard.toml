@@ -1,4 +1,4 @@
-# Made by the converter from blender/skill-yard.world.toml; don't edit it here. Change the world in
+# Made by the converter from worlds/skill-yard/skill-yard.world.toml; don't edit it here. Change the world in
 # Blender and run blender/convert.sh again (docs/ideas/world-building.md).
 uses = ["island-things.toml"]
 

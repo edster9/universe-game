@@ -9,17 +9,23 @@ Worlds are built in Blender and converted for the game (decided 2026-10-02; see 
 | `catalogue.toml` | The catalogue: what each model means to the game (scenery, source, or thing; material, mass, pieces, and so on) and which models show it | Yes |
 | `make_catalogue.py` | Builds `catalogue.blend` from the catalogue and the downloaded packs | Yes |
 | `catalogue.blend` | The models, one collection per model of each entry (`standing-trees/3`), marked as assets | **No**: it holds the packs' models. Make it with the script |
-| `skill-yard.blend` | The first world: the skill grounds as a walled yard 100 m across. **The master copy**, edited by hand | Yes: it links to the catalogue, never copies from it, so it holds no pack models |
-| `make_skill_yard.py` | Made the first version of `skill-yard.blend`; not run again unless we start over | Yes |
+| `make_skill_yard.py` | Made the first version of `worlds/skill-yard/skill-yard.blend` | Yes |
+| `relink.py` | Points a moved world file at the catalogue again | Yes |
+| `export_world.py`, `convert.sh` | Export a world and convert it for the game | Yes |
+| `worlds.sh` | Fetches worlds from S3 and sends them back | Yes |
 | `blender.sh` | Runs a script in Windows' Blender from WSL, without its window | Yes |
+
+**The worlds themselves aren't here**: they're in `worlds/<world>/` (a Blender file or several, and a manifest), which git ignores; they live in S3 (see [worlds/README.md](../worlds/README.md)). A world file links to `catalogue.blend` rather than copying from it, so it holds none of a pack's models.
 
 ## Which command makes what
 
 | Command | Reads | Makes | In git |
 | --- | --- | --- | --- |
 | `blender/blender.sh make_catalogue.py` | `catalogue.toml`, the packs | `blender/catalogue.blend` | No |
-| `blender/blender.sh make_skill_yard.py` | `catalogue.blend` | `blender/skill-yard.blend` (the first version only; it's edited by hand since) | Yes |
-| `blender/convert.sh skill-yard` | `skill-yard.world.toml` (the manifest, written by hand), `skill-yard.blend`, `catalogue.toml` | `assets/worlds/skill-yard/`: the export (`skill-yard.gltf`, `skill-yard.bin`, and the textures it uses), which the client draws; and `data/skill-yard.toml`, the world's data for the engine | The export no (it holds the packs' models); the data yes |
+| `blender/blender.sh make_skill_yard.py` | `catalogue.blend` | `worlds/skill-yard/skill-yard.blend` (the first version only; it's edited by hand since) | No: S3 |
+| `blender/worlds.sh pull skill-yard` | the bucket | `worlds/skill-yard/`: the Blender file and the manifest | No: S3 |
+| `blender/convert.sh skill-yard` | `worlds/skill-yard/skill-yard.world.toml` (the manifest, written by hand), `skill-yard.blend`, `catalogue.toml` | `assets/worlds/skill-yard/`: the export (`skill-yard.gltf`, `skill-yard.bin`, and the textures it uses), which the client draws; and `data/skill-yard.toml`, the world's data for the engine | The export no (it holds the packs' models); the data yes |
+| `blender/worlds.sh push skill-yard` | `worlds/skill-yard/` | a new version of each changed file in the bucket | No: S3 |
 
 `blender.sh` only runs a script in Blender; which files it makes depends on the script. Blender also leaves a `.blend1` beside a file it saves: the version before, as a backup (git ignores it).
 
@@ -27,9 +33,10 @@ Worlds are built in Blender and converted for the game (decided 2026-10-02; see 
 
 1. Download the packs listed in [assets/third-party](../assets/third-party/README.md) and put their files where each README says. Without them, the catalogue draws simple shapes instead.
 2. Make the catalogue: `blender/blender.sh make_catalogue.py` from WSL, or `blender --background --factory-startup --python blender/make_catalogue.py` anywhere else. Run it again whenever `catalogue.toml` changes or a pack is added.
-3. Open `skill-yard.blend` in Blender. From Windows, the repository in WSL is at `\\wsl.localhost\Ubuntu-24.04\home\edster\projects\universe-game`.
+3. Fetch a world: `blender/worlds.sh pull skill-yard`.
+4. Open `worlds/skill-yard/skill-yard.blend` in Blender. From Windows, the repository in WSL is at `\\wsl.localhost\Ubuntu-24.04\home\edster\projects\universe-game`.
 
-## What you'll see in skill-yard.blend
+## What you'll see in worlds/skill-yard/skill-yard.blend
 
 The outliner (top right) has four collections:
 - **places**: two circles: the yard (50 m out from the middle) and the deep woods in the north-east corner, where the boars live.
@@ -61,7 +68,8 @@ Each object's tags are custom properties: select it, then **Object Properties** 
 - **More or less of a source:** duplicate one of its models (Shift+D) or delete one. A source whose models each stand for an amount (trees at 1 t each, stones at 50 kg) holds that much more or less.
 - **Another thing:** duplicate one (Shift+D) and **give it a new `ug_id`**: two things with one id is a mistake the converter will refuse.
 - **Something new from the catalogue:** add the `blender` folder as an asset library once (Edit, Preferences, File Paths, Asset Libraries, +), then drag entries in from the Asset Browser. A dragged-in model comes without tags: add `ug_entry` and `ug_id` for a thing, or parent it to a source's circle (Ctrl+P) to make it part of that source.
-- **Save** (Ctrl+S). Blender keeps a `.blend1` backup beside it, which git ignores.
+- **Save** (Ctrl+S). Blender keeps a `.blend1` backup beside it, which is never sent to S3.
+- **Send it** when you're done: `blender/worlds.sh push skill-yard`. S3 keeps every version, so nothing sent is ever lost.
 
 ## Converting a world for the game
 

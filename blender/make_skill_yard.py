@@ -1,4 +1,4 @@
-"""Builds blender/skill-yard.blend, the first world made in Blender: the skill
+"""Built worlds/skill-yard/skill-yard.blend, the first world made in Blender: the skill
 grounds again, as one walled square yard 100 m across. It's a starting
 point: after this, the .blend file is the master, edited by hand in Blender,
 and this script isn't run again unless we start over.
@@ -34,7 +34,7 @@ from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CATALOGUE = os.path.join(HERE, "catalogue.blend")
-OUT = os.path.join(HERE, "skill-yard.blend")
+OUT = os.path.join(HERE, "..", "worlds", "skill-yard", "skill-yard.blend")
 HALF = 50.0  # the yard is 100 m across
 GOLDEN = math.pi * (3 - math.sqrt(5))
 
@@ -286,6 +286,7 @@ def light_and_camera():
 
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
     # Saved first, so the catalogue is linked by a path relative to it.
     bpy.ops.wm.save_as_mainfile(filepath=OUT)
     catalogue = link_catalogue()

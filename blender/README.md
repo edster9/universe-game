@@ -53,6 +53,20 @@ Each object's tags are custom properties: select it, then **Object Properties** 
 - **Something new from the catalogue:** add the `blender` folder as an asset library once (Edit, Preferences, File Paths, Asset Libraries, +), then drag entries in from the Asset Browser. A dragged-in model comes without tags: add `ug_entry` and `ug_id` for a thing, or parent it to a source's circle (Ctrl+P) to make it part of that source.
 - **Save** (Ctrl+S). Blender keeps a `.blend1` backup beside it, which git ignores.
 
+## Converting a world for the game
+
+    blender/convert.sh skill-yard
+
+This exports each Blender file the manifest (`skill-yard.world.toml`) lists, as glTF with the tags, into `assets/worlds/` (not in git: it holds the packs' models), then runs the converter (`cargo run -p console -- --convert blender/skill-yard.world.toml`), which checks every tag against the catalogue and writes **`data/skill-yard.toml`**, the world's data file. That file is in git, so the proofs run without Blender; it says at its top that it's made, not written. Run the converter again after every change in Blender. It refuses, naming each problem, a tag the catalogue doesn't know, a thing or source without a `ug_id`, two with the same one, a source with no models, and anything outside every place's circle.
+
+How the converter reads the world:
+- **Places** in one file all lead to each other, as far apart as their middles. A thing is in the smallest place whose circle it's in.
+- **A source's mass** is its models times the entry's `each` (12 trees at 1 t each make 12 t), unless `ug_mass` says otherwise or the entry has no `each`. **Its spread** is how far its models stand from its circle's middle.
+- **A creature** keeps to the places of its file. **Something that grows back** draws on the nearest source of the entry its catalogue entry names, in the same place.
+- **Scenery** isn't written at all: the engine never hears of it.
+
+Proofs on the converted world: `data/scripts/skill-yard-0-the-board.txt` and `skill-yard-1-fire-variations.txt`, the skill grounds' own, played on the yard. Moving things around in Blender can change how far walks take, which those proofs check in places.
+
 ## Next
 
-The converter: reading the world (exported as glTF, with the tags) and writing the world's data for the engine and the scene for the client, checking every tag against the catalogue. Then the first test: the skill grounds' proofs, passing on the yard.
+The client drawing the world's scenery from the export (the walls, paths, and decoration), and each source drawn by its own models where Blender put them, so that felling takes the tree nearest you.

@@ -1,0 +1,50 @@
+# The skill yard's manifest: which Blender files make the world, and the
+# world's own settings (docs/ideas/world-building.md). blender/convert.sh
+# exports each file and runs the converter, which writes the world's data
+# file for the engine. Paths are from this file's folder.
+#
+# A bigger world lists more files here, each a region or an interior, and
+# their places join up by the ways between them.
+
+# The Blender files, each exported to <exported>/<name>/<name>.gltf.
+files = ["skill-yard"]
+catalogue = "catalogue.toml"
+exported = "../assets/worlds"
+output = "../data/skill-yard.toml"
+# Copied into the world's data file as they are.
+uses = ["island-things.toml"]
+
+# The world's settings, copied as they are: the skill grounds' own.
+[world]
+reference_temperature = "293 K"
+open_air_heat_loss = "5 W/K"
+max_touch_temperature = "330 K"
+seed = 1
+air_clearing = "0.1%"
+calm_step = "1 min"
+convection = "10 W/(m2*K)"
+emissivity = "90%"
+touch_transfer = "100 W/(m2*K)"
+wear_rate = "10 mg/s"
+friction_share = "50%"
+rubbing_time = "10 min"
+flame_share = "50%"
+hand_hardness = "1"
+explore_time = "30 min"
+explore_chance = "60%"
+lapse_rate = "6.5 K/km"
+planet_radius = "6371 km"
+eye_height = "1.7 m"
+survey_time = "10 min"
+wound_rate = "20 g/s"
+hit_chance = "60%"
+hand_push = "5%"
+drag = "300%"
+day = "24 h"
+starts_at = "8 h"
+sunrise = "6 h"
+sunset = "18 h"
+bare_feet_limit = "8 g/km"
+bare_feet_pace = "50%"
+bare_feet_wound = "20 mg/s"
+covers = "2 kg"

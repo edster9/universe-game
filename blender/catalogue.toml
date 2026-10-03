@@ -15,7 +15,7 @@
 #
 # What it means to the engine, in the words of the world's data files:
 #   material, composition, kind, fixed, mass, pieces, grows, and, for people
-#   and creatures, culture, rules, temperature.
+#   and creatures (`agent = true`), culture, rules, temperature.
 #   each    for a source: the mass each drawn model stands for, so a stand of
 #           12 trees at 1 t each holds 12 t; placing more trees adds more.
 #           Without it, a source's mass is `mass` (a placement can change it).
@@ -42,6 +42,7 @@ scale = 0.8
 [[entry]]
 id = "player"
 is = "thing"
+agent = true
 label = "the islander"
 kind = "human"
 culture = "islanders"
@@ -53,6 +54,7 @@ colour = "#d9a066"
 [[entry]]
 id = "boar"
 is = "thing"
+agent = true
 label = "a boar"
 kind = "boar"
 temperature = "311 K"

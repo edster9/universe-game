@@ -2,6 +2,7 @@
 //!
 //!     cargo run -p console [-- --world <file.toml>] [--as <person-id>]
 //!     cargo run -p console -- --script <file.txt>
+//!     cargo run -p console -- --convert <blender/world.world.toml>
 //!     cargo run -p console -- --world <file.toml> --as <person-id> --live [--real-time]
 //!     cargo run -p console -- --load <save> [--live [--real-time]]
 //!
@@ -23,6 +24,22 @@ const SAVES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../saves");
 fn main() -> ExitCode {
     // `--script <file>` plays a script and prints what happened.
     let args: Vec<String> = std::env::args().skip(1).collect();
+    // `--convert <manifest>` makes a world built in Blender into its data
+    // file (blender/convert.sh runs it after exporting).
+    if let [flag, path] = args.as_slice()
+        && flag == "--convert"
+    {
+        return match console::convert::convert(std::path::Path::new(path)) {
+            Ok(said) => {
+                println!("{said}");
+                ExitCode::SUCCESS
+            }
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::FAILURE
+            }
+        };
+    }
     if let [flag, path] = args.as_slice()
         && flag == "--script"
     {

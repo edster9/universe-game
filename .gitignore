@@ -29,3 +29,6 @@ vendor/
 # never kept; and Blender's backup copies.
 /blender/catalogue.blend
 *.blend1
+
+# Worlds exported from Blender: they hold the packs' models.
+/assets/worlds/

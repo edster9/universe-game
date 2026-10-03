@@ -1,0 +1,581 @@
+# Made by the converter from blender/skill-yard.world.toml; don't edit it here. Change the world in
+# Blender and run blender/convert.sh again (docs/ideas/world-building.md).
+uses = ["island-things.toml"]
+
+[world]
+air_clearing = "0.1%"
+bare_feet_limit = "8 g/km"
+bare_feet_pace = "50%"
+bare_feet_wound = "20 mg/s"
+calm_step = "1 min"
+convection = "10 W/(m2*K)"
+covers = "2 kg"
+day = "24 h"
+drag = "300%"
+emissivity = "90%"
+explore_chance = "60%"
+explore_time = "30 min"
+eye_height = "1.7 m"
+flame_share = "50%"
+friction_share = "50%"
+hand_hardness = "1"
+hand_push = "5%"
+hit_chance = "60%"
+lapse_rate = "6.5 K/km"
+max_touch_temperature = "330 K"
+open_air_heat_loss = "5 W/K"
+planet_radius = "6371 km"
+reference_temperature = "293 K"
+rubbing_time = "10 min"
+seed = 1
+starts_at = "8 h"
+sunrise = "6 h"
+sunset = "18 h"
+survey_time = "10 min"
+touch_transfer = "100 W/(m2*K)"
+wear_rate = "10 mg/s"
+wound_rate = "20 g/s"
+
+[[place]]
+id = "yard"
+label = "the skill yard"
+exits = ["deep-woods"]
+distances = { "deep-woods" = "50.9 m" }
+east = "0.0 m"
+north = "0.0 m"
+size = "50.0 m"
+temperature = "300 K"
+night = "292 K"
+
+[[place]]
+id = "deep-woods"
+label = "the deep woods"
+exits = ["yard"]
+distances = { "yard" = "50.9 m" }
+east = "36.0 m"
+north = "36.0 m"
+size = "13.0 m"
+temperature = "300 K"
+night = "292 K"
+
+[[agent]]
+id = "player"
+label = "the islander"
+at = "yard"
+spot = "0.0 m north, 0.0 m east"
+kind = "human"
+culture = "islanders"
+temperature = "310 K"
+rules = "player"
+
+[[agent]]
+id = "boar-1"
+label = "a boar"
+at = "deep-woods"
+spot = "2.0 m north, 3.0 m west"
+kind = "boar"
+temperature = "311 K"
+range = ["yard", "deep-woods"]
+
+[[agent]]
+id = "boar-2"
+label = "a boar"
+at = "deep-woods"
+spot = "2.0 m north, 3.0 m east"
+kind = "boar"
+temperature = "311 K"
+range = ["yard", "deep-woods"]
+
+[[item]]
+id = "woodland"
+label = "the woodland"
+at = "yard"
+spot = "30.5 m north, 0.0 m east"
+mass = "2 t"
+fixed = true
+material = "rock"
+spread = "1.0 m"
+
+[[item]]
+id = "grove"
+label = "the fibre grove"
+at = "yard"
+spot = "15.2 m north, 26.4 m east"
+mass = "2 t"
+fixed = true
+material = "rock"
+spread = "1.0 m"
+
+[[item]]
+id = "stream"
+label = "the stream bank"
+at = "yard"
+spot = "15.2 m south, 26.4 m east"
+mass = "2 t"
+fixed = true
+material = "rock"
+spread = "1.0 m"
+
+[[item]]
+id = "forge"
+label = "the forge"
+at = "yard"
+spot = "30.5 m south, 0.0 m east"
+mass = "2 t"
+fixed = true
+material = "rock"
+spread = "1.0 m"
+
+[[item]]
+id = "hearth"
+label = "the hearth"
+at = "yard"
+spot = "15.2 m south, 26.4 m west"
+mass = "2 t"
+fixed = true
+material = "rock"
+spread = "1.0 m"
+
+[[item]]
+id = "knapping"
+label = "the knapping ground"
+at = "yard"
+spot = "15.2 m north, 26.4 m west"
+mass = "2 t"
+fixed = true
+material = "rock"
+spread = "1.0 m"
+
+[[item]]
+id = "woodland-forage"
+label = "roots and nuts in the leaf litter"
+at = "yard"
+spot = "28.0 m north, 0.0 m east"
+mass = "150 kg"
+fixed = true
+material = "roots"
+pieces = { chance = "70%", find_time = "1 min", size = "500 g" }
+spread = "0.7 m"
+grows = { rate = "20%", limit = "195 kg", from = "floor" }
+
+[[item]]
+id = "woodland-flint"
+label = "flint nodules"
+at = "yard"
+spot = "26.5 m north, 3.1 m east"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { find_time = "8 s", size = "500 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "woodland-stones"
+label = "loose stones"
+at = "yard"
+spot = "23.1 m north, 3.9 m east"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { find_time = "5 s", size = "1 kg" }
+spread = "0.7 m"
+
+[[item]]
+id = "woodland-sticks"
+label = "fallen sticks"
+at = "yard"
+spot = "20.4 m north, 1.7 m east"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "4 s", size = "200 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "woodland-grass"
+label = "dry grass"
+at = "yard"
+spot = "20.4 m north, 1.7 m west"
+mass = "20 kg"
+fixed = true
+material = "grass"
+pieces = { find_time = "3 s", size = "5 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "woodland-twigs"
+label = "dry twigs"
+at = "yard"
+spot = "23.1 m north, 3.9 m west"
+mass = "20 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "3 s", size = "20 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "woodland-bushes"
+label = "fibrous bushes"
+at = "yard"
+spot = "26.5 m north, 3.1 m west"
+mass = "500 kg"
+fixed = true
+material = "fibre"
+kind = "shrub"
+pieces = { find_time = "10 s", size = "250 g" }
+spread = "1.7 m"
+
+[[item]]
+id = "grove-bushes"
+label = "fibrous bushes"
+at = "yard"
+spot = "16.0 m north, 20.8 m east"
+mass = "500 kg"
+fixed = true
+material = "fibre"
+kind = "shrub"
+pieces = { find_time = "10 s", size = "250 g" }
+spread = "1.7 m"
+
+[[item]]
+id = "grove-sticks"
+label = "fallen sticks"
+at = "yard"
+spot = "10.0 m north, 24.2 m east"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "4 s", size = "200 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "grove-logs"
+label = "deadwood"
+at = "yard"
+spot = "10.0 m north, 17.3 m east"
+mass = "200 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "8 s", size = "3 kg" }
+spread = "0.7 m"
+
+[[item]]
+id = "stream-water"
+label = "water"
+at = "yard"
+spot = "8.0 m south, 20.8 m east"
+mass = "50 t"
+fixed = true
+material = "water"
+spread = "4.2 m"
+
+[[item]]
+id = "stream-fish"
+label = "fish in the water"
+at = "yard"
+spot = "9.5 m south, 23.9 m east"
+mass = "150 kg"
+fixed = true
+material = "fish"
+kind = "fish"
+pieces = { chance = "60%", find_time = "1 min", needs = "spear", size = "500 g" }
+spread = "0.5 m"
+
+[[item]]
+id = "stream-mussels"
+label = "mussels in the shallows"
+at = "yard"
+spot = "12.9 m south, 24.7 m east"
+mass = "100 kg"
+fixed = true
+composition = { shell = "65%", shellfish = "35%" }
+kind = "shellfish"
+pieces = { find_time = "30 s", size = "1 kg" }
+spread = "0.5 m"
+
+[[item]]
+id = "stream-forage"
+label = "roots and nuts in the leaf litter"
+at = "yard"
+spot = "15.6 m south, 22.5 m east"
+mass = "150 kg"
+fixed = true
+material = "roots"
+pieces = { chance = "70%", find_time = "1 min", size = "500 g" }
+spread = "0.7 m"
+grows = { rate = "20%", limit = "195 kg", from = "floor" }
+
+[[item]]
+id = "stream-flint"
+label = "flint nodules"
+at = "yard"
+spot = "15.6 m south, 19.0 m east"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { find_time = "8 s", size = "500 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "stream-stones"
+label = "loose stones"
+at = "yard"
+spot = "12.9 m south, 16.9 m east"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { find_time = "5 s", size = "1 kg" }
+spread = "0.7 m"
+
+[[item]]
+id = "stream-sticks"
+label = "fallen sticks"
+at = "yard"
+spot = "9.5 m south, 17.7 m east"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "4 s", size = "200 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "forge-bog"
+label = "bog iron in a boggy hollow"
+at = "yard"
+spot = "20.0 m south, 0.0 m east"
+mass = "200 kg"
+fixed = true
+composition = { iron = "50%", rock = "50%" }
+pieces = { find_time = "10 s", size = "2 kg" }
+spread = "0.6 m"
+
+[[item]]
+id = "forge-clay"
+label = "clay in a bank"
+at = "yard"
+spot = "21.2 m south, 2.8 m east"
+mass = "500 kg"
+fixed = true
+material = "clay"
+pieces = { find_time = "5 s", size = "1 kg" }
+spread = "2.1 m"
+
+[[item]]
+id = "forge-stones"
+label = "loose stones"
+at = "yard"
+spot = "24.0 m south, 4.0 m east"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { find_time = "5 s", size = "1 kg" }
+spread = "0.7 m"
+
+[[item]]
+id = "forge-flint"
+label = "flint nodules"
+at = "yard"
+spot = "26.8 m south, 2.8 m east"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { find_time = "8 s", size = "500 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "forge-grass"
+label = "dry grass"
+at = "yard"
+spot = "28.0 m south, 0.0 m east"
+mass = "20 kg"
+fixed = true
+material = "grass"
+pieces = { find_time = "3 s", size = "5 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "forge-twigs"
+label = "dry twigs"
+at = "yard"
+spot = "26.8 m south, 2.8 m west"
+mass = "20 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "3 s", size = "20 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "forge-sticks"
+label = "fallen sticks"
+at = "yard"
+spot = "24.0 m south, 4.0 m west"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "4 s", size = "200 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "forge-logs"
+label = "deadwood"
+at = "yard"
+spot = "21.2 m south, 2.8 m west"
+mass = "200 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "8 s", size = "3 kg" }
+spread = "0.7 m"
+
+[[item]]
+id = "hearth-grass"
+label = "dry grass"
+at = "yard"
+spot = "8.0 m south, 20.8 m west"
+mass = "20 kg"
+fixed = true
+material = "grass"
+pieces = { find_time = "3 s", size = "5 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "hearth-twigs"
+label = "dry twigs"
+at = "yard"
+spot = "10.8 m south, 17.0 m west"
+mass = "20 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "3 s", size = "20 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "hearth-sticks"
+label = "fallen sticks"
+at = "yard"
+spot = "15.2 m south, 18.4 m west"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "4 s", size = "200 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "hearth-logs"
+label = "deadwood"
+at = "yard"
+spot = "15.2 m south, 23.1 m west"
+mass = "200 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "8 s", size = "3 kg" }
+spread = "0.7 m"
+
+[[item]]
+id = "hearth-stones"
+label = "loose stones"
+at = "yard"
+spot = "10.8 m south, 24.6 m west"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { find_time = "5 s", size = "1 kg" }
+spread = "0.7 m"
+
+[[item]]
+id = "knapping-flint"
+label = "flint nodules"
+at = "yard"
+spot = "16.0 m north, 20.8 m west"
+mass = "200 kg"
+fixed = true
+material = "flint"
+pieces = { find_time = "8 s", size = "500 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "knapping-stones"
+label = "loose stones"
+at = "yard"
+spot = "10.0 m north, 17.3 m west"
+mass = "500 kg"
+fixed = true
+material = "stone"
+pieces = { find_time = "5 s", size = "1 kg" }
+spread = "0.7 m"
+
+[[item]]
+id = "knapping-sticks"
+label = "fallen sticks"
+at = "yard"
+spot = "10.0 m north, 24.2 m west"
+mass = "50 kg"
+fixed = true
+material = "wood"
+pieces = { find_time = "4 s", size = "200 g" }
+spread = "0.7 m"
+
+[[item]]
+id = "woodland-trees"
+label = "standing trees"
+at = "yard"
+spot = "39.0 m north, 0.0 m east"
+mass = "12 t"
+fixed = true
+material = "wood"
+kind = "tree"
+pieces = { edge = "1 mm", find_time = "3 min", needs = "axe", size = "20 kg" }
+spread = "5.3 m"
+
+[[item]]
+id = "floor"
+label = "the forest floor"
+at = "yard"
+spot = "39.0 m north, 0.0 m east"
+mass = "100 t"
+fixed = true
+material = "litter"
+spread = "8.5 m"
+
+[[item]]
+id = "deep-trees"
+label = "standing trees"
+at = "deep-woods"
+spot = "0.0 m north, 0.0 m east"
+mass = "24 t"
+fixed = true
+material = "wood"
+kind = "tree"
+pieces = { edge = "1 mm", find_time = "3 min", needs = "axe", size = "20 kg" }
+spread = "5.3 m"
+
+[[item]]
+id = "deep-floor"
+label = "the forest floor"
+at = "deep-woods"
+spot = "0.0 m north, 0.0 m east"
+mass = "100 t"
+fixed = true
+material = "litter"
+spread = "8.5 m"
+
+[[item]]
+id = "spring"
+label = "a spring"
+at = "deep-woods"
+spot = "6.0 m south, 6.0 m west"
+mass = "20 t"
+fixed = true
+material = "water"
+spread = "4.2 m"
+
+[[item]]
+id = "deep-forage"
+label = "roots and nuts in the leaf litter"
+at = "deep-woods"
+spot = "7.0 m south, 4.0 m east"
+mass = "150 kg"
+fixed = true
+material = "roots"
+pieces = { chance = "70%", find_time = "1 min", size = "500 g" }
+spread = "0.7 m"
+grows = { rate = "20%", limit = "195 kg", from = "deep-floor" }

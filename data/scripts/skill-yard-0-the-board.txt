@@ -1,0 +1,163 @@
+# The skill yard: the skill grounds' board (skill-grounds-0-the-board.txt),
+# played on the world built in Blender (blender/skill-yard.blend), made into
+# data/skill-yard.toml by the converter. Only the world and its name differ.
+#
+# The skill grounds (docs/challenges/skill-grounds.md), step 3: the board.
+# One open place: from the clearing in the middle, six zones in a ring, each
+# with everything its own skills need within reach of its middle, so
+# nothing is fetched from another zone. Each zone's kit is gathered and used
+# here, walking to it from the clearing.
+world skill-yard.toml
+as player
+luck average
+
+look
+expect said the skill yard
+expect said the hearth
+expect said the forge
+expect said the knapping ground
+expect said the fibre grove
+expect said the stream bank
+expect said the woodland
+expect said bog iron in a boggy hollow
+expect said fibrous bushes
+expect said mussels in the shallows
+expect said standing trees
+expect not said a boar
+
+# The knapping ground: a spear, from its own flint, stones, and sticks.
+go to the knapping ground
+expect said that took 2
+go to flint
+gather flint
+go to stones
+gather stones
+go to sticks
+gather sticks
+work flint into flake with stone
+work stick into shaft with flake
+assemble spear
+expect said spear
+drop stone
+
+# The fibre grove: rope, from its own bushes, and poles.
+walk to 0 0
+go to the fibre grove
+go to bushes
+gather bushes x2
+go to sticks
+gather sticks
+go to deadwood
+gather deadwood
+work fibre into rope
+expect said rope
+drop all
+
+# The forge: everything for a furnace and its fire, all in reach. (The
+# islanders don't know a furnace yet: how they come to know metalworking is
+# step 5's question.)
+walk to 0 0
+go to the forge
+go to bog iron
+gather bog iron
+go to clay
+gather clay x2
+go to stones
+gather stones x6
+go to flint
+gather flint
+go to grass
+gather grass
+go to twigs
+gather twigs
+go to sticks
+gather sticks
+go to deadwood
+gather deadwood
+expect said a wood log
+drop all
+
+# The stream bank: water, mussels, and roots and nuts.
+walk to 0 0
+go to the stream bank
+go to mussels
+gather mussels
+go to roots and nuts
+gather roots and nuts
+go to fish
+try gather fish
+go to flint
+gather flint
+go to stones
+gather stones
+go to sticks
+gather sticks
+drop all
+# Bushes grow in two zones: the nearest is meant, the fibre grove's, 26 m
+# away here (the woodland's are 42 m away, over half a minute).
+go to bushes
+expect said that took 2
+walk to 0 0
+
+# The woodland: its trees need an axe, and the boars are in the deep woods.
+walk to 0 0
+go to the woodland
+# (An axe, to the islanders, who don't know one yet: "a part put together".)
+go to trees
+try gather trees
+expect said you need a part put together for the standing trees
+go to flint
+gather flint
+go to stones
+gather stones
+go to sticks
+gather sticks
+go to grass
+gather grass
+go to twigs
+gather twigs
+go to bushes
+gather bushes
+drop all
+
+# The hearth: a fire, fed by sizes, each when the last has caught.
+walk to 0 0
+go to the hearth
+go to grass
+gather grass x3
+go to twigs
+gather twigs x4
+expect said you find 20 g of wood, a wood twig
+go to sticks
+gather sticks x6
+expect said a wood stick
+go to deadwood
+gather deadwood
+expect said a wood log
+go to stones
+gather stones x5
+assemble fire ring
+drop fire ring
+put grass in ring
+rub wood against wood into ring
+wait until grass is burning
+expect said burning
+put grass in ring
+repeat 4
+  put twig in ring
+end
+wait until twig is burning
+expect said the twig is burning
+put stick in ring
+put stick in ring
+wait until stick is burning
+expect said the stick is burning
+repeat 3
+  put stick in ring
+end
+wait 1 min
+put log in ring
+wait until log is burning
+expect said the log is burning
+expect alive
+expect conserved

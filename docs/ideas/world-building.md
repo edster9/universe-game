@@ -135,3 +135,9 @@ The owner asked whether a universe is many Blender files, a town each and an int
 - **Names are kept apart by file**: an id is unique within its file, and the converter prefixes it with the file's own (`harbour-town/pub-door`), so two builders can each have a `door-1`.
 - **Edges must agree**: where two regions meet, the ground must meet. The converter checks each shared edge and refuses a seam.
 - **Bigger scales are the same pattern, nested**: a universe's manifest lists its star systems, a system's its planets, a planet's its regions. Each level is a text file listing the files below it.
+
+## The converter (built 2026-10-02)
+
+`blender/convert.sh <world>` exports each Blender file a world's manifest lists (`blender/<world>.world.toml`: the files, the catalogue, the libraries it uses, and the world's settings) as glTF with its tags, then runs the converter (`console --convert`, `crates/console/src/convert.rs`), which writes the world's data file, `data/<world>.toml`, kept in git so the proofs run without Blender. It refuses unknown tags, missing or repeated ids, sources with no models, and things outside every place. A source's mass is its models' count times its entry's `each`, and its spread is how far its models stand. **First result:** `data/skill-yard.toml`, 2 places, the player and two boars, 45 things and sources; the skill grounds' board and fire proofs pass on it, the board's only change being one walk that's longer in the yard's layout. Tests: `crates/console/tests/convert.rs` (a small export written by hand: a place, a rock, three stones as a source, decoration; and the refusals), checked by sabotage (a source's mass ignoring its models fails it).
+
+**Not yet:** the client drawing the exported scenery (the walls, paths, and decoration); a source's drawn models known to the engine (their spots, and which are taken), for felling the nearest tree; ground heights from Blender.

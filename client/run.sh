@@ -7,6 +7,7 @@
 #   client/run.sh --load last              pick up a save
 #   client/run.sh --script companion-3-asking.txt   play a script
 #   client/run.sh --shot shot.png --after 5          a screenshot, then quit
+#   client/run.sh --install                build and install it, without starting it
 set -euo pipefail
 cd "$(dirname "$0")"
 ZIGBUILD_BIN=$(dirname "$(ls ~/.version-fox/temp/*/rust/cargo/bin/cargo-zigbuild 2>/dev/null | head -1)" 2>/dev/null || true)
@@ -53,5 +54,9 @@ cp -ru ../assets/. "$TARGET/assets/"
 # The worlds and scripts, beside the program.
 rm -rf "$TARGET/data"
 cp -r ../data "$TARGET/data"
+if [ "${1:-}" = "--install" ]; then
+    echo "Installed in C:\\Users\\edste\\universe-game\\client."
+    exit 0
+fi
 cd "$TARGET"
 exec ./client.exe "$@"

@@ -3053,12 +3053,15 @@ pub fn choices(world: &World, actor: EntityId, thing: EntityId) -> Vec<Choice> {
             walk_first: far,
         })
         .collect();
-    // Walking up to it, if there's something to do there, or it's someone.
-    if far && (!offered.is_empty() || world.is_agent(thing)) {
+    // Walking up to it, whenever it's out of reach and the walk can be
+    // made, even with nothing to do there yet (the owner, 2026-10-02: only
+    // what can't even be walked to offers nothing).
+    let walk = Intent::Walk { to: it.clone() };
+    if far && plan(world, actor, &walk).is_ok() {
         offered.insert(
             0,
             Choice {
-                intent: Intent::Walk { to: it },
+                intent: walk,
                 walk_first: false,
             },
         );

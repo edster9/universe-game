@@ -137,4 +137,25 @@ mod tests {
         let flint = world.find_by_key("flint").unwrap();
         assert!(menu(world, me, flint).is_empty());
     }
+
+    /// Anything that can be walked to offers walking up to it, even with
+    /// nothing to do there; beside it, with nothing to do, nothing.
+    #[test]
+    fn what_can_be_walked_to_offers_walking_up_to_it() {
+        let data = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../data"));
+        let world = crate::load_world_file(&data.join("skill-yard.toml"))
+            .unwrap()
+            .with_player_rules("player")
+            .unwrap();
+        let mut session = Session::new(world, "player").unwrap();
+        let (world, me) = (session.world(), session.player());
+        // The hearth's landmark, a big rock 30 m off: nothing to do with it.
+        let rock = world.find_by_key("hearth").unwrap();
+        let labels = |menu: &[Choice]| menu.iter().map(|c| c.label.clone()).collect::<Vec<_>>();
+        assert_eq!(labels(&menu(world, me, rock)), ["walk up to it"]);
+        let reply = session.handle(&menu(session.world(), me, rock)[0].line);
+        assert!(!reply.refused, "{}", reply.text);
+        let (world, me) = (session.world(), session.player());
+        assert!(menu(world, me, rock).is_empty());
+    }
 }

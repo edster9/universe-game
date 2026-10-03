@@ -740,6 +740,10 @@ Added 2026-10-02. I get the three distinctions; it's a pretty good classificatio
 
 Added 2026-10-02. In practice **we wouldn't build one big Blender file for a server's whole universe; it would be many. Each town would be its own Blender file**, and maybe even **walking inside a building, a pub or a library, would be a separate Blender file of its own.** Is that the basic workflow, **so different people can work on different parts of the universe in different Blender files?**
 
+### Walking up to anything
+
+Added 2026-10-02. **Some items say "nothing you can do with it right now", but we should at least be able to walk up to them.** Only things we can do nothing with, and can't even walk to, should get that message.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

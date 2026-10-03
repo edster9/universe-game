@@ -87,3 +87,5 @@ The canned "x3" and "x10" are gone from the menu (2026-10-01, at the owner's req
 - Nothing blocks sight: no walls, trees, or hills between. A thing in a container is seen as well as the container, whether or not the container is closed.
 - Which person someone is, rather than that it's someone, has no closer band yet.
 - What's remembered of places you've left isn't filtered by how well it was seen.
+
+**Walking up to anything** (the owner, 2026-10-02): something out of reach that can be walked to always offers "walk up to it", even with nothing to do there yet, such as a landmark rock. "Nothing you can do with it now" is left for what's in reach with nothing to do, and what can't even be walked to. (Before, walking up was offered only alongside something to do there, or for a person or creature.) Test: `what_can_be_walked_to_offers_walking_up_to_it` in `crates/console/src/menu.rs`.

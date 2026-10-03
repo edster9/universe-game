@@ -20,6 +20,8 @@ vendor/
 .env.*
 /saves/
 
-# Third-party asset packs as downloaded: big, and some not ours to share.
-# Models we adopt are copied into the client and committed (CC0 only).
-/assets/third-party/*/
+# Third-party asset packs: never in git (size and licences); only each
+# pack's README, saying what to download and where it goes.
+/assets/third-party/**
+!/assets/third-party/**/
+!/assets/third-party/**/README.md

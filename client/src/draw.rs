@@ -766,6 +766,37 @@ pub fn draw_movers(
 mod tests {
     use super::{STYLE, Style};
 
+    /// Every model the style names is listed in its pack's README, which
+    /// git keeps though it never keeps the pack: someone who forks the
+    /// project learns from it what to download.
+    #[test]
+    fn every_model_is_in_its_packs_readme() {
+        let style: Style = toml::from_str(STYLE).expect("the style file");
+        let models = style
+            .kind
+            .values()
+            .chain(style.material.values())
+            .chain(style.design.values())
+            .chain([&style.fallback])
+            .flat_map(|look| look.models.iter())
+            .chain(style.showcase.iter().map(|s| &s.model));
+        let assets = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../assets");
+        for model in models {
+            // third-party/<maker>/<pack>/...
+            let pack: Vec<&str> = model.splitn(4, '/').take(3).collect();
+            let readme = assets.join(pack.join("/")).join("README.md");
+            let text = std::fs::read_to_string(&readme)
+                .unwrap_or_else(|_| panic!("{model}: no README at {}", readme.display()));
+            let name = model.rsplit('/').next().unwrap_or(model);
+            let name = name.strip_suffix(".gltf").unwrap_or(name);
+            assert!(
+                text.contains(&format!("`{name}`")),
+                "{model} isn't listed in {}",
+                readme.display()
+            );
+        }
+    }
+
     /// The style reads, and every form it names is one the client draws.
     #[test]
     fn every_form_in_the_style_is_drawn() {

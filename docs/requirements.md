@@ -706,6 +706,10 @@ Added 2026-10-02. I want to try an asset pack from quaternius.com; **they have a
 
 Added 2026-10-02, after asking why not everything in the scene can be moved or picked. **The point of a build mode is to rearrange things**, and **eventually we're going to have a world builder**, so we can pick from a library and add to the scene. Right now I'm just trying to see what's in this pack; **it's not the time for the full 3D beautification yet**, but we need some basic functionality, and then we'll go back to organising our assets.
 
+### Asset packs stay out of git
+
+Added 2026-10-02. I was going to mention the git ignore for assets we download: **due to licensing, we have no idea**, and **we cannot put those in our git repository, for many reasons: size, and also licensing.** We're going to buy some commercial items soon. So **put READMEs inside the assets folder, check them in, and specify what's there**, so that **if somebody forks the project, they'll know what assets they need from the particular pack we're using, and which particular files from the pack are to be included**, so the game has the assets it needs.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

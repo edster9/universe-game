@@ -75,6 +75,8 @@ At the console, type `help` for commands, and `datasheet <thing>` to see everyth
 | `crates/console` | The text console, the script runner, and the live JSON channel |
 | `data/` | Worlds and the things in them: materials, shapes, designs, kinds of creature, peoples' words |
 | `data/scripts/` | Scripted stories that prove each stage, with shared recipes in `skills/` |
+| `client/` | The game's native client (Rust and Bevy): the world drawn live from the engine, built in WSL for Windows by `client/run.sh` |
+| `assets/third-party/` | Where downloaded asset packs go. **The packs aren't in git** (size and licences); each pack's README says where to get it and which files the game uses. Without them the client draws its own simple shapes |
 | `docs/` | The design record: requirements in the owner's words, proposals and decisions, the [register of every law](docs/laws.md), and research. Start at [docs/README.md](docs/README.md) |
 
 ## How it's being made
@@ -85,4 +87,4 @@ The project is steered by conversation. Its owner sets the direction and the rul
 
 ## License
 
-[MIT](LICENSE). Free to use, study, and adapt.
+[MIT](LICENSE). Free to use, study, and adapt. The MIT licence covers this repository's own files; third-party asset packs keep their makers' licences and aren't included (see [assets/third-party](assets/third-party/README.md)).

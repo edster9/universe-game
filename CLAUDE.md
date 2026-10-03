@@ -24,6 +24,7 @@ These hold for every design decision unless the owner changes them.
 - **Report honestly**, including failures, bugs found, and anything left simplified.
 - **Hosting is AWS.** Recommend AWS services first; the staged plan is in `docs/technology.md`.
 - **Commits** end with a `Co-Authored-By` line for Claude.
+- **No third-party assets in git** (the owner, 2026-10-02), whatever their licence: packs go in `assets/third-party/<maker>/<pack>/`, which git ignores, and only each pack's README is committed (where to get it, its licence, where its files go, which files the game uses). A client test checks every model the style names is in its pack's README.
 
 ## Testing
 

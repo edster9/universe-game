@@ -736,6 +736,10 @@ Added 2026-10-02. I get the three distinctions; it's a pretty good classificatio
 
 **Can you make a Blender file and classify and tag everything in it, so I can open it and look?** Or does that need an MCP server, where I launch Blender and you talk to it through some interface? Either way, **I want to recreate our world in Blender, but a much simpler one: not a huge island, just one big square area with walls**, so we're confined and everything we need for the various examples is in there; the rest is up to you. **The first problem is how we interface with Blender.** I don't have people to model in Blender yet, but I'm a quick learner: **once I have a base file, I can modify it, add to it, and run it through our converter again.** If you can't make one, we'll build it step by step in Blender, which would be a good learning experience on its own.
 
+### Many Blender files, many hands
+
+Added 2026-10-02. In practice **we wouldn't build one big Blender file for a server's whole universe; it would be many. Each town would be its own Blender file**, and maybe even **walking inside a building, a pub or a library, would be a separate Blender file of its own.** Is that the basic workflow, **so different people can work on different parts of the universe in different Blender files?**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

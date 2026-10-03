@@ -87,7 +87,7 @@ Proofs on the converted world: `data/scripts/skill-yard-0-the-board.txt` and `sk
 
 ## In the game
 
-The client opens the skill yard by default and draws it from the export (`client/src/built.rs`): scenery just as it was placed; each source by its own models, where they stand in Blender; each thing by its own model, following the engine, so build mode (M) moves it (and `/save` keeps where). People and creatures, and anything made in play, the client draws itself. Build mode leaves sources alone: they move in Blender. After changing the world in Blender, convert it again and restart the client (`client/run.sh` copies the export beside it).
+The client opens the skill yard by default and draws it from the export (`client/src/built.rs`): scenery just as it was placed; each source by its own models, where they stand in Blender; each thing by its own model, following the engine, so build mode (M) moves it (and `/save` keeps where); a source moves the same way, whole, with all its models. People and creatures, and anything made in play, the client draws itself. A move in build mode is kept by `/save`, not in the Blender file: converting again puts everything back where Blender has it. After changing the world in Blender, convert it again and restart the client (`client/run.sh` copies the export beside it).
 
 ## Next
 

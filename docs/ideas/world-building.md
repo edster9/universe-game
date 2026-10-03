@@ -116,7 +116,7 @@ So the owner's sequence holds: built in Blender, loaded, and you're in it; from 
 
 The owner: "I want to agree on everything." All six points above are decided: the three kinds and the rule that sorts them; the house as one thing, with only working parts separate; felling the tree nearest you, recorded by the engine, growing back; building by footprint, site, time, and house; Blender as the master for base worlds, with play kept in saves; and the first test, the skill grounds rebuilt in Blender. The plain-words section above was rewritten at the owner's request, for reading aloud.
 
-**Build mode moves things, not sources** (the owner, 2026-10-02): a source is moved in Blender and converted again. Exceptions may come; none yet.
+**Build mode moves things, not sources** (the owner, 2026-10-02): a source is moved in Blender and converted again. Exceptions may come; none yet. **Changed the same evening**, the owner asking whether moving a source costs anything: it doesn't (moving a pile is one change of spot, as for a boulder), so build mode moves sources too, **whole**, with all the models that show them (one tree drags its whole stand). As for things, a move in build mode lives in the save, not the Blender file: converting the world again puts everything back where Blender has it.
 
 ## The first world in Blender (built 2026-10-02)
 

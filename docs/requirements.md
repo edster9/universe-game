@@ -765,6 +765,10 @@ Added 2026-10-02. A few performance issues again:
 
 After those are fixed, improvements to the tasks the actor is given: **picking up wood, or any item, takes time, but there's no feedback on what's happening.** We should have **some sort of progress bar near the action, near the actor, counting down to when it will be done**; maybe in the top message section, but I've usually seen it near the action itself. Then **we should talk about what happens if you're picking up wood, aren't done yet, and walk away: what should the result be?**
 
+### Moving sources in build mode after all
+
+Added 2026-10-02. In build mode **I can only move the big boulders that mark the zones; nothing else is selectable.** I can understand the trees, since they might count as sources, but **small items like the wood and grass aren't movable**: they're sources too, technically, not free objects like a rock. **Why can't we move sources, then?** A sword isn't a source, not something you take some of, like a pile of wood; it'd be like the boulder, the third kind in Blender. **But even if something is a source, is there a cost to making it movable?**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

@@ -744,6 +744,10 @@ Added 2026-10-02. In practice **we wouldn't build one big Blender file for a ser
 
 Added 2026-10-02. **Some items say "nothing you can do with it right now", but we should at least be able to walk up to them.** Only things we can do nothing with, and can't even walk to, should get that message.
 
+### Sample worlds in git, the evolving world outside it
+
+Added 2026-10-02. **I asked because it's a binary file, and it will change very often.** I guess without it the world has nothing to render, and someone who clones the repo won't have anything to work with. **But we'll have a lot of these .blend files soon as the game expands, and git won't be the place for them.** We should plan for **a sample .blend for a new git clone**, but **the evolving world map should not be in git.**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

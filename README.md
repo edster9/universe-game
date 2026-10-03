@@ -44,16 +44,27 @@ You take the barb of glassy grey stone joined to long straight pole of wood.
 You take the spear of glassy grey stone and wood.
 ```
 
-## Running it
+## Getting set up
 
-You need Rust, installed with [rustup](https://rustup.rs/); the toolchain version is pinned in `rust-toolchain.toml`.
+### What's in git, and what isn't
+
+Everything that's text is in git: the engine, the console, the client, the worlds' data, the scripts and proofs, the docs, the catalogue of what models mean, and a README for each asset pack. Three things aren't, and each has one place to come from:
+
+| Not in git | Why | Where it comes from |
+| --- | --- | --- |
+| **Asset packs** (models and textures) | Size, and their makers' licences | Download each pack its README names, into `assets/third-party/` ([how](assets/third-party/README.md)) |
+| **Source worlds** (Blender files) | Binary, and changing often while the system is trained | The S3 bucket `universe-game-worlds`, public to read: `blender/worlds.sh pull <world>` ([how](worlds/README.md)) |
+| **What the scripts make** | Made from the above, or fetched by the scripts | Made again by running them: the Blender catalogue, worlds' exports, the voice model, DirectX's shader compiler, saves |
+
+Without the packs and the worlds, everything still works: the proofs need neither, and the game client draws simple shapes of its own instead of models. (One more thing is never in git, for one experiment only: the AI translator's test harness, `prototypes/translator`, needs your own API key, in a `.env` file at the top of the project, as its `translate.py` explains.)
+
+### 1. The engine and its proofs (Linux, macOS, or WSL)
+
+You need Rust, installed with [rustup](https://rustup.rs/); the toolchain version is pinned in `rust-toolchain.toml`, and rustup installs it on first use.
 
 ```sh
 # Every proof: law checks, conservation property tests, and every scripted story (about 15 s)
 cargo test --workspace
-
-# The long trials: survivors on many seeds, with real chance (a few minutes)
-cargo test --workspace -- --ignored --nocapture
 
 # Play one scripted story and print its transcript
 cargo run -p console -- --script data/scripts/stranded-8-crossing.txt
@@ -65,7 +76,42 @@ cargo run -p console -- --world data/living.toml --as survivor
 cargo run -p console -- --world data/strangers-words.toml --as islander --live
 ```
 
-At the console, type `help` for commands, and `datasheet <thing>` to see everything the engine measures about something.
+At the console, type `help` for commands, and `datasheet <thing>` to see everything the engine measures about something. The long trials (`cargo test --workspace -- --ignored --nocapture`) take minutes and are run only now and then.
+
+### 2. The game client (Windows, built in WSL)
+
+The client is a native Windows program, built from Linux inside WSL2 and run on Windows' graphics card. In WSL you need, besides Rust:
+- [Zig](https://ziglang.org/download/) 0.16, unpacked into `~/.local/zig/` (or on your `PATH`), and `cargo install cargo-zigbuild`;
+- `cmake`, `python3`, `curl`, and `unzip` (`sudo apt install cmake python3 curl unzip`).
+
+```sh
+client/run.sh                    # build, install in C:\Users\<you>\universe-game\client, and play
+client/run.sh --install          # build and install, without starting it
+client/run.sh --world stranded   # another world
+```
+
+The first run downloads Whisper's English model (about 150 MB, for voice) and Microsoft's shader compiler (`dxcompiler.dll`, without which DirectX takes seconds to start). Set `UNIVERSE_HOME` to install somewhere else. Once installed, `client.exe` can be started from Windows too. The default world is the skill yard; see `client/src/main.rs` for every option.
+
+### 3. The models
+
+Download the packs listed in [assets/third-party](assets/third-party/README.md) and put their files where each pack's README says (for now, one free pack). The client picks them up the next time `client/run.sh` installs it.
+
+### 4. Worlds built in Blender
+
+You need [Blender](https://www.blender.org/download/) 5.0 on Windows (`blender/blender.sh` runs it from WSL; set `BLENDER` if it's installed somewhere else) and, in WSL, the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html), which fetches worlds without an AWS account.
+
+```sh
+blender/blender.sh make_catalogue.py   # the models' library, from the packs (once, and when the catalogue changes)
+blender/worlds.sh pull skill-yard      # fetch the world
+blender/convert.sh skill-yard          # export it and convert it for the game
+client/run.sh                          # and play it
+```
+
+To change a world, open `worlds/<world>/<world>.blend` in Blender, save, convert again, and send it back with `blender/worlds.sh push <world>`, which needs write access to the bucket (the project's AWS profile); in a fork, set `WORLDS_BUCKET` to a bucket of your own. See [blender/README.md](blender/README.md).
+
+### 5. Committing
+
+Commit as usual. The ignore rules keep the packs, the worlds, and everything the scripts make out of git, so `git status` never shows them. Before committing, run `cargo fmt --all`, `cargo clippy --workspace --all-targets`, and the proofs; for the client, the same in `client/` (it's built on its own, outside the workspace).
 
 ## How it's laid out
 
@@ -76,6 +122,8 @@ At the console, type `help` for commands, and `datasheet <thing>` to see everyth
 | `data/` | Worlds and the things in them: materials, shapes, designs, kinds of creature, peoples' words |
 | `data/scripts/` | Scripted stories that prove each stage, with shared recipes in `skills/` |
 | `client/` | The game's native client (Rust and Bevy): the world drawn live from the engine, built in WSL for Windows by `client/run.sh` |
+| `blender/` | Tools for worlds built in Blender: the catalogue of what models mean, and scripts to make the models' library, convert worlds, and fetch and send them |
+| `worlds/` | Source worlds, fetched from S3; only its README is in git |
 | `assets/third-party/` | Where downloaded asset packs go. **The packs aren't in git** (size and licences); each pack's README says where to get it and which files the game uses. Without them the client draws its own simple shapes |
 | `docs/` | The design record: requirements in the owner's words, proposals and decisions, the [register of every law](docs/laws.md), and research. Start at [docs/README.md](docs/README.md) |
 

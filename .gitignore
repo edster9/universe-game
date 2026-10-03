@@ -37,3 +37,6 @@ vendor/
 # kept in S3 (blender/worlds.sh), not in git. Only the folder's README is.
 /worlds/*
 !/worlds/README.md
+
+# Python's compiled copies.
+__pycache__/

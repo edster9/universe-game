@@ -752,6 +752,10 @@ Added 2026-10-02. **I asked because it's a binary file, and it will change very 
 
 Added 2026-10-02. **No, we don't have a sample yet: these .blend files are going to be very temporary as we train the system and work up.** Use the positiveignition AWS key to **make a public S3 bucket for now, and a script to upload these world files into it.** Then **move the .blend files out of the blender folder**: that folder should be the Blender utilities and what they produce, like the catalogue. **We need a source world folder**: `assets/worlds` is the final output. Maybe `blender/worlds`, where the game worlds start to pile up, or maybe somewhere else?
 
+### Docs for a fresh clone
+
+Added 2026-10-02. **Make sure all the docs are correct for someone to clone, get up and running, and commit to git.** The worlds they can get from S3, and the assets they have to download and extract; **that's all that's needed of what isn't in git.**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

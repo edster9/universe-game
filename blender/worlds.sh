@@ -9,7 +9,8 @@
 #   blender/worlds.sh versions <world>   every version of its files kept
 set -euo pipefail
 cd "$(dirname "$0")/.."
-BUCKET="s3://universe-game-worlds"
+# The project's bucket; a fork can use its own with WORLDS_BUCKET.
+BUCKET="s3://${WORLDS_BUCKET:-universe-game-worlds}"
 PROFILE="${AWS_PROFILE:-positiveignition}"
 # Blender's backups and the converter's leftovers stay at home.
 EXCLUDE=(--exclude "*.blend1" --exclude "*.blend@")

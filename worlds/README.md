@@ -1,6 +1,6 @@
 # Source worlds
 
-The worlds as built, one folder each: `worlds/<world>/` holds its Blender files and its manifest (`<world>.world.toml`: which files make it, and its settings). **They're not in git**: they're binary, change often, and, while we train the system, temporary (the owner, 2026-10-02). They live in an S3 bucket, `universe-game-worlds`, public to read, which keeps every version sent.
+The worlds as built, one folder each: `worlds/<world>/` holds its Blender files and its manifest (`<world>.world.toml`: which files make it, and its settings). **They're not in git**: they're binary, change often, and, while we train the system, temporary (the owner, 2026-10-02). They live in an S3 bucket, `universe-game-worlds`, public to read, which keeps every version sent. Fetching needs the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) but no AWS account; sending needs write access to the bucket (the project's AWS profile, `positiveignition`, or `AWS_PROFILE`), and a fork can use a bucket of its own with `WORLDS_BUCKET`.
 
     blender/worlds.sh list               the worlds there are
     blender/worlds.sh pull skill-yard    fetch one into worlds/skill-yard

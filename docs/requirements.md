@@ -769,6 +769,10 @@ After those are fixed, improvements to the tasks the actor is given: **picking u
 
 Added 2026-10-02. In build mode **I can only move the big boulders that mark the zones; nothing else is selectable.** I can understand the trees, since they might count as sources, but **small items like the wood and grass aren't movable**: they're sources too, technically, not free objects like a rock. **Why can't we move sources, then?** A sword isn't a source, not something you take some of, like a pile of wood; it'd be like the boulder, the third kind in Blender. **But even if something is a source, is there a cost to making it movable?**
 
+### Build mode moves anything; play moves what's allowed
+
+Added 2026-10-02. **Sources aren't designed to be movable in real play; things are what usually move.** But there can be many situations where a source can legitimately move in a real game, and **its position should be saved if it's allowed to move.** That allowance is part of the real game, not the debug build command: **the build command is always allowed to move things; in a real game a thing is usually movable and a source isn't, and what's allowed can be a flag, which we don't have yet.** The real reason we have the build command is **to experiment with world design, and to help speed up certain steps.**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

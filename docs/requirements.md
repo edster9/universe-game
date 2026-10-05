@@ -781,6 +781,10 @@ Added 2026-10-04. Before the console list: **time on rendering, optimization, an
 
 On low-resolution textures and levels of detail: **if the asset libraries don't come with them, do you plan to make them yourselves?** (Yes: by script, from the packs' own files, kept out of git like the packs.)
 
+### Enough for a village and an island; regions later
+
+Added 2026-10-04, as round 1 of the benchmarks ended. **A universe game has to have regions, but we don't need to solve that right now.** If we have enough for building a good village and an island, we can stop for now. **We'll attempt the first multi-city regions on the island, so we can walk from one city to the other.**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

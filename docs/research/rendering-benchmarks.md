@@ -143,6 +143,20 @@ At high, what's left is mostly the near trees, at full detail out to 40 m and mi
 
 In the screenshots, the edge of the forest looks as before, and from high above the far forest shows as cards fading into the haze. The cards come out a little darker than the full models. The pack's twisted tree is autumn red, so 2% of the trees are red.
 
+### Round 1 ends here (the owner, 2026-10-04)
+
+The huge forest (100,000 trees, 2.2 km, about 350,000 objects) was started and stopped. Blender alone took over 20 minutes to place the objects, getting slower as the scene grew, and hadn't finished. The owner closed the round: what we have is enough for a good village and an island, and regions come later. The first multi-city regions will be on the island, walking from one city to the next.
+
+What round 1 suggests for regions:
+- **Split a big world into region files.** Blender's own speed gives out somewhere past 70,000 objects in one file. Exporting the large forest took 4½ minutes, and its scene description was 44 MB. Region files are how [world-building.md](../ideas/world-building.md) already plans big worlds, so that people can work on different parts.
+- **Load regions near the player.** That's also what the game will need, beyond a forest or two of this size.
+
+Measurements still to make, in a later round:
+- the presets on the village and the island once they're built;
+- animated trees (wind);
+- render scale (drawing fewer pixels and stretching them);
+- the huge forest, built as regions.
+
 ## The presets so far
 
 These are set in `client/src/graphics.rs`. The benchmarks will refine them.

@@ -6,7 +6,9 @@
 # --python blender/<script>. BLENDER names another blender.exe.
 set -euo pipefail
 cd "$(dirname "$0")"
-B="${BLENDER:-/mnt/c/Program Files/Blender Foundation/Blender 5.0/blender.exe}"
+# The newest Blender installed on Windows, unless BLENDER names one.
+B="${BLENDER:-$(ls -d "/mnt/c/Program Files/Blender Foundation/Blender "*/blender.exe 2>/dev/null | sort -V | tail -1)}"
+[ -x "$B" ] || { echo "Can't find Blender: install it, or set BLENDER to its blender.exe."; exit 1; }
 script="$1"
 shift
 "$B" --background --factory-startup --python "$(wslpath -w "$PWD/$script")" -- "$@" 2>&1 |

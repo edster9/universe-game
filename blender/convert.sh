@@ -12,7 +12,9 @@ world="$1"
 folder="worlds/$world"
 manifest="$folder/$world.world.toml"
 [ -f "$manifest" ] || { echo "There's no $manifest: fetch the world first (blender/worlds.sh pull $world)."; exit 1; }
-B="${BLENDER:-/mnt/c/Program Files/Blender Foundation/Blender 5.0/blender.exe}"
+# The newest Blender installed on Windows, unless BLENDER names one.
+B="${BLENDER:-$(ls -d "/mnt/c/Program Files/Blender Foundation/Blender "*/blender.exe 2>/dev/null | sort -V | tail -1)}"
+[ -x "$B" ] || { echo "Can't find Blender: install it, or set BLENDER to its blender.exe."; exit 1; }
 read_manifest() { python3 -c "import tomllib, sys; m = tomllib.load(open('$manifest', 'rb')); print($1)"; }
 exported="$folder/$(read_manifest "m['exported']")"
 for file in $(read_manifest "' '.join(m['files'])"); do

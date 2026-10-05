@@ -375,6 +375,12 @@ pub fn convert(manifest: &Path) -> Result<String, String> {
         }
     }
 
+    // Written in order of id, not in the order Blender lists things, which
+    // changes between its versions: the data changes only when the world
+    // does.
+    places.sort_by(|a, b| a.id.cmp(&b.id));
+    placed.sort_by(|a, b| a.1.id.cmp(&b.1.id));
+
     // Every id once.
     let mut seen = BTreeSet::new();
     for id in places

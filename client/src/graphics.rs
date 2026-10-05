@@ -14,7 +14,7 @@ use bevy::camera::Hdr;
 use bevy::light::{CascadeShadowConfigBuilder, DirectionalLightShadowMap};
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-use bevy::window::PresentMode;
+use bevy::window::{Monitor, PresentMode, PrimaryMonitor};
 use serde::{Deserialize, Serialize};
 
 /// A preset, or "custom" once a setting has been changed on its own.
@@ -63,9 +63,16 @@ pub struct Graphics {
     pub bloom: bool,
     /// How far anything is drawn, in metres.
     pub view: u32,
+    /// How soon things far away are drawn more simply, or small things not
+    /// at all (`detail.rs`).
+    pub detail: Level,
+    /// How fine the pictures on things are: the largest copies of each are
+    /// left out lower down (`textures.rs`), from the next load.
+    pub textures: Level,
     /// Haze thickening towards the edge of the view, which hides it.
     pub fog: bool,
-    /// Wait for the screen, so no frame is drawn that isn't shown.
+    /// Wait for the screen, and draw no more frames than it shows (see
+    /// `cap`).
     pub vsync: bool,
     /// At most this many frames a second, or 0 for no cap: saves power
     /// and heat on a laptop.
@@ -102,6 +109,16 @@ pub const SETTINGS: &[(&str, &str, &str)] = &[
     ("bloom", "on, off", "a glow round flames and bright things"),
     ("view", "metres", "how far anything is drawn"),
     (
+        "detail",
+        "low, medium, high",
+        "how soon things far off are drawn more simply, and small things not at all",
+    ),
+    (
+        "textures",
+        "low, medium, high",
+        "how fine the pictures on things are, for the graphics card's memory (from the next game)",
+    ),
+    (
         "fog",
         "on, off",
         "haze thickening towards the edge of the view",
@@ -109,7 +126,7 @@ pub const SETTINGS: &[(&str, &str, &str)] = &[
     (
         "vsync",
         "on, off",
-        "wait for the screen, drawing no frame it won't show",
+        "draw no more frames than the screen shows (off: as many as can be drawn)",
     ),
     (
         "fps-cap",
@@ -146,11 +163,13 @@ impl Graphics {
     /// A preset's settings. Display choices (vsync, the cap) aren't part
     /// of quality, so a preset leaves them as they were.
     pub fn preset(quality: Quality) -> Graphics {
-        let (shadows, smoothing, bloom, view) = match quality {
-            Quality::Low => (Level::Off, Smoothing::Fxaa, false, 250),
-            Quality::Medium => (Level::Low, Smoothing::Smaa, true, 500),
-            Quality::High | Quality::Custom => (Level::Medium, Smoothing::Msaa, true, 1_000),
-            Quality::Ultra => (Level::High, Smoothing::Msaa, true, 2_000),
+        let (shadows, smoothing, bloom, view, textures) = match quality {
+            Quality::Low => (Level::Off, Smoothing::Fxaa, false, 250, Level::Low),
+            Quality::Medium => (Level::Low, Smoothing::Smaa, true, 500, Level::Medium),
+            Quality::High | Quality::Custom => {
+                (Level::Medium, Smoothing::Msaa, true, 1_000, Level::High)
+            }
+            Quality::Ultra => (Level::High, Smoothing::Msaa, true, 2_000, Level::High),
         };
         Graphics {
             quality,
@@ -158,6 +177,8 @@ impl Graphics {
             smoothing,
             bloom,
             view,
+            textures,
+            detail: textures,
             fog: true,
             vsync: true,
             fps_cap: 0,
@@ -173,6 +194,8 @@ impl Graphics {
             "smoothing" => named(self.smoothing),
             "bloom" => on(self.bloom),
             "view" => format!("{} m", self.view),
+            "textures" => named(self.textures),
+            "detail" => named(self.detail),
             "fog" => on(self.fog),
             "vsync" => on(self.vsync),
             "fps-cap" if self.fps_cap == 0 => "off".to_string(),
@@ -205,6 +228,16 @@ impl Graphics {
             "shadows" => value
                 .and_then(parse)
                 .map(|l| self.shadows = l)
+                .ok_or_else(wrong),
+            "textures" => value
+                .and_then(parse)
+                .filter(|l| *l != Level::Off)
+                .map(|l| self.textures = l)
+                .ok_or_else(wrong),
+            "detail" => value
+                .and_then(parse)
+                .filter(|l| *l != Level::Off)
+                .map(|l| self.detail = l)
                 .ok_or_else(wrong),
             "smoothing" => value
                 .and_then(parse)
@@ -366,13 +399,33 @@ pub fn apply(
     }
 }
 
-/// Holds each frame back to the cap, if there is one.
-pub fn cap(graphics: Res<Graphics>, mut last: Local<Option<Instant>>) {
-    if graphics.fps_cap == 0 {
-        *last = None;
-        return;
-    }
-    let frame = Duration::from_secs_f64(1.0 / graphics.fps_cap as f64);
+/// Holds each frame back to the cap: the one set, or, with vsync, the
+/// screen's own rate. Waiting for the screen alone doesn't hold the game
+/// back on a laptop whose screen is run by its other graphics chip (this
+/// one: 60 Hz, drawn at up to 200 frames a second all the same), and a
+/// graphics card run flat out reaches its power limit, where the laptop
+/// cuts its clock to a tenth for a moment: a freeze (measured 2026-10-04,
+/// docs/research/rendering-benchmarks.md).
+pub fn cap(
+    graphics: Res<Graphics>,
+    screens: Query<&Monitor, With<PrimaryMonitor>>,
+    mut last: Local<Option<Instant>>,
+) {
+    let screen = || {
+        screens
+            .iter()
+            .find_map(|m| m.refresh_rate_millihertz)
+            .map_or(60, |mhz| mhz.div_ceil(1_000))
+    };
+    let fps = match (graphics.fps_cap, graphics.vsync) {
+        (0, false) => {
+            *last = None;
+            return;
+        }
+        (0, true) => screen(),
+        (cap, _) => cap,
+    };
+    let frame = Duration::from_secs_f64(1.0 / fps as f64);
     if let Some(then) = *last {
         let wait = (then + frame).saturating_duration_since(Instant::now());
         std::thread::sleep(wait);

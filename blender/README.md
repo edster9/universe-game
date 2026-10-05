@@ -11,6 +11,8 @@ Worlds are built in Blender and converted for the game (decided 2026-10-02; see 
 | `catalogue.blend` | The models, one collection per model of each entry (`standing-trees/3`), marked as assets | **No**: it holds the packs' models. Make it with the script |
 | `make_skill_yard.py` | Made the first version of `worlds/skill-yard/skill-yard.blend` | Yes |
 | `relink.py` | Points a moved world file at the catalogue again | Yes |
+| `make_forest.py` | Makes a forest world for the rendering benchmarks (`client/bench.sh` runs it) | Yes |
+| `preview_lods.py` | Renders an entry's models at each level of detail side by side, to judge the simpler copies | Yes |
 | `export_world.py`, `convert.sh` | Export a world and convert it for the game | Yes |
 | `worlds.sh` | Fetches worlds from S3 and sends them back | Yes |
 | `blender.sh` | Runs a script in Windows' Blender from WSL, without its window | Yes |
@@ -25,7 +27,10 @@ Worlds are built in Blender and converted for the game (decided 2026-10-02; see 
 | `blender/blender.sh make_skill_yard.py` | `catalogue.blend` | `worlds/skill-yard/skill-yard.blend` (the first version only; it's edited by hand since) | No: S3 |
 | `blender/worlds.sh pull skill-yard` | the bucket | `worlds/skill-yard/`: the Blender file and the manifest | No: S3 |
 | `blender/convert.sh skill-yard` | `worlds/skill-yard/skill-yard.world.toml` (the manifest, written by hand), `skill-yard.blend`, `catalogue.toml` | `assets/worlds/skill-yard/`: the export (`skill-yard.gltf`, `skill-yard.bin`, and the textures it uses), which the client draws; and `data/skill-yard.toml`, the world's data for the engine | The export no (it holds the packs' models); the data yes |
+| `blender/blender.sh make_forest.py forest-small 200 50` | `catalogue.blend`, `data/skill-yard.toml` (for the world's settings) | `worlds/forest-small/`: a forest of 200 trees, 100 m across, and its manifest | No: made again whenever needed |
 | `blender/worlds.sh push skill-yard` | `worlds/skill-yard/` | a new version of each changed file in the bucket | No: S3 |
+
+An entry's `lods` in the catalogue makes simpler copies of its models inside its collections, tagged `ug_lod` (the full model 0), which the game swaps in by distance; in Blender all of them show, one inside another. See [docs/research/rendering-benchmarks.md](../docs/research/rendering-benchmarks.md).
 
 `blender.sh` only runs a script in Blender; which files it makes depends on the script. Blender also leaves a `.blend1` beside a file it saves: the version before, as a backup (git ignores it).
 

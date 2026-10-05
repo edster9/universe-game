@@ -40,3 +40,6 @@ vendor/
 
 # Python's compiled copies.
 __pycache__/
+
+# Forests for the rendering benchmarks: made by blender/make_forest.py.
+/data/forest-*.toml

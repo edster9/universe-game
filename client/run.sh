@@ -8,6 +8,7 @@
 #   client/run.sh --script companion-3-asking.txt   play a script
 #   client/run.sh --shot shot.png --after 5          a screenshot, then quit
 #   client/run.sh --install                build and install it, without starting it
+#   PROFILE=1 client/run.sh                build client-profile.exe, which records timings
 set -euo pipefail
 cd "$(dirname "$0")"
 # Rust from rustup, Zig (on the PATH, or unpacked in ~/.local/zig), and
@@ -21,6 +22,15 @@ export PATH=~/.cargo/bin:${ZIG_DIR:-}:$PATH:${ZIGBUILD_BIN:-}
 ./vendor.sh
 export LIBCLANG_PATH=${LIBCLANG_PATH:-/usr/lib/llvm-18/lib}
 export CFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3" CXXFLAGS_x86_64_pc_windows_gnu="-march=x86-64-v3"
+# PROFILE=1: a build that records every frame's timings (a trace file per
+# run), kept apart and installed beside the game as client-profile.exe.
+if [ -n "${PROFILE:-}" ]; then
+    cargo zigbuild --release --target x86_64-pc-windows-gnu --features profile --target-dir target/profile
+    . ./where.sh
+    cp target/profile/x86_64-pc-windows-gnu/release/client.exe "$TARGET/client-profile.exe"
+    echo "Installed client-profile.exe in $(wslpath -w "$TARGET")."
+    exit 0
+fi
 cargo zigbuild --release --target x86_64-pc-windows-gnu
 . ./where.sh
 mkdir -p "$TARGET"

@@ -17,6 +17,11 @@ serde_json = "1"
 whisper-rs = "0.16"
 cpal = "0.18"
 
+# A build that records how long every part of every frame takes, for
+# finding what stalls (client/bench.sh with PROFILE=1).
+[features]
+profile = ["bevy/trace_chrome"]
+
 # Dependencies build optimised even in debug builds: Bevy is slow otherwise.
 [profile.dev.package."*"]
 opt-level = 3

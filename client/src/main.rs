@@ -31,6 +31,10 @@
 //!   folder beside the data folder; a game ends with a save called "last",
 //!   except one that only takes a picture (`--shot`).
 //! - `--shot <file.png> [--after <seconds>]` saves one frame and exits.
+//! - `--bench <metres> [--bench-label <text>]` the rendering benchmark: a
+//!   fixed route round a forest reaching that far from the middle, measured
+//!   into `bench.csv` (see `bench.rs`); `--maximized` starts the window
+//!   maximized.
 //! - `--yaw`, `--pitch` (degrees) and `--zoom` (metres) set the camera
 //!   around the islander; `--from x,y,z --look x,y,z` start it flying.
 //! - `--script <file> [--shots <folder>] [--step <seconds>]` plays a script
@@ -51,9 +55,11 @@ use console::script::Playing;
 use console::session::Session;
 use engine::world::{EntityId, World as EngineWorld};
 
+mod bench;
 mod build;
 mod built;
 mod camera;
+mod detail;
 mod draw;
 mod graphics;
 mod grid;
@@ -63,6 +69,7 @@ mod shapes;
 mod showcase;
 mod terminal;
 mod terrain;
+mod textures;
 mod tools;
 mod voice;
 mod walking;
@@ -252,9 +259,15 @@ fn main() {
     // can draw, not waiting for the screen), pictures, and scripts don't
     // change them.
     let mut graphics = graphics::Graphics::load();
-    let measuring = ["--no-vsync", "--shot", "--script", "--hear-script"]
-        .iter()
-        .any(|flag| std::env::args().any(|a| a == *flag));
+    let measuring = [
+        "--no-vsync",
+        "--bench",
+        "--shot",
+        "--script",
+        "--hear-script",
+    ]
+    .iter()
+    .any(|flag| std::env::args().any(|a| a == *flag));
     if measuring {
         graphics.kept = false;
     }
@@ -263,11 +276,19 @@ fn main() {
     }
 
     keep_crashes();
+    let bench = bench::Bench::wanted(world_file);
     // DirectX 12 on Windows unless WGPU_BACKEND says otherwise: Vulkan on
     // this laptop's NVIDIA chip has lost the device now and then.
     let mut wgpu = bevy::render::settings::WgpuSettings::default();
     if cfg!(windows) && std::env::var("WGPU_BACKEND").is_err() {
         wgpu.backends = Some(bevy::render::settings::Backends::DX12);
+    }
+    // The benchmark times each stage of drawing on the graphics card.
+    if bench.is_some() {
+        use bevy::render::settings::WgpuFeatures;
+        wgpu.features |= WgpuFeatures::TIMESTAMP_QUERY
+            | WgpuFeatures::TIMESTAMP_QUERY_INSIDE_ENCODERS
+            | WgpuFeatures::TIMESTAMP_QUERY_INSIDE_PASSES;
     }
     let mut app = App::new();
     app.add_plugins(
@@ -331,6 +352,14 @@ fn main() {
     // How the scene is drawn, when the settings for it change, and the
     // frame-rate cap.
     .add_systems(Update, graphics::apply)
+    // Smaller copies of each texture as it loads, before it goes to the
+    // graphics card.
+    .add_systems(PostUpdate, textures::mipmaps)
+    // Far things drawn more simply, small ones not at all.
+    .add_systems(
+        Update,
+        (detail::tag_levels, detail::tag_small, detail::ranges).chain(),
+    )
     .add_systems(Last, graphics::cap)
     .add_systems(
         Update,
@@ -377,6 +406,16 @@ fn main() {
             .chain(),
     );
     app.add_systems(Last, save_at_end.after(bevy::window::ExitSystems));
+    // The rendering benchmark, which places the camera after everything
+    // else has.
+    app.add_systems(Startup, bench::maximize).add_systems(
+        PostUpdate,
+        bench::run.before(bevy::transform::TransformSystems::Propagate),
+    );
+    if let Some(bench) = bench {
+        app.insert_resource(bench)
+            .add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin);
+    }
     if std::env::args().any(|a| a == "--frames")
         && let Some(render) = app.get_sub_app_mut(bevy::render::RenderApp)
     {
@@ -394,7 +433,8 @@ fn save_at_end(
     options: Res<Options>,
     mut saved: Local<bool>,
 ) {
-    if exits.read().next().is_none() || *saved || options.shot.is_some() {
+    let measuring = std::env::args().any(|a| a == "--bench");
+    if exits.read().next().is_none() || *saved || options.shot.is_some() || measuring {
         return;
     }
     *saved = true;

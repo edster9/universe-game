@@ -12,6 +12,9 @@
 #           one picked per placement; or `shape`, one of the simple shapes
 #           blender/make_catalogue.py makes itself, with a `colour`
 #   scale   how big the model is drawn, times its own size
+#   lods    simpler copies for drawing far away, each a share of the
+#           model's triangles (e.g. [0.25, 0.06]); the game swaps them in
+#           by distance (the `detail` setting)
 #
 # What it means to the engine, in the words of the world's data files:
 #   material, composition, kind, fixed, mass, pieces, grows, and, for people
@@ -83,6 +86,7 @@ models = [
     "quaternius/stylized-nature-megakit/glTF/Pine_4.gltf",
     "quaternius/stylized-nature-megakit/glTF/Pine_5.gltf",
 ]
+lods = [0.25, 0.06]
 
 [[entry]]
 id = "fibrous-bushes"
@@ -285,9 +289,11 @@ id = "dead-tree"
 is = "scenery"
 models = ["quaternius/stylized-nature-megakit/glTF/DeadTree_2.gltf"]
 scale = 0.6
+lods = [0.25, 0.06]
 
 [[entry]]
 id = "twisted-tree"
 is = "scenery"
 models = ["quaternius/stylized-nature-megakit/glTF/TwistedTree_1.gltf"]
 scale = 0.45
+lods = [0.25, 0.06]

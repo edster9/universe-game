@@ -116,30 +116,13 @@ pub fn ranges(
     let changed = graphics.is_changed();
     let (ends, times) = reach(graphics.detail);
     let view = graphics.view as f32;
-    let fade = |d: f32| {
-        let d = d.min(view * 0.95);
-        d..d * 1.05
-    };
     for (entity, lod, tagged) in &levels {
         if !changed && !tagged.is_added() {
             continue;
         }
-        let level = (lod.level as usize).min(ends.len());
-        let start = if level == 0 {
-            0.0..0.0
-        } else {
-            fade(ends[level - 1])
-        };
-        let end = if lod.last || level == ends.len() {
-            fade(view)
-        } else {
-            fade(ends[level])
-        };
-        commands.entity(entity).insert(VisibilityRange {
-            start_margin: start,
-            end_margin: end,
-            use_aabb: false,
-        });
+        commands
+            .entity(entity)
+            .insert(span(lod.level, lod.last, &ends, view));
     }
     for (entity, size, tagged) in &sized {
         if !changed && !tagged.is_added() {
@@ -148,8 +131,58 @@ pub fn ranges(
         let end = if size.0 < SMALL { size.0 * times } else { view };
         commands.entity(entity).insert(VisibilityRange {
             start_margin: 0.0..0.0,
-            end_margin: fade(end),
+            end_margin: fade(end, view),
             use_aabb: false,
         });
+    }
+}
+
+/// A fade between two levels, a little way past `d`, and never past the
+/// view's end.
+fn fade(d: f32, view: f32) -> std::ops::Range<f32> {
+    let d = d.min(view * 0.95);
+    d..d * 1.05
+}
+
+/// Where a level of detail is drawn: from where the one before ends to
+/// where it ends itself, or the view's end, if it's the last.
+fn span(level: u8, last: bool, ends: &[f32], view: f32) -> VisibilityRange {
+    let level = (level as usize).min(ends.len());
+    let start_margin = if level == 0 {
+        0.0..0.0
+    } else {
+        fade(ends[level - 1], view)
+    };
+    let end_margin = if last || level == ends.len() {
+        fade(view, view)
+    } else {
+        fade(ends[level], view)
+    };
+    VisibilityRange {
+        start_margin,
+        end_margin,
+        use_aabb: false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn each_level_takes_over_where_the_last_ends_and_the_last_goes_to_the_view() {
+        let ends = [40.0, 140.0, 300.0];
+        let view = 1_000.0;
+        let levels: Vec<_> = (0..=3).map(|l| span(l, l == 3, &ends, view)).collect();
+        for pair in levels.windows(2) {
+            assert_eq!(pair[0].end_margin, pair[1].start_margin);
+        }
+        assert_eq!(levels[0].start_margin, 0.0..0.0);
+        assert!(levels[3].end_margin.start >= view * 0.95);
+        // A model without cards: its lowest geometry goes to the view.
+        assert_eq!(span(2, true, &ends, view).end_margin, levels[3].end_margin);
+        // A short view: nothing is drawn past it.
+        let short = span(2, false, &ends, 100.0);
+        assert!(short.end_margin.end <= 100.0);
     }
 }

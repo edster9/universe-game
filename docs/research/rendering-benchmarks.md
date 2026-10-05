@@ -112,19 +112,36 @@ Bevy's culling ignores the camera's far plane: it checks the frustum with the fa
 
 **Fix:** every scenery mesh smaller than 50 m gets a visibility range ending at the `view` setting. That covers the last detail level and everything without levels. The ground is bigger, so it's always drawn.
 
-### Where things stand: large forest (20,000 trees, 1 km)
+### Cards: a tree as pictures of itself, farthest away
 
-Maximized, capped at 60:
+In the large forest (20,000 trees, 1 km) at high, the 1 km view took in most of the forest. Even the lowest geometric level is about 800 to 1,600 triangles a tree, and the main pass took about 20 ms. Shadows cost 8 to 15 fps on top, but even without them high didn't hold 60.
 
-| Preset | Frame rate | Worst 1% | Drawn | Note |
-|---|---|---|---|---|
-| low | 59 | 19–21 ms | 1–2 thousand meshes, about 1 M triangles | plenty of room |
-| medium | 59 | 20–30 ms | about 7 thousand meshes, 4 M triangles | one freeze at the first stop, still settling in |
-| high | 43–50 | 34–41 ms | 12–28 thousand meshes, 8–16 M triangles | the card is full |
-| high, shadows off | 53–59 | 21–33 ms | the same | shadows cost 8–15 fps |
-| ultra | 34–40 | 35–37 ms | up to 34 thousand meshes, 19 M triangles | the card is full |
+The usual answer is cards, also called impostors. Farthest away, a tree is drawn as pictures of itself: two crossed upright ones and one flat one at its crown, 6 triangles in all.
 
-High's 1 km view takes in most of the forest, and the lowest detail level is still about 800 to 1,600 triangles a tree. The main drawing pass alone takes about 20 ms. **Next: cards (impostors).** Beyond a few hundred metres, a tree becomes two or three flat pictures of itself, rendered in Blender from the full model, at about 8 triangles instead of 1,000.
+- **Made in Blender.** An entry's `card = true` makes them. `make_catalogue.py` photographs the full model, from the side and from above, on a clear background, lit evenly by a white sky so the pictures carry the model's own colours.
+  - The pictures go in `assets/generated/cards`, not in git, because they're made from the packs.
+  - The card's material is a copy of a pack leaf material, with the photograph in place of the leaves.
+  - The cards' normals point at the sky, so they light the same from every side.
+- **In the game.** The card is each tree's last level, and the last level is drawn out to the end of the view.
+
+  | Detail | Card from |
+  |---|---|
+  | low | 90 m |
+  | medium | 180 m |
+  | high | 300 m |
+
+Large forest, maximized, capped at 60, before → after cards:
+
+| Preset | Before | With cards | Triangles drawn (k), before → after |
+|---|---|---|---|
+| low | 59, worst 1% 19–21 ms | 59, worst 1% 19 ms | about 1,000 → about 300 |
+| medium | 45–59, freezes at the first stop | 59, worst 1% 19–23 ms | 4,000 → 1,200–1,500 |
+| high | 41–50, worst 1% 34–41 ms | 54–59, worst 1% 22–28 ms | 8,000–17,000 → 400–5,400 |
+| ultra | 32–40 | 31–59 (one freeze) | 11,000–20,000 → 900–8,000 |
+
+At high, what's left is mostly the near trees, at full detail out to 40 m and middle detail to 140 m, plus the sun's shadows.
+
+In the screenshots, the edge of the forest looks as before, and from high above the far forest shows as cards fading into the haze. The cards come out a little darker than the full models. The pack's twisted tree is autumn red, so 2% of the trees are red.
 
 ## The presets so far
 

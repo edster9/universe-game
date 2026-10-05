@@ -785,6 +785,10 @@ On low-resolution textures and levels of detail: **if the asset libraries don't 
 
 Added 2026-10-04, as round 1 of the benchmarks ended. **A universe game has to have regions, but we don't need to solve that right now.** If we have enough for building a good village and an island, we can stop for now. **We'll attempt the first multi-city regions on the island, so we can walk from one city to the other.**
 
+### The order ahead: terminal and skills, then a village from modular packs, then regions
+
+Added 2026-10-04. What we used was trees only; **city packs and other things are coming.** For a first round of optimization, we did great. **After we fix the terminal, the skill settings, and everything like that, we'll start to build a city using modular building packs**, and get a better sense of what can be drawn for a **medium-sized village**. Then we'll work on **multi-region**: an island can have many cities that **you can probably see from a distance, but you're obviously not rendering all the buildings of a city from a distance.** As we get closer to another city, we'll have to **switch and load it, and abandon the city we came from**, something like that. That's advanced level design, for later.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

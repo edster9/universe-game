@@ -23,6 +23,8 @@ from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PACKS = os.path.join(HERE, "..", "assets", "third-party")
+# Pictures made here from the packs' models (cards): not in git, like them.
+CARDS = os.path.join(HERE, "..", "assets", "generated", "cards")
 OUT = os.path.join(HERE, "catalogue.blend")
 
 
@@ -302,6 +304,142 @@ def simpler_copies(objects, shares, coll):
     return copies
 
 
+def world_matrix(o):
+    """Where an object is in its collection, through its parents (objects
+    outside a scene don't keep their world matrix up to date)."""
+    m = o.matrix_basis.copy()
+    while o.parent is not None:
+        m = o.parent.matrix_basis @ o.matrix_parent_inverse @ m
+        o = o.parent
+    return m
+
+
+def photograph(coll, shown, name, looking_down, size, middle, top):
+    """A picture of the model, flat-lit, on a clear background: from the
+    south, or from above."""
+    scene = bpy.context.scene
+    scene.collection.children.link(coll)
+    hidden = [o for o in coll.objects if o not in shown and not o.hide_render]
+    for o in hidden:
+        o.hide_render = True
+    cam = bpy.data.objects.new("card camera", bpy.data.cameras.new("card camera"))
+    cam.data.type = "ORTHO"
+    w, h = size
+    if looking_down:
+        cam.location = (middle.x, middle.y, top + 50.0)
+        cam.rotation_euler = (0.0, 0.0, 0.0)
+        cam.data.ortho_scale = w * 1.02
+        res = (256, 256)
+    else:
+        cam.location = (middle.x, middle.y - 100.0, h / 2)
+        cam.rotation_euler = (math.radians(90), 0.0, 0.0)
+        cam.data.ortho_scale = max(w, h) * 1.02
+        res = (256, max(64, min(1024, round(256 * h / w))))
+    cam.data.clip_end = 500.0
+    scene.collection.objects.link(cam)
+    scene.camera = cam
+    # Lit evenly from a white sky, so the picture is the model's own
+    # colours; the game lights the card.
+    world = bpy.data.worlds.get("cards") or bpy.data.worlds.new("cards")
+    world.color = (1.0, 1.0, 1.0)
+    try:
+        world.use_nodes = True
+    except AttributeError:
+        pass
+    if world.node_tree:
+        bg = world.node_tree.nodes.get("Background")
+        if bg:
+            bg.inputs["Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+            bg.inputs["Strength"].default_value = 1.0
+    scene.world = world
+    engines = [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items]
+    scene.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in engines else "BLENDER_EEVEE"
+    scene.render.film_transparent = True
+    scene.render.resolution_x, scene.render.resolution_y = res
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = "RGBA"
+    scene.view_settings.view_transform = "Standard"
+    os.makedirs(CARDS, exist_ok=True)
+    path = os.path.join(CARDS, f"{name}-{'top' if looking_down else 'side'}.png")
+    scene.render.filepath = path
+    bpy.ops.render.render(write_still=True)
+    bpy.data.objects.remove(cam)
+    for o in hidden:
+        o.hide_render = False
+    scene.collection.children.unlink(coll)
+    return path
+
+
+def card(coll, objects, level):
+    """The model as cards, for drawing farthest away: two crossed upright
+    pictures of it and one flat one at its crown, each two triangles, lit
+    as if facing the sky (so they light alike from every side). Tagged
+    `ug_lod` `level`."""
+    shown = [o for o in objects if o.type == "MESH"]
+    points = [world_matrix(o) @ v.co for o in shown for v in o.data.vertices]
+    if not points:
+        return None
+    lo = Vector([min(p[i] for p in points) for i in range(3)])
+    hi = Vector([max(p[i] for p in points) for i in range(3)])
+    middle = (lo + hi) / 2
+    w = max(hi.x - lo.x, hi.y - lo.y)
+    h = hi.z
+    name = shown[0].name
+    side = photograph(coll, shown, name, False, (w, h), middle, hi.z)
+    top = photograph(coll, shown, name, True, (w, h), middle, hi.z)
+    # A cut-out material to copy (picture times vertex colour, with a
+    # cut-out edge, as the packs' leaves are, and exported so), its picture
+    # swapped for the photograph: the model's own if it has one, or else
+    # any in the catalogue so far.
+    def cut_out(m):
+        return m and m.node_tree and any(
+            n.type == "BSDF_PRINCIPLED" and n.inputs["Alpha"].is_linked
+            for n in m.node_tree.nodes
+        )
+    own = [m for o in shown for m in o.data.materials]
+    template = next((m for m in own + list(bpy.data.materials) if cut_out(m)), None)
+    materials = []
+    for path in (side, top):
+        if template is not None:
+            mat = template.copy()
+            for n in mat.node_tree.nodes:
+                if n.type == "TEX_IMAGE":
+                    n.image = bpy.data.images.load(path)
+        else:
+            mat = bpy.data.materials.new("card")
+        mat.name = f"card {os.path.basename(path)[:-4]}"
+        materials.append(mat)
+    r, crown = w / 2, lo.z + (hi.z - lo.z) * 0.65
+    cx, cy = middle.x, middle.y
+    verts = [
+        (cx - r, cy, 0.0), (cx + r, cy, 0.0), (cx + r, cy, h), (cx - r, cy, h),
+        (cx, cy - r, 0.0), (cx, cy + r, 0.0), (cx, cy + r, h), (cx, cy - r, h),
+        (cx - r, cy - r, crown), (cx + r, cy - r, crown), (cx + r, cy + r, crown),
+        (cx - r, cy + r, crown),
+    ]
+    faces = [(0, 1, 2, 3), (4, 5, 6, 7), (8, 9, 10, 11)]
+    mesh = bpy.data.meshes.new(f"{name} card")
+    mesh.from_pydata(verts, [], faces)
+    uv = mesh.uv_layers.new(name="UVMap")
+    square = [(0, 0), (1, 0), (1, 1), (0, 1)]
+    for poly in mesh.polygons:
+        for k, li in enumerate(poly.loop_indices):
+            uv.data[li].uv = square[k]
+        poly.material_index = 1 if poly.index == 2 else 0
+    for mat in materials:
+        mesh.materials.append(mat)
+    colours = mesh.color_attributes.new("Color", "BYTE_COLOR", "CORNER")
+    for d in colours.data:
+        d.color = (1.0, 1.0, 1.0, 1.0)
+    mesh.color_attributes.active_color = colours
+    mesh.color_attributes.render_color_index = 0
+    mesh.normals_split_custom_set([(0.0, 0.0, 1.0)] * len(mesh.loops))
+    o = bpy.data.objects.new(f"{name} card", mesh)
+    o["ug_lod"] = level
+    coll.objects.link(o)
+    return o
+
+
 def main():
     clear()
     with open(os.path.join(HERE, "catalogue.toml"), "rb") as f:
@@ -337,6 +475,8 @@ def main():
                 coll.objects.link(o)
             if path and entry.get("lods"):
                 simpler_copies(objects, entry["lods"], coll)
+            if path and entry.get("card"):
+                card(coll, objects, len(entry.get("lods", [])) + 1)
             coll["ug_entry"] = entry["id"]
             coll["ug_is"] = entry["is"]
             coll.asset_mark()

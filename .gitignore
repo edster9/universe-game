@@ -43,3 +43,6 @@ __pycache__/
 
 # Forests for the rendering benchmarks: made by blender/make_forest.py.
 /data/forest-*.toml
+
+# Made from the packs (pictures of their models for drawing far away): not in git, like them.
+/assets/generated/

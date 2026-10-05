@@ -15,6 +15,8 @@
 #   lods    simpler copies for drawing far away, each a share of the
 #           model's triangles (e.g. [0.25, 0.06]); the game swaps them in
 #           by distance (the `detail` setting)
+#   card    true: farthest away, the model is drawn as pictures of itself
+#           (photographed in Blender into assets/generated/cards)
 #
 # What it means to the engine, in the words of the world's data files:
 #   material, composition, kind, fixed, mass, pieces, grows, and, for people
@@ -87,6 +89,7 @@ models = [
     "quaternius/stylized-nature-megakit/glTF/Pine_5.gltf",
 ]
 lods = [0.25, 0.06]
+card = true
 
 [[entry]]
 id = "fibrous-bushes"
@@ -290,6 +293,7 @@ is = "scenery"
 models = ["quaternius/stylized-nature-megakit/glTF/DeadTree_2.gltf"]
 scale = 0.6
 lods = [0.25, 0.06]
+card = true
 
 [[entry]]
 id = "twisted-tree"
@@ -297,3 +301,4 @@ is = "scenery"
 models = ["quaternius/stylized-nature-megakit/glTF/TwistedTree_1.gltf"]
 scale = 0.45
 lods = [0.25, 0.06]
+card = true

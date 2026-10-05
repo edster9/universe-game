@@ -22,7 +22,9 @@
 //!   companion's island is companion.toml), `--as <id>` who to play (the
 //!   first person no mind or instinct runs), `--speed <x>` game seconds a
 //!   second (1).
-//! - `--no-vsync` draws as fast as it can, for measuring with `--frames`.
+//! - `--no-vsync` draws as fast as it can, for measuring with `--frames`;
+//!   the drawing settings themselves are `/quality` and the rest (see
+//!   `graphics.rs`), kept in `graphics.toml` beside the program.
 //! - `--world <name>` plays another world in the data folder ("skill-yard",
 //!   the default, or "skill-grounds"; ".toml" can be left off).
 //! - `--load <save>` picks up a save (`/save`, `/load`) from the `saves`
@@ -53,6 +55,7 @@ mod build;
 mod built;
 mod camera;
 mod draw;
+mod graphics;
 mod grid;
 mod menu;
 mod panels;
@@ -116,7 +119,7 @@ impl Sim {
 struct Hud;
 
 #[derive(Component)]
-struct Sun;
+pub struct Sun;
 
 /// What the command line asked for.
 #[derive(Resource)]
@@ -245,6 +248,20 @@ fn main() {
     let land = Land::of(play_world(&play)).flat_if(built.scene.is_some());
     let speed = number("--speed").unwrap_or(1.0);
 
+    // The drawing settings kept from last time. Measuring (as fast as it
+    // can draw, not waiting for the screen), pictures, and scripts don't
+    // change them.
+    let mut graphics = graphics::Graphics::load();
+    let measuring = ["--no-vsync", "--shot", "--script", "--hear-script"]
+        .iter()
+        .any(|flag| std::env::args().any(|a| a == *flag));
+    if measuring {
+        graphics.kept = false;
+    }
+    if std::env::args().any(|a| a == "--no-vsync") {
+        graphics.vsync = false;
+    }
+
     keep_crashes();
     // DirectX 12 on Windows unless WGPU_BACKEND says otherwise: Vulkan on
     // this laptop's NVIDIA chip has lost the device now and then.
@@ -267,12 +284,10 @@ fn main() {
                 primary_window: Some(Window {
                     title: "Universe game".into(),
                     resolution: (1600, 900).into(),
-                    // As fast as it can draw, not waiting for the screen:
-                    // for measuring what drawing costs.
-                    present_mode: if std::env::args().any(|a| a == "--no-vsync") {
-                        bevy::window::PresentMode::AutoNoVsync
-                    } else {
+                    present_mode: if graphics.vsync {
                         bevy::window::PresentMode::AutoVsync
+                    } else {
+                        bevy::window::PresentMode::AutoNoVsync
                     },
                     ..default()
                 }),
@@ -290,6 +305,7 @@ fn main() {
     .insert_resource(style)
     .insert_resource(land)
     .insert_resource(options)
+    .insert_resource(graphics)
     .init_resource::<draw::Kit>()
     .init_resource::<Console>()
     .init_resource::<terminal::Shots>()
@@ -312,8 +328,10 @@ fn main() {
             grid::setup,
         ),
     )
-    // How the scene is drawn, when the settings for it change.
-    .add_systems(Update, camera::graphics)
+    // How the scene is drawn, when the settings for it change, and the
+    // frame-rate cap.
+    .add_systems(Update, graphics::apply)
+    .add_systems(Last, graphics::cap)
     .add_systems(
         Update,
         (
@@ -569,23 +587,13 @@ fn setup(
         commands.spawn((Mesh3d(meshes.add(mesh)), MeshMaterial3d(ground.clone())));
     }
 
-    // The sun, turned by `day_and_night`. Its shadows in two layers out to
-    // 100 m, not Bevy's four out to 150: shadows are the dearest thing
-    // drawn (measured 2026-10-02), and 100 m covers what the islander sees
-    // close enough to matter.
+    // The sun, turned by `day_and_night`; its shadows are as the drawing
+    // settings say (`graphics::apply`).
     commands.spawn((
         DirectionalLight {
             illuminance: 12_000.0,
-            shadow_maps_enabled: true,
             ..default()
         },
-        bevy::light::CascadeShadowConfigBuilder {
-            num_cascades: 2,
-            first_cascade_far_bound: 15.0,
-            maximum_distance: 100.0,
-            ..default()
-        }
-        .build(),
         Transform::default(),
         Sun,
     ));

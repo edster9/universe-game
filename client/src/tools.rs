@@ -10,6 +10,7 @@
 use bevy::prelude::*;
 
 use crate::camera::Eye;
+use crate::graphics::{self, Graphics, Quality};
 use crate::grid::Grid;
 use crate::panels::Panels;
 use crate::terminal::{Console, Said};
@@ -23,13 +24,6 @@ pub struct Settings {
     pub snap: bool,
     /// A circle on the ground showing how far the islander can reach.
     pub reach: bool,
-    /// How the scene is drawn, for speed against looks: the sun's shadows,
-    /// smoothed edges (4x MSAA), the glow round flames (bloom, which also
-    /// needs the wider colour range of HDR), and haze far off.
-    pub shadows: bool,
-    pub msaa: bool,
-    pub bloom: bool,
-    pub fog: bool,
 }
 
 impl Default for Settings {
@@ -37,10 +31,6 @@ impl Default for Settings {
         Settings {
             snap: true,
             reach: false,
-            shadows: true,
-            msaa: true,
-            bloom: true,
-            fog: true,
         }
     }
 }
@@ -106,20 +96,6 @@ const SETTINGS: &[(&str, &str, Layer, &str)] = &[
         Layer::Always,
         "models from an asset pack set out to look at, not in the world",
     ),
-    ("shadows", "", Layer::Always, "the sun casts shadows"),
-    (
-        "msaa",
-        "",
-        Layer::Always,
-        "smoothed edges (4x multisampling)",
-    ),
-    (
-        "bloom",
-        "",
-        Layer::Always,
-        "a glow round flames and bright things",
-    ),
-    ("fog", "", Layer::Always, "haze in the distance"),
 ];
 
 /// Everything a tool can change.
@@ -133,9 +109,16 @@ pub struct Changeable<'w> {
     land: Res<'w, Land>,
     build: ResMut<'w, crate::build::Build>,
     showcase: ResMut<'w, crate::showcase::Showcase>,
+    graphics: ResMut<'w, Graphics>,
 }
 
 impl Changeable<'_> {
+    fn graphics_name(&self, quality: Quality) -> String {
+        Graphics::preset(quality)
+            .value("quality")
+            .unwrap_or_default()
+    }
+
     fn value(&self, name: &str) -> String {
         let on = |b: bool| if b { "on" } else { "off" }.to_string();
         match name {
@@ -149,11 +132,7 @@ impl Changeable<'_> {
             "body" => on(self.panels.body),
             "build" => on(self.build.on),
             "showcase" => on(self.showcase.shown),
-            "shadows" => on(self.settings.shadows),
-            "msaa" => on(self.settings.msaa),
-            "bloom" => on(self.settings.bloom),
-            "fog" => on(self.settings.fog),
-            _ => String::new(),
+            _ => self.graphics.value(name).unwrap_or_default(),
         }
     }
 
@@ -167,6 +146,13 @@ impl Changeable<'_> {
             self.sim.speed = speed;
             return Ok(());
         }
+        // The drawing settings: kept for the next game when changed.
+        if let Some(result) = self.graphics.set(name, value) {
+            if result.is_ok() {
+                self.graphics.keep();
+            }
+            return result;
+        }
         let flag: &mut bool = match name {
             "pause" => &mut self.sim.paused,
             "snap" => &mut self.settings.snap,
@@ -177,10 +163,6 @@ impl Changeable<'_> {
             "body" => &mut self.panels.body,
             "build" => &mut self.build.on,
             "showcase" => &mut self.showcase.shown,
-            "shadows" => &mut self.settings.shadows,
-            "msaa" => &mut self.settings.msaa,
-            "bloom" => &mut self.settings.bloom,
-            "fog" => &mut self.settings.fog,
             _ => {
                 return Err(format!(
                     "there's no setting \"{name}\"; /settings lists them"
@@ -232,7 +214,8 @@ pub fn run(line: &str, console: &mut Console, things: &mut Changeable) {
             console.say(
                 Said::Debug,
                 "Tools: /settings lists the settings; /set <name> <value>, or /<name> <value>, \
-                 changes one; /<name> alone flips one that's on or off. /save <name> saves the \
+                 changes one; /<name> alone flips one that's on or off; /quality low, medium, \
+                 high or ultra sets how the scene is drawn all at once. /save <name> saves the \
                  whole world, /load [name] picks a save up (\"last\" is made when the game ends), \
                  and /saves lists them (single player). /make <thing> puts something in front of \
                  you (\"/make fire\", \"/make 2 kg wood\", \"/make fire ring\"), and /light <thing> \
@@ -253,6 +236,27 @@ pub fn run(line: &str, console: &mut Console, things: &mut Changeable) {
                     Said::Debug,
                     &format!("{name} = {value} ({layer}{key}): {help}"),
                 );
+            }
+            for (name, values, help) in graphics::SETTINGS {
+                let value = things.value(name);
+                console.say(
+                    Said::Debug,
+                    &format!("{name} = {value} (always; {values}): {help}"),
+                );
+            }
+            return;
+        }
+        // What the presets set, rather than flipping anything.
+        Tool::Set("quality", None) => {
+            let now = things.value("quality");
+            console.say(
+                Said::Debug,
+                &format!("quality = {now}; /quality <preset> sets:"),
+            );
+            for quality in [Quality::Low, Quality::Medium, Quality::High, Quality::Ultra] {
+                let name = things.graphics_name(quality);
+                let sets = Graphics::describe(quality);
+                console.say(Said::Debug, &format!("  {name}: {sets}"));
             }
             return;
         }

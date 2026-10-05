@@ -773,6 +773,14 @@ Added 2026-10-02. In build mode **I can only move the big boulders that mark the
 
 Added 2026-10-02. **Sources aren't designed to be movable in real play; things are what usually move.** But there can be many situations where a source can legitimately move in a real game, and **its position should be saved if it's allowed to move.** That allowance is part of the real game, not the debug build command: **the build command is always allowed to move things; in a real game a thing is usually movable and a source isn't, and what's allowed can be a flag, which we don't have yet.** The real reason we have the build command is **to experiment with world design, and to help speed up certain steps.**
 
+### Rendering benchmarks, from small to massive
+
+Added 2026-10-04. Before the console list: **time on rendering, optimization, and benchmarking. This is going to be done many, many times.** We had a couple of small scares already with shadows, fires, and window resizing. **If the game is going to be good, it must be able to render a very large scene efficiently.** So **run benchmarks progressing from simple to more massive, and if you see problems as we render more, stop, optimize, and continue.** We have a good library of trees, and more is coming (modular homes and so on). **Plan for rendering small, medium, and large forests**: build various worlds in Blender and benchmark them to see where we stand. **Just because the world is big, it shouldn't slow down**; I think it's all about the settings. Shadows make a very big difference, especially once there are animations and moving trees, which come next. **Find the sweet spot of render settings**: a lot of games make certain sacrifices because they care more about performance than about absolute rendering.
+
+**The render settings should be part of the console commands**, so users can set render quality with presets, and **turn certain features on and off**: if a user just wants to turn off shadows globally, they can. Or level of detail, or texture quality. All those things are usually settable, and are in the presets too.
+
+On low-resolution textures and levels of detail: **if the asset libraries don't come with them, do you plan to make them yourselves?** (Yes: by script, from the packs' own files, kept out of git like the packs.)
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

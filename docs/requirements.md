@@ -793,6 +793,10 @@ Added 2026-10-04. What we used was trees only; **city packs and other things are
 
 Added 2026-10-06. **Let's improve the console environment a little.** Look up other games and how they handle the console; I don't think ours behaves the same way. For example, **right now you can't have the console open, typing, and still walk around**: the WASD keys end up typing. How do other games do that? **Should we replace WASD with just the arrow keys** and get it over with, to make it easier? Give me a rundown of how other games handle the console (**opening, closing, typing**) and how to make the workflow very similar. And **there's no scrolling**: if you type `help` and it goes off screen, there's no way to see the lines that went off; maybe **the mouse's middle button (wheel) to scroll** and view the history. Again, how do other games do it? Do some research and get back to me.
 
+### Help for every command, and getting back to the newest lines
+
+Added 2026-10-06. **We need a way to list all commands when we type `help`. We also want each one on its own**: if there's a command called `gather`, then **`help gather` gives more specific information about it and all its variations** (x2, x3, grams, picking up, all the different things you can do with it). **Every command needs its own help, along with the full listing.** If `help` is very long, it scrolls past the screen, and you scroll back with the mouse. And when debug lines keep coming, things go off screen and you scroll back up with the wheel to see what's going on. **But what happens when new output comes out: where does it print, and how do you get back to the end of the buffer?** Scrolling all the way back down by hand isn't good: **there should be a shortcut to jump back.** How do other consoles do it? Maybe research that too. Last thing: **if the help is too long, should it say "press space to see more", or just print everything and you scroll back up?**
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).

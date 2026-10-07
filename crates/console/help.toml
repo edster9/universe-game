@@ -1,0 +1,669 @@
+# The console's help: `help` lists the commands by group, a line each;
+# `help <command>` (or a topic) tells all about one. Every command the game
+# accepts has an entry here, and every entry is a command it accepts: a test
+# checks both (tests/help.rs), so a new command fails until it has its help.
+#
+# Each command:
+#   name      what's typed first
+#   also      other words for it
+#   group     where `help` lists it
+#   summary   one line, for the list (keep it short)
+#   usage     every way to write it
+#   about     what it does, what it needs, what stops it
+#   examples  real lines to try
+#   see       related commands and topics
+
+groups = [
+    "Looking and moving",
+    "Gathering and carrying",
+    "Making things",
+    "Fire and heat",
+    "Your body",
+    "Other people",
+    "Time and doing things more than once",
+    "Tools: the person at the keyboard",
+    "Testing",
+]
+
+# Looking and moving ---------------------------------------------------------
+
+[[command]]
+name = "look"
+also = ["l"]
+group = "Looking and moving"
+summary = "describe where you are: the time, ways out, who and what is here"
+usage = ["look"]
+about = """
+Says where you are, the day and time and whether it's light, the ways out you know, who's here, and everything you can see, with how far away and in which direction anything out of reach lies. What's too far to make out is only "something small" or "something large": walk closer to see what it is."""
+examples = ["look"]
+see = ["survey", "walk", "names"]
+
+[[command]]
+name = "go"
+group = "Looking and moving"
+summary = "walk to another place, or to something here (\"go to\")"
+usage = ["go <place>", "go <place> on <something that floats>", "go to <thing>"]
+about = """
+"go <place>" walks to another place by a way out you know ("look" lists them); it takes as long as the walk does. "go to <thing>" is the same as "walk to <thing>": up to something in this place, within reach. With something that floats, you can cross water on it."""
+examples = ["go deep woods", "go to dry grass"]
+see = ["walk", "explore", "stop"]
+
+[[command]]
+name = "walk"
+also = ["approach"]
+group = "Looking and moving"
+summary = "walk up to something here, or to a spot"
+usage = ["walk to <thing>", "walk to <east> <north>"]
+about = """
+Walks you up to something in this place until it's within reach, or to a spot given in metres east and north of the place's middle (negative for west and south). Most things must be within reach to use: a command for something too far says how far and which way. In the game, a click on the ground or a menu's "walk up to it" does this, and so do the WASD keys."""
+examples = ["walk to deadwood", "walk to 12 -3"]
+see = ["go", "stop", "look"]
+
+[[command]]
+name = "stop"
+group = "Looking and moving"
+summary = "stop what you're doing; a walk stops where you've got to"
+usage = ["stop"]
+about = """
+Stops what you're in the middle of. A walk stops where you are; work stopped before it's done gives nothing (pieces already gathered in a run of them are kept). Also ends a run of repeated commands."""
+examples = ["stop"]
+see = ["repeat", "wait"]
+
+[[command]]
+name = "survey"
+group = "Looking and moving"
+summary = "take in the view: see what lies in the distance"
+usage = ["survey"]
+about = """
+Takes a while to look around properly, from where you stand: from high ground you see further, and what you see you remember (your map)."""
+examples = ["survey"]
+see = ["explore", "recall"]
+
+[[command]]
+name = "explore"
+also = ["search"]
+group = "Looking and moving"
+summary = "search around for a way out you don't know yet"
+usage = ["explore"]
+about = """
+Spends time searching the place for a way out you don't know; it may find one, or not. Ways found are remembered."""
+examples = ["explore"]
+see = ["survey", "go"]
+
+[[command]]
+name = "read"
+also = ["study"]
+group = "Looking and moving"
+summary = "read something, such as a map"
+usage = ["read <thing>"]
+about = """
+Reads what's written or drawn on something you can reach; a map teaches you the places and ways it shows."""
+examples = ["read map"]
+see = ["recall"]
+
+[[command]]
+name = "recall"
+also = ["memory"]
+group = "Looking and moving"
+summary = "what you remember: places, ways, and what you saw there"
+usage = ["recall"]
+about = """
+Lists what you know: the places you've been or learned of, the ways between them, and what was where when you last saw it."""
+examples = ["recall"]
+see = ["survey", "read"]
+
+# Gathering and carrying -----------------------------------------------------
+
+[[command]]
+name = "gather"
+also = ["collect"]
+group = "Gathering and carrying"
+summary = "take a piece from a patch or source (\"gather sticks\")"
+usage = [
+    "gather <source>",
+    "gather <source> x3",
+    "gather <source> 500 g",
+    "gather <source> until full",
+]
+about = """
+Searches a patch or source (dry grass, fallen sticks, standing trees) for one piece of it and puts it in your hands: a source's pieces have their own size and take their own time to find. Some need a tool (felling a tree needs an axe). It must be within reach: walk to it first ("go to sticks; gather sticks"). Words for sizes work: "gather twigs", "gather sticks", "gather logs".
+To gather more than once: "x3" gathers three pieces; "500 g" keeps gathering until you carry half a kilogram more; "until full" keeps on until you can carry no more, the source is bare, or you stop. The first refusal ends the run.
+In the game, a click on a source offers "gather" and "keep gathering"."""
+examples = [
+    "gather dry grass",
+    "gather sticks x3",
+    "gather wood 500 g",
+    "go to sticks; gather sticks until full",
+]
+see = ["take", "drop", "backpack", "repeat", "names"]
+
+[[command]]
+name = "take"
+also = ["get"]
+group = "Gathering and carrying"
+summary = "pick something up, or take it out of something"
+usage = ["take <thing>", "take <thing> from <container>", "take off <thing>"]
+about = """
+Picks up something within reach, or takes it out of a container. Too heavy, or too hot to hold, and you can't. "take off" takes off something you're wearing."""
+examples = ["take flint", "take ember from ring"]
+see = ["drop", "put", "gather", "wear"]
+
+[[command]]
+name = "drop"
+group = "Gathering and carrying"
+summary = "put something down; \"drop all\" puts down everything"
+usage = ["drop <thing>", "drop <thing> x2", "drop <thing> 500 g", "drop all"]
+about = """
+Puts down something you carry, where you stand. "drop all" puts down everything; "x2" drops two of them, "500 g" drops until you carry that much less."""
+examples = ["drop wood", "drop all"]
+see = ["take", "put", "backpack"]
+
+[[command]]
+name = "put"
+group = "Gathering and carrying"
+summary = "put something inside something"
+usage = ["put <thing> in <container>"]
+about = """
+Puts something you carry into a container within reach (a ring of stones, a basket), if it fits. "smallest" and "largest" choose by size among things of a name: "put smallest wood in ring" lays the twigs before the sticks."""
+examples = ["put dry grass in ring", "put smallest wood in ring"]
+see = ["take", "pour", "names"]
+
+[[command]]
+name = "give"
+group = "Gathering and carrying"
+summary = "hand something to someone"
+usage = ["give <thing> to <person>"]
+about = """
+Hands something you carry to someone within reach. It becomes theirs."""
+examples = ["give flint to stranger"]
+see = ["offer", "pay"]
+
+[[command]]
+name = "pay"
+group = "Gathering and carrying"
+summary = "pay someone credits"
+usage = ["pay <person> <amount>"]
+about = """
+Pays someone credits from what you have ("inventory" says how many)."""
+examples = ["pay stranger 5"]
+see = ["give", "offer", "inventory"]
+
+[[command]]
+name = "inventory"
+also = ["inv", "i"]
+group = "Gathering and carrying"
+summary = "what you carry, and your credits"
+usage = ["inventory"]
+about = """
+Lists what you carry, its total weight, what's inside what, and your credits."""
+examples = ["inventory"]
+see = ["backpack"]
+
+[[command]]
+name = "backpack"
+also = ["pack"]
+group = "Gathering and carrying"
+summary = "what you carry, a line each"
+usage = ["backpack"]
+about = """
+What you carry, one thing to a line, with weights. In the game, B opens it as a window."""
+examples = ["backpack"]
+see = ["inventory", "body"]
+
+[[command]]
+name = "dig"
+group = "Gathering and carrying"
+summary = "dig material out of the ground with a tool"
+usage = ["dig <source> with <tool>"]
+about = """
+Digs material (clay, ore, earth) out of the ground where it lies, with something hard enough to dig with."""
+examples = ["dig clay with stick"]
+see = ["gather"]
+
+[[command]]
+name = "fill"
+group = "Gathering and carrying"
+summary = "fill a container from a liquid"
+usage = ["fill <container> from <liquid>"]
+about = """
+Fills a container you carry from water or another liquid within reach, as much as it holds."""
+examples = ["fill shell from water"]
+see = ["drink", "pour"]
+
+# Making things -----------------------------------------------------------------
+
+[[command]]
+name = "assemble"
+also = ["make", "build"]
+group = "Making things"
+summary = "put carried parts together to a design you know"
+usage = ["assemble <design>"]
+about = """
+Puts the parts you carry together into something you know how to make: the design's parts must be in your hands. Something new you make asks what to call it. "help" can't list the designs you know: "scope" does, for testing; "designs" lists the world's."""
+examples = ["assemble fire ring", "make spear"]
+see = ["disassemble", "join", "call"]
+
+[[command]]
+name = "disassemble"
+also = ["dismantle"]
+group = "Making things"
+summary = "take something apart into its parts"
+usage = ["disassemble <thing>"]
+about = """
+Takes something made apart into its parts, which stay where it stood."""
+examples = ["disassemble fire ring"]
+see = ["assemble"]
+
+[[command]]
+name = "join"
+group = "Making things"
+summary = "put two things together without a design"
+usage = ["join <thing> and <thing>"]
+about = """
+Puts two things together into something new, without a design: an invention. You'll be asked what to call it."""
+examples = ["join flint and stick"]
+see = ["assemble", "call"]
+
+[[command]]
+name = "work"
+group = "Making things"
+summary = "shape something with a tool"
+usage = ["work <thing> into <shape> with <tool>"]
+about = """
+Shapes something you carry with a tool: knapping flint into a blade, carving wood. The tool must be harder than what it works."""
+examples = ["work flint into blade with stone"]
+see = ["divide", "assemble"]
+
+[[command]]
+name = "divide"
+also = ["split"]
+group = "Making things"
+summary = "pull something soft apart into two"
+usage = ["divide <thing>"]
+about = """
+Pulls something soft apart into two pieces. Tinder teased fine catches from a smaller ember."""
+examples = ["divide dry grass"]
+see = ["work", "rub"]
+
+[[command]]
+name = "butcher"
+also = ["carve"]
+group = "Making things"
+summary = "cut a dead body into its parts with an edge"
+usage = ["butcher <body> with <tool>"]
+about = """
+Cuts a dead animal into its parts (meat, hide, bone) with something that has an edge."""
+examples = ["butcher boar with flint"]
+see = ["attack", "eat"]
+
+[[command]]
+name = "call"
+also = ["name"]
+group = "Making things"
+summary = "name something in your own words"
+usage = ["call <thing> a <word>", "call it a <word>"]
+about = """
+Names something in your own words: from then on you can call it, and things like it, by that word. Names live in minds, so others won't know your word until you tell them."""
+examples = ["call it a spear"]
+see = ["tell", "names"]
+
+# Fire and heat -------------------------------------------------------------------
+
+[[command]]
+name = "rub"
+group = "Fire and heat"
+summary = "rub two pieces hard together: heat, dust, an ember"
+usage = [
+    "rub <thing> against <thing>",
+    "rub <thing> against <thing> into <container>",
+    "rub <thing> against <thing> for <time>",
+]
+about = """
+Rubs two pieces hard together: the work turns to heat and wears off hot dust, which can smoulder into an ember. "into" a container, the dust lands there, on whatever tinder is in it. It keeps on until something there catches, 10 minutes at most, or "for" a time. A fire is made on the ground: put the container down before rubbing into it."""
+examples = ["rub stick against deadwood into ring"]
+see = ["light", "pour", "divide"]
+
+[[command]]
+name = "light"
+group = "Fire and heat"
+summary = "light something that holds fuel, from a flame nearby"
+usage = ["light <thing>"]
+about = """
+Lights a furnace, a fire ring, or anything holding fuel, from a flame already burning nearby. A flame heats what it reaches, the finest first: twigs before sticks, sticks before logs."""
+examples = ["light ring"]
+see = ["rub", "pour", "put"]
+
+[[command]]
+name = "pour"
+also = ["tip"]
+group = "Fire and heat"
+summary = "pour something molten, or tip pieces into a container"
+usage = ["pour <thing> into <container>", "tip <thing> into <container>"]
+about = """
+Pours something molten into a mould, or tips loose pieces from one container into another: "tip dust into ring" drops an ember onto the tinder there."""
+examples = ["tip dust into ring", "pour iron into mould"]
+see = ["rub", "light", "put"]
+
+# Your body ---------------------------------------------------------------------------
+
+[[command]]
+name = "body"
+group = "Your body"
+summary = "how your body is: its vitals, or everything measured"
+usage = ["body", "body all"]
+about = """
+Your vitals: warmth, water, energy, stamina, wounds. "body all" lists everything the engine measures about you. In the game, V opens it as a window."""
+examples = ["body", "body all"]
+see = ["eat", "drink", "sleep"]
+
+[[command]]
+name = "eat"
+group = "Your body"
+summary = "eat something you carry"
+usage = ["eat <thing>"]
+about = """
+Eats something you carry. A player's body is kept by vitality instead, so it doesn't need to."""
+examples = ["eat nuts"]
+see = ["drink", "body"]
+
+[[command]]
+name = "drink"
+group = "Your body"
+summary = "drink from water within reach, or from what you carry"
+usage = ["drink from <liquid>"]
+about = """
+Drinks from water within reach, or from a container you carry."""
+examples = ["drink from water"]
+see = ["fill", "eat"]
+
+[[command]]
+name = "sleep"
+group = "Your body"
+summary = "sleep if your body needs it; a player can rest a while"
+usage = ["sleep", "sleep for <time>", "sleep in <shelter>"]
+about = """
+Sleeps, if your body needs it; in a shelter you keep warmer. A player rests instead, for as long as asked."""
+examples = ["sleep for 1 h"]
+see = ["wait", "body"]
+
+[[command]]
+name = "wear"
+also = ["don", "remove"]
+group = "Your body"
+summary = "wear something soft you carry; \"take off\" to remove"
+usage = ["wear <thing>", "wear <thing> on your feet", "take off <thing>", "remove <thing>"]
+about = """
+Wears something soft you carry, on your body or your feet: clothing keeps you warm, shoes guard your feet on rough ground. "take off" (or "remove") takes it off again."""
+examples = ["wear hide on your feet", "take off hide"]
+see = ["take", "body"]
+
+# Other people ----------------------------------------------------------------------------
+
+[[command]]
+name = "tell"
+group = "Other people"
+summary = "teach someone your word for something"
+usage = ["tell <person> that <thing> is a <word>"]
+about = """
+Teaches someone your word for something, so they know it by that name too."""
+examples = ["tell stranger that the spear is a spear"]
+see = ["call", "ask"]
+
+[[command]]
+name = "offer"
+also = ["trade"]
+group = "Other people"
+summary = "offer a trade"
+usage = ["offer <thing> to <person> for <thing>"]
+about = """
+Offers something you carry to someone for something of theirs. They weigh it by what they value, and accept or not."""
+examples = ["offer flint to stranger for fish"]
+see = ["give", "pay", "ask"]
+
+[[command]]
+name = "ask"
+group = "Other people"
+summary = "ask someone with a mind of their own to do something"
+usage = ["ask <person> to <command>"]
+about = """
+Asks someone to do something, in your words, which they weigh in theirs: they may do it, or not."""
+examples = ["ask stranger to gather sticks"]
+see = ["tell", "offer"]
+
+[[command]]
+name = "attack"
+also = ["strike", "stab"]
+group = "Other people"
+summary = "strike at someone"
+usage = ["attack <someone>", "attack <someone> with <thing>"]
+about = """
+Strikes at someone or some creature within reach, with your hands or with something you hold. An edge wounds; wounds bleed. Creatures may fight back or flee, by their temperament."""
+examples = ["attack boar with spear"]
+see = ["butcher", "body"]
+
+# Time and doing things more than once --------------------------------------------------
+
+[[command]]
+name = "wait"
+also = ["z"]
+group = "Time and doing things more than once"
+summary = "let time pass, or wait until something happens"
+usage = [
+    "wait",
+    "wait <seconds>",
+    "wait until free",
+    "wait until 08:30",
+    "wait until <thing> is burning",
+]
+about = """
+Lets time pass: some seconds, until what you're doing is done ("until free"), until a time of day, or until something catches fire (a few minutes at most)."""
+examples = ["wait 30", "wait until free", "wait until ring is burning"]
+see = ["start", "sleep", "time"]
+
+[[command]]
+name = "start"
+group = "Time and doing things more than once"
+summary = "start something without waiting for it to finish"
+usage = ["start <command>"]
+about = """
+Starts something without waiting: you're told how it came out when it's done. In the game everything already works this way."""
+examples = ["start gather sticks"]
+see = ["wait", "stop", "repeat"]
+
+[[command]]
+name = "quit"
+also = ["exit"]
+group = "Time and doing things more than once"
+summary = "leave the game (it's saved as \"last\")"
+usage = ["quit"]
+about = """
+Ends the game. The world is saved as "last" (and the one before as "previous"), to pick up with /load."""
+examples = ["quit"]
+see = ["/save", "/load"]
+
+# Tools: the person at the keyboard -------------------------------------------------------
+
+[[command]]
+name = "/save"
+group = "Tools: the person at the keyboard"
+summary = "save the whole world, to pick up later exactly as it was"
+usage = ["/save <name>"]
+about = """
+Saves the whole world under a name (single player). A game also saves as "last" when it ends."""
+examples = ["/save before fire"]
+see = ["/load", "/saves"]
+
+[[command]]
+name = "/load"
+group = "Tools: the person at the keyboard"
+summary = "pick up a save (\"last\" if no name)"
+usage = ["/load", "/load <name>"]
+about = """
+Picks up a save: "last", made when a game ends, if no name is given; "previous" is the one before it."""
+examples = ["/load", "/load before fire"]
+see = ["/save", "/saves"]
+
+[[command]]
+name = "/saves"
+group = "Tools: the person at the keyboard"
+summary = "the saves there are"
+usage = ["/saves"]
+about = """
+Lists the saves there are, to /load."""
+examples = ["/saves"]
+see = ["/save", "/load"]
+
+[[command]]
+name = "/make"
+group = "Tools: the person at the keyboard"
+summary = "the designer puts something in front of you"
+usage = ["/make <thing>", "/make <thing> in <container>"]
+about = """
+The designer (a tool, not the islander) puts something 1.5 m in front of you: an amount of a material ("2 kg wood", "300 g wood as shaft"), a design ("fire ring"), or a kit ("fire": one burning in a ring). It's counted like sunlight, a named source, so nothing comes from nowhere."""
+examples = ["/make fire", "/make 2 kg wood", "/make fire ring"]
+see = ["/light", "/place"]
+
+[[command]]
+name = "/light"
+group = "Tools: the person at the keyboard"
+summary = "the designer's flame lights something"
+usage = ["/light <thing>"]
+about = """
+The designer's own flame lights something, without needing a fire nearby."""
+examples = ["/light ring"]
+see = ["/make", "light"]
+
+[[command]]
+name = "/place"
+group = "Tools: the person at the keyboard"
+summary = "the designer moves something lying here"
+usage = ["/place <thing> <east> <north>", "/place <thing> <east> <north> <up>"]
+about = """
+Moves something lying in this place to a spot, in metres east and north of the middle (and up, off the ground). Build mode in the game (M) does the same by dragging."""
+examples = ["/place deadwood 3 -2"]
+see = ["/make"]
+
+# Testing ---------------------------------------------------------------------------------------
+
+[[command]]
+name = "totals"
+group = "Testing"
+summary = "the world's total mass, energy, and credits (these never change)"
+usage = ["totals"]
+about = """
+The world's totals: mass, energy, and credits. They never change except through named sources (sunlight, the designer), which is how the engine shows nothing comes from nowhere."""
+examples = ["totals"]
+see = ["datasheet", "log"]
+
+[[command]]
+name = "datasheet"
+also = ["ds"]
+group = "Testing"
+summary = "everything the engine measures about something"
+usage = ["datasheet <thing>", "datasheet here", "datasheet me"]
+about = """
+Everything the engine measures about something: mass, materials, temperature, size, hardness, and more."""
+examples = ["datasheet me", "datasheet ring"]
+see = ["body", "totals"]
+
+[[command]]
+name = "designs"
+group = "Testing"
+summary = "the designs in this world and what they need"
+usage = ["designs"]
+about = """
+Lists every design the world knows and its parts: what could be made, whether or not you know how."""
+examples = ["designs"]
+see = ["assemble", "scope"]
+
+[[command]]
+name = "scope"
+group = "Testing"
+summary = "everything your character could put to use"
+usage = ["scope"]
+about = """
+What a translator from plain words to commands is given: the commands, your words, the ways you know to make things, what you carry, remember, and see. Nothing you couldn't know."""
+examples = ["scope"]
+see = ["designs", "recall"]
+
+[[command]]
+name = "time"
+group = "Testing"
+summary = "how long the world has been running"
+usage = ["time"]
+about = """
+How many seconds the world has run. "look" gives the day and time of day."""
+examples = ["time"]
+see = ["wait"]
+
+[[command]]
+name = "log"
+group = "Testing"
+summary = "the last changes that passed the gate"
+usage = ["log", "log <n>"]
+about = """
+The last n changes the gate accepted: every change to the world goes through it."""
+examples = ["log 20"]
+see = ["totals"]
+
+[[command]]
+name = "become"
+group = "Testing"
+summary = "act as someone else from now on"
+usage = ["become <person>"]
+about = """
+From now on, your commands are someone else's. In the game you play one person; this is a developer's tool."""
+examples = ["become stranger"]
+see = ["as"]
+
+[[command]]
+name = "as"
+group = "Testing"
+summary = "give one command as someone else"
+usage = ["as <person> <command>"]
+about = """
+One command as someone else, hearing how what they started came out."""
+examples = ["as stranger gather sticks"]
+see = ["become"]
+
+# Topics ------------------------------------------------------------------------------------------
+
+[[topic]]
+name = "names"
+summary = "how to name things in commands"
+about = """
+Things are named in your own words, by part of their description: "lump", "dry grass", "the ring". When several things share a name, the nearest is meant, among things on the ground.
+"smallest <thing>" and "largest <thing>" choose by size: "put smallest wood in ring" lays the twigs before the sticks.
+"#12" names a thing by its number, which menus use.
+Only what you can make out can be named: something too far away is only "something small" until you walk closer. Tab completes the names of what you can see."""
+
+[[topic]]
+name = "repeat"
+summary = "doing a command more than once, or several in a row"
+about = """
+Any command can be repeated, as a player would ask:
+  <command> x3            three times
+  <command> 500 g         until you carry that much more (gathering) or less (dropping)
+  <command> until full    until you can't any more, or you stop
+  drop all                put down everything
+  <command>; <command>    one after another: "go to sticks; gather sticks x3"
+Each time is a command like any other, checked by the laws, and the first refusal ends the run. "stop" ends it too."""
+
+[[topic]]
+name = "tools"
+summary = "commands for the person at the keyboard, starting with /"
+about = """
+Tools start with a slash: they're for you at the keyboard, not the islander. Press / to start one. In the game, "/settings" lists the settings and "/set <name> <value>" (or "/<name> <value>") changes one; "/<name>" alone flips one that's on or off. "/quality low|medium|high|ultra" sets how the scene is drawn. Saving and the designer's tools: /save, /load, /saves, /make, /light, /place ("help /make" and so on)."""
+
+[[topic]]
+name = "testing"
+summary = "commands for testing the engine"
+about = """
+For testing and development, not play: totals, datasheet, designs, scope, time, log, become, as. "help <command>" for each."""
+
+[[topic]]
+name = "keys"
+summary = "the game's keys and the console's"
+about = """
+In the game: WASD walk; right- or middle-drag, or the arrows, to look; the wheel to zoom; a left click on something for what you can do with it, on the ground to walk there; F fly; B backpack; V body; T (held) speak a command; G grid; M build mode; Space pause; [ and ] slower or faster.
+The console: Enter to type, Enter to send, Esc to close without sending; / starts a tool; Tab completes; Left, Right, Home, End, Delete, Ctrl+Backspace edit the line; Ctrl+V pastes; Up and Down bring back earlier commands. The wheel over the console, or Page Up and Page Down, scroll back through it; Ctrl+End (or End, when not typing), sending a command, or a click on the "newer lines below" line come back to the newest; Ctrl+Home goes to the oldest. The key left of 1 (`) makes the console bigger, smaller, or hidden."""

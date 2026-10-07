@@ -138,6 +138,89 @@ pub fn values(tool: &str) -> Vec<String> {
     Vec::new()
 }
 
+/// The game's own tools, a line each, for "help tools" (the session's
+/// tools come before them).
+pub fn listing() -> String {
+    let mut lines = vec![" In the game".to_string()];
+    lines.push(format!(
+        "  {:<14}{}",
+        "/settings", "every setting, and what it's set to now"
+    ));
+    lines.push(format!(
+        "  {:<14}{}",
+        "/set", "change a setting: /set <name> <value>, or /<name> <value>"
+    ));
+    for (name, key, _, help) in SETTINGS {
+        let key = if key.is_empty() {
+            String::new()
+        } else {
+            format!(" (key {key})")
+        };
+        lines.push(format!("  {:<14}{help}{key}", format!("/{name}")));
+    }
+    for (name, _, help) in graphics::SETTINGS {
+        lines.push(format!("  {:<14}{help}", format!("/{name}")));
+    }
+    lines.join("\n")
+}
+
+/// Help on one of the game's own tools ("help /grid", "help quality"), if
+/// that's what's asked and it's not one the session knows.
+pub fn help_on(line: &str) -> Option<String> {
+    let mut words = line.split_whitespace();
+    if !matches!(words.next(), Some("help" | "?")) {
+        return None;
+    }
+    let name = words.next()?.trim_start_matches('/').to_lowercase();
+    if console::help::entry(&name).is_some() {
+        return None;
+    }
+    let ways = |values: &[String]| {
+        if values.is_empty() {
+            String::new()
+        } else {
+            format!("\n  /{name} <value>: {}", values.join(", "))
+        }
+    };
+    if let Some((_, key, layer, help)) = SETTINGS.iter().find(|(n, ..)| *n == name) {
+        let key = if key.is_empty() {
+            String::new()
+        } else {
+            format!("\nKey: {key}.")
+        };
+        let flips = if name == "speed" {
+            "\n  /speed <x>: from 1 (real time) to 16384".to_string()
+        } else {
+            format!("\n  /{name}: flips it on or off{}", ways(&values(&name)))
+        };
+        return Some(format!(
+            "/{name}: {help}{flips}{key}\nWho may use it: {}.",
+            layer.name()
+        ));
+    }
+    if let Some((_, _, help)) = graphics::SETTINGS.iter().find(|(n, ..)| *n == name) {
+        let mut text = format!("/{name}: {help}{}", ways(&values(&name)));
+        if name == "quality" {
+            for quality in [Quality::Low, Quality::Medium, Quality::High, Quality::Ultra] {
+                let preset = Graphics::preset(quality)
+                    .value("quality")
+                    .unwrap_or_default();
+                text += &format!("\n  {preset}: {}", Graphics::describe(quality));
+            }
+        }
+        text += "\nKept between games. Who may use it: always (it's your own machine's).";
+        return Some(text);
+    }
+    match name.as_str() {
+        "settings" => Some("/settings: lists every setting and what it's set to now.".into()),
+        "help" => Some("/help: the tools in short; \"help tools\" lists them all, a line each.".into()),
+        "set" => Some(
+            "/set <name> <value> changes a setting (/<name> <value> does too); /<name> alone flips one that's on or off.".into(),
+        ),
+        _ => None,
+    }
+}
+
 /// Everything a tool can change.
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct Changeable<'w> {
@@ -374,5 +457,23 @@ mod tests {
         assert_eq!(super::values("/grid"), ["on", "off"]);
         assert_eq!(super::values("/fps-cap"), ["off"]);
         assert!(super::values("/set").contains(&"shadows".to_string()));
+    }
+
+    #[test]
+    fn the_games_own_tools_have_their_help() {
+        for name in super::names() {
+            let asked = format!("help {name}");
+            let session = console::help::entry(name.trim_start_matches('/')).is_some();
+            assert!(
+                session || super::help_on(&asked).is_some(),
+                "no help for {name}"
+            );
+        }
+        let quality = super::help_on("help /quality").unwrap();
+        assert!(quality.contains("low, medium, high, ultra") && quality.contains("shadows"));
+        assert!(super::help_on("help grid").unwrap().contains("Key: G"));
+        // The session's own tools and commands are left to the session.
+        assert!(super::help_on("help /save").is_none());
+        assert!(super::help_on("help gather").is_none());
     }
 }

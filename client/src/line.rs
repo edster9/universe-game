@@ -179,25 +179,6 @@ pub fn complete(line: &mut Line, candidates: impl FnOnce(Slot<'_>) -> Vec<String
     Vec::new()
 }
 
-/// The commands in a help text: the first word of each line that starts
-/// one ("  gather <source> ..."), slashes kept.
-pub fn commands_in(help: &str) -> Vec<String> {
-    let mut words: Vec<String> = help
-        .lines()
-        .filter(|l| l.starts_with("  ") && !l.starts_with("   "))
-        .filter_map(|l| l.split_whitespace().next())
-        .filter(|w| {
-            w.chars()
-                .next()
-                .is_some_and(|c| c.is_ascii_lowercase() || c == '/')
-        })
-        .map(str::to_string)
-        .collect();
-    words.sort();
-    words.dedup();
-    words
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -258,11 +239,5 @@ mod tests {
         l.cursor = 1;
         let listed = complete(&mut l, names);
         assert_eq!(listed, vec!["gather", "give", "go"]);
-    }
-
-    #[test]
-    fn the_commands_are_read_from_the_help() {
-        let help = "Commands:\n  look   describe\n  walk to <thing>   walk\n                     (\"go to\" too)\n  /save <name>   save\n  <command> x3   repeat\n";
-        assert_eq!(commands_in(help), vec!["/save", "look", "walk"]);
     }
 }

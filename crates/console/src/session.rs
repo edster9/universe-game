@@ -15,81 +15,6 @@ mod saves;
 
 pub use saves::LAST;
 
-pub const HELP: &str = "\
-Commands:
-  look                              describe where you are
-  inventory                         what you carry, and your credits
-  backpack                          what you carry, a line each
-  body [all]                        how your body is: its vitals, or everything measured
-  go <place>                        walk somewhere
-  walk to <thing>                   walk up to something in this place, within reach (\"go to\" too)
-  walk to <east> <north>            walk to a spot, in metres from the middle of this place
-  stop                              stop what you're doing; a walk stops where you've got to
-  gather <source>                   search a patch or source for a piece of it (\"gather sticks\", \"gather grass\")
-  take <thing> [from <container>]   pick something up
-  drop <thing>                      put something down; \"drop all\" puts down everything
-  put <thing> in <container>        put something inside something
-  give <thing> to <person>          hand something over
-  pay <person> <amount>             pay credits
-  dig <source> with <tool>          dig material out of the ground
-  fill <container> from <liquid>    fill a container
-  eat <thing>                       eat something you carry
-  drink from <liquid>               drink
-  light <thing>                     light a furnace or anything that holds fuel, from a flame already burning nearby
-  pour <thing> into <container>     pour something molten, or tip loose pieces from one container into another
-                                    (\"tip dust into ring\": an ember into tinder; \"tip\" too)
-  work <thing> into <shape> with <tool>
-                                    shape something with a tool
-  rub <thing> against <thing> [into <container>] [for <time>]
-                                    rub two pieces hard together: the work turns to heat and wears off hot dust,
-                                    which can smoulder into an ember; \"into\" a container, the dust lands there,
-                                    on whatever tinder is in it. Keeps on until something there catches (10 minutes at most).
-                                    A fire is made on the ground: put a container down before rubbing into it
-  divide <thing>                    pull something soft apart into two (tinder teased fine catches from a small ember)
-  butcher <body> with <tool>        cut a dead body into its parts with something that has an edge
-  attack <someone> [with <thing>]   strike at someone
-  explore                           search around for a way out you don't know yet
-  survey                            take in the view: see what lies in the distance
-  read <thing>                      read something, such as a map
-  assemble <design>                 put carried parts together to a design (or \"make\")
-  disassemble <thing>               take something apart into its parts
-  wear <thing> [on your feet]       wear something soft you carry; \"take off <thing>\"
-  join <thing> and <thing>          put things together without a design
-  call <thing> a <word>             name something in your own words (\"call it a …\")
-  tell <person> that <thing> is a <word>
-                                    teach someone your word for something
-  offer <thing> to <person> for <thing>
-                                    offer a trade
-  ask <person> to <command>         ask someone with a mind of their own to do something
-  wait [seconds]                    let time pass; \"wait until free\", \"wait until 08:30\",
-                                    \"wait until <thing> is burning\" (a few minutes at most)
-  start <command>                   start something without waiting for it
-  <command> x3                      do it three times (\"gather sticks x3\")
-  <command> 500 g                   do it until you carry that much more, or less (\"gather wood 500 g\")
-  <command>; <command>              one after another (\"go to sticks; gather sticks x2\")
-  as <person>                       act as someone else, hearing how what they started came out
-  sleep [for <time>] [in <shelter>]  sleep, if your body needs it; a player can rest for a time
-Testing tools:
-  totals                            the world's total mass, energy, and credits (these never change)
-  datasheet <thing|here|me>         everything the engine measures about something
-  designs                           the designs in this world and what they need
-  time                              how long the world has been running
-  log [n]                           the last n entries that passed the gate
-  become <person>                   act as someone else
-  /save <name>                      save the whole world, to pick up later exactly where it was
-  /load [name]                      pick up a save (\"last\", made when a game ends, if no name; \"previous\" is the one before)
-  /saves                            the saves there are
-  /make <thing> [in <container>]    the designer puts something in front of you: an amount of a material
-                                    (\"2 kg wood\", \"300 g wood as shaft\"), a design (\"fire ring\"), or a kit
-                                    (\"fire\": one burning in a ring)
-  /light <thing>                    the designer's flame lights something
-  /place <thing> <east> <north> [<up>]
-                                    the designer moves something lying here, in metres from the middle (build mode in the client)
-  quit
-Things can be named by part of their description (\"lump\"), or by id (\"#12\").
-\"smallest <thing>\" and \"largest <thing>\" choose by size among things of that name
-(\"put smallest wood in ring\": the twigs before the sticks).";
-
 /// The longest wait allowed in one command: one game day.
 const MAX_WAIT: u64 = 30 * 86_400;
 
@@ -203,7 +128,7 @@ impl Session {
             .map_or((line, ""), |(f, r)| (f, r.trim()));
         let mut reply = match first.to_lowercase().as_str() {
             "" => Reply::say(""),
-            "help" | "?" => Reply::say(HELP),
+            "help" | "?" => Reply::say(crate::help::reply(rest)),
             "quit" | "exit" => Reply {
                 text: "Goodbye.".into(),
                 quit: true,
@@ -1592,18 +1517,7 @@ impl Session {
     fn scope(&mut self) -> String {
         let (w, me) = (&self.world, self.player);
         // The player's commands, not the developer's.
-        let commands: Vec<&str> = HELP
-            .split("Testing tools:")
-            .next()
-            .unwrap_or(HELP)
-            .trim()
-            .lines()
-            .filter(|l| !l.trim_start().starts_with("as <person>"))
-            .collect();
-        let naming = HELP
-            .find("Things can be named")
-            .map_or("", |at| &HELP[at..]);
-        let commands = format!("{}\n{naming}", commands.join("\n"));
+        let commands = crate::help::for_players();
         let parts = |slots: &[(String, Requirement)]| {
             slots
                 .iter()

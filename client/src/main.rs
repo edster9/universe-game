@@ -369,6 +369,7 @@ fn main() {
             (
                 terminal::type_in,
                 terminal::wheel,
+                terminal::jump,
                 controls,
                 panels::keys,
                 build::toggle,

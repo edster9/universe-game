@@ -25,7 +25,7 @@ use crate::line::{self, Line, Slot};
 use crate::{Options, Play, Sim};
 
 /// What a log line is, which sets its colour.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Said {
     /// What the player typed.
     Typed,
@@ -123,9 +123,22 @@ impl Console {
         }
     }
 
+    /// A reply longer than the console shows from its top, with the command
+    /// that asked for it, and "newer lines below" under it: read on by
+    /// scrolling, as a pager would, without one.
+    fn show_from_top(&mut self, lines: usize) {
+        let shown = self.shown();
+        if shown > 0 && lines + 1 > shown {
+            self.scroll = lines + 2 - shown;
+            self.scroll_by(0);
+        }
+    }
+
     /// Scrolls back (up) or on (down) by `lines`, within the log.
     fn scroll_by(&mut self, lines: isize) {
-        let most = self.log.len().saturating_sub(self.shown().max(1));
+        // Back as far as the oldest line, with the "newer lines below" line
+        // taking the last place.
+        let most = self.log.len().saturating_sub(self.shown().max(1) - 1);
         self.scroll = (self.scroll as isize + lines).clamp(0, most as isize) as usize;
         self.changed = true;
     }
@@ -139,6 +152,21 @@ pub struct LogLines;
 
 #[derive(Component)]
 pub struct InputLine;
+
+/// The line saying newer lines are below, which jumps to them when clicked.
+#[derive(Component)]
+pub struct Newer;
+
+/// A click on "newer lines below" comes back to the newest.
+pub fn jump(
+    mut console: ResMut<Console>,
+    clicked: Query<&Interaction, (Changed<Interaction>, With<Newer>)>,
+) {
+    if clicked.iter().any(|i| *i == Interaction::Pressed) {
+        console.scroll = 0;
+        console.changed = true;
+    }
+}
 
 pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
     commands
@@ -203,10 +231,28 @@ pub fn send(console: &mut Console, sim: &mut Sim, line: &str, exit: &mut Message
 /// command, the names of what the islander can make out.
 fn completions(sim: &Sim, slot: Slot) -> Vec<String> {
     match slot {
-        Slot::First => line::commands_in(console::session::HELP)
-            .into_iter()
-            .chain(crate::tools::names())
-            .collect(),
+        Slot::First => {
+            let mut words: Vec<String> = console::help::commands()
+                .iter()
+                .map(|c| c.name.clone())
+                .chain(["help".to_string()])
+                .chain(crate::tools::names())
+                .collect();
+            words.sort();
+            words.dedup();
+            words
+        }
+        // What there's help on: every command, topic, and tool.
+        Slot::After("help" | "?") => {
+            let mut words: Vec<String> = console::help::names()
+                .into_iter()
+                .map(str::to_string)
+                .chain(crate::tools::names())
+                .collect();
+            words.sort();
+            words.dedup();
+            words
+        }
         Slot::After(tool) if tool.starts_with('/') => crate::tools::values(tool),
         Slot::After(_) => match &sim.play {
             Play::Live(session) => session.names(),
@@ -233,15 +279,25 @@ pub fn send_as(
         console.tools.push(line.to_string());
         return;
     }
+    // Help on the game's own settings, which the session doesn't know.
+    if let Some(text) = crate::tools::help_on(line) {
+        console.say(Said::Reply, &text);
+        console.show_from_top(text.lines().count());
+        return;
+    }
     match &mut sim.play {
         Play::Live(session) => {
-            let reply = session.handle(line);
+            let mut reply = session.handle(line);
             let said = if reply.refused {
                 Said::Refused
             } else {
                 Said::Reply
             };
+            if line.trim() == "help tools" {
+                reply.text = format!("{}\n{}", reply.text, crate::tools::listing());
+            }
             console.say(said, &reply.text);
+            console.show_from_top(reply.text.lines().count());
             if reply.quit {
                 exit.write(AppExit::Success);
             }
@@ -280,8 +336,18 @@ pub fn type_in(
         if key.state != ButtonState::Pressed {
             continue;
         }
-        // Reading back through the log, typing or not.
+        // Reading back through the log, typing or not: Ctrl+End to the
+        // newest, Ctrl+Home to the oldest.
         match key.logical_key {
+            Key::End if ctrl => {
+                console.scroll = 0;
+                console.changed = true;
+                continue;
+            }
+            Key::Home if ctrl => {
+                console.scroll_by(isize::MAX / 2);
+                continue;
+            }
             Key::PageUp => {
                 console.scroll_by(page);
                 continue;
@@ -450,10 +516,12 @@ pub fn show(
         let below = (scrolled > 0).then(|| {
             (
                 Said::Debug,
-                format!("--- {scrolled} newer lines below: scroll down, Page Down, or End ---"),
+                format!(
+                    "--- {scrolled} newer lines below: click here, scroll down, Page Down, or Ctrl+End ---"
+                ),
             )
         });
-        for (said, line) in console.log[from..end].iter().chain(below.iter()) {
+        for (said, line) in console.log[from..end].iter() {
             lines.spawn((
                 Text::new(line.clone()),
                 TextFont {
@@ -461,6 +529,20 @@ pub fn show(
                     ..default()
                 },
                 TextColor(said.colour()),
+            ));
+        }
+        // A click on it comes back to the newest, as chat windows' "jump
+        // to present" does.
+        if let Some((said, line)) = below {
+            lines.spawn((
+                Text::new(line),
+                TextFont {
+                    font_size: bevy::text::FontSize::Px(15.0),
+                    ..default()
+                },
+                TextColor(said.colour()),
+                Interaction::default(),
+                Newer,
             ));
         }
     });
@@ -733,6 +815,10 @@ mod tests {
         press(&mut app, Key::Enter, KeyCode::Enter);
         typed(&mut app, "help");
         press(&mut app, Key::Enter, KeyCode::Enter);
+        // It's longer than the console: shown from its top. End comes to
+        // the newest; Page Up goes back from there.
+        assert!(console(&app).scroll > 0);
+        press(&mut app, Key::End, KeyCode::End);
         assert_eq!(console(&app).scroll, 0);
         press(&mut app, Key::PageUp, KeyCode::PageUp);
         let back = console(&app).scroll;
@@ -749,5 +835,55 @@ mod tests {
         assert_eq!(console(&app).scroll, back + 1);
         press(&mut app, Key::End, KeyCode::End);
         assert_eq!(console(&app).scroll, 0);
+    }
+
+    #[test]
+    fn a_long_reply_shows_from_its_top_and_ctrl_end_jumps_to_the_newest() {
+        let mut app = app();
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        typed(&mut app, "help");
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        // The window starts at the command that asked, the rest below it.
+        let c = console(&app);
+        let shown = c.shown();
+        assert!(c.scroll > 0);
+        let top = c.log.len() - c.scroll - (shown - 1);
+        let help_at = c.log.iter().rposition(|(_, l)| l == "> help").unwrap();
+        assert_eq!(c.log[top].1, "> help", "help at {help_at}");
+        // Ctrl+End, even while typing, comes back to the newest.
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        key(
+            &mut app,
+            Key::Control,
+            KeyCode::ControlLeft,
+            ButtonState::Pressed,
+        );
+        app.update();
+        press(&mut app, Key::End, KeyCode::End);
+        assert_eq!(console(&app).scroll, 0);
+        // Ctrl+Home goes to the oldest.
+        press(&mut app, Key::Home, KeyCode::Home);
+        let c = console(&app);
+        assert_eq!(c.scroll, c.log.len() - (c.shown() - 1));
+    }
+
+    #[test]
+    fn tab_after_help_completes_what_there_is_help_on() {
+        let mut app = app();
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        typed(&mut app, "help gat");
+        press(&mut app, Key::Tab, KeyCode::Tab);
+        assert_eq!(console(&app).input.text, "help gather ");
+        press(&mut app, Key::Escape, KeyCode::Escape);
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        typed(&mut app, "help /qual");
+        press(&mut app, Key::Tab, KeyCode::Tab);
+        assert_eq!(console(&app).input.text, "help /quality ");
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        let said = &console(&app).log;
+        assert!(
+            said.iter().any(|(_, l)| l.starts_with("/quality: ")),
+            "{said:?}"
+        );
     }
 }

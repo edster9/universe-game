@@ -93,5 +93,31 @@ At the owner's request, the console now works as games' chat lines and developer
   - The log keeps 1,000 lines.
 - The key left of 1 (\`) still makes the console bigger, smaller, or hidden.
 
+- **Getting back to the newest** (built 2026-10-06, as Discord's "jump to present" and WoW's jump-to-bottom button do): a click on the "newer lines below" line, Ctrl+End (even while typing; plain End then moves the cursor), End when not typing, or sending a command. Ctrl+Home goes to the oldest.
+- **A long reply shows from its top**, starting at the command that asked for it, with "newer lines below" under it: read on by scrolling or Page Down. This is a pager's benefit without one. "Press space for more" was weighed and left out (the owner's choice, 2026-10-06): pagers come from old terminals, game consoles print and scroll, and a pager would take over the line you type on.
+
 Not done, by the owner's choice: moving while typing (other games don't either).
+
+## Help (built 2026-10-06)
+
+- **`help`** lists every command by group, a line each with what it does:
+  - looking and moving;
+  - gathering and carrying;
+  - making things;
+  - fire and heat;
+  - your body;
+  - other people;
+  - time and doing things more than once;
+  - tools;
+  - testing;
+  - then the topics.
+- **`help <command>`** tells all about one command: every way to write it (`gather <source> x3`, `500 g`, `until full`), what it does and needs, examples, and related commands. Other words for a command lead to it (`help collect`), and so do tools without their slash (`help save`).
+- **Topics:** `names` (naming things), `repeat`, `tools`, `testing`, `keys`.
+- **The game's own `/` settings** answer from their own list (`help /quality` shows each preset). `help tools` adds them after the session's tools.
+- **Tab after `help`** completes anything there's help on.
+- **An unknown word** gets "Did you mean …".
+- **One source.** The help is one file, `crates/console/help.toml`, a short entry per command.
+  - `tests/help.rs` reads the verbs from the parser and the session and fails if any command lacks help, or any help is for a command that doesn't exist. It caught `remove` on its first run.
+  - Every example must be understood, and every "see also" must lead somewhere.
+  - The translator's scope takes its list of commands from the same file.
 

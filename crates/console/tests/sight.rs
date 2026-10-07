@@ -106,3 +106,30 @@ fn something_made_in_play_is_measured_like_anything_else() {
     );
     assert!(all > one && one > 0, "a stone {one} µm, the ring {all} µm");
 }
+
+#[test]
+fn tab_completes_only_names_for_what_is_made_out() {
+    let mut s = islander();
+    ok(&mut s, "go forest");
+    ok(&mut s, "go to sticks; gather sticks");
+    // Carried, it's a name to complete.
+    assert!(
+        s.names().iter().any(|n| n == "wood stick"),
+        "{:?}",
+        s.names()
+    );
+    ok(&mut s, "drop wood");
+    assert!(
+        s.names().iter().any(|n| n == "wood stick"),
+        "{:?}",
+        s.names()
+    );
+    // Across the forest it's only something small: no name to give away.
+    ok(&mut s, "walk to -25 -20");
+    let names = s.names();
+    assert!(!names.iter().any(|n| n == "wood stick"), "{names:?}");
+    assert!(
+        !names.iter().any(|n| n.starts_with("something")),
+        "{names:?}"
+    );
+}

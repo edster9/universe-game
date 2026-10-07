@@ -1,9 +1,16 @@
 //! The console: translucent, along the bottom of the window. An input
 //! line, and a log where replies, news, and grey debugging messages scroll.
-//! Enter to type, Enter again to send (or Esc to stop), and the keys go
-//! back to the game; the key left of 1 (`) makes it bigger, smaller, or
-//! hidden; while typing, up and down bring back earlier commands. Commands go through the console's own
-//! session, so every reply and refusal is the one the scripts prove.
+//! It works as games' chat lines and consoles do (researched 2026-10-06):
+//! Enter to type (or `/`, which starts a tool), Enter again to send (or Esc
+//! to stop), and the keys go back to the game; while typing, the keys are
+//! the line's: Left, Right, Home, End, Delete, Ctrl+Backspace, Ctrl+V to
+//! paste, Up and Down for earlier commands, and Tab to complete a command,
+//! a tool, or the name of something the islander can make out (`line.rs`).
+//! The mouse wheel over the console, or Page Up and Page Down, scroll back
+//! through the log; sending, or End when not typing, comes back to the
+//! newest. The key left of 1 (`) makes it bigger, smaller, or hidden.
+//! Commands go through the console's own session, so every reply and
+//! refusal is the one the scripts prove.
 //!
 //! With `--script`, the client plays a script file through the console
 //! instead, a line at a time, and saves a screenshot at each expectation.
@@ -14,6 +21,7 @@ use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, save_to_disk};
 use console::script::Step;
 
+use crate::line::{self, Line, Slot};
 use crate::{Options, Play, Sim};
 
 /// What a log line is, which sets its colour.
@@ -53,8 +61,13 @@ enum Size {
 pub struct Console {
     /// Keys go to the input line, not the game.
     pub typing: bool,
-    input: String,
+    input: Line,
     log: Vec<(Said, String)>,
+    /// How many lines back from the newest the log is scrolled.
+    scroll: usize,
+    /// The pointer is over the console: the wheel scrolls it, not the
+    /// camera.
+    pub over: bool,
     /// Bumped whenever the log changes, to redraw it.
     changed: bool,
     size: Size,
@@ -69,8 +82,10 @@ impl Default for Console {
     fn default() -> Self {
         Console {
             typing: false,
-            input: String::new(),
+            input: Line::default(),
             log: Vec::new(),
+            scroll: 0,
+            over: false,
             changed: true,
             size: Size::Small,
             history: Vec::new(),
@@ -80,16 +95,38 @@ impl Default for Console {
     }
 }
 
-const KEPT: usize = 500;
+/// How many lines the log keeps.
+const KEPT: usize = 1_000;
 
 impl Console {
     pub fn say(&mut self, said: Said, text: &str) {
+        let before = self.log.len();
         for line in text.lines() {
             self.log.push((said, line.to_string()));
+        }
+        // Scrolled back, what's being read stays put as lines arrive.
+        if self.scroll > 0 {
+            self.scroll += self.log.len() - before;
         }
         if self.log.len() > KEPT {
             self.log.drain(..self.log.len() - KEPT);
         }
+        self.changed = true;
+    }
+
+    /// How many lines show at the console's size.
+    fn shown(&self) -> usize {
+        match self.size {
+            Size::Small => 9,
+            Size::Large => 34,
+            Size::Hidden => 0,
+        }
+    }
+
+    /// Scrolls back (up) or on (down) by `lines`, within the log.
+    fn scroll_by(&mut self, lines: isize) {
+        let most = self.log.len().saturating_sub(self.shown().max(1));
+        self.scroll = (self.scroll as isize + lines).clamp(0, most as isize) as usize;
         self.changed = true;
     }
 }
@@ -150,13 +187,32 @@ pub fn setup(mut commands: Commands, mut console: ResMut<Console>) {
     );
     console.say(
         Said::Debug,
-        "Enter to type a command, Enter to send it; \"help\" lists them. Hold T to speak one. ` resizes this.",
+        "Enter to type a command, Enter to send it; \"help\" lists them. / starts a tool. Tab \
+         completes. The wheel over this, or Page Up and Down, scrolls back. Hold T to speak a \
+         command. ` resizes this.",
     );
 }
 
 /// Sends a line to the session, as the player typing it.
 pub fn send(console: &mut Console, sim: &mut Sim, line: &str, exit: &mut MessageWriter<AppExit>) {
     send_as(console, sim, line, line, exit);
+}
+
+/// What Tab can complete, for the word being typed: commands (from the
+/// console's own help) and tools first; after a tool, its values; after a
+/// command, the names of what the islander can make out.
+fn completions(sim: &Sim, slot: Slot) -> Vec<String> {
+    match slot {
+        Slot::First => line::commands_in(console::session::HELP)
+            .into_iter()
+            .chain(crate::tools::names())
+            .collect(),
+        Slot::After(tool) if tool.starts_with('/') => crate::tools::values(tool),
+        Slot::After(_) => match &sim.play {
+            Play::Live(session) => session.names(),
+            Play::Script(_) => Vec::new(),
+        },
+    }
 }
 
 /// Sends a line to the session, shown in the log as `shown`: a command
@@ -169,6 +225,8 @@ pub fn send_as(
     exit: &mut MessageWriter<AppExit>,
 ) {
     console.history.push(line.to_string());
+    // Back to the newest, to see the reply.
+    console.scroll = 0;
     console.say(Said::Typed, &format!("> {shown}"));
     // Tools, for the person at the keyboard, not the actor.
     if line.starts_with('/') {
@@ -194,11 +252,14 @@ pub fn send_as(
 
 /// Takes keys while typing: letters into the input line, Enter to send.
 /// First, anything `--type` asked for, as if typed.
+#[allow(clippy::too_many_arguments)]
 pub fn type_in(
     mut keys: MessageReader<KeyboardInput>,
+    held: Res<ButtonInput<KeyCode>>,
     options: Res<Options>,
     mut console: ResMut<Console>,
     mut sim: ResMut<Sim>,
+    mut clipboard: Option<ResMut<bevy::clipboard::Clipboard>>,
     mut exit: MessageWriter<AppExit>,
     mut started: Local<bool>,
 ) {
@@ -213,14 +274,37 @@ pub fn type_in(
             send(&mut console, &mut sim, line, &mut exit);
         }
     }
+    let ctrl = held.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
+    let page = console.shown().saturating_sub(1).max(1) as isize;
     for key in keys.read() {
         if key.state != ButtonState::Pressed {
             continue;
         }
+        // Reading back through the log, typing or not.
+        match key.logical_key {
+            Key::PageUp => {
+                console.scroll_by(page);
+                continue;
+            }
+            Key::PageDown => {
+                console.scroll_by(-page);
+                continue;
+            }
+            _ => {}
+        }
         if !console.typing {
-            match key.logical_key {
+            match &key.logical_key {
                 Key::Enter => console.typing = true,
-                Key::Character(ref c) if c.as_str() == "`" => {
+                // A tool, straight away.
+                Key::Character(c) if c.as_str() == "/" => {
+                    console.typing = true;
+                    console.input.set("/");
+                }
+                Key::End => {
+                    console.scroll = 0;
+                    console.changed = true;
+                }
+                Key::Character(c) if c.as_str() == "`" => {
                     console.size = match console.size {
                         Size::Small => Size::Large,
                         Size::Large => Size::Hidden,
@@ -233,18 +317,34 @@ pub fn type_in(
             continue;
         }
         match &key.logical_key {
-            Key::Escape => console.typing = false,
+            // Closed without sending, the line thrown away, as games do.
+            Key::Escape => {
+                console.typing = false;
+                console.input.take();
+                console.back = 0;
+            }
             Key::Enter => {
                 // Sent, and the keys go back to the game: [ and ] work at once.
                 console.typing = false;
-                let line = std::mem::take(&mut console.input);
+                let line = console.input.take();
                 console.back = 0;
                 if !line.trim().is_empty() {
                     send(&mut console, &mut sim, line.trim(), &mut exit);
                 }
             }
-            Key::Backspace => {
-                console.input.pop();
+            Key::Backspace if ctrl => console.input.delete_word(),
+            Key::Backspace => console.input.backspace(),
+            Key::Delete => console.input.delete(),
+            Key::ArrowLeft => console.input.left(),
+            Key::ArrowRight => console.input.right(),
+            Key::Home => console.input.home(),
+            Key::End => console.input.end(),
+            Key::Tab => {
+                let Console { input, .. } = &mut *console;
+                let listed = line::complete(input, |slot| completions(&sim, slot));
+                if !listed.is_empty() {
+                    console.say(Said::Debug, &listed.join(", "));
+                }
             }
             Key::ArrowUp | Key::ArrowDown => {
                 let n = console.history.len();
@@ -253,21 +353,48 @@ pub fn type_in(
                 } else {
                     console.back.saturating_sub(1)
                 };
-                console.input = if console.back == 0 {
+                let earlier = if console.back == 0 {
                     String::new()
                 } else {
                     console.history[n - console.back].clone()
                 };
+                console.input.set(&earlier);
             }
-            Key::Space => console.input.push(' '),
-            Key::Character(c) => {
-                console
-                    .input
-                    .extend(c.chars().filter(|ch| !ch.is_control()));
+            Key::Character(c) if ctrl => {
+                if c.eq_ignore_ascii_case("v")
+                    && let Some(clipboard) = clipboard.as_deref_mut()
+                    && let Some(Ok(text)) = clipboard.fetch_text().poll_result()
+                {
+                    console.input.insert(&text);
+                }
             }
+            Key::Space => console.input.insert(" "),
+            Key::Character(c) => console.input.insert(c),
             _ => {}
         }
     }
+}
+
+/// The mouse wheel over the console scrolls its log (the camera's zoom
+/// leaves it alone then: `Console::over`).
+pub fn wheel(
+    mut console: ResMut<Console>,
+    panel: Query<(&Interaction, &Visibility), With<Panel>>,
+    scroll: Res<bevy::input::mouse::AccumulatedMouseScroll>,
+) {
+    use bevy::input::mouse::MouseScrollUnit;
+    console.over = panel
+        .single()
+        .is_ok_and(|(i, v)| *i != Interaction::None && *v != Visibility::Hidden);
+    if !console.over || scroll.delta.y == 0.0 {
+        return;
+    }
+    let notches = match scroll.unit {
+        MouseScrollUnit::Line => scroll.delta.y,
+        MouseScrollUnit::Pixel => scroll.delta.y / MouseScrollUnit::SCROLL_UNIT_CONVERSION_FACTOR,
+    };
+    // Three lines a notch; up is back.
+    console.scroll_by((notches * 3.0).round() as isize);
 }
 
 /// Redraws the log when it changes, and the input line always.
@@ -287,7 +414,8 @@ pub fn show(
             " "
         };
         text.0 = if console.typing {
-            format!("> {}{caret}", console.input)
+            let caret = if caret == "_" { '|' } else { ' ' };
+            format!("> {}", console.input.shown(caret))
         } else if voice.listening() {
             format!("(listening{caret})")
         } else if voice.busy {
@@ -308,15 +436,24 @@ pub fn show(
     }
     console.changed = false;
     let Ok(log) = log.single() else { return };
-    let shown = match console.size {
-        Size::Small => 9,
-        Size::Large => 34,
-        Size::Hidden => 0,
-    };
-    let from = console.log.len().saturating_sub(shown);
+    let shown = console.shown();
+    // Scrolled back: a line saying so takes the last place.
+    let scrolled = console.scroll.min(console.log.len().saturating_sub(shown));
+    let end = console.log.len() - scrolled;
+    let from = end.saturating_sub(if scrolled > 0 {
+        shown.saturating_sub(1)
+    } else {
+        shown
+    });
     commands.entity(log).despawn_children();
     commands.entity(log).with_children(|lines| {
-        for (said, line) in &console.log[from..] {
+        let below = (scrolled > 0).then(|| {
+            (
+                Said::Debug,
+                format!("--- {scrolled} newer lines below: scroll down, Page Down, or End ---"),
+            )
+        });
+        for (said, line) in console.log[from..end].iter().chain(below.iter()) {
             lines.spawn((
                 Text::new(line.clone()),
                 TextFont {
@@ -433,5 +570,184 @@ pub fn take_shots(
             });
         }
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bevy::input::keyboard::{Key, KeyCode, KeyboardInput};
+    use bevy::input::{ButtonState, InputPlugin};
+    use bevy::prelude::*;
+    use console::session::Session;
+
+    use super::{Console, type_in};
+    use crate::{Options, Play, Sim};
+
+    /// The console with the skill yard's islander, and keys pressed into
+    /// it as the window would, with nothing sent to Windows.
+    fn app() -> App {
+        let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
+        let world = console::load_world_file(&data.join("skill-yard.toml")).unwrap();
+        let session = Session::new(world, "player").unwrap().with_real_time();
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, InputPlugin))
+            .insert_resource(Sim {
+                play: Play::Live(Box::new(session)),
+                speed: 1.0,
+                paused: false,
+                owed: 0.0,
+            })
+            .insert_resource(Options {
+                shot: None,
+                after: 0.0,
+                from: None,
+                look: None,
+                yaw: None,
+                pitch: None,
+                zoom: None,
+                script: None,
+                shots: String::new(),
+                step: 0.0,
+                typed: String::new(),
+                open: String::new(),
+            })
+            .init_resource::<Console>()
+            .add_systems(Update, type_in);
+        app.update();
+        app
+    }
+
+    fn key(app: &mut App, logical: Key, code: KeyCode, state: ButtonState) {
+        app.world_mut().write_message(KeyboardInput {
+            key_code: code,
+            logical_key: logical,
+            state,
+            text: None,
+            repeat: false,
+            window: Entity::PLACEHOLDER,
+        });
+    }
+
+    /// A key pressed and let go, in one frame.
+    fn press(app: &mut App, logical: Key, code: KeyCode) {
+        key(app, logical.clone(), code, ButtonState::Pressed);
+        key(app, logical, code, ButtonState::Released);
+        app.update();
+    }
+
+    fn typed(app: &mut App, text: &str) {
+        for c in text.chars() {
+            let logical = if c == ' ' {
+                Key::Space
+            } else {
+                Key::Character(c.to_string().into())
+            };
+            key(app, logical.clone(), KeyCode::KeyA, ButtonState::Pressed);
+            key(app, logical, KeyCode::KeyA, ButtonState::Released);
+        }
+        app.update();
+    }
+
+    fn console(app: &App) -> &Console {
+        app.world().resource::<Console>()
+    }
+
+    #[test]
+    fn a_slash_starts_a_tool_and_tab_completes_it_and_its_value() {
+        let mut app = app();
+        press(&mut app, Key::Character("/".into()), KeyCode::Slash);
+        assert!(console(&app).typing);
+        typed(&mut app, "qua");
+        press(&mut app, Key::Tab, KeyCode::Tab);
+        assert_eq!(console(&app).input.text, "/quality ");
+        typed(&mut app, "me");
+        press(&mut app, Key::Tab, KeyCode::Tab);
+        assert_eq!(console(&app).input.text, "/quality medium ");
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        assert!(!console(&app).typing);
+        assert_eq!(app.world().resource::<Console>().tools, ["/quality medium"]);
+    }
+
+    #[test]
+    fn tab_completes_a_command_and_what_the_islander_sees() {
+        let mut app = app();
+        let names = match &app.world().resource::<Sim>().play {
+            Play::Live(session) => session.names(),
+            Play::Script(_) => unreachable!(),
+        };
+        let name = names
+            .iter()
+            .find(|n| n.len() > 4)
+            .expect("something in sight")
+            .clone();
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        typed(&mut app, "gath");
+        press(&mut app, Key::Tab, KeyCode::Tab);
+        assert_eq!(console(&app).input.text, "gather ");
+        typed(&mut app, &name[..3]);
+        press(&mut app, Key::Tab, KeyCode::Tab);
+        let line = console(&app).input.text.clone();
+        // Completed, or the names it could be listed in the log.
+        let listed = console(&app)
+            .log
+            .last()
+            .map(|(_, l)| l.clone())
+            .unwrap_or_default();
+        assert!(
+            line.starts_with(&format!("gather {name}")) || listed.contains(&name),
+            "{line:?} / {listed:?} / {names:?}"
+        );
+    }
+
+    #[test]
+    fn the_line_edits_where_the_cursor_is_and_the_log_scrolls_back() {
+        let mut app = app();
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        typed(&mut app, "lok around");
+        press(&mut app, Key::Home, KeyCode::Home);
+        press(&mut app, Key::ArrowRight, KeyCode::ArrowRight);
+        press(&mut app, Key::ArrowRight, KeyCode::ArrowRight);
+        typed(&mut app, "o");
+        assert_eq!(console(&app).input.text, "look around");
+        // Ctrl+Backspace takes a word.
+        press(&mut app, Key::End, KeyCode::End);
+        key(
+            &mut app,
+            Key::Control,
+            KeyCode::ControlLeft,
+            ButtonState::Pressed,
+        );
+        app.update();
+        press(&mut app, Key::Backspace, KeyCode::Backspace);
+        key(
+            &mut app,
+            Key::Control,
+            KeyCode::ControlLeft,
+            ButtonState::Released,
+        );
+        app.update();
+        assert_eq!(console(&app).input.text, "look ");
+        press(&mut app, Key::Escape, KeyCode::Escape);
+
+        // Help is longer than the console: Page Up goes back, End returns.
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        typed(&mut app, "help");
+        press(&mut app, Key::Enter, KeyCode::Enter);
+        assert_eq!(console(&app).scroll, 0);
+        press(&mut app, Key::PageUp, KeyCode::PageUp);
+        let back = console(&app).scroll;
+        assert!(
+            back > 0,
+            "log {} lines, last {:?}",
+            console(&app).log.len(),
+            console(&app).log.last().map(|l| &l.1)
+        );
+        // New lines don't move what's being read.
+        app.world_mut()
+            .resource_mut::<Console>()
+            .say(super::Said::News, "a boar grunts");
+        assert_eq!(console(&app).scroll, back + 1);
+        press(&mut app, Key::End, KeyCode::End);
+        assert_eq!(console(&app).scroll, 0);
     }
 }

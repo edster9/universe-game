@@ -70,3 +70,28 @@ The owner: "all these shortcuts will be needed". See [challenges/skill-grounds.m
 2. Settings are remembered between sessions, in a file beside the program.
 3. Tools can be spoken: "slash speed sixty-four".
 4. Editing tools, with the designer as a named source, when the world designer's turn comes.
+
+## The console's keys (built 2026-10-06)
+
+At the owner's request, the console now works as games' chat lines and developer consoles do (Minecraft, World of Warcraft, the Quake and Source consoles, Skyrim, Unreal). The research and the owner's choices are in [requirements.md](../requirements.md), "The console: how other games do it".
+
+- **Opening and closing.** Enter opens the line. `/` opens it with the slash already typed, for tools. Enter sends and gives the keys back to the game. Esc closes and throws the line away.
+- **While typing,** the keys are the line's, as in every game; you can't walk.
+  - Left and Right move the cursor, Home and End go to the ends, and Delete deletes.
+  - Ctrl+Backspace deletes a word, and Ctrl+V pastes.
+  - Up and Down bring back earlier commands.
+- **Tab completes:**
+  - a command (from the console's own help);
+  - a tool;
+  - a setting's values (`/quality me` becomes `/quality medium`);
+  - after a command, the name of something the islander can make out (`gather dr` becomes `gather dry `). It never completes what they can't see: no oracles, from `Session::names`.
+
+  If several match and agree no further, they're listed in the log.
+- **Scrolling.** The mouse wheel over the console scrolls back through the log; over the world it still zooms. Page Up and Page Down do the same.
+  - While scrolled back, a line says how many newer lines are below, and what you're reading stays put as lines arrive.
+  - Sending a command, or End when not typing, comes back to the newest.
+  - The log keeps 1,000 lines.
+- The key left of 1 (\`) still makes the console bigger, smaller, or hidden.
+
+Not done, by the owner's choice: moving while typing (other games don't either).
+

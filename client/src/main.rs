@@ -63,6 +63,7 @@ mod detail;
 mod draw;
 mod graphics;
 mod grid;
+mod line;
 mod menu;
 mod panels;
 mod shapes;
@@ -367,6 +368,7 @@ fn main() {
             // What the player does: keys, typing, speaking.
             (
                 terminal::type_in,
+                terminal::wheel,
                 controls,
                 panels::keys,
                 build::toggle,

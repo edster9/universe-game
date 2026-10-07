@@ -677,6 +677,53 @@ impl Session {
         self.player
     }
 
+    /// The names the player could type for what they perceive: what they
+    /// carry, what they can make out here (and what's in it), who's here,
+    /// and the ways out they know, in their own words. Never what they
+    /// can't see or make out (no oracles): Tab completes from this.
+    pub fn names(&self) -> Vec<String> {
+        let (w, me) = (&self.world, self.player);
+        let mut names = Vec::new();
+        let add = |things: &[Thing], names: &mut Vec<String>| {
+            for t in things {
+                names.push(t.label.clone());
+                names.extend(t.contents.iter().map(|c| c.label.clone()));
+            }
+        };
+        add(&view::inventory(w, me).things, &mut names);
+        if let Some(look) = view::look(w, me) {
+            // Seen but not made out, it's only "something small".
+            let made_out: Vec<Thing> = look
+                .things
+                .into_iter()
+                .filter(|t| !t.label.starts_with("something"))
+                .collect();
+            add(&made_out, &mut names);
+            add(&look.air, &mut names);
+            names.extend(look.exits);
+            names.extend(
+                look.people
+                    .into_iter()
+                    .filter(|p| p != "someone" && !p.starts_with("something")),
+            );
+        }
+        let mut names: Vec<String> = names
+            .into_iter()
+            .map(|n| {
+                let n = n.trim();
+                ["a ", "an ", "the ", "some "]
+                    .iter()
+                    .find_map(|a| n.strip_prefix(a))
+                    .unwrap_or(n)
+                    .to_string()
+            })
+            .filter(|n| !n.is_empty())
+            .collect();
+        names.sort();
+        names.dedup();
+        names
+    }
+
     fn look(&self) -> String {
         let Some(look) = view::look(&self.world, self.player) else {
             return "You aren't anywhere.".into();

@@ -98,6 +98,46 @@ const SETTINGS: &[(&str, &str, Layer, &str)] = &[
     ),
 ];
 
+/// Every tool's name, with its slash, for Tab to complete.
+pub fn names() -> Vec<String> {
+    let mut names: Vec<String> = [
+        "help", "settings", "set", "save", "load", "saves", "make", "light", "place",
+    ]
+    .into_iter()
+    .chain(SETTINGS.iter().map(|(name, ..)| *name))
+    .chain(graphics::SETTINGS.iter().map(|(name, ..)| *name))
+    .map(|n| format!("/{n}"))
+    .collect();
+    names.sort();
+    names
+}
+
+/// The values a setting takes, for Tab to complete after its name (or after
+/// `/set <name>`).
+pub fn values(tool: &str) -> Vec<String> {
+    let name = tool.trim_start_matches('/');
+    if name == "set" {
+        return SETTINGS
+            .iter()
+            .map(|(name, ..)| *name)
+            .chain(graphics::SETTINGS.iter().map(|(name, ..)| *name))
+            .map(str::to_string)
+            .collect();
+    }
+    if let Some((_, values, _)) = graphics::SETTINGS.iter().find(|(n, ..)| *n == name) {
+        return values
+            .split(", ")
+            .filter(|v| !v.contains(' ') || *v == "or off")
+            .map(|v| v.trim_start_matches("or ").to_string())
+            .filter(|v| v != "metres")
+            .collect();
+    }
+    if SETTINGS.iter().any(|(n, ..)| *n == name) && name != "speed" {
+        return vec!["on".into(), "off".into()];
+    }
+    Vec::new()
+}
+
 /// Everything a tool can change.
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct Changeable<'w> {
@@ -319,5 +359,20 @@ mod tests {
         assert_eq!(parse("/grid off"), Tool::Set("grid", Some("off")));
         assert_eq!(parse("/grid"), Tool::Set("grid", None));
         assert_eq!(parse("/set speed 64 now"), Tool::Unknown);
+    }
+
+    #[test]
+    fn tab_knows_every_tool_and_each_settings_values() {
+        let names = super::names();
+        assert!(names.contains(&"/quality".to_string()));
+        assert!(names.contains(&"/grid".to_string()));
+        assert!(names.contains(&"/save".to_string()));
+        assert_eq!(
+            super::values("/quality"),
+            ["low", "medium", "high", "ultra"]
+        );
+        assert_eq!(super::values("/grid"), ["on", "off"]);
+        assert_eq!(super::values("/fps-cap"), ["off"]);
+        assert!(super::values("/set").contains(&"shadows".to_string()));
     }
 }

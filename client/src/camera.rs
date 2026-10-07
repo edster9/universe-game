@@ -148,7 +148,9 @@ pub fn follow(
         eye.pitch =
             (eye.pitch + axis(KeyCode::ArrowUp, KeyCode::ArrowDown) * turn * 0.6).clamp(-0.3, 1.45);
     }
+    // Over the console, the wheel scrolls its log instead.
     let lines = match scroll.unit {
+        _ if console.over => 0.0,
         MouseScrollUnit::Line => scroll.delta.y,
         MouseScrollUnit::Pixel => scroll.delta.y / MouseScrollUnit::SCROLL_UNIT_CONVERSION_FACTOR,
     };

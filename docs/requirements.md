@@ -789,6 +789,10 @@ Added 2026-10-04, as round 1 of the benchmarks ended. **A universe game has to h
 
 Added 2026-10-04. What we used was trees only; **city packs and other things are coming.** For a first round of optimization, we did great. **After we fix the terminal, the skill settings, and everything like that, we'll start to build a city using modular building packs**, and get a better sense of what can be drawn for a **medium-sized village**. Then we'll work on **multi-region**: an island can have many cities that **you can probably see from a distance, but you're obviously not rendering all the buildings of a city from a distance.** As we get closer to another city, we'll have to **switch and load it, and abandon the city we came from**, something like that. That's advanced level design, for later.
 
+### The console: how other games do it
+
+Added 2026-10-06. **Let's improve the console environment a little.** Look up other games and how they handle the console; I don't think ours behaves the same way. For example, **right now you can't have the console open, typing, and still walk around**: the WASD keys end up typing. How do other games do that? **Should we replace WASD with just the arrow keys** and get it over with, to make it easier? Give me a rundown of how other games handle the console (**opening, closing, typing**) and how to make the workflow very similar. And **there's no scrolling**: if you type `help` and it goes off screen, there's no way to see the lines that went off; maybe **the mouse's middle button (wheel) to scroll** and view the history. Again, how do other games do it? Do some research and get back to me.
+
 ## The first attempt
 
 No graphics. Text only. Very simple slices of the engine, each proving one simple concept, to chart a course and see where it goes. See [slices.md](slices.md).
